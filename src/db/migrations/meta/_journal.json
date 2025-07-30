@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1753813743781,
+      "tag": "0000_add_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1753816789559,
+      "tag": "0001_add_chat_table",
+      "breakpoints": true
+    }
+  ]
+}

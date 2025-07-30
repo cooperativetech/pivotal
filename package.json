@@ -1,0 +1,53 @@
+{
+  "name": "quiz-feed",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"tsx watch ./src/server.ts\" \"vite\"",
+    "prod": "tsx ./src/server.ts --prod",
+    "build": "tsc -b && vite build",
+    "dkgen": "drizzle-kit generate",
+    "dkmig": "drizzle-kit migrate",
+    "lint": "eslint . && tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.17.1",
+    "@hono/zod-validator": "0.7.2",
+    "@openrouter/ai-sdk-provider": "0.7.2",
+    "ai": "4.3.19",
+    "better-auth": "1.3.2",
+    "drizzle-orm": "0.44.3",
+    "hono": "4.8.5",
+    "lodash": "4.17.21",
+    "pg": "8.16.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router": "7.7.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "tailwindcss": "4.1.11",
+    "tsx": "4.20.3",
+    "vite": "7.0.5",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.31.0",
+    "@tailwindcss/vite": "4.1.11",
+    "@types/lodash": "4.17.20",
+    "@types/node": "24.0.15",
+    "@types/pg": "8.15.4",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "4.7.0",
+    "concurrently": "9.2.0",
+    "drizzle-kit": "0.31.4",
+    "eslint": "9.31.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "0.4.20",
+    "globals": "16.3.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.38.0"
+  }
+}
