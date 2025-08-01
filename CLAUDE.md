@@ -42,6 +42,7 @@ This is a full-stack chat application built with modern web technologies.
     'comma-dangle': ['error', 'always-multiline'],
     'object-curly-spacing': ['error', 'always'],
     'array-bracket-spacing': ['error', 'never'],
+    'no-trailing-spaces': ['error'],
     '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
 }
 ```

@@ -42,9 +42,9 @@ function Chat() {
       // Join the chat room
       try {
         socketClient.joinChat(
-          chatId, 
-          user.id, 
-          user.name || user.email, 
+          chatId,
+          user.id,
+          user.name || user.email,
           user.email,
         )
       } catch (err) {
@@ -63,7 +63,7 @@ function Chat() {
 
     const handleChatJoined = ({ chatId: joinedChatId, groupChat, onlineUsers }: { chatId: string, groupChat: GroupChat, onlineUsers: string[] }) => {
       if (joinedChatId !== chatId) return
-      
+
       // Load existing messages
       setGroupMessages(groupChat.groupChatHistory || [])
       const userMessages = groupChat.individualChatHistory[user.id] || []
@@ -154,7 +154,7 @@ function Chat() {
           throw new Error('Failed to fetch users')
         }
         const allUsers = await usersResponse.json() as User[]
-        
+
         const chatParticipants = chatData.groupChat.userIds.map((userId: string) => {
           const userInfo = allUsers.find((u) => u.id === userId)
           return {
@@ -162,7 +162,7 @@ function Chat() {
             name: userInfo?.name || userInfo?.email || 'Unknown User',
           }
         })
-        
+
         if (user) {
           // Add current user if not in the list
           const currentUserInList = chatParticipants.find((p: OnlineUser) => p.id === user.id)
@@ -173,7 +173,7 @@ function Chat() {
             })
           }
         }
-        
+
         setParticipants(chatParticipants)
       } catch (err) {
         console.error('Failed to fetch chat:', err)
@@ -186,7 +186,7 @@ function Chat() {
 
   const handleSendGroupMessage = (text: string) => {
     if (!user || !isConnected) return
-    
+
     try {
       socketClient.sendMessage(chatId!, text, 'group')
       // Clear typing indicator
@@ -202,11 +202,11 @@ function Chat() {
 
   const handleSendAssistantMessage = async (text: string) => {
     if (!user || !isConnected) return
-    
+
     try {
       // Send message via socket for real-time update
       socketClient.sendMessage(chatId!, text, 'assistant')
-      
+
       // Also call the API endpoint to trigger takeAction
       const response = await fetch(`/api/chats/${chatId}/assistant`, {
         method: 'POST',
@@ -281,7 +281,7 @@ function Chat() {
           <div className="mt-2 text-sm text-red-600">{error}</div>
         )}
       </header>
-      
+
       <div className="flex-1 flex gap-4 p-6 bg-gray-50 overflow-hidden">
         <div className="flex-1 flex flex-col">
           <ChatBox
@@ -296,7 +296,7 @@ function Chat() {
             <div className="text-sm text-gray-500 italic mt-1">{typingIndicator}</div>
           )}
         </div>
-        
+
         <div className="flex-1">
           <ChatBox
             title="AI Assistant"

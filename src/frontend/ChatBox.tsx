@@ -24,7 +24,7 @@ function ChatBox({ title, messages, currentUserId, onSendMessage, participants, 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setInputValue(value)
-    
+
     // Notify typing status
     if (onTyping) {
       onTyping(value.length > 0)
@@ -42,7 +42,7 @@ function ChatBox({ title, messages, currentUserId, onSendMessage, participants, 
       <div className="px-4 py-3 border-b bg-gray-50">
         <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((message, index) => {
           const isCurrentUser = message.userId === currentUserId
@@ -74,7 +74,7 @@ function ChatBox({ title, messages, currentUserId, onSendMessage, participants, 
           )
         })}
       </div>
-      
+
       <form onSubmit={handleSubmit} className="border-t p-4">
         <div className="flex gap-2">
           <input
