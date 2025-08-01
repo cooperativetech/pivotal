@@ -6,7 +6,7 @@ brew install pnpm
 pnpm install
 ```
 
-Ensure you have `PV_DB_URL` and `PV_OPENROUTER_API_KEY` are set. Then, run the dev server (uses hot module reloading):
+Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` are set. Then, run the dev server (uses hot module reloading):
 ```
 pnpm run dev
 ```

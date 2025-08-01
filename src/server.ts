@@ -17,7 +17,7 @@ import { z } from 'zod'
 import { takeAction } from './anthropic-api.ts'
 import { auth } from './auth.ts'
 import db from './db/engine.ts'
-import { chat } from './db/schema/main.ts'
+import { chatTable } from './db/schema/main.ts'
 import { setupSocketServer } from './socket-server.ts'
 
 const args = parseArgs({ options: { prod: { type: 'boolean' } } })
@@ -75,7 +75,7 @@ const app = new Hono()
       individualChatHistory: {},
     }
 
-    const newChat = await db.insert(chat).values({
+    const newChat = await db.insert(chatTable).values({
       id: randomUUID(),
       name,
       groupChat,
@@ -93,8 +93,8 @@ const app = new Hono()
     const chatId = c.req.param('chatId')
 
     const chatRecord = await db.select()
-      .from(chat)
-      .where(eq(chat.id, chatId))
+      .from(chatTable)
+      .where(eq(chatTable.id, chatId))
       .limit(1)
 
     if (chatRecord.length === 0) {
@@ -121,8 +121,8 @@ const app = new Hono()
 
     // Get the chat
     const chatRecord = await db.select()
-      .from(chat)
-      .where(eq(chat.id, chatId))
+      .from(chatTable)
+      .where(eq(chatTable.id, chatId))
       .limit(1)
 
     if (chatRecord.length === 0) {
@@ -148,9 +148,9 @@ const app = new Hono()
     })
 
     // Update the chat in database
-    await db.update(chat)
+    await db.update(chatTable)
       .set({ groupChat })
-      .where(eq(chat.id, chatId))
+      .where(eq(chatTable.id, chatId))
 
     // Call takeAction and process the response
     const actionResponse = await takeAction(groupChat, session.user.id)
@@ -168,9 +168,9 @@ const app = new Hono()
       // Update public context if specified
       if (aiResponse.updatePublicContext) {
         groupChat.publicContext = aiResponse.updatePublicContext
-        await db.update(chat)
+        await db.update(chatTable)
           .set({ groupChat })
-          .where(eq(chat.id, chatId))
+          .where(eq(chatTable.id, chatId))
       }
 
       // Process messages
@@ -214,9 +214,9 @@ const app = new Hono()
         }
 
         // Save updated chat to database
-        await db.update(chat)
+        await db.update(chatTable)
           .set({ groupChat })
-          .where(eq(chat.id, chatId))
+          .where(eq(chatTable.id, chatId))
 
         return c.json({
           success: true,

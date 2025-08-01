@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io'
 import { eq } from 'drizzle-orm'
 import db from './db/engine.ts'
-import { chat } from './db/schema/main.ts'
+import { chatTable } from './db/schema/main.ts'
 import { ChatMessage } from './shared/api-types.ts'
 
 interface SocketUser {
@@ -47,8 +47,8 @@ export function setupSocketServer(io: Server, port: number) {
 
         // Verify user has access to this chat
         const chatRecord = await db.select()
-          .from(chat)
-          .where(eq(chat.id, chatId))
+          .from(chatTable)
+          .where(eq(chatTable.id, chatId))
           .limit(1)
 
         if (chatRecord.length === 0) {
@@ -104,8 +104,8 @@ export function setupSocketServer(io: Server, port: number) {
       try {
         // Get the current chat
         const chatRecord = await db.select()
-          .from(chat)
-          .where(eq(chat.id, chatId))
+          .from(chatTable)
+          .where(eq(chatTable.id, chatId))
           .limit(1)
 
         if (chatRecord.length === 0) {
@@ -118,11 +118,11 @@ export function setupSocketServer(io: Server, port: number) {
         // Update the appropriate chat history
         if (messageType === 'group') {
           groupChat.groupChatHistory.push(message)
-          
+
           // Save to database for group messages
-          await db.update(chat)
+          await db.update(chatTable)
             .set({ groupChat })
-            .where(eq(chat.id, chatId))
+            .where(eq(chatTable.id, chatId))
         }
         // Skip saving assistant messages - they're handled by the API endpoint
 
