@@ -6,7 +6,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import { GroupChat } from '../../shared/api-types.ts'
+import { GroupChat, WorkflowType } from '../../shared/api-types.ts'
 
 export const chatTable = pgTable('chat', {
   id: text().primaryKey(),
@@ -22,6 +22,7 @@ export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
   userIds: json().$type<string[]>().notNull().default([]),
   summary: text().notNull(),
+  workflowType: text().$type<WorkflowType>().notNull().default('other'),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })

@@ -50,3 +50,6 @@ export type Chat = z.infer<typeof Chat>
 
 export const CreateChatResponse = Chat
 export type CreateChatResponse = z.infer<typeof CreateChatResponse>
+
+export const WorkflowType = z.enum(['scheduling', 'other'])
+export type WorkflowType = z.infer<typeof WorkflowType>

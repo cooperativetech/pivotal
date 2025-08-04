@@ -10,7 +10,7 @@ const app = new App({
   socketMode: true,
 })
 
-app.message(async ({ message, say, context, client }) => {
+app.message(async ({ message, context, client }) => {
   if ('text' in message && message.text && message.user && message.ts && message.channel) {
     console.log(message)
     const isDirectMessage = message.channel_type === 'im'
@@ -61,30 +61,39 @@ app.message(async ({ message, say, context, client }) => {
       }
       // Step 4: If DM or bot mentioned and could form new topic
       else if ((isDirectMessage || isBotMentioned) && analysis.suggestedNewTopic) {
-        // Create new topic
-        const [newTopic] = await db.insert(topicTable).values({
-          userIds: [message.user],
-          summary: analysis.suggestedNewTopic,
-        }).returning()
+        // Check if it's a scheduling workflow
+        if (analysis.workflowType === 'scheduling') {
+          // Create new topic
+          const [newTopic] = await db.insert(topicTable).values({
+            userIds: [message.user],
+            summary: analysis.suggestedNewTopic,
+            workflowType: analysis.workflowType,
+          }).returning()
 
-        // Save message related to new topic
-        await db.insert(slackMessageTable).values({
-          topicId: newTopic.id,
-          channelId: message.channel,
-          userId: message.user,
-          text: message.text,
-          timestamp: new Date(parseFloat(message.ts) * 1000),
-          raw: message,
-        })
+          // Save message related to new topic
+          await db.insert(slackMessageTable).values({
+            topicId: newTopic.id,
+            channelId: message.channel,
+            userId: message.user,
+            text: message.text,
+            timestamp: new Date(parseFloat(message.ts) * 1000),
+            raw: message,
+          })
 
-        // Add heart emoji
-        await client.reactions.add({
-          channel: message.channel,
-          name: 'heart',
-          timestamp: message.ts,
-        })
-
-        await say(`Created new topic: ${analysis.suggestedNewTopic}`)
+          // Reply in thread to the original message
+          await client.chat.postMessage({
+            channel: message.channel,
+            thread_ts: message.ts,
+            text: `Created new topic: ${analysis.suggestedNewTopic}`,
+          })
+        } else {
+          // Non-scheduling workflow - send canned response in thread
+          await client.chat.postMessage({
+            channel: message.channel,
+            thread_ts: message.ts,
+            text: 'Sorry, but I\'m only set up for scheduling requests at the moment. Try something like "plan lunch with the team" or "schedule a meeting for next week".',
+          })
+        }
       }
     } catch (error) {
       console.error('Error processing message:', error)

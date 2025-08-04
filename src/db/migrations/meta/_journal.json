@@ -22,6 +22,13 @@
       "when": 1754339406882,
       "tag": "0002_add_topic_and_slack_message_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754348950120,
+      "tag": "0003_add_workflow_type_to_topic",
+      "breakpoints": true
     }
   ]
 }

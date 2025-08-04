@@ -140,6 +140,7 @@ Remember: Your job is to make scheduling painless and fast while respecting ever
 export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage): Promise<{
   relevantTopicId?: string
   suggestedNewTopic?: string
+  workflowType?: 'scheduling' | 'other'
   confidence: number
   reasoning: string
 }> {
@@ -169,13 +170,19 @@ Given a list of existing topics and a new message, determine:
   - Could generate follow-up discussion
   - Is coherent enough to summarize into a topic
 
+## Workflow Type Classification
+When suggesting a new topic, also classify its workflow type:
+- "scheduling": The topic involves planning, organizing, or scheduling meetings, events, or activities (e.g., "plan lunch", "schedule meeting", "organize team event")
+- "other": All other topics that don't involve scheduling or planning activities
+
 ## Response Format
 You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
 
 The JSON structure must be:
 {
   "relevantTopicId": "topic-id-2",           // Include only if message is relevant to existing topic
-  "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated, and the
+  "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated
+  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling" or "other"
   "confidence": 0.85,                        // Confidence level between 0 and 1
   "reasoning": "Brief explanation"           // One sentence explaining the decision
 }
@@ -217,6 +224,7 @@ Analyze whether this message is relevant to any of the existing topics or if it 
     const analysis = JSON.parse(res.text) as {
       relevantTopicId?: string
       suggestedNewTopic?: string
+      workflowType?: 'scheduling' | 'other'
       confidence: number
       reasoning: string
     }
