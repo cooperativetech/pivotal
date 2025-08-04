@@ -10,7 +10,8 @@
     "build": "tsc -b && vite build",
     "dkgen": "drizzle-kit generate",
     "dkmig": "drizzle-kit migrate",
-    "lint": "tsc --noEmit && eslint ."
+    "lint": "tsc --noEmit && eslint .",
+    "postinstall": "./setup-hooks.sh"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

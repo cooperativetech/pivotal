@@ -3,7 +3,6 @@ import {
   type CalendarEvent,
   type UtilityConfig,
   type TimeSlot,
-  type EvaluationResult,
   evaluateMeetingTime,
   generateAllTimeSlots,
   calculateTotalUtility,
@@ -29,28 +28,28 @@ interface CalendarGenerationConfig {
 function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent[] {
   const events: CalendarEvent[] = []
   const numEvents = Math.floor(Math.random() * (config.maxEvents - config.minEvents + 1)) + config.minEvents
-  
+
   // Track occupied time slots to avoid overlaps
   const occupiedSlots = new Set<string>()
-  
+
   for (let i = 0; i < numEvents; i++) {
     let attempts = 0
     let event: CalendarEvent | null = null
-    
+
     // Try to create non-overlapping event (max 50 attempts)
     while (attempts < 50 && !event) {
       // Random start time within working hours
       const startMinutes = Math.floor(
-        Math.random() * (config.workdayEnd - config.workdayStart - 60) + config.workdayStart
+        Math.random() * (config.workdayEnd - config.workdayStart - 60) + config.workdayStart,
       )
-      
+
       // Round to nearest 30 minutes
       const roundedStart = Math.floor(startMinutes / 30) * 30
-      
+
       // Random duration: 30, 60, or 90 minutes
       const duration = [30, 60, 90][Math.floor(Math.random() * 3)]
       const endMinutes = roundedStart + duration
-      
+
       // Check if this slot is available
       const slotKey = `${roundedStart}-${endMinutes}`
       if (!occupiedSlots.has(slotKey) && endMinutes <= config.workdayEnd) {
@@ -58,12 +57,12 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
         for (let m = roundedStart; m < endMinutes; m += 30) {
           occupiedSlots.add(`${m}-${m + 30}`)
         }
-        
+
         // Determine event type based on probabilities
         const rand = Math.random()
         let eventType: 'meeting' | 'blocked-work' | 'personal' | 'critical'
         const probs = config.eventTypeProbabilities
-        
+
         if (rand < probs.critical) {
           eventType = 'critical'
         } else if (rand < probs.critical + probs.personal) {
@@ -73,7 +72,7 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
         } else {
           eventType = 'meeting'
         }
-        
+
         // Generate description based on type
         const descriptions = {
           meeting: ['Team sync', 'Client call', '1:1', 'Planning session', 'Review meeting'],
@@ -81,7 +80,7 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
           personal: ['Lunch', 'Gym', 'Errand', 'Appointment', 'Break'],
           critical: ['Pick up kids', 'Medical appointment', 'Flight', 'School event', 'Emergency'],
         }
-        
+
         event = {
           start: minutesToTime(roundedStart),
           end: minutesToTime(endMinutes),
@@ -89,22 +88,22 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
           description: descriptions[eventType][Math.floor(Math.random() * descriptions[eventType].length)],
         }
       }
-      
+
       attempts++
     }
-    
+
     if (event) {
       events.push(event)
     }
   }
-  
+
   // Sort events by start time
   events.sort((a, b) => {
     const aStart = parseInt(a.start.split(':')[0]) * 60 + parseInt(a.start.split(':')[1])
     const bStart = parseInt(b.start.split(':')[0]) * 60 + parseInt(b.start.split(':')[1])
     return aStart - bStart
   })
-  
+
   return events
 }
 
@@ -123,7 +122,7 @@ function generateRandomUtilityConfig(): UtilityConfig {
 // Generate N random person profiles
 export function generateRandomProfiles(
   numPeople: number,
-  calendarConfig?: Partial<CalendarGenerationConfig>
+  calendarConfig?: Partial<CalendarGenerationConfig>,
 ): PersonProfile[] {
   const defaultConfig: CalendarGenerationConfig = {
     minEvents: 3,
@@ -137,16 +136,16 @@ export function generateRandomProfiles(
     workdayStart: 8 * 60, // 8:00
     workdayEnd: 18 * 60,  // 18:00
   }
-  
+
   const config = { ...defaultConfig, ...calendarConfig }
-  
+
   const names = [
     'Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry', 'Iris', 'Jack',
     'Kate', 'Liam', 'Maya', 'Noah', 'Olivia', 'Paul', 'Quinn', 'Ruby', 'Sam', 'Tara',
   ]
-  
+
   const profiles: PersonProfile[] = []
-  
+
   for (let i = 0; i < numPeople; i++) {
     profiles.push({
       name: names[i % names.length] + (i >= names.length ? i.toString() : ''),
@@ -154,7 +153,7 @@ export function generateRandomProfiles(
       utilityConfig: generateRandomUtilityConfig(),
     })
   }
-  
+
   return profiles
 }
 
@@ -171,11 +170,11 @@ export function simpleSchedulingAlgorithm(profiles: PersonProfile[]): TimeSlot {
     { start: '16:00', end: '17:00' }, // Late afternoon
     { start: '13:00', end: '14:00' }, // After lunch
   ]
-  
+
   // Evaluate each preferred time and pick the best
   let bestSlot = preferredTimes[0]
   let bestUtility = -Infinity
-  
+
   for (const slot of preferredTimes) {
     const { total } = calculateTotalUtility(profiles, slot)
     if (total > bestUtility) {
@@ -183,7 +182,7 @@ export function simpleSchedulingAlgorithm(profiles: PersonProfile[]): TimeSlot {
       bestSlot = slot
     }
   }
-  
+
   return bestSlot
 }
 
@@ -192,7 +191,7 @@ export function greedySchedulingAlgorithm(profiles: PersonProfile[]): TimeSlot {
   const allSlots = generateAllTimeSlots()
   let bestSlot = allSlots[0]
   let bestUtility = -Infinity
-  
+
   for (const slot of allSlots) {
     const { total } = calculateTotalUtility(profiles, slot)
     if (total > bestUtility) {
@@ -200,41 +199,41 @@ export function greedySchedulingAlgorithm(profiles: PersonProfile[]): TimeSlot {
       bestSlot = slot
     }
   }
-  
+
   return bestSlot
 }
 
 // Algorithm that uses heuristics (e.g., avoid early/late, prefer mid-day)
 export function heuristicSchedulingAlgorithm(profiles: PersonProfile[]): TimeSlot {
   const allSlots = generateAllTimeSlots()
-  
+
   // Filter to reasonable meeting hours (9-17)
   const reasonableSlots = allSlots.filter(slot => {
     const hour = parseInt(slot.start.split(':')[0])
     return hour >= 9 && hour < 17
   })
-  
+
   // Score each slot with utility + time preference bonus
   let bestSlot = reasonableSlots[0]
   let bestScore = -Infinity
-  
+
   for (const slot of reasonableSlots) {
     const { total } = calculateTotalUtility(profiles, slot)
     const hour = parseInt(slot.start.split(':')[0])
-    
+
     // Add bonus for preferred times (10-11, 14-16)
     let timeBonus = 0
     if (hour === 10 || hour === 14 || hour === 15) {
       timeBonus = 50 // Significant bonus for preferred times
     }
-    
+
     const score = total + timeBonus
     if (score > bestScore) {
       bestScore = score
       bestSlot = slot
     }
   }
-  
+
   return bestSlot
 }
 
@@ -269,13 +268,13 @@ interface BenchmarkResults {
 // Run a single test case
 function runTestCase(
   profiles: PersonProfile[],
-  algorithm: (profiles: PersonProfile[]) => TimeSlot
+  algorithm: (profiles: PersonProfile[]) => TimeSlot,
 ): TestCaseResult {
   // Find the optimal solution
   const allSlots = generateAllTimeSlots()
   let optimalSlot = allSlots[0]
   let optimalUtility = -Infinity
-  
+
   for (const slot of allSlots) {
     const { total } = calculateTotalUtility(profiles, slot)
     if (total > optimalUtility) {
@@ -283,14 +282,14 @@ function runTestCase(
       optimalSlot = slot
     }
   }
-  
+
   // Run the algorithm
   const algorithmSlot = algorithm(profiles)
   const { total: algorithmUtility } = calculateTotalUtility(profiles, algorithmSlot)
-  
+
   // Get percentile
   const evaluation = evaluateMeetingTime(profiles, algorithmSlot)
-  
+
   return {
     optimalSlot,
     optimalUtility,
@@ -308,28 +307,28 @@ export function runBenchmark(
   algorithm: (profiles: PersonProfile[]) => TimeSlot,
   numCases: number,
   numPeoplePerCase: number = 5,
-  calendarConfig?: Partial<CalendarGenerationConfig>
+  calendarConfig?: Partial<CalendarGenerationConfig>,
 ): BenchmarkResults {
   const results: TestCaseResult[] = []
-  
+
   console.log(`Running ${numCases} test cases for ${algorithmName}...`)
-  
+
   for (let i = 0; i < numCases; i++) {
     if (i % 100 === 0 && i > 0) {
       console.log(`  Progress: ${i}/${numCases} cases completed`)
     }
-    
+
     const profiles = generateRandomProfiles(numPeoplePerCase, calendarConfig)
     const result = runTestCase(profiles, algorithm)
     results.push(result)
   }
-  
+
   // Calculate statistics
   const optimalCount = results.filter(r => r.isOptimal).length
   const averageUtilityRatio = results.reduce((sum, r) => sum + r.utilityRatio, 0) / results.length
   const averagePercentile = results.reduce((sum, r) => sum + r.percentile, 0) / results.length
   const worstCaseRatio = Math.min(...results.map(r => r.utilityRatio))
-  
+
   // Percentile distribution
   const percentileDistribution = {
     top10: results.filter(r => r.percentile >= 90).length,
@@ -337,13 +336,13 @@ export function runBenchmark(
     top50: results.filter(r => r.percentile >= 50).length,
     bottom25: results.filter(r => r.percentile < 25).length,
   }
-  
+
   // Debug: Check if percentiles are being calculated correctly
   if (results.length > 0) {
     const samplePercentiles = results.slice(0, 5).map(r => r.percentile)
     console.log(`  Sample percentiles: ${samplePercentiles.map(p => p.toFixed(1)).join(', ')}`)
   }
-  
+
   return {
     algorithmName,
     totalCases: numCases,
@@ -377,51 +376,51 @@ export function formatBenchmarkResults(results: BenchmarkResults): string {
     `  Average utility ratio: ${(results.averageUtilityRatio * 100).toFixed(1)}%`,
     `  Worst case ratio: ${(results.worstCaseRatio * 100).toFixed(1)}%`,
   ]
-  
+
   return output.join('\n')
 }
 
 // Run all benchmarks
 export function runAllBenchmarks(numCases: number = 1000) {
   console.log(`Starting scheduling algorithm benchmarks with ${numCases} test cases each...\n`)
-  
+
   // Test different algorithms
   const algorithms: Array<{ name: string; fn: (profiles: PersonProfile[]) => TimeSlot }> = [
     { name: 'Simple Algorithm (Common Times)', fn: simpleSchedulingAlgorithm },
     { name: 'Greedy Algorithm (Exhaustive)', fn: greedySchedulingAlgorithm },
     { name: 'Heuristic Algorithm (Smart)', fn: heuristicSchedulingAlgorithm },
   ]
-  
+
   const allResults: BenchmarkResults[] = []
-  
+
   for (const { name, fn } of algorithms) {
     const results = runBenchmark(name, fn, numCases)
     allResults.push(results)
     console.log(formatBenchmarkResults(results))
   }
-  
+
   // Compare algorithms
   console.log('\n' + '='.repeat(50))
   console.log('Algorithm Comparison Summary:')
   console.log('='.repeat(50))
-  
+
   // Sort by average percentile (higher is better)
   allResults.sort((a, b) => b.averagePercentile - a.averagePercentile)
-  
+
   console.log('\nRanked by Average Percentile (key metric):')
   allResults.forEach((result, index) => {
     console.log(`${index + 1}. ${result.algorithmName}: ${result.averagePercentile.toFixed(1)}%`)
   })
-  
+
   // Analysis
   const bestPercentile = Math.max(...allResults.map(r => r.averagePercentile))
   const worstPercentile = Math.min(...allResults.map(r => r.averagePercentile))
-  
+
   console.log(`\nKey Insights:`)
   console.log(`- Best average percentile: ${bestPercentile.toFixed(1)}%`)
   console.log(`- Worst average percentile: ${worstPercentile.toFixed(1)}%`)
   console.log(`- Performance gap: ${(bestPercentile - worstPercentile).toFixed(1)} percentile points`)
-  
+
   // Show which algorithms are close to random (33.3% for 3 algorithms)
   const randomExpectedPercentile = 100 / allResults.length
   console.log(`\nNote: Random selection would average ${randomExpectedPercentile.toFixed(1)}% percentile`)

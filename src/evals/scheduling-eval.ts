@@ -63,29 +63,29 @@ export function timeSlotsOverlap(slot1: TimeSlot, slot2: TimeSlot): boolean {
   const end1 = timeToMinutes(slot1.end)
   const start2 = timeToMinutes(slot2.start)
   const end2 = timeToMinutes(slot2.end)
-  
+
   return start1 < end2 && start2 < end1
 }
 
 // Calculate utility for a person given a proposed time slot
 export function calculatePersonUtility(
   person: PersonProfile,
-  proposedTime: TimeSlot
+  proposedTime: TimeSlot,
 ): { utility: number; conflictingEvent?: CalendarEvent } {
   // Find all events that conflict with the proposed time
-  const conflicts = person.calendar.filter(event => 
-    timeSlotsOverlap(proposedTime, { start: event.start, end: event.end })
+  const conflicts = person.calendar.filter(event =>
+    timeSlotsOverlap(proposedTime, { start: event.start, end: event.end }),
   )
-  
+
   // If no conflicts, return max utility (free time)
   if (conflicts.length === 0) {
     return { utility: person.utilityConfig.free }
   }
-  
+
   // Find the most restrictive conflict (lowest utility)
   let minUtility = person.utilityConfig.free
   let worstConflict: CalendarEvent | undefined
-  
+
   for (const conflict of conflicts) {
     let utility: number
     switch (conflict.type) {
@@ -105,20 +105,20 @@ export function calculatePersonUtility(
         utility = person.utilityConfig.critical
         break
     }
-    
+
     if (utility < minUtility) {
       minUtility = utility
       worstConflict = conflict
     }
   }
-  
+
   return { utility: minUtility, conflictingEvent: worstConflict }
 }
 
 // Calculate total utility across all participants for a given time slot
 export function calculateTotalUtility(
   profiles: PersonProfile[],
-  proposedTime: TimeSlot
+  proposedTime: TimeSlot,
 ): { total: number; individual: Array<{ person: string; utility: number; conflictingEvent?: CalendarEvent }> } {
   const individual = profiles.map(person => {
     const result = calculatePersonUtility(person, proposedTime)
@@ -128,16 +128,16 @@ export function calculateTotalUtility(
       conflictingEvent: result.conflictingEvent,
     }
   })
-  
+
   const total = individual.reduce((sum, score) => sum + score.utility, 0)
-  
+
   return { total, individual }
 }
 
 // Generate all possible 1-hour time slots for a day
 export function generateAllTimeSlots(): TimeSlot[] {
   const slots: TimeSlot[] = []
-  
+
   // Generate 24 1-hour slots from 00:00 to 23:00
   for (let hour = 0; hour < 24; hour++) {
     slots.push({
@@ -145,7 +145,7 @@ export function generateAllTimeSlots(): TimeSlot[] {
       end: minutesToTime((hour + 1) * 60),
     })
   }
-  
+
   return slots
 }
 
@@ -153,33 +153,33 @@ export function generateAllTimeSlots(): TimeSlot[] {
 export function findMinMaxUtilities(profiles: PersonProfile[]): { min: number; max: number; allScores: Map<string, number> } {
   const allSlots = generateAllTimeSlots()
   const allScores = new Map<string, number>()
-  
+
   let min = Infinity
   let max = -Infinity
-  
+
   for (const slot of allSlots) {
     const { total } = calculateTotalUtility(profiles, slot)
     const key = `${slot.start}-${slot.end}`
     allScores.set(key, total)
-    
+
     if (total < min) min = total
     if (total > max) max = total
   }
-  
+
   return { min, max, allScores }
 }
 
 // Main evaluation function
 export function evaluateMeetingTime(
   profiles: PersonProfile[],
-  proposedTime: TimeSlot
+  proposedTime: TimeSlot,
 ): EvaluationResult {
   // Calculate utility for proposed time
   const { total, individual } = calculateTotalUtility(profiles, proposedTime)
-  
+
   // Find min/max across all possible times
   const { min, max, allScores } = findMinMaxUtilities(profiles)
-  
+
   // Calculate percentile (0-100 scale)
   // If this is optimal (equals max), it's 100th percentile
   if (total === max) {
@@ -192,15 +192,15 @@ export function evaluateMeetingTime(
       individualScores: individual,
     }
   }
-  
+
   // Otherwise, calculate what percentage of slots are worse
   let worseCount = 0
   allScores.forEach(score => {
     if (score < total) worseCount++
   })
-  
+
   const percentile = (worseCount / allScores.size) * 100
-  
+
   return {
     proposedTime,
     totalUtility: total,
@@ -221,7 +221,7 @@ export function createTestProfiles(): PersonProfile[] {
     personal: 40,
     critical: 0,
   }
-  
+
   const profiles: PersonProfile[] = [
     {
       name: 'Sarah',
@@ -279,14 +279,14 @@ export function createTestProfiles(): PersonProfile[] {
       utilityConfig: standardUtility,
     },
   ]
-  
+
   return profiles
 }
 
 // Example usage
 export function runExample() {
   const profiles = createTestProfiles()
-  
+
   // Test a few different time slots
   const testSlots: TimeSlot[] = [
     { start: '08:00', end: '09:00' }, // Early morning
@@ -294,20 +294,20 @@ export function runExample() {
     { start: '15:00', end: '16:00' }, // Mid-afternoon
     { start: '17:00', end: '18:00' }, // End of day
   ]
-  
+
   console.log('Scheduling Evaluation Results:')
   console.log('==============================\\n')
-  
+
   for (const slot of testSlots) {
     const result = evaluateMeetingTime(profiles, slot)
     console.log(`Proposed time: ${slot.start} - ${slot.end}`)
     console.log(`Total utility: ${result.totalUtility} (min: ${result.minPossibleUtility}, max: ${result.maxPossibleUtility})`)
     console.log(`Percentile: ${result.percentile}% (higher is better)`)
     console.log('Individual impacts:')
-    
+
     for (const score of result.individualScores) {
-      const impact = score.conflictingEvent 
-        ? `conflicts with "${score.conflictingEvent.description}"` 
+      const impact = score.conflictingEvent
+        ? `conflicts with "${score.conflictingEvent.description}"`
         : 'is free'
       console.log(`  - ${score.person}: ${score.utility} utility (${impact})`)
     }
