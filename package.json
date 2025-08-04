@@ -13,6 +13,7 @@
     "lint": "tsc --noEmit && eslint ."
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hono/node-server": "1.17.1",
     "@hono/zod-validator": "0.7.2",
     "@openrouter/ai-sdk-provider": "0.7.2",
