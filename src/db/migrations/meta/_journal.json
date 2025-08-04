@@ -15,6 +15,13 @@
       "when": 1753816789559,
       "tag": "0001_add_chat_table",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754339406882,
+      "tag": "0002_add_topic_and_slack_message_tables",
+      "breakpoints": true
     }
   ]
 }

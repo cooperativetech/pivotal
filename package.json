@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "bot": "tsx ./src/slack-bot.ts",
+    "bot": "tsx watch ./src/slack-bot.ts",
     "dev": "concurrently \"tsx watch ./src/server.ts\" \"vite\"",
     "prod": "tsx ./src/server.ts --prod",
     "build": "tsc -b && vite build",

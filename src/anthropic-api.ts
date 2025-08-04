@@ -1,6 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { GroupChat } from './shared/api-types'
+import { Topic, SlackMessage } from './db/schema/main'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -133,5 +134,100 @@ Remember: Your job is to make scheduling painless and fast while respecting ever
         text: 'I apologize, but I encountered an error processing your request.',
       }],
     })
+  }
+}
+
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage): Promise<{
+  relevantTopicId?: string
+  suggestedNewTopic?: string
+  confidence: number
+  reasoning: string
+}> {
+  const systemPrompt = `You are a topic analysis assistant. Your job is to analyze whether a given message is relevant to any existing topics or if it could form the basis for a new topic.
+
+## Your Task
+Given a list of existing topics and a new message, determine:
+1. Whether the message is relevant to any existing topics
+2. Which specific topic it relates to (if any)
+3. If it doesn't relate to existing topics, whether it could form a new topic
+4. Your confidence level (0-1) in this assessment
+
+## Analysis Criteria
+- A message is relevant to a topic if it:
+  - Directly discusses information relevant to the topic summary
+  - Is part of an ongoing conversation that is already part of the topic
+  - Provides new information that extends the topic
+
+- Consider the topic metadata:
+  - How recently the topic was updated (more recent = potentially more relevant)
+  - The set of users involved (message sender involved = potentially more relevant)
+  - If the message's userId is in the topic's userIds list, it's more likely to be relevant
+
+- A message could form a new topic if it:
+  - Introduces a distinct subject or task not covered by existing topics
+  - Has sufficient substance (not just small talk or meta-conversation)
+  - Could generate follow-up discussion
+  - Is coherent enough to summarize into a topic
+
+## Response Format
+You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
+
+The JSON structure must be:
+{
+  "relevantTopicId": "topic-id-2",           // Include only if message is relevant to existing topic
+  "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated, and the
+  "confidence": 0.85,                        // Confidence level between 0 and 1
+  "reasoning": "Brief explanation"           // One sentence explaining the decision
+}
+
+IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
+
+  const userPrompt = `Existing topics:
+${topics.map((topic, i) => {
+  const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
+  return `${i + 1}. Topic ID: ${topic.id}
+   Summary: ${topic.summary}
+   Users involved: [${topic.userIds.join(', ')}]
+   Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}`
+}).join('\n\n')}
+
+Message to analyze:
+User: ${message.userId}
+Channel: ${message.channelId}
+Timestamp: ${new Date(message.timestamp).toLocaleString()}
+Text: "${message.text}"
+
+Analyze whether this message is relevant to any of the existing topics or if it could form the basis for a new topic.`
+
+  try {
+    const res = await generateText({
+      model: openrouter('anthropic/claude-sonnet-4'),
+      maxTokens: 1024,
+      temperature: 0, // Lower temperature for more consistent analysis
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+    })
+
+    // Parse the JSON response
+    const analysis = JSON.parse(res.text) as {
+      relevantTopicId?: string
+      suggestedNewTopic?: string
+      confidence: number
+      reasoning: string
+    }
+
+    return analysis
+  } catch (error) {
+    console.error('Error in analyzeTopicRelevance:', error)
+    // Return a safe default response
+    return {
+      confidence: 0,
+      reasoning: '',
+    }
   }
 }
