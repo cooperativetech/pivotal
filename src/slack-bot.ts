@@ -12,7 +12,7 @@ const app = new App({
 })
 
 // Helper function to get all Slack users
-async function getSlackUsers(client: AllMiddlewareArgs['client']): Promise<Map<string, string>> {
+async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = false): Promise<Map<string, string>> {
   const userMap = new Map<string, string>()
 
   try {
@@ -23,9 +23,11 @@ async function getSlackUsers(client: AllMiddlewareArgs['client']): Promise<Map<s
 
     if (result.ok && result.members) {
       for (const member of result.members) {
-        // Only include real users (not bots or deleted users)
-        if (!member.is_bot && !member.deleted && member.id && member.real_name) {
-          userMap.set(member.id, member.real_name)
+        // Include real users and optionally bots
+        if (!member.deleted && member.id && member.real_name) {
+          if (!member.is_bot || includeBots) {
+            userMap.set(member.id, member.real_name)
+          }
         }
       }
 
@@ -39,8 +41,10 @@ async function getSlackUsers(client: AllMiddlewareArgs['client']): Promise<Map<s
 
         if (nextResult.ok && nextResult.members) {
           for (const member of nextResult.members) {
-            if (!member.is_bot && !member.deleted && member.id && member.real_name) {
-              userMap.set(member.id, member.real_name)
+            if (!member.deleted && member.id && member.real_name) {
+              if (!member.is_bot || includeBots) {
+                userMap.set(member.id, member.real_name)
+              }
             }
           }
         }
@@ -88,8 +92,8 @@ async function processSchedulingActions(
       return
     }
 
-    // Get Slack users for name mapping
-    const userMap = await getSlackUsers(client)
+    // Get Slack users for name mapping (including bots to get bot's name)
+    const userMap = await getSlackUsers(client, true)
 
     // Call scheduleNextStep to determine actions
     const nextStep = await scheduleNextStep(currentMessage, topic, previousMessages.slice(0, -1), userMap, context.botUserId)
@@ -108,7 +112,7 @@ async function processSchedulingActions(
         await db.insert(slackMessageTable).values({
           topicId: topicId,
           channelId: message.channel,
-          userId: context.botId || 'bot',
+          userId: context.botUserId || 'bot',
           text: nextStep.replyMessage,
           timestamp: new Date(parseFloat(response.ts) * 1000),
           raw: response.message,
@@ -118,11 +122,34 @@ async function processSchedulingActions(
 
     // Process other actions based on the response
     // Update topic if needed
-    if (nextStep.updateUserIds || nextStep.updateSummary) {
+    if (nextStep.updateUserIds || nextStep.updateUserNames || nextStep.updateSummary) {
       const updates: Partial<TopicInsert> = {}
-      if (nextStep.updateUserIds) {
+
+      // Handle updateUserNames by mapping names back to userIds
+      if (nextStep.updateUserNames) {
+        const nameToIdMap = new Map<string, string>()
+        userMap.forEach((name, id) => {
+          nameToIdMap.set(name, id)
+        })
+
+        const updatedUserIds: string[] = []
+        for (const name of nextStep.updateUserNames) {
+          const userId = nameToIdMap.get(name)
+          if (userId) {
+            updatedUserIds.push(userId)
+          } else {
+            console.warn(`Could not find userId for name: ${name}`)
+          }
+        }
+
+        if (updatedUserIds.length > 0) {
+          updates.userIds = updatedUserIds
+        }
+      } else if (nextStep.updateUserIds) {
+        // Fallback to direct userIds if provided
         updates.userIds = nextStep.updateUserIds
       }
+
       if (nextStep.updateSummary) {
         updates.summary = nextStep.updateSummary
       }
@@ -135,8 +162,32 @@ async function processSchedulingActions(
 
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
+      // Create name to ID mapping
+      const nameToIdMap = new Map<string, string>()
+      userMap.forEach((name, id) => {
+        nameToIdMap.set(name, id)
+      })
+
       for (const messageGroup of nextStep.messagesToUsers) {
-        for (const userId of messageGroup.userIds) {
+        // Determine which userIds to use
+        let userIdsToMessage: string[] = []
+
+        if (messageGroup.userNames) {
+          // Map names back to userIds
+          for (const name of messageGroup.userNames) {
+            const userId = nameToIdMap.get(name)
+            if (userId) {
+              userIdsToMessage.push(userId)
+            } else {
+              console.warn(`Could not find userId for name: ${name}`)
+            }
+          }
+        } else if (messageGroup.userIds) {
+          // Fallback to direct userIds if provided
+          userIdsToMessage = messageGroup.userIds
+        }
+
+        for (const userId of userIdsToMessage) {
           try {
             // Open a DM channel with the user
             const dmChannel = await client.conversations.open({
@@ -155,7 +206,7 @@ async function processSchedulingActions(
                 await db.insert(slackMessageTable).values({
                   topicId: topicId,
                   channelId: dmChannel.channel.id,
-                  userId: context.botId || 'bot',
+                  userId: context.botUserId || 'bot',
                   text: messageGroup.text,
                   timestamp: new Date(parseFloat(dmResponse.ts) * 1000),
                   raw: dmResponse.message,
@@ -184,7 +235,7 @@ async function processSchedulingActions(
         await db.insert(slackMessageTable).values({
           topicId: topicId,
           channelId: message.channel,
-          userId: context.botId || 'bot',
+          userId: context.botUserId || 'bot',
           text: nextStep.groupMessage,
           timestamp: new Date(parseFloat(groupResponse.ts) * 1000),
           raw: groupResponse.message,
@@ -217,8 +268,8 @@ app.message(async ({ message, context, client }) => {
       // Step 1: Query all existing topics from the DB
       const topics = await db.select().from(topicTable)
 
-      // Get Slack users for name mapping
-      const userMap = await getSlackUsers(client)
+      // Get Slack users for name mapping (including bots to get bot's name)
+      const userMap = await getSlackUsers(client, true)
 
       // Create slack message object for analysis
       const slackMessage = {

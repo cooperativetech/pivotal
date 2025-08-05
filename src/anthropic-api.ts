@@ -4,6 +4,19 @@ import { Topic, SlackMessage } from './db/schema/main'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
+// Helper function to replace user ID mentions with user names
+function replaceUserMentions(text: string, userMap?: Map<string, string>): string {
+  if (!userMap || userMap.size === 0) {
+    return text
+  }
+
+  // Replace all <@USERID> patterns with the user's name
+  return text.replace(/<@([A-Z0-9]+)>/g, (match, userId: string) => {
+    const userName = userMap.get(userId)
+    return userName ? `<@${userName}>` : match
+  })
+}
+
 export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap?: Map<string, string>, botUserId?: string): Promise<{
   relevantTopicId?: string
   suggestedNewTopic?: string
@@ -56,17 +69,20 @@ The JSON structure must be:
 
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
-  const userPrompt = `${botUserId ? `Bot User ID: ${botUserId} (this is you in the conversations)
+  // Create a map for bot name
+  const botName = botUserId && userMap?.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
+
+  const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
 
 ` : ''}${userMap && userMap.size > 0 ? `User Directory:
-${Array.from(userMap.entries()).map(([id, name]) => `${id}: ${name}`).join('\n')}
+${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Existing topics:
 ${topics.map((topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
   const userNames = topic.userIds.map(id => {
     const name = userMap?.get(id)
-    return name ? `${name} (${id})` : id
+    return name || 'Unknown User'
   }).join(', ')
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
@@ -75,10 +91,10 @@ ${topics.map((topic, i) => {
 }).join('\n\n')}
 
 Message to analyze:
-User: ${userMap?.get(message.userId) || message.userId} (${message.userId})
+From: ${userMap?.get(message.userId) || 'Unknown User'}
 Channel: ${message.channelId}
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
-Text: "${message.text}"
+Text: "${replaceUserMentions(message.text, userMap)}"
 
 Analyze whether this message is relevant to any of the existing topics or if it could form the basis for a new topic.`
 
@@ -156,8 +172,9 @@ function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: 
 
       sortedMessages.forEach(msg => {
         const indent = threadId !== 'main' ? '    ' : '  '
-        const userName = userMap?.get(msg.userId) || msg.userId
-        output += `${indent}[${new Date(msg.timestamp).toLocaleString()}] ${userName} (${msg.userId}): "${msg.text}"\n`
+        const userName = userMap?.get(msg.userId) || 'Unknown User'
+        const processedText = replaceUserMentions(msg.text, userMap)
+        output += `${indent}[${new Date(msg.timestamp).toLocaleString()}] ${userName}: "${processedText}"\n`
       })
     })
     output += '\n'
@@ -170,9 +187,11 @@ export async function scheduleNextStep(message: SlackMessage, topic: Topic, prev
   action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateUserIds?: string[]
+  updateUserNames?: string[] // Names that will be mapped back to userIds
   updateSummary?: string
   messagesToUsers?: {
     userIds: string[] // List of users to send this identical message to
+    userNames?: string[] // Names that will be mapped back to userIds
     text: string
   }[]
   groupMessage?: string
@@ -200,7 +219,8 @@ Based on the current state, determine:
 
 ## Action Types
 - "identify_users": Need to determine who should be involved
-  - Return updateUserIds array with the COMPLETE list of users who should be involved in the topic going forward
+  - Return updateUserNames array with the COMPLETE list of user names who should be involved in the topic going forward
+  - IMPORTANT: Use the exact full names from the User Directory (e.g., "John Smith", not "John" or "Smith")
   - This replaces the existing user list, not appends to it
   - Return replyMessage asking about missing participants or confirming who will be included
 
@@ -225,7 +245,7 @@ Based on the current state, determine:
   - Return replyMessage with the appropriate response
   - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
   - Optionally return groupMessage for updates to all users in shared channel
-  - Optionally return updateUserIds if users need to be added/removed
+  - Optionally return updateUserNames if users need to be added/removed (use exact names from User Directory)
 
 ## Important Guidelines
 - Keep messages conversational and friendly
@@ -235,21 +255,22 @@ Based on the current state, determine:
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Update the topic summary (updateSummary) whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
+- ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 
 ## Response Format
 Return ONLY a JSON object with the appropriate fields based on the action:
 {
   "action": "identify_users|gather_constraints|finalize|complete|other",
   "replyMessage": "Message text",  // REQUIRED: Reply to the message sender
-  "updateUserIds": ["user1", "user2"],  // Complete list of users for the topic (replaces existing)
+  "updateUserNames": ["John Smith", "Jane Doe"],  // Complete list of user names (MUST use exact names from User Directory)
   "updateSummary": "Updated topic summary",  // Optional for ANY action - updates topic when details change
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
     {
-      "userIds": ["user123"],     // Send this message as individual DM to each user in list
+      "userNames": ["John Smith"],     // Send this message as individual DM to each user in list (MUST use exact names from User Directory)
       "text": "Hi! What times work for you this week?"
     },
     {
-      "userIds": ["user456", "user789"],  // Each user gets the same message as a private DM
+      "userNames": ["Jane Doe", "Bob Wilson"],  // Each user gets the same message as a private DM (MUST use exact names from User Directory)
       "text": "Quick check - are you available Tuesday afternoon?"
     }
   ],
@@ -259,18 +280,20 @@ Return ONLY a JSON object with the appropriate fields based on the action:
 
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
-  const userPrompt = `${botUserId ? `Bot User ID: ${botUserId} (this is you in the conversations)
+  // Create a map for bot name
+  const botName = botUserId && userMap?.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
 
-` : ''}${userMap && userMap.size > 0 ? `User Directory: {
-  ${Array.from(userMap.entries()).map(([id, name]) => `${id}: ${name}`).join(',\n  ')}
-}
+  const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
+
+` : ''}${userMap && userMap.size > 0 ? `User Directory:
+${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Current Topic:
 ID: ${topic.id}
 Summary: ${topic.summary}
 Users involved: ${topic.userIds.map(id => {
   const name = userMap?.get(id)
-  return name ? `${name} (${id})` : id
+  return name || 'Unknown User'
 }).join(', ')}
 Created: ${new Date(topic.createdAt).toLocaleString()}
 Last updated: ${new Date(topic.updatedAt).toLocaleString()}
@@ -279,8 +302,8 @@ Previous Messages in this Topic:
 ${organizeMessagesByChannelAndThread(previousMessages, userMap)}
 
 Message To Reply To:
-From user: ${userMap?.get(message.userId) || message.userId} (${message.userId})
-Text: "${message.text}"
+From: ${userMap?.get(message.userId) || 'Unknown User'}
+Text: "${replaceUserMentions(message.text, userMap)}"
 Channel: ${message.channelId}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
     ? `\nThread: ${message.raw.thread_ts}`
@@ -311,9 +334,11 @@ Based on the conversation history and current message, determine the next step i
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
       updateUserIds?: string[]
+      updateUserNames?: string[]
       updateSummary?: string
       messagesToUsers?: {
         userIds: string[]
+        userNames?: string[]
         text: string
       }[]
       groupMessage?: string
