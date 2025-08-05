@@ -1,7 +1,8 @@
 const { App } = await import('@slack/bolt')
+import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
 import db from './db/engine'
-import { topicTable, slackMessageTable } from './db/schema/main'
-import { analyzeTopicRelevance } from './anthropic-api'
+import { topicTable, slackMessageTable, TopicInsert } from './db/schema/main'
+import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { eq } from 'drizzle-orm'
 
 const app = new App({
@@ -10,9 +11,205 @@ const app = new App({
   socketMode: true,
 })
 
+// Helper function to get all Slack users
+async function getSlackUsers(client: AllMiddlewareArgs['client']): Promise<Map<string, string>> {
+  const userMap = new Map<string, string>()
+
+  try {
+    // Call users.list to get all users in the workspace
+    const result = await client.users.list({
+      limit: 200, // Recommended limit per documentation
+    })
+
+    if (result.ok && result.members) {
+      for (const member of result.members) {
+        // Only include real users (not bots or deleted users)
+        if (!member.is_bot && !member.deleted && member.id && member.real_name) {
+          userMap.set(member.id, member.real_name)
+        }
+      }
+
+      // Handle pagination if there are more users
+      let cursor = result.response_metadata?.next_cursor
+      while (cursor) {
+        const nextResult = await client.users.list({
+          cursor,
+          limit: 200,
+        })
+
+        if (nextResult.ok && nextResult.members) {
+          for (const member of nextResult.members) {
+            if (!member.is_bot && !member.deleted && member.id && member.real_name) {
+              userMap.set(member.id, member.real_name)
+            }
+          }
+        }
+
+        cursor = nextResult.response_metadata?.next_cursor
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching Slack users:', error)
+  }
+
+  return userMap
+}
+
+async function processSchedulingActions(
+  topicId: string,
+  message: SlackEventMiddlewareArgs<'message'>['message'],
+  client: AllMiddlewareArgs['client'],
+  context: AllMiddlewareArgs['context'],
+) {
+  try {
+    // Get the topic details
+    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+    if (!topic) {
+      console.error('Topic not found:', topicId)
+      return
+    }
+
+    // Only process scheduling topics
+    if (topic.workflowType !== 'scheduling') {
+      return
+    }
+
+    // Get all previous messages for this topic
+    const previousMessages = await db
+      .select()
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.topicId, topicId))
+      .orderBy(slackMessageTable.timestamp)
+
+    // Get the saved message for proper typing
+    const currentMessage = previousMessages[previousMessages.length - 1]
+    if (!currentMessage) {
+      console.error('Current message not found')
+      return
+    }
+
+    // Get Slack users for name mapping
+    const userMap = await getSlackUsers(client)
+
+    // Call scheduleNextStep to determine actions
+    const nextStep = await scheduleNextStep(currentMessage, topic, previousMessages.slice(0, -1), userMap, context.botUserId)
+    console.log('Next scheduling step:', nextStep)
+
+    // Always send the reply message in thread
+    if ('channel' in message && 'ts' in message) {
+      const response = await client.chat.postMessage({
+        channel: message.channel,
+        thread_ts: message.ts,
+        text: nextStep.replyMessage,
+      })
+
+      // Save the bot's reply to the database immediately
+      if (response.ok && response.ts) {
+        await db.insert(slackMessageTable).values({
+          topicId: topicId,
+          channelId: message.channel,
+          userId: context.botId || 'bot',
+          text: nextStep.replyMessage,
+          timestamp: new Date(parseFloat(response.ts) * 1000),
+          raw: response.message,
+        })
+      }
+    }
+
+    // Process other actions based on the response
+    // Update topic if needed
+    if (nextStep.updateUserIds || nextStep.updateSummary) {
+      const updates: Partial<TopicInsert> = {}
+      if (nextStep.updateUserIds) {
+        updates.userIds = nextStep.updateUserIds
+      }
+      if (nextStep.updateSummary) {
+        updates.summary = nextStep.updateSummary
+      }
+      updates.updatedAt = new Date()
+
+      await db.update(topicTable)
+        .set(updates)
+        .where(eq(topicTable.id, topicId))
+    }
+
+    // Send individual messages if needed
+    if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
+      for (const messageGroup of nextStep.messagesToUsers) {
+        for (const userId of messageGroup.userIds) {
+          try {
+            // Open a DM channel with the user
+            const dmChannel = await client.conversations.open({
+              users: userId,
+            })
+
+            // Send the message
+            if (dmChannel.ok && dmChannel.channel?.id) {
+              const dmResponse = await client.chat.postMessage({
+                channel: dmChannel.channel.id,
+                text: messageGroup.text,
+              })
+
+              // Save the bot's DM to the database immediately
+              if (dmResponse.ok && dmResponse.ts) {
+                await db.insert(slackMessageTable).values({
+                  topicId: topicId,
+                  channelId: dmChannel.channel.id,
+                  userId: context.botId || 'bot',
+                  text: messageGroup.text,
+                  timestamp: new Date(parseFloat(dmResponse.ts) * 1000),
+                  raw: dmResponse.message,
+                })
+              }
+            }
+          } catch (dmError) {
+            console.error(`Failed to send DM to ${userId}:`, dmError)
+          }
+        }
+      }
+    }
+
+    // Send group message if needed
+    if (nextStep.groupMessage && 'channel' in message) {
+      // Find or create a group channel with all topic users
+      // For now, we'll send to the original channel
+      // TODO: Implement proper group channel creation/finding
+      const groupResponse = await client.chat.postMessage({
+        channel: message.channel,
+        text: nextStep.groupMessage,
+      })
+
+      // Save the bot's group message to the database immediately
+      if (groupResponse.ok && groupResponse.ts) {
+        await db.insert(slackMessageTable).values({
+          topicId: topicId,
+          channelId: message.channel,
+          userId: context.botId || 'bot',
+          text: nextStep.groupMessage,
+          timestamp: new Date(parseFloat(groupResponse.ts) * 1000),
+          raw: groupResponse.message,
+        })
+      }
+    }
+
+    // Handle completion
+    if (nextStep.action === 'complete') {
+      console.log('Scheduling workflow completed for topic:', topicId)
+    }
+  } catch (error) {
+    console.error('Error processing scheduling actions:', error)
+  }
+}
+
 app.message(async ({ message, context, client }) => {
-  if ('text' in message && message.text && message.user && message.ts && message.channel) {
+  // Check if message has required fields
+  if ('text' in message && message.text && message.ts && message.channel) {
     console.log(message)
+
+    // For bot messages, we need to check differently since they don't have a user field
+    const isBotMessage = 'bot_id' in message && message.bot_id
+    const userId = isBotMessage ? message.bot_id! : message.user!
+
     const isDirectMessage = message.channel_type === 'im'
     const isBotMentioned = message.text.includes(`<@${context.botUserId}>`)
 
@@ -20,19 +217,22 @@ app.message(async ({ message, context, client }) => {
       // Step 1: Query all existing topics from the DB
       const topics = await db.select().from(topicTable)
 
+      // Get Slack users for name mapping
+      const userMap = await getSlackUsers(client)
+
       // Create slack message object for analysis
       const slackMessage = {
         id: '', // Will be set when inserting
         topicId: '', // Will be set based on analysis
         channelId: message.channel,
-        userId: message.user,
+        userId: userId,
         text: message.text,
         timestamp: new Date(parseFloat(message.ts) * 1000),
         raw: message,
       }
 
-      // Step 2: Call analyzeTopicRelevance
-      const analysis = await analyzeTopicRelevance(topics, slackMessage)
+      // Step 2: Call analyzeTopicRelevance for non-bot messages
+      const analysis = await analyzeTopicRelevance(topics, slackMessage, userMap, context.botUserId)
       console.log('Analysis result:', analysis)
 
       // Step 3: If message is relevant to existing topic
@@ -41,23 +241,19 @@ app.message(async ({ message, context, client }) => {
         await db.insert(slackMessageTable).values({
           topicId: analysis.relevantTopicId,
           channelId: message.channel,
-          userId: message.user,
+          userId: userId,
           text: message.text,
           timestamp: new Date(parseFloat(message.ts) * 1000),
           raw: message,
-        })
-
-        // Add thumbs up reaction
-        await client.reactions.add({
-          channel: message.channel,
-          name: 'thumbsup',
-          timestamp: message.ts,
         })
 
         // Update the topic's updatedAt timestamp
         await db.update(topicTable)
           .set({ updatedAt: new Date() })
           .where(eq(topicTable.id, analysis.relevantTopicId))
+
+        // Process scheduling actions for this topic
+        await processSchedulingActions(analysis.relevantTopicId, message, client, context)
       }
       // Step 4: If DM or bot mentioned and could form new topic
       else if ((isDirectMessage || isBotMentioned) && analysis.suggestedNewTopic) {
@@ -65,7 +261,7 @@ app.message(async ({ message, context, client }) => {
         if (analysis.workflowType === 'scheduling') {
           // Create new topic
           const [newTopic] = await db.insert(topicTable).values({
-            userIds: [message.user],
+            userIds: [userId],
             summary: analysis.suggestedNewTopic,
             workflowType: analysis.workflowType,
           }).returning()
@@ -74,18 +270,14 @@ app.message(async ({ message, context, client }) => {
           await db.insert(slackMessageTable).values({
             topicId: newTopic.id,
             channelId: message.channel,
-            userId: message.user,
+            userId: userId,
             text: message.text,
             timestamp: new Date(parseFloat(message.ts) * 1000),
             raw: message,
           })
 
-          // Reply in thread to the original message
-          await client.chat.postMessage({
-            channel: message.channel,
-            thread_ts: message.ts,
-            text: `Created new topic: ${analysis.suggestedNewTopic}`,
-          })
+          // Process scheduling actions for this new topic
+          await processSchedulingActions(newTopic.id, message, client, context)
         } else {
           // Non-scheduling workflow - send canned response in thread
           await client.chat.postMessage({

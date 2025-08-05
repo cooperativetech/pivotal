@@ -137,7 +137,7 @@ Remember: Your job is to make scheduling painless and fast while respecting ever
   }
 }
 
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage): Promise<{
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap?: Map<string, string>, botUserId?: string): Promise<{
   relevantTopicId?: string
   suggestedNewTopic?: string
   workflowType?: 'scheduling' | 'other'
@@ -189,17 +189,26 @@ The JSON structure must be:
 
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
-  const userPrompt = `Existing topics:
+  const userPrompt = `${botUserId ? `Bot User ID: ${botUserId} (this is you in the conversations)
+
+` : ''}${userMap && userMap.size > 0 ? `User Directory:
+${Array.from(userMap.entries()).map(([id, name]) => `${id}: ${name}`).join('\n')}
+
+` : ''}Existing topics:
 ${topics.map((topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
+  const userNames = topic.userIds.map(id => {
+    const name = userMap?.get(id)
+    return name ? `${name} (${id})` : id
+  }).join(', ')
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
-   Users involved: [${topic.userIds.join(', ')}]
+   Users involved: [${userNames}]
    Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}`
 }).join('\n\n')}
 
 Message to analyze:
-User: ${message.userId}
+User: ${userMap?.get(message.userId) || message.userId} (${message.userId})
 Channel: ${message.channelId}
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
 Text: "${message.text}"
@@ -236,6 +245,222 @@ Analyze whether this message is relevant to any of the existing topics or if it 
     return {
       confidence: 0,
       reasoning: '',
+    }
+  }
+}
+
+function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: Map<string, string>): string {
+  if (messages.length === 0) {
+    return 'No previous messages'
+  }
+
+  // Group messages by channel and thread
+  const messageGroups = messages.reduce((acc, msg) => {
+    const channelKey = msg.channelId
+    const threadKey = (msg.raw && typeof msg.raw === 'object' && 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string')
+      ? msg.raw.thread_ts
+      : 'main'
+
+    if (!acc[channelKey]) {
+      acc[channelKey] = {}
+    }
+    if (!acc[channelKey][threadKey]) {
+      acc[channelKey][threadKey] = []
+    }
+
+    acc[channelKey][threadKey].push(msg)
+    return acc
+  }, {} as Record<string, Record<string, SlackMessage[]>>)
+
+  // Sort messages within each group by timestamp and format output
+  let output = ''
+  Object.entries(messageGroups).forEach(([channelId, threads]) => {
+    output += `Channel ${channelId}:\n`
+
+    Object.entries(threads).forEach(([threadId, messages]) => {
+      if (threadId !== 'main') {
+        output += `  Thread ${threadId}:\n`
+      }
+
+      // Sort messages by timestamp
+      const sortedMessages = messages.sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      )
+
+      sortedMessages.forEach(msg => {
+        const indent = threadId !== 'main' ? '    ' : '  '
+        const userName = userMap?.get(msg.userId) || msg.userId
+        output += `${indent}[${new Date(msg.timestamp).toLocaleString()}] ${userName} (${msg.userId}): "${msg.text}"\n`
+      })
+    })
+    output += '\n'
+  })
+
+  return output.trim()
+}
+
+export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap?: Map<string, string>, botUserId?: string): Promise<{
+  action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
+  replyMessage: string
+  updateUserIds?: string[]
+  updateSummary?: string
+  messagesToUsers?: {
+    userIds: string[] // List of users to send this identical message to
+    text: string
+  }[]
+  groupMessage?: string
+  reasoning: string
+}> {
+  const systemPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
+
+## Scheduling Workflow
+The scheduling process follows these steps:
+1. **Identify Users**: Determine who needs to be included in the scheduling
+2. **Gather Constraints**: Collect availability and preferences from each user individually
+3. **Finalize**: Once consensus is found, get confirmation from all participants on the chosen time
+
+## Current Context
+You will receive:
+- The current message from a user
+- The topic information including all users currently involved
+- The topic summary describing what needs to be scheduled
+
+## Your Task
+Based on the current state, determine:
+1. Which step of the workflow we're in
+2. What action to take next
+3. Generate the appropriate message(s)
+
+## Action Types
+- "identify_users": Need to determine who should be involved
+  - Return updateUserIds array with the COMPLETE list of users who should be involved in the topic going forward
+  - This replaces the existing user list, not appends to it
+  - Return replyMessage asking about missing participants or confirming who will be included
+
+- "gather_constraints": Need to collect availability from users
+  - Return messagesToUsers array with personalized availability requests (sent as 1-1 DMs)
+  - Each message can be sent to one or multiple users (via userIds array) - same message as individual DMs
+  - Return replyMessage acknowledging the constraint gathering process
+  - Can gather from multiple users simultaneously or focus on one at a time
+  - Continue gathering until a consensus time emerges from the constraints
+
+- "finalize": Ready to confirm the consensus time
+  - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
+  - Only use when you have identified a time that works for all participants
+  - Return replyMessage with confirmation
+
+- "complete": Scheduling is done
+  - Return groupMessage with final details
+  - Return replyMessage confirming completion
+
+- "other": Miscellaneous actions needed
+  - Use for: asking clarification, providing updates, handling edge cases
+  - Return replyMessage with the appropriate response
+  - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
+  - Optionally return groupMessage for updates to all users in shared channel
+  - Optionally return updateUserIds if users need to be added/removed
+
+## Important Guidelines
+- Keep messages conversational and friendly
+- Respect privacy - don't share individual constraints publicly
+- Only move to finalize when you've found a time that works for all participants
+- Consider timezone differences if mentioned
+- Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
+- Update the topic summary (updateSummary) whenever new information clarifies or changes the meeting details
+- messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
+
+## Response Format
+Return ONLY a JSON object with the appropriate fields based on the action:
+{
+  "action": "identify_users|gather_constraints|finalize|complete|other",
+  "replyMessage": "Message text",  // REQUIRED: Reply to the message sender
+  "updateUserIds": ["user1", "user2"],  // Complete list of users for the topic (replaces existing)
+  "updateSummary": "Updated topic summary",  // Optional for ANY action - updates topic when details change
+  "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
+    {
+      "userIds": ["user123"],     // Send this message as individual DM to each user in list
+      "text": "Hi! What times work for you this week?"
+    },
+    {
+      "userIds": ["user456", "user789"],  // Each user gets the same message as a private DM
+      "text": "Quick check - are you available Tuesday afternoon?"
+    }
+  ],
+  "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
+  "reasoning": "Brief explanation of the decision"
+}
+
+IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
+
+  const userPrompt = `${botUserId ? `Bot User ID: ${botUserId} (this is you in the conversations)
+
+` : ''}${userMap && userMap.size > 0 ? `User Directory: {
+  ${Array.from(userMap.entries()).map(([id, name]) => `${id}: ${name}`).join(',\n  ')}
+}
+
+` : ''}Current Topic:
+ID: ${topic.id}
+Summary: ${topic.summary}
+Users involved: ${topic.userIds.map(id => {
+  const name = userMap?.get(id)
+  return name ? `${name} (${id})` : id
+}).join(', ')}
+Created: ${new Date(topic.createdAt).toLocaleString()}
+Last updated: ${new Date(topic.updatedAt).toLocaleString()}
+
+Previous Messages in this Topic:
+${organizeMessagesByChannelAndThread(previousMessages, userMap)}
+
+Message To Reply To:
+From user: ${userMap?.get(message.userId) || message.userId} (${message.userId})
+Text: "${message.text}"
+Channel: ${message.channelId}${
+  message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
+    ? `\nThread: ${message.raw.thread_ts}`
+    : ''
+}
+Timestamp: ${new Date(message.timestamp).toLocaleString()}
+
+Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
+
+  console.log(userPrompt)
+
+  try {
+    const res = await generateText({
+      model: openrouter('anthropic/claude-sonnet-4'),
+      maxTokens: 1024,
+      temperature: 0.7,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+    })
+
+    // Parse the JSON response
+    const nextStep = JSON.parse(res.text) as {
+      action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
+      replyMessage: string
+      updateUserIds?: string[]
+      updateSummary?: string
+      messagesToUsers?: {
+        userIds: string[]
+        text: string
+      }[]
+      groupMessage?: string
+      reasoning: string
+    }
+
+    return nextStep
+  } catch (error) {
+    console.error('Error in scheduleNextStep:', error)
+    // Return a safe default response
+    return {
+      action: 'other',
+      replyMessage: 'I encountered an error processing the scheduling request.',
+      reasoning: 'Error occurred during processing',
     }
   }
 }
