@@ -75,8 +75,7 @@ def intersect(a: List[datetimeInterval], b: List[datetimeInterval]) -> List[date
 #------------------------
 
 def normalize_calendars(
-    profiles: List[Dict],
-    window: datetimeInterval
+    profiles: List[Dict]
 ) -> Dict[str, List[datetimeInterval]]:
     """
     Convert raw JSON profiles to a map of user -> merged busy intervals.
@@ -88,7 +87,7 @@ def normalize_calendars(
         name = p['name']
         raw = []
         for ev in p.get('calendar', []):
-            date = window[0].date()
+            date = datetime.today().date() # datetime operations require a date context. will be useful later too.
             st = datetime.combine(date, datetime.strptime(ev['start'], '%H:%M').time())
             en = datetime.combine(date, datetime.strptime(ev['end'],   '%H:%M').time())
             raw.append((st, en))
@@ -97,18 +96,18 @@ def normalize_calendars(
 
 
 def find_common_free(
-    busy_map: Dict[str, List[datetimeInterval]],
-    window: datetimeInterval
+    busy_map: Dict[str, List[datetimeInterval]]
 ) -> List[datetimeInterval]:
     """
     Compute common free intervals across all users in busy_map.
     """
-    free_lists = []
-    for intervals in busy_map.values():
-        free_lists.append(invert(intervals, window))
-    if not free_lists:
-        return []
-    return reduce(intersect, free_lists)
+    date = datetime.today().date()
+    window = (
+        datetime.combine(date, time(0, 0)),
+        datetime.combine(date, time(23, 59))
+    )
+    free_lists = [invert(busy, window) for busy in busy_map.values()]
+    return reduce(intersect, free_lists) if free_lists else []
 
 
 def get_acceptable_times(
@@ -128,19 +127,14 @@ def get_acceptable_times(
 
 # Example usage
 def example():
-    # Define search window
-    window_start = datetime(2025,8,5,9,0)
-    window_end   = datetime(2025,8,5,17,0)
-    window = (window_start, window_end)
-
     # Sample profiles
     profiles = [
         {'name':'Alice', 'calendar':[{'start':'12:00','end':'13:00'}, {'start':'14:00','end':'15:00'}]},
         {'name':'Bob',   'calendar':[{'start':'09:00','end':'13:00'}]}
     ]
 
-    busy_map = normalize_calendars(profiles, window)
-    common_free = find_common_free(busy_map, window)
+    busy_map = normalize_calendars(profiles)
+    common_free = find_common_free(busy_map)
     slots = get_acceptable_times(common_free)
     for s,e in slots:
         print(f"Free: {s.time()} → {e.time()}")
