@@ -1,13 +1,13 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import type { PersonProfile, TimeSlot, CalendarEvent } from './generate-benchmark-data'
+import type { PersonProfile, TimeSlot } from './generate-benchmark-data'
 
 // What algorithms actually see - calendar + separate raw text input
 export interface PersonInput {
   name: string
   calendar?: Array<{    // Optional - person might not share calendar
     start: string      // "09:00"
-    end: string        // "10:00" 
+    end: string        // "10:00"
     title: string      // "Team sync"
     description?: string  // Optional calendar event description
   }>
@@ -62,21 +62,21 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
     const includeRawText = Math.random() < dataAvailability.rawTextProbability
     // Generate raw text based on their calendar
     const rawTextParts: string[] = []
-    
+
     // Add constraints based on critical events
     const criticalEvents = profile.calendar.filter(e => e.type === 'critical')
     criticalEvents.forEach(event => {
       rawTextParts.push(`I absolutely cannot miss my ${event.description} at ${event.start}.`)
     })
-    
+
     // Add preferences based on other events
-    const hasEarlyMorning = profile.calendar.some(e => 
-      parseInt(e.start.split(':')[0]) < 9
+    const hasEarlyMorning = profile.calendar.some(e =>
+      parseInt(e.start.split(':')[0]) < 9,
     )
     if (hasEarlyMorning) {
-      rawTextParts.push("I have early morning commitments, so prefer afternoon meetings.")
+      rawTextParts.push('I have early morning commitments, so prefer afternoon meetings.')
     }
-    
+
     // Add some general availability hints
     const busyHours = new Set<number>()
     profile.calendar.forEach(event => {
@@ -86,7 +86,7 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
         busyHours.add(h)
       }
     })
-    
+
     // Find free windows
     const freeWindows: string[] = []
     for (let h = 9; h < 17; h++) {
@@ -97,7 +97,7 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
     if (freeWindows.length > 0) {
       rawTextParts.push(`Generally available around ${freeWindows.slice(0, 3).join(', ')}.`)
     }
-    
+
     return {
       name: profile.name,
       calendar: includeCalendar && profile.calendar.length > 0 ? profile.calendar.map(event => ({
@@ -105,7 +105,7 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
         end: event.end,
         title: event.description,
       })) : undefined,
-      rawText: includeRawText ? (rawTextParts.join(' ') || undefined) : undefined
+      rawText: includeRawText ? (rawTextParts.join(' ') || undefined) : undefined,
     }
   })
 }
@@ -119,12 +119,12 @@ export async function scoreAlgorithm(
   algorithmName: string,
   algorithm: (inputs: PersonInput[]) => TimeSlot | Promise<TimeSlot>,
   benchmarkDataFile: string,
-  dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0, rawTextProbability: 1.0 }
+  dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0, rawTextProbability: 1.0 },
 ): Promise<ScoringResults> {
   // Check if file exists in data directory first, then current directory
   const dataDir = join(import.meta.dirname, '..', 'data')
   let filepath = join(dataDir, benchmarkDataFile)
-  
+
   if (!existsSync(filepath)) {
     // Try without data directory
     filepath = benchmarkDataFile
@@ -132,20 +132,20 @@ export async function scoreAlgorithm(
       throw new Error(`Benchmark data file not found: ${benchmarkDataFile} (looked in data/ and current directory)`)
     }
   }
-  
+
   // Load benchmark data
   console.log(`Loading benchmark data from ${filepath}...`)
-  const testCases: BenchmarkTestCase[] = JSON.parse(readFileSync(filepath, 'utf-8'))
+  const testCases: BenchmarkTestCase[] = JSON.parse(readFileSync(filepath, 'utf-8')) as BenchmarkTestCase[]
   console.log(`Loaded ${testCases.length} test cases`)
-  
+
   console.log(`\nScoring algorithm: ${algorithmName}`)
-  
+
   const results: AlgorithmResult[] = []
-  
+
   for (const testCase of testCases) {
     // Convert to public format and run algorithm
     const publicProfiles = toPublicProfiles(testCase.profiles, dataAvailability)
-    
+
     let suggestedSlot: TimeSlot
     try {
       suggestedSlot = await algorithm(publicProfiles)
@@ -153,48 +153,48 @@ export async function scoreAlgorithm(
       console.error('Algorithm threw error:', error)
       throw error
     }
-    
+
     // Validate the suggested slot
     if (!suggestedSlot || typeof suggestedSlot !== 'object') {
       throw new Error(`Algorithm returned invalid result: ${JSON.stringify(suggestedSlot)}`)
     }
-    
+
     if (!suggestedSlot.start || !suggestedSlot.end) {
       throw new Error(`Algorithm suggested invalid slot: start=${suggestedSlot.start}, end=${suggestedSlot.end}`)
     }
-    
+
     // Find the utility for this slot
     const slotData = testCase.utilityDistribution.find(
-      d => d.timeSlot.start === suggestedSlot.start && d.timeSlot.end === suggestedSlot.end
+      d => d.timeSlot.start === suggestedSlot.start && d.timeSlot.end === suggestedSlot.end,
     )
-    
+
     let achievedUtility: number
     let percentile: number
     let isOptimal: boolean
-    
+
     if (!slotData) {
       console.warn(`Algorithm suggested non-existent slot: ${suggestedSlot.start}-${suggestedSlot.end}`)
       console.warn('Assigning 0% percentile score')
-      
+
       // Invalid slot gets worst possible score
       achievedUtility = testCase.utilityDistribution[0].totalUtility // Just for ratio calculation
       percentile = 0
       isOptimal = false
     } else {
       achievedUtility = slotData.totalUtility
-      
+
       // Calculate percentile (what % of slots are worse)
       const worseCount = testCase.utilityDistribution.filter(
-        d => d.totalUtility < achievedUtility
+        d => d.totalUtility < achievedUtility,
       ).length
       percentile = (worseCount / testCase.utilityDistribution.length) * 100
-      
+
       // Check if optimal
       isOptimal = testCase.optimalSlots.some(
-        slot => slot.start === suggestedSlot.start && slot.end === suggestedSlot.end
+        slot => slot.start === suggestedSlot.start && slot.end === suggestedSlot.end,
       )
     }
-    
+
     results.push({
       testCaseId: testCase.id,
       suggestedSlot,
@@ -202,10 +202,10 @@ export async function scoreAlgorithm(
       optimalUtility: testCase.optimalUtility,
       utilityRatio: achievedUtility / testCase.optimalUtility,
       percentile: Math.round(percentile * 100) / 100,
-      isOptimal
+      isOptimal,
     })
   }
-  
+
   // Calculate summary statistics
   const summary = {
     averagePercentile: results.reduce((sum, r) => sum + r.percentile, 0) / results.length,
@@ -217,14 +217,14 @@ export async function scoreAlgorithm(
       top25: results.filter(r => r.percentile >= 75).length,
       top50: results.filter(r => r.percentile >= 50).length,
       bottom25: results.filter(r => r.percentile < 25).length,
-    }
+    },
   }
-  
+
   return {
     algorithmName,
     totalCases: testCases.length,
     results,
-    summary
+    summary,
   }
 }
 
