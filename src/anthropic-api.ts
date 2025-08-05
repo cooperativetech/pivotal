@@ -1,6 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { Topic, SlackMessage } from './db/schema/main'
+import { tsToDate } from './shared/utils'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -140,9 +141,12 @@ function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: 
   // Group messages by channel and thread
   const messageGroups = messages.reduce((acc, msg) => {
     const channelKey = msg.channelId
-    const threadKey = (msg.raw && typeof msg.raw === 'object' && 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string')
-      ? msg.raw.thread_ts
-      : 'main'
+    let threadKey = '0'
+    if (msg.raw && typeof msg.raw === 'object' && 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string') {
+      threadKey = msg.raw.thread_ts
+    } else if (msg.raw && typeof msg.raw === 'object' && 'ts' in msg.raw && typeof msg.raw.ts === 'string') {
+      threadKey = msg.raw.ts // Use message timestamp as thread key if no thread timestamp found
+    }
 
     if (!acc[channelKey]) {
       acc[channelKey] = {}
@@ -160,9 +164,16 @@ function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: 
   Object.entries(messageGroups).forEach(([channelId, threads]) => {
     output += `Channel ${channelId}:\n`
 
-    Object.entries(threads).forEach(([threadId, messages]) => {
-      if (threadId !== 'main') {
-        output += `  Thread ${threadId}:\n`
+    // Sort threads by threadId converted to number
+    const sortedThreads = Object.entries(threads).sort(([aId], [bId]) => {
+      return Number(aId) - Number(bId)
+    })
+
+    sortedThreads.forEach(([threadId, messages]) => {
+      // Only show thread header if there's more than one message in the thread
+      if (messages.length > 1) {
+        // Convert threadId (timestamp string) to formatted date
+        output += `  Thread [${tsToDate(threadId).toLocaleString()}]:\n`
       }
 
       // Sort messages by timestamp
@@ -171,7 +182,8 @@ function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: 
       )
 
       sortedMessages.forEach(msg => {
-        const indent = threadId !== 'main' ? '    ' : '  '
+        // Adjust indent based on whether we're showing thread header
+        const indent = messages.length > 1 ? '    ' : '  '
         const userName = userMap?.get(msg.userId) || 'Unknown User'
         const processedText = replaceUserMentions(msg.text, userMap)
         output += `${indent}[${new Date(msg.timestamp).toLocaleString()}] ${userName}: "${processedText}"\n`
@@ -306,7 +318,7 @@ From: ${userMap?.get(message.userId) || 'Unknown User'}
 Text: "${replaceUserMentions(message.text, userMap)}"
 Channel: ${message.channelId}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
-    ? `\nThread: ${message.raw.thread_ts}`
+    ? `\nThread: [${tsToDate(message.raw.thread_ts).toLocaleString()}]`
     : ''
 }
 Timestamp: ${new Date(message.timestamp).toLocaleString()}

@@ -4,6 +4,7 @@ import db from './db/engine'
 import { topicTable, slackMessageTable, TopicInsert } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { eq } from 'drizzle-orm'
+import { tsToDate } from './shared/utils'
 
 const app = new App({
   token: process.env.PV_SLACK_BOT_TOKEN,
@@ -114,7 +115,7 @@ async function processSchedulingActions(
           channelId: message.channel,
           userId: context.botUserId || 'bot',
           text: nextStep.replyMessage,
-          timestamp: new Date(parseFloat(response.ts) * 1000),
+          timestamp: tsToDate(response.ts),
           raw: response.message,
         })
       }
@@ -208,7 +209,7 @@ async function processSchedulingActions(
                   channelId: dmChannel.channel.id,
                   userId: context.botUserId || 'bot',
                   text: messageGroup.text,
-                  timestamp: new Date(parseFloat(dmResponse.ts) * 1000),
+                  timestamp: tsToDate(dmResponse.ts),
                   raw: dmResponse.message,
                 })
               }
@@ -237,7 +238,7 @@ async function processSchedulingActions(
           channelId: message.channel,
           userId: context.botUserId || 'bot',
           text: nextStep.groupMessage,
-          timestamp: new Date(parseFloat(groupResponse.ts) * 1000),
+          timestamp: tsToDate(groupResponse.ts),
           raw: groupResponse.message,
         })
       }
@@ -278,7 +279,7 @@ app.message(async ({ message, context, client }) => {
         channelId: message.channel,
         userId: userId,
         text: message.text,
-        timestamp: new Date(parseFloat(message.ts) * 1000),
+        timestamp: tsToDate(message.ts),
         raw: message,
       }
 
@@ -294,7 +295,7 @@ app.message(async ({ message, context, client }) => {
           channelId: message.channel,
           userId: userId,
           text: message.text,
-          timestamp: new Date(parseFloat(message.ts) * 1000),
+          timestamp: tsToDate(message.ts),
           raw: message,
         })
 
@@ -323,7 +324,7 @@ app.message(async ({ message, context, client }) => {
             channelId: message.channel,
             userId: userId,
             text: message.text,
-            timestamp: new Date(parseFloat(message.ts) * 1000),
+            timestamp: tsToDate(message.ts),
             raw: message,
           })
 
