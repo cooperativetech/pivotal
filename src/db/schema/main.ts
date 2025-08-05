@@ -6,17 +6,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import { GroupChat, WorkflowType } from '../../shared/api-types.ts'
-
-export const chatTable = pgTable('chat', {
-  id: text().primaryKey(),
-  name: text().notNull(),
-  groupChat: json().$type<GroupChat>().notNull(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-})
-
-export type ChatInsert = InferInsertModel<typeof chatTable>
-export type Chat = InferSelectModel<typeof chatTable>
+import { WorkflowType } from '../../shared/api-types.ts'
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
