@@ -121,8 +121,10 @@ def get_acceptable_times(
     """
     acceptable: List[datetimeInterval] = []
     for start_time, end_time in common_free:
-        if start_time.time() >= start and end_time.time() <= end:
-            acceptable.append((start_time, end_time))  
+        clipped_start = max(start_time, datetime.combine(start_time.date(), start))
+        clipped_end   = min(end_time, datetime.combine(end_time.date(), end))
+        if clipped_start < clipped_end:
+            acceptable.append((clipped_start, clipped_end))
     return acceptable
 
 # Example usage

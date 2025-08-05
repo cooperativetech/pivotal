@@ -10,7 +10,7 @@ The calendar problem is not new. This tool follows pretty simple logic, and a lo
     → `invert()` (called inside `find_common_free()`)
 3) Find the intersection of all free times. These are globally all the possible times for the calendar event.
     → `intersect()` (also inside `find_common_free()`)
-4) Filter times for 'acceptable' times. This is the soft filter. Currently just a 6am - 10pm binary.
+4) Filter all possible times for 'acceptable' times. 
     → `get_acceptable_times()`
 
 # Down the line
