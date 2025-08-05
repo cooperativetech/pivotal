@@ -1,6 +1,9 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
-import { Topic, SlackMessage } from './db/schema/main'
+
+import db from './db/engine'
+import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
+import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate } from './shared/utils'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -25,6 +28,59 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
   confidence: number
   reasoning: string
 }> {
+  // Get message thread_ts if it exists
+  let messageThreadTs: string | undefined
+  if (message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string') {
+    messageThreadTs = message.raw.thread_ts
+  }
+
+  // Fetch recent messages for each topic in the same channel
+  const topicMessagesMap = new Map<string, SlackMessage[]>()
+
+  for (const topic of topics) {
+    // Get all messages for this topic in the current channel
+    const topicMessages = await db
+      .select()
+      .from(slackMessageTable)
+      .where(
+        and(
+          eq(slackMessageTable.topicId, topic.id),
+          eq(slackMessageTable.channelId, message.channelId),
+        ),
+      )
+      .orderBy(desc(slackMessageTable.timestamp))
+
+    // Separate thread messages and channel messages
+    const threadMessages: SlackMessage[] = []
+    const channelMessages: SlackMessage[] = []
+
+    for (const msg of topicMessages) {
+      // Check if message is in the same thread
+      if (messageThreadTs && msg.raw && typeof msg.raw === 'object') {
+        const msgThreadTs = 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string'
+          ? msg.raw.thread_ts
+          : ('ts' in msg.raw && typeof msg.raw.ts === 'string' ? msg.raw.ts : null)
+
+        if (msgThreadTs === messageThreadTs) {
+          threadMessages.push(msg)
+        }
+      }
+      channelMessages.push(msg)
+    }
+
+    // Get most recent 5 from thread and channel (avoiding duplicates)
+    const recentThreadMessages = threadMessages.slice(0, 5)
+    const recentChannelMessages = channelMessages
+      .slice(0, 5)
+      .filter(msg => !recentThreadMessages.some(tm => tm.id === msg.id))
+
+    // Combine and sort by timestamp
+    const combinedMessages = [...recentThreadMessages, ...recentChannelMessages]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+
+    topicMessagesMap.set(topic.id, combinedMessages)
+  }
+
   const systemPrompt = `You are a topic analysis assistant. Your job is to analyze whether a given message is relevant to any existing topics or if it could form the basis for a new topic.
 
 ## Your Task
@@ -85,15 +141,21 @@ ${topics.map((topic, i) => {
     const name = userMap?.get(id)
     return name || 'Unknown User'
   }).join(', ')
+
+  // Get recent messages for this topic
+  const recentMessages = topicMessagesMap.get(topic.id) || []
+  const messagesFormatted = recentMessages.length > 0
+    ? `\n   Recent messages in this channel:\n${organizeMessagesByChannelAndThread(recentMessages, userMap).split('\n').map(line => '   ' + line).join('\n')}`
+    : ''
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
    Users involved: [${userNames}]
-   Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}`
+   Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}${messagesFormatted}`
 }).join('\n\n')}
 
 Message to analyze:
 From: ${userMap?.get(message.userId) || 'Unknown User'}
-Channel: ${message.channelId}
+Channel: ${message.channelId}${messageThreadTs ? `\nIn thread: [${tsToDate(messageThreadTs).toLocaleString()}]` : ''}
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
 Text: "${replaceUserMentions(message.text, userMap)}"
 
