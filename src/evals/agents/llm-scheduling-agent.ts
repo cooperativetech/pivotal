@@ -1,15 +1,17 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { generateText } from 'ai'
 import type { TimeSlot } from '../core-benchmark/generate-benchmark-data'
 import type { PersonInput } from '../core-benchmark/score-algorithm'
 import { scoreAlgorithm, printScoringResults } from '../core-benchmark/score-algorithm'
 
-// Initialize Gemini with API key from environment
-const apiKey = process.env.GOOGLE_AI_API_KEY
+// Initialize OpenRouter with API key from environment
+const apiKey = process.env.OPENROUTER_API_KEY
 if (!apiKey) {
-  throw new Error('GOOGLE_AI_API_KEY environment variable is required')
+  throw new Error('OPENROUTER_API_KEY environment variable is required')
 }
-const genAI = new GoogleGenerativeAI(apiKey)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' })
+const openrouter = createOpenRouter({
+  apiKey,
+})
 
 // Format person input for LLM
 function formatPersonForLLM(person: PersonInput): string {
@@ -59,8 +61,11 @@ Think step by step:
 Show your reasoning, then end with "FINAL ANSWER: HH:00" (must be on the hour)`
 
   try {
-    const result = await model.generateContent(prompt)
-    const response = result.response.text().trim()
+    const result = await generateText({
+      model: openrouter('google/gemini-2.5-pro'),
+      prompt,
+    })
+    const response = result.text.trim()
 
     console.log('\n' + '='.repeat(60))
     console.log('LLM REASONING:')
@@ -93,7 +98,7 @@ Show your reasoning, then end with "FINAL ANSWER: HH:00" (must be on the hour)`
 
     return { start, end }
   } catch (error) {
-    console.error('Error calling Gemini:', error)
+    console.error('Error calling OpenRouter:', error)
     return { start: '10:00', end: '11:00' } // Fallback
   }
 }
@@ -114,16 +119,15 @@ export async function evaluateLLMScheduler(benchmarkFile: string, dataAvailabili
       throw new Error('LLM agent returned invalid time slot')
     }
 
-    // Add delay to respect Gemini rate limits
-    // 150 RPM = 0.4 seconds between requests
-    // Using 500ms to be safe
+    // Add delay to respect API rate limits
+    // Using 500ms between requests to be safe
     await new Promise(resolve => setTimeout(resolve, 500))
     return result
   }
 
   try {
     const results = await scoreAlgorithm(
-      'Gemini 2.5 Pro Scheduler',
+      'Gemini 2.5 Pro Scheduler (via OpenRouter)',
       rateLimitedAgent,
       benchmarkFile,
       dataAvailability,

@@ -4,7 +4,7 @@
 
 ```bash
 # Test the LLM scheduler with existing benchmark data
-export GOOGLE_AI_API_KEY="your-api-key"
+export OPENROUTER_API_KEY="your-api-key"
 npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json
 
 # Test with partial data (70% calendars, 90% raw text)
@@ -52,7 +52,7 @@ printScoringResults(results)
 - `score-algorithm.ts` - Framework for scoring scheduling algorithms against benchmark data
 
 **agents/**
-- `llm-scheduling-agent.ts` - Example scheduler using Google Gemini to find optimal meeting times
+- `llm-scheduling-agent.ts` - Example scheduler using OpenRouter (Gemini 2.5 Pro) to find optimal meeting times
 
 **data/**
 - `benchmark-data-*.json` - Pre-generated test cases for evaluation
