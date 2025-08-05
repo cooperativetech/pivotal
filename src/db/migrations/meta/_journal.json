@@ -36,6 +36,13 @@
       "when": 1754418225620,
       "tag": "0004_remove_auth_and_chat_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1754437547962,
+      "tag": "0005_add_is_active_to_topics",
+      "breakpoints": true
     }
   ]
 }

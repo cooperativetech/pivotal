@@ -263,6 +263,7 @@ export async function scheduleNextStep(message: SlackMessage, topic: Topic, prev
   updateUserIds?: string[]
   updateUserNames?: string[] // Names that will be mapped back to userIds
   updateSummary?: string
+  markTopicInactive?: boolean
   messagesToUsers?: {
     userIds: string[] // List of users to send this identical message to
     userNames?: string[] // Names that will be mapped back to userIds
@@ -313,6 +314,7 @@ Based on the current state, determine:
 - "complete": Scheduling is done
   - Return groupMessage with final details
   - Return replyMessage confirming completion
+  - Set markTopicInactive: true to indicate this topic should be marked inactive
 
 - "other": Miscellaneous actions needed
   - Use for: asking clarification, providing updates, handling edge cases
@@ -338,6 +340,7 @@ Return ONLY a JSON object with the appropriate fields based on the action:
   "replyMessage": "Message text",  // REQUIRED: Reply to the message sender
   "updateUserNames": ["John Smith", "Jane Doe"],  // Complete list of user names (MUST use exact names from User Directory)
   "updateSummary": "Updated topic summary",  // Optional for ANY action - updates topic when details change
+  "markTopicInactive": true,      // Optional: Include when action is "complete" to mark topic as inactive
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
     {
       "userNames": ["John Smith"],     // Send this message as individual DM to each user in list (MUST use exact names from User Directory)
@@ -410,6 +413,7 @@ Based on the conversation history and current message, determine the next step i
       updateUserIds?: string[]
       updateUserNames?: string[]
       updateSummary?: string
+      markTopicInactive?: boolean
       messagesToUsers?: {
         userIds: string[]
         userNames?: string[]

@@ -4,6 +4,7 @@ import {
   timestamp,
   json,
   uuid,
+  boolean,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import { WorkflowType } from '../../shared/api-types.ts'
@@ -13,6 +14,7 @@ export const topicTable = pgTable('topic', {
   userIds: json().$type<string[]>().notNull().default([]),
   summary: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
+  isActive: boolean().notNull().default(true),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })

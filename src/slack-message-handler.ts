@@ -237,9 +237,16 @@ async function processSchedulingActions(
       }
     }
 
-    // Handle completion
+    // Handle completion and mark topic as inactive if requested
     if (nextStep.action === 'complete') {
       console.log('Scheduling workflow completed for topic:', topicId)
+
+      if (nextStep.markTopicInactive) {
+        await db.update(topicTable)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(eq(topicTable.id, topicId))
+        console.log('Topic marked as inactive:', topicId)
+      }
     }
   } catch (error) {
     console.error('Error processing scheduling actions:', error)
@@ -263,8 +270,8 @@ export async function handleSlackMessage(
     const isBotMentioned = message.text.includes(`<@${botUserId}>`)
 
     try {
-      // Step 1: Query all existing topics from the DB
-      const topics = await db.select().from(topicTable)
+      // Step 1: Query all active topics from the DB
+      const topics = await db.select().from(topicTable).where(eq(topicTable.isActive, true))
 
       // Get Slack users for name mapping (including bots to get bot's name)
       const userMap = await getSlackUsers(client, true)
