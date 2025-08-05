@@ -5,7 +5,7 @@ Core pipeline for multi-person free-time intersection:
 
 1) normalize_calendars: parse user calendars into merged busy intervals
 2) find_common_free: invert + intersect to get common free intervals
-3) get_acceptable_times: placeholder to filter/rank free intervals (currently identity)
+3) get_acceptable_times: filter/rank the free intervals (set parameters below)
 
 Assumes all events fall on the same date, and window provides that date context.
 """
@@ -15,6 +15,13 @@ from functools import reduce
 
 # Type alias for clarity
 datetimeInterval = Tuple[datetime, datetime]
+
+#------------------------
+# Global vars: User-configurable filter
+#------------------------
+# Define acceptable hours here, datetime format. For use in `get_acceptable_times()`.
+ACCEPTABLE_START: time = time(6, 0)
+ACCEPTABLE_END:   time = time(22, 0)
 
 #------------------------
 # Interval primitives
@@ -73,7 +80,7 @@ def normalize_calendars(
 ) -> Dict[str, List[datetimeInterval]]:
     """
     Convert raw JSON profiles to a map of user -> merged busy intervals.
-    Expects each profile {'name': str, 'calendar': [{'start': 'HH:MM','end': 'HH:MM', ...}, ...]}.
+    As per parker's eval, expects each profile {'name': str, 'calendar': [{'start': 'HH:MM','end': 'HH:MM', ...}, ...]}.
     All events are mapped onto window[0].date().
     """
     busy_map: Dict[str, List[datetimeInterval]] = {}
@@ -105,13 +112,19 @@ def find_common_free(
 
 
 def get_acceptable_times(
-    common_free: List[datetimeInterval]
+    common_free: List[datetimeInterval],
+    start: time = ACCEPTABLE_START,
+    end: time = ACCEPTABLE_END
 ) -> List[datetimeInterval]:
     """
     Placeholder: filter or rank 'common_free' intervals.
     Currently returns the full list unchanged.
     """
-    return common_free
+    acceptable: List[datetimeInterval] = []
+    for start_time, end_time in common_free:
+        if start_time.time() >= start and end_time.time() <= end:
+            acceptable.append((start_time, end_time))  
+    return acceptable
 
 # Example usage
 def example():
