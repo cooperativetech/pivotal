@@ -1,7 +1,7 @@
+# This file is a sandbox to test and debug the time intersection tool.
+
 import json
 from time_intersection import normalize_calendars, find_common_free, get_acceptable_times
-
-2+2
 
 # Load calendars from eval json
 with open("../evals/data/benchmark-data-100-cases.json") as f:
