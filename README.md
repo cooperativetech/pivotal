@@ -11,6 +11,11 @@ Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_SLACK_BOT_TOKEN`, and 
 pnpm run bot
 ```
 
+While the bot is running, you can test it with fake slack messages using the flack command line tool:
+```
+pnpm run flack
+```
+
 ## Setting Up Local DB
 
 Install and start postgres 16, then create pivotal DB:
