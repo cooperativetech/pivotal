@@ -9,7 +9,7 @@ Core pipeline for multi-person free-time intersection:
 
 Assumes all events fall on the same date, and window provides that date context.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from typing import List, Tuple, Dict
 from functools import reduce
 
