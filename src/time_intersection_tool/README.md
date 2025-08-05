@@ -1,7 +1,7 @@
 # Overview
 This is a tool that is called by the pivotal LLM scheduler to find intersections between user calendars.
 
-The calendar problem is not new. This tool follows pretty simple logic, and a lot of this is lifted from the classic ways people solve this problem. 
+The calendar problem is not new. The tool follows simple logic of "obtain free times per person + take intersection". Intervals of free time are lists, code designed to be as simple and modular as possible and can handle very high throughput as we scale. Google's 'Find a Time' feature works similarly.  
 
 # Logic
 1) For each user, turn calendars into intervals of busy times.
