@@ -1,8 +1,10 @@
 const { App } = await import('@slack/bolt')
 import { handleSlackMessage, getSlackUsers } from './slack-message-handler'
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
+import { parseArgs } from 'node:util'
+
+const args = parseArgs({ options: { dev: { type: 'boolean' } } })
 
 // Store bot user ID after initialization
 let botUserId: string | undefined
@@ -26,19 +28,21 @@ slackApp.message(async ({ message, context, client }) => {
 
 await initializeSlackApp()
 
-// Create Hono app for HTTP API for local testing
-const honoApp = new Hono()
-  .use('/*', cors())
-  .get('/api/bot-info', (c) => {
-    return c.json({ botUserId })
-  })
-  .get('/api/users', async (c) => {
-    const users = await getSlackUsers(slackApp.client, false)
-    // Convert Map to array of [id, name] pairs for JSON serialization
-    return c.json(Array.from(users.entries()))
-  })
+// Only run the HTTP API server if --dev flag is present
+if (args.values.dev) {
+  // Create Hono app for HTTP API for local testing
+  const honoApp = new Hono()
+    .get('/api/bot-info', (c) => {
+      return c.json({ botUserId })
+    })
+    .get('/api/users', async (c) => {
+      const users = await getSlackUsers(slackApp.client, false)
+      // Convert Map to array of [id, name] pairs for JSON serialization
+      return c.json(Array.from(users.entries()))
+    })
 
-serve({ fetch: honoApp.fetch, port: 3001 })
-console.log(`HTTP API server running on port ${3001}...`)
+  serve({ fetch: honoApp.fetch, port: 3001 })
+  console.log(`HTTP API server running on port ${3001}...`)
+}
 
 export {}

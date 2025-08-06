@@ -8,12 +8,17 @@ pnpm install
 
 Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` are set. Then, run the bot:
 ```
-pnpm run bot
+pnpm run dev
 ```
 
 While the bot is running, you can test it with fake slack messages using the flack command line tool:
 ```
 pnpm run flack
+```
+
+To run the bot in production mode, which disallows flack access:
+```
+pnpm run prod
 ```
 
 ## Setting Up Local DB
