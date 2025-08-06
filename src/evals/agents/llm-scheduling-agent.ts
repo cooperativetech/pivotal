@@ -27,22 +27,17 @@ function formatPersonForLLM(person: PersonInput): string {
     parts.push('Calendar: Not shared')
   }
 
-  // Add raw text constraints if available
-  if (person.rawText) {
-    parts.push(`Constraints: ${person.rawText}`)
-  }
-
   return parts.join('\n')
 }
 
 // LLM agent that picks meeting times
-export async function llmSchedulingAgent(inputs: PersonInput[]): Promise<TimeSlot> {
+export async function llmSchedulingAgent(inputs: PersonInput[], aggregateRawText?: string): Promise<TimeSlot> {
   // Format all person inputs
   const peopleText = inputs.map(formatPersonForLLM).join('\n\n')
 
   const prompt = `Find the best 1-hour meeting time for these 5 people on Tuesday.
 
-${peopleText}
+${aggregateRawText ? `Conversation history:\n${aggregateRawText}\n\n` : ''}${peopleText}
 
 Rules:
 1. NEVER schedule during: flights, medical appointments, picking up children, emergencies
@@ -104,14 +99,14 @@ Show your reasoning, then end with "FINAL ANSWER: HH:00" (must be on the hour)`
 }
 
 // Run evaluation using the scoring framework
-export async function evaluateLLMScheduler(benchmarkFile: string, dataAvailability = { calendarProbability: 1.0, rawTextProbability: 1.0 }) {
+export async function evaluateLLMScheduler(benchmarkFile: string, dataAvailability = { calendarProbability: 1.0 }) {
   console.log('Evaluating LLM scheduler using benchmark data...')
-  console.log(`Data availability: ${dataAvailability.calendarProbability * 100}% calendar, ${dataAvailability.rawTextProbability * 100}% rawText\n`)
+  console.log(`Data availability: ${dataAvailability.calendarProbability * 100}% calendar\n`)
 
   // Create a rate-limited version of the LLM agent
-  const rateLimitedAgent = async (inputs: PersonInput[]): Promise<TimeSlot> => {
+  const rateLimitedAgent = async (inputs: PersonInput[], aggregateRawText?: string): Promise<TimeSlot> => {
     console.log(`Processing test case with ${inputs.length} people...`)
-    const result = await llmSchedulingAgent(inputs)
+    const result = await llmSchedulingAgent(inputs, aggregateRawText)
 
     // Validate result before returning
     if (!result || !result.start || !result.end) {
@@ -143,12 +138,10 @@ export async function evaluateLLMScheduler(benchmarkFile: string, dataAvailabili
 if (import.meta.url === `file://${process.argv[1]}`) {
   const benchmarkFile = process.argv[2] || 'benchmark-data-100-cases.json'
 
-  // Parse optional data availability parameters
+  // Parse optional data availability parameter
   const calendarProb = parseFloat(process.argv[3] || '1.0')
-  const rawTextProb = parseFloat(process.argv[4] || '1.0')
 
   evaluateLLMScheduler(benchmarkFile, {
     calendarProbability: calendarProb,
-    rawTextProbability: rawTextProb,
   }).catch(console.error)
 }

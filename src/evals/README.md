@@ -7,8 +7,8 @@
 export OPENROUTER_API_KEY="your-api-key"
 npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json
 
-# Test with partial data (70% calendars, 90% raw text)
-npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json 0.7 0.9
+# Test with partial data (70% calendars)
+npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json 0.7
 
 # Generate new benchmark data
 npx tsx core-benchmark/generate-benchmark-data.ts 100
@@ -21,8 +21,9 @@ import { scoreAlgorithm, printScoringResults } from './core-benchmark/score-algo
 import type { PersonInput, TimeSlot } from './core-benchmark/score-algorithm'
 
 // Create your scheduling function
-async function myScheduler(inputs: PersonInput[]): Promise<TimeSlot> {
-  // inputs: Array of people with calendar events and/or raw text constraints
+async function myScheduler(inputs: PersonInput[], aggregateRawText?: string): Promise<TimeSlot> {
+  // inputs: Array of people with calendar events
+  // aggregateRawText: Optional conversation history from all participants
   // Return a 1-hour meeting slot (must start on the hour)
   return { start: "14:00", end: "15:00" }
 }
@@ -37,9 +38,9 @@ printScoringResults(results)
 ```
 
 **Input format:**
-- `PersonInput[]` - Array of people with optional calendar events and raw text availability
+- `PersonInput[]` - Array of people with optional calendar events
+- `aggregateRawText` - Optional conversation history from all participants
 - Calendar events have start/end times (24hr format) and title/description
-- Raw text contains natural language constraints
 
 **Output format:**
 - `TimeSlot` - Single 1-hour slot with start/end times

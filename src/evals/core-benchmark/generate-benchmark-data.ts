@@ -352,6 +352,7 @@ export function generateRandomProfiles(
 interface BenchmarkTestCase {
   id: number
   profiles: PersonProfile[]
+  aggregateRawText?: string  // Conversation history from all participants
   utilityDistribution: {
     timeSlot: TimeSlot
     totalUtility: number

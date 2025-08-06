@@ -11,12 +11,12 @@ export interface PersonInput {
     title: string      // "Team sync"
     description?: string  // Optional calendar event description
   }>
-  rawText?: string   // Optional - person might not provide text constraints
 }
 
 interface BenchmarkTestCase {
   id: number
   profiles: PersonProfile[]
+  aggregateRawText?: string  // Conversation history from all participants
   utilityDistribution: {
     timeSlot: TimeSlot
     totalUtility: number
@@ -54,49 +54,10 @@ interface ScoringResults {
 }
 
 // Convert internal profiles to public format (hide utilities and event types)
-// Also generate realistic raw text based on the person's events
 function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvailabilityConfig): PersonInput[] {
   return profiles.map(profile => {
-    // Decide whether to include calendar/rawText based on probabilities
+    // Decide whether to include calendar based on probability
     const includeCalendar = Math.random() < dataAvailability.calendarProbability
-    const includeRawText = Math.random() < dataAvailability.rawTextProbability
-    // Generate raw text based on their calendar
-    const rawTextParts: string[] = []
-
-    // Add constraints based on critical events
-    const criticalEvents = profile.calendar.filter(e => e.type === 'critical')
-    criticalEvents.forEach(event => {
-      rawTextParts.push(`I absolutely cannot miss my ${event.description} at ${event.start}.`)
-    })
-
-    // Add preferences based on other events
-    const hasEarlyMorning = profile.calendar.some(e =>
-      parseInt(e.start.split(':')[0]) < 9,
-    )
-    if (hasEarlyMorning) {
-      rawTextParts.push('I have early morning commitments, so prefer afternoon meetings.')
-    }
-
-    // Add some general availability hints
-    const busyHours = new Set<number>()
-    profile.calendar.forEach(event => {
-      const startHour = parseInt(event.start.split(':')[0])
-      const endHour = parseInt(event.end.split(':')[0])
-      for (let h = startHour; h < endHour; h++) {
-        busyHours.add(h)
-      }
-    })
-
-    // Find free windows
-    const freeWindows: string[] = []
-    for (let h = 9; h < 17; h++) {
-      if (!busyHours.has(h)) {
-        freeWindows.push(`${h}:00`)
-      }
-    }
-    if (freeWindows.length > 0) {
-      rawTextParts.push(`Generally available around ${freeWindows.slice(0, 3).join(', ')}.`)
-    }
 
     return {
       name: profile.name,
@@ -105,21 +66,19 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
         end: event.end,
         title: event.description,
       })) : undefined,
-      rawText: includeRawText ? (rawTextParts.join(' ') || undefined) : undefined,
     }
   })
 }
 
 export interface DataAvailabilityConfig {
   calendarProbability: number  // 0-1, probability of including calendar
-  rawTextProbability: number   // 0-1, probability of including rawText
 }
 
 export async function scoreAlgorithm(
   algorithmName: string,
-  algorithm: (inputs: PersonInput[]) => TimeSlot | Promise<TimeSlot>,
+  algorithm: (inputs: PersonInput[], aggregateRawText?: string) => TimeSlot | Promise<TimeSlot>,
   benchmarkDataFile: string,
-  dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0, rawTextProbability: 1.0 },
+  dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0 },
 ): Promise<ScoringResults> {
   // Check if file exists in data directory first, then current directory
   const dataDir = join(import.meta.dirname, '..', 'data')
@@ -148,7 +107,7 @@ export async function scoreAlgorithm(
 
     let suggestedSlot: TimeSlot
     try {
-      suggestedSlot = await algorithm(publicProfiles)
+      suggestedSlot = await algorithm(publicProfiles, testCase.aggregateRawText)
     } catch (error) {
       console.error('Algorithm threw error:', error)
       throw error
