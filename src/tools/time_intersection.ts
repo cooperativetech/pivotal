@@ -161,7 +161,6 @@ function getAcceptableTimes(commonFree: DateTimeInterval[]): DateTimeInterval[] 
       new Date(today.setHours(ACCEPTABLE_START_HOUR, 0, 0, 0)),
       new Date(today.setHours(ACCEPTABLE_END_HOUR, 0, 0, 0)),
   ]
-  
   return intersect(commonFree, [acceptableWindow])
 }
 
@@ -200,7 +199,6 @@ export function findCommonFreeTime(profiles: UserProfile[]): FreeSlot[] {
 
   // Invert each user's busy schedule to get their free time
   const freeLists = Object.values(busyMap).map(busyIntervals => invert(busyIntervals, window))
-  
   // Find the intersection of all users' free time
   const commonFree = freeLists.reduce((acc, freeList) => intersect(acc, freeList), window as unknown as DateTimeInterval[])
 
