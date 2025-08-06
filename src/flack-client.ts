@@ -70,10 +70,10 @@ async function main() {
   socket.on('bot-response', (data: { channel: string; text: string; thread_ts?: string; timestamp: string }) => {
     if (data.thread_ts) {
       console.log(`\n🤖 Bot (in thread):`)
-    } else if (data.channel.startsWith('D_')) {
+    } else if (data.channel.startsWith('D')) {
       console.log(`\n🤖 Bot (DM to ${data.channel}):`)
     } else {
-      console.log(`\n🤖 Bot:`)
+      console.log(`\n🤖 Bot: (Group message to ${data.channel})`)
     }
     console.log(`   ${data.text}\n`)
   })

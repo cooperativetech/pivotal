@@ -20,13 +20,14 @@ export function setupSocketServer(io: Server, botUserId: string, slackClient: Al
 
     // Send users list to the client on connection
     try {
-      const users = await getSlackUsers(slackClient)
+      // Get list of non-bot users
+      const users = await getSlackUsers(slackClient, false)
       // Get list of currently impersonated user IDs
       const impersonatedUserIds = new Set(impersonatedUsers.values())
 
       // Filter and map users
       const availableUsers = Array.from(users.entries())
-        .filter(([id]) => id !== botUserId && !impersonatedUserIds.has(id))
+        .filter(([id]) => !impersonatedUserIds.has(id))
         .map(([id, name]) => ({ id, name }))
 
       // Sort users: those with queued messages first

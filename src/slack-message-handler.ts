@@ -19,7 +19,8 @@ export async function getSlackUsers(client: AllMiddlewareArgs['client'], include
       for (const member of result.members) {
         // Include real users and optionally bots
         if (!member.deleted && member.id && member.real_name) {
-          if (!member.is_bot || includeBots) {
+          const isBot = member.is_bot || member.id == 'USLACKBOT'
+          if (!isBot || includeBots) {
             userMap.set(member.id, member.real_name)
           }
         }
@@ -36,7 +37,8 @@ export async function getSlackUsers(client: AllMiddlewareArgs['client'], include
         if (nextResult.ok && nextResult.members) {
           for (const member of nextResult.members) {
             if (!member.deleted && member.id && member.real_name) {
-              if (!member.is_bot || includeBots) {
+              const isBot = member.is_bot || member.id == 'USLACKBOT'
+              if (!isBot || includeBots) {
                 userMap.set(member.id, member.real_name)
               }
             }
