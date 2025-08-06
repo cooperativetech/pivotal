@@ -25,9 +25,11 @@ async function initializeSlackApp() {
   slackApp.logger.info('Slack bot is running')
 }
 
-slackApp.message(async ({ message, context, client }) => {
-  await handleSlackMessage(message, context.botUserId, client)
-})
+if (!args.values.dev) {
+  slackApp.message(async ({ message, context, client }) => {
+    await handleSlackMessage(message, context.botUserId, client)
+  })
+}
 
 await initializeSlackApp()
 
