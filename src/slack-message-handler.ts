@@ -216,24 +216,88 @@ async function processSchedulingActions(
 
     // Send group message if needed
     if (nextStep.groupMessage && 'channel' in message) {
-      // Find or create a group channel with all topic users
-      // For now, we'll send to the original channel
-      // TODO: Implement proper group channel creation/finding
-      const groupResponse = await client.chat.postMessage({
-        channel: message.channel,
-        text: nextStep.groupMessage,
-      })
+      // Create or open an MPIM (multi-party instant message) with all topic users
+      if (topic.userIds && topic.userIds.length > 0) {
+        try {
+          // Open a conversation with multiple users (MPIM)
+          const mpimResult = await client.conversations.open({
+            users: topic.userIds.join(','), // Comma-separated list of user IDs
+          })
 
-      // Save the bot's group message to the database immediately
-      if (groupResponse.ok && groupResponse.ts) {
-        await db.insert(slackMessageTable).values({
-          topicId: topicId,
-          channelId: message.channel,
-          userId: botUserId || 'bot',
+          if (mpimResult.ok && mpimResult.channel?.id) {
+            // Send the group message to the MPIM
+            const groupResponse = await client.chat.postMessage({
+              channel: mpimResult.channel.id,
+              text: nextStep.groupMessage,
+            })
+
+            // Save the bot's group message to the database immediately
+            if (groupResponse.ok && groupResponse.ts) {
+              await db.insert(slackMessageTable).values({
+                topicId: topicId,
+                channelId: mpimResult.channel.id,
+                userId: botUserId || 'bot',
+                text: nextStep.groupMessage,
+                timestamp: tsToDate(groupResponse.ts),
+                raw: groupResponse.message,
+              })
+            }
+          } else {
+            console.error('Failed to open MPIM:', mpimResult.error)
+            // Fallback to posting in the original channel
+            const groupResponse = await client.chat.postMessage({
+              channel: message.channel,
+              text: nextStep.groupMessage,
+            })
+
+            if (groupResponse.ok && groupResponse.ts) {
+              await db.insert(slackMessageTable).values({
+                topicId: topicId,
+                channelId: message.channel,
+                userId: botUserId || 'bot',
+                text: nextStep.groupMessage,
+                timestamp: tsToDate(groupResponse.ts),
+                raw: groupResponse.message,
+              })
+            }
+          }
+        } catch (mpimError) {
+          console.error('Error creating MPIM:', mpimError)
+          // Fallback to posting in the original channel
+          const groupResponse = await client.chat.postMessage({
+            channel: message.channel,
+            text: nextStep.groupMessage,
+          })
+
+          if (groupResponse.ok && groupResponse.ts) {
+            await db.insert(slackMessageTable).values({
+              topicId: topicId,
+              channelId: message.channel,
+              userId: botUserId || 'bot',
+              text: nextStep.groupMessage,
+              timestamp: tsToDate(groupResponse.ts),
+              raw: groupResponse.message,
+            })
+          }
+        }
+      } else {
+        console.warn('No userIds found in topic for group message')
+        // Fallback to posting in the original channel
+        const groupResponse = await client.chat.postMessage({
+          channel: message.channel,
           text: nextStep.groupMessage,
-          timestamp: tsToDate(groupResponse.ts),
-          raw: groupResponse.message,
         })
+
+        if (groupResponse.ok && groupResponse.ts) {
+          await db.insert(slackMessageTable).values({
+            topicId: topicId,
+            channelId: message.channel,
+            userId: botUserId || 'bot',
+            text: nextStep.groupMessage,
+            timestamp: tsToDate(groupResponse.ts),
+            raw: groupResponse.message,
+          })
+        }
       }
     }
 
