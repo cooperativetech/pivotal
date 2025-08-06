@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { tsToDate } from './shared/utils'
 
 // Helper function to get all Slack users
-export async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = false): Promise<Map<string, string>> {
+export async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = true): Promise<Map<string, string>> {
   const userMap = new Map<string, string>()
 
   try {
@@ -87,7 +87,7 @@ async function processSchedulingActions(
     }
 
     // Get Slack users for name mapping (including bots to get bot's name)
-    const userMap = await getSlackUsers(client, true)
+    const userMap = await getSlackUsers(client)
 
     // Call scheduleNextStep to determine actions
     const nextStep = await scheduleNextStep(currentMessage, topic, previousMessages.slice(0, -1), userMap, botUserId)
@@ -274,7 +274,7 @@ export async function handleSlackMessage(
       const topics = await db.select().from(topicTable).where(eq(topicTable.isActive, true))
 
       // Get Slack users for name mapping (including bots to get bot's name)
-      const userMap = await getSlackUsers(client, true)
+      const userMap = await getSlackUsers(client)
 
       // Create slack message object for analysis
       const slackMessage = {

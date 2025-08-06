@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch ./src/slack-bot.ts --dev",
     "prod": "tsx ./src/slack-bot.ts",
-    "flack": "tsx ./src/flack.ts",
+    "flack": "tsx ./src/flack-client.ts",
     "dkgen": "drizzle-kit generate",
     "dkmig": "drizzle-kit migrate",
     "lint": "tsc --noEmit && eslint .",
@@ -22,6 +22,8 @@
     "drizzle-orm": "0.44.3",
     "hono": "4.8.12",
     "pg": "8.16.3",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1",
     "tsx": "4.20.3",
     "zod": "3.25.76"
   },
