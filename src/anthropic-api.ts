@@ -300,10 +300,14 @@ Based on the current state, determine:
   - Return replyMessage asking about missing participants or confirming who will be included
 
 - "gather_constraints": Need to collect availability from users
+  - IMPORTANT: Start by asking the initial requesting user (the person who created the topic) about their scheduling constraints first
+  - Only after getting the requester's constraints should you move on to asking other participants
   - Return messagesToUsers array with personalized availability requests (sent as 1-1 DMs)
   - Each message can be sent to one or multiple users (via userIds array) - same message as individual DMs
   - Return replyMessage acknowledging the constraint gathering process
-  - Can gather from multiple users simultaneously or focus on one at a time
+  - CRITICAL: If your replyMessage says you will reach out to others, you MUST include the corresponding messagesToUsers in the same response
+  - Never promise to contact users without actually including those messages in messagesToUsers array
+  - Can gather from multiple users simultaneously or focus on one at a time (but always start with the requester)
   - Continue gathering until a consensus time emerges from the constraints
 
 - "finalize": Ready to confirm the consensus time
@@ -332,6 +336,8 @@ Based on the current state, determine:
 - Update the topic summary (updateSummary) whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
+- CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
+- Never defer actions to a future response - everything mentioned in replyMessage must be actioned in the same response
 
 ## Response Format
 Return ONLY a JSON object with the appropriate fields based on the action:
