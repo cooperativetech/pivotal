@@ -55,6 +55,30 @@ export async function getSlackUsers(client: AllMiddlewareArgs['client'], include
   return userMap
 }
 
+// Global lock for message processing
+const messageProcessingLock = {
+  isLocked: false,
+  queue: [] as (() => void)[],
+  acquire(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.isLocked) {
+        this.isLocked = true
+        resolve()
+      } else {
+        this.queue.push(resolve)
+      }
+    })
+  },
+  release(): void {
+    if (this.queue.length > 0) {
+      const next = this.queue.shift()
+      next?.()
+    } else {
+      this.isLocked = false
+    }
+  },
+}
+
 async function processSchedulingActions(
   topicId: string,
   message: SlackEventMiddlewareArgs<'message'>['message'],
@@ -326,6 +350,9 @@ export async function handleSlackMessage(
 ) {
   // Check if message has required fields
   if ('text' in message && message.text && message.ts && message.channel) {
+    // Acquire the global lock before processing
+    await messageProcessingLock.acquire()
+
     console.log(message)
 
     // For bot messages, we need to check differently since they don't have a user field
@@ -421,6 +448,9 @@ export async function handleSlackMessage(
       } catch (reactionError) {
         console.error('Error adding error reaction:', reactionError)
       }
+    } finally {
+      // Always release the lock when done
+      messageProcessingLock.release()
     }
   }
 }
