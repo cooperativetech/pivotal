@@ -85,7 +85,7 @@ export async function getUnconnectedUsers(slackUserIds: string[]): Promise<strin
  * Get or create user context for a Slack user
  * Returns existing context or creates empty context if none exists
  */
-export async function getOrCreateUserContext(slackUserId: string): Promise<Record<string, any>> {
+export async function getOrCreateUserContext(slackUserId: string): Promise<Record<string, unknown>> {
   try {
     const existingContext = await db
       .select()
@@ -94,7 +94,7 @@ export async function getOrCreateUserContext(slackUserId: string): Promise<Recor
       .limit(1)
 
     if (existingContext.length > 0) {
-      return existingContext[0].context as Record<string, any>
+      return existingContext[0].context as Record<string, unknown>
     }
 
     // Create new context entry
@@ -119,7 +119,7 @@ export async function getOrCreateUserContext(slackUserId: string): Promise<Recor
  */
 export async function updateUserContext(
   slackUserId: string,
-  newContext: Record<string, any>,
+  newContext: Record<string, unknown>,
 ): Promise<void> {
   try {
     // Get existing context first
