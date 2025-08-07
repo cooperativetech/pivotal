@@ -3,3 +3,4 @@ dist
 pnpm-lock.yaml
 pv.log
 .DS_Store
+.env

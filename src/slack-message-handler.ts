@@ -116,7 +116,7 @@ async function processSchedulingActions(
     const userMap = await getSlackUsers(client)
 
     // Call scheduleNextStep to determine actions
-    const nextStep = await scheduleNextStep(currentMessage, topic, previousMessages.slice(0, -1), userMap, botUserId)
+    const nextStep = await scheduleNextStep(currentMessage, topic, previousMessages.slice(0, -1), userMap, botUserId, client)
     console.log('Next scheduling step:', nextStep)
 
     // Always send the reply message in thread

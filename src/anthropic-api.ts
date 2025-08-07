@@ -5,6 +5,8 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate } from './shared/utils'
+import { getUnconnectedUsers, generateGoogleOAuthUrl } from './calendar-service'
+import type { AllMiddlewareArgs } from '@slack/bolt'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -257,8 +259,8 @@ function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: 
   return output.trim()
 }
 
-export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap?: Map<string, string>, botUserId?: string): Promise<{
-  action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
+export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap?: Map<string, string>, botUserId?: string, slackClient?: AllMiddlewareArgs['client']): Promise<{
+  action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateUserIds?: string[]
   updateUserNames?: string[] // Names that will be mapped back to userIds
@@ -272,13 +274,68 @@ export async function scheduleNextStep(message: SlackMessage, topic: Topic, prev
   groupMessage?: string
   reasoning: string
 }> {
+  // Check calendar connections for all users in the topic (but make it optional)
+  if (topic.userIds.length > 0) {
+    const unconnectedUsers = await getUnconnectedUsers(topic.userIds)
+
+    if (unconnectedUsers.length > 0) {
+      // Only prompt for calendar connection if we haven't already asked
+      // Check if we've already sent calendar connection requests in previous messages
+      const hasAskedForCalendar = previousMessages.some(msg =>
+        msg.text.toLowerCase().includes('calendar') &&
+        msg.text.toLowerCase().includes('connect'),
+      )
+
+      if (!hasAskedForCalendar) {
+        // Get team ID from Slack client
+        let slackTeamId = 'T_UNKNOWN'
+        if (slackClient) {
+          try {
+            const teamInfo = await slackClient.team.info()
+            if (teamInfo.ok && teamInfo.team?.id) {
+              slackTeamId = teamInfo.team.id
+            }
+          } catch (error) {
+            console.warn('Could not get team info:', error)
+          }
+        }
+
+        // Generate calendar connection messages for unconnected users
+        const messagesToUsers = unconnectedUsers.map(slackUserId => {
+          const authUrl = generateGoogleOAuthUrl(slackUserId, slackTeamId)
+
+          return {
+            userIds: [slackUserId],
+            text: `Hi! I can help schedule this meeting more efficiently if you connect your Google Calendar. This is completely optional - if you prefer, I can ask you for your availability manually instead.
+
+To connect your calendar: ${authUrl}
+
+If you'd rather not connect your calendar, just reply "skip calendar" and I'll ask for your availability the traditional way.`,
+          }
+        })
+
+        const userNames = unconnectedUsers
+          .map(userId => userMap?.get(userId) || 'Unknown User')
+          .join(', ')
+
+        return {
+          action: 'request_calendar_access',
+          replyMessage: `I'm reaching out to ${userNames} to see if they'd like to connect their calendars for easier scheduling. This is optional - we can proceed with manual availability if they prefer.`,
+          messagesToUsers,
+          reasoning: `Offering optional calendar connection to ${unconnectedUsers.length} users before proceeding with manual scheduling`,
+        }
+      }
+    }
+  }
+
   const systemPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
 
 ## Scheduling Workflow
 The scheduling process follows these steps:
 1. **Identify Users**: Determine who needs to be included in the scheduling
-2. **Gather Constraints**: Collect availability and preferences from each user individually
-3. **Finalize**: Once consensus is found, get confirmation from all participants on the chosen time
+2. **Request Calendar Access**: (Optional) Offer users the chance to connect Google Calendar for easier scheduling
+3. **Gather Constraints**: Collect availability and preferences from each user individually
+4. **Finalize**: Once consensus is found, get confirmation from all participants on the chosen time
 
 ## Current Context
 You will receive:
@@ -298,6 +355,11 @@ Based on the current state, determine:
   - IMPORTANT: Use the exact full names from the User Directory (e.g., "John Smith", not "John" or "Smith")
   - This replaces the existing user list, not appends to it
   - Return replyMessage asking about missing participants or confirming who will be included
+
+- "request_calendar_access": (Handled automatically - you should not use this action)
+  - This action is handled automatically by the system before your response
+  - If users need calendar access, they will be prompted automatically
+  - You should proceed with other actions as normal
 
 - "gather_constraints": Need to collect availability from users
   - IMPORTANT: Start by asking the initial requesting user (the person who created the topic) about their scheduling constraints first
