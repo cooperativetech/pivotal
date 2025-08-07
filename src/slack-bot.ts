@@ -7,7 +7,7 @@ import { parseArgs } from 'node:util'
 import { handleSlackMessage } from './slack-message-handler'
 import { setupSocketServer } from './flack-socket-server.ts'
 
-const args = parseArgs({ options: { dev: { type: 'boolean' } } })
+const args = parseArgs({ options: { prod: { type: 'boolean' } } })
 
 // Store bot user ID after initialization
 let botUserId: string | undefined
@@ -25,7 +25,8 @@ async function initializeSlackApp() {
   slackApp.logger.info('Slack bot is running')
 }
 
-if (!args.values.dev) {
+// Only listen for real slack messages if --prod flag is present
+if (args.values.prod) {
   slackApp.message(async ({ message, context, client }) => {
     await handleSlackMessage(message, context.botUserId, client)
   })
@@ -33,8 +34,8 @@ if (!args.values.dev) {
 
 await initializeSlackApp()
 
-// Only run the flack socket server if --dev flag is present
-if (args.values.dev) {
+// Only run the flack socket server if --prod flag is not present
+if (!args.values.prod) {
   const PORT = 3001
   const honoApp = new Hono()
   const server = serve({ fetch: honoApp.fetch, port: PORT })
