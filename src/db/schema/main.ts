@@ -26,15 +26,29 @@ export type Topic = InferSelectModel<typeof topicTable>
 export const slackMessageTable = pgTable('slack_message', {
   id: uuid().primaryKey().defaultRandom(),
   topicId: uuid().notNull().references(() => topicTable.id),
-  channelId: text().notNull(),
   userId: text().notNull(),
+  channelId: text().notNull(),
   text: text().notNull(),
   timestamp: timestamp({ withTimezone: true }).notNull(),
-  raw: json(),
+  raw: json().notNull(),
 })
 
 export type SlackMessageInsert = InferInsertModel<typeof slackMessageTable>
 export type SlackMessage = InferSelectModel<typeof slackMessageTable>
+
+export const slackUserTable = pgTable('slack_user', {
+  id: text().primaryKey(),
+  teamId: text().notNull(),
+  realName: text(),
+  tz: text(),
+  isBot: boolean().notNull(),
+  deleted: boolean().notNull(),
+  updated: timestamp({ withTimezone: true }).notNull(),
+  raw: json().notNull(),
+})
+
+export type SlackUserInsert = InferInsertModel<typeof slackUserTable>
+export type SlackUser = InferSelectModel<typeof slackUserTable>
 
 export const slackUserMapping = pgTable('slack_user_mapping', {
   slackUserId: text('slack_user_id').primaryKey(),

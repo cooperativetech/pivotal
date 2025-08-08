@@ -1,52 +1,81 @@
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
+import type { UsersListResponse } from '@slack/web-api'
 import db from './db/engine'
-import { topicTable, slackMessageTable, TopicInsert } from './db/schema/main'
+import { topicTable, slackMessageTable, TopicInsert, slackUserTable, SlackUserInsert } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { tsToDate } from './shared/utils'
+
+type UsersListMember = NonNullable<UsersListResponse['members']>[number];
 
 // Helper function to get all Slack users
 export async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = true): Promise<Map<string, string>> {
   const userMap = new Map<string, string>()
+  const usersToUpsert: SlackUserInsert[] = []
 
   try {
-    // Call users.list to get all users in the workspace
-    const result = await client.users.list({
-      limit: 200, // Recommended limit per documentation
-    })
-
-    if (result.ok && result.members) {
-      for (const member of result.members) {
-        // Include real users and optionally bots
-        if (!member.deleted && member.id && member.real_name) {
-          const isBot = member.is_bot || member.id == 'USLACKBOT'
-          if (!isBot || includeBots) {
-            userMap.set(member.id, member.real_name)
-          }
-        }
+    let allMembers: UsersListMember[] = []
+    let cursor: string | undefined = ''
+    while (true) {
+      const result = await client.users.list({
+        cursor,
+        limit: 200, // Recommended limit per documentation
+      })
+      if (result.ok && result.members) {
+        allMembers = allMembers.concat(result.members)
       }
+      cursor = result.response_metadata?.next_cursor
+      if (!cursor) {
+        break
+      }
+    }
 
-      // Handle pagination if there are more users
-      let cursor = result.response_metadata?.next_cursor
-      while (cursor) {
-        const nextResult = await client.users.list({
-          cursor,
-          limit: 200,
+    for (const member of allMembers) {
+      if (!member.updated && member.id === 'USLACKBOT') {
+        member.updated = 1
+      }
+      if (
+        !member.id
+        || !member.team_id
+        || !member.updated
+        || member.deleted === undefined
+        || (!member.deleted && !member.real_name)
+      ) {
+        console.warn('Warning: member missing critical fields:', member)
+        continue
+      }
+      const isBot = member.is_bot || member.id === 'USLACKBOT'
+      usersToUpsert.push({
+        id: member.id,
+        teamId: member.team_id,
+        realName: member.real_name,
+        tz: member.tz,
+        isBot: isBot,
+        deleted: member.deleted,
+        updated: new Date(member.updated * 1000),
+        raw: member,
+      })
+      if (!member.deleted && member.real_name && (!isBot || includeBots)) {
+        userMap.set(member.id, member.real_name)
+      }
+    }
+
+    // Perform upsert for all users
+    if (usersToUpsert.length > 0) {
+      await db.insert(slackUserTable)
+        .values(usersToUpsert)
+        .onConflictDoUpdate({
+          target: slackUserTable.id,
+          set: {
+            teamId: sql.raw('excluded.team_id'),
+            realName: sql.raw('excluded.real_name'),
+            tz: sql.raw('excluded.tz'),
+            isBot: sql.raw('excluded.is_bot'),
+            deleted: sql.raw('excluded.deleted'),
+            updated: sql.raw('excluded.updated'),
+            raw: sql.raw('excluded.raw'),
+          },
         })
-
-        if (nextResult.ok && nextResult.members) {
-          for (const member of nextResult.members) {
-            if (!member.deleted && member.id && member.real_name) {
-              const isBot = member.is_bot || member.id == 'USLACKBOT'
-              if (!isBot || includeBots) {
-                userMap.set(member.id, member.real_name)
-              }
-            }
-          }
-        }
-
-        cursor = nextResult.response_metadata?.next_cursor
-      }
     }
   } catch (error) {
     console.error('Error fetching Slack users:', error)
