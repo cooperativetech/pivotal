@@ -5,7 +5,7 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { getUnconnectedUsers, generateGoogleOAuthUrl } from './calendar-service'
+import { getUnconnectedUsers, generateGoogleOAuthUrl, fetchAndStoreUserCalendar, getUserCalendarFromContext } from './calendar-service'
 import type { AllMiddlewareArgs } from '@slack/bolt'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -252,6 +252,7 @@ If you'd rather not connect your calendar, just reply "skip calendar" and I'll a
       }
     }
   }
+
 
   const systemPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
 
