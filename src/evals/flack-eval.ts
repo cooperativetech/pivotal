@@ -40,19 +40,6 @@ interface ConversationLog {
 // API base URL
 const API_BASE_URL = 'http://localhost:3001'
 
-// Fetch bot info from the API
-async function fetchBotInfo(): Promise<string | undefined> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/bot-info`)
-    if (!response.ok) throw new Error('Failed to fetch bot info')
-    const data = await response.json() as { botUserId?: string }
-    return data.botUserId
-  } catch (error) {
-    console.error('Error fetching bot info:', error)
-    return undefined
-  }
-}
-
 interface BenchmarkTestCase {
   id: number
   profiles: PersonProfile[]
@@ -299,7 +286,7 @@ export async function evaluateWithFlack(
 
   // Check if bot is running
   console.log('Connecting to Slack bot at http://localhost:3001...')
-  const botUserId = await fetchBotInfo()
+  const botUserId = 'UTESTBOT'
   if (!botUserId) {
     console.error('❌ Could not connect to Slack bot. Make sure the bot is running on http://localhost:3001')
     console.error('Run the bot server first, then run this eval.')

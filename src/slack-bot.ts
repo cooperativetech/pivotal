@@ -1,59 +1,46 @@
+// @slack/bolt requires this import syntax for some reason
 const { App } = await import('@slack/bolt')
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Server } from 'socket.io'
 import { parseArgs } from 'node:util'
+import { eq } from 'drizzle-orm'
 
-import { handleSlackMessage, getSlackUsers } from './slack-message-handler'
+import { handleSlackMessage } from './slack-message-handler'
 import { setupSocketServer } from './flack-socket-server.ts'
 import { exchangeCodeForTokens, saveUserTokens } from './google-oauth'
 import { fetchAndStoreUserCalendar } from './calendar-service'
+import db from './db/engine'
+import { topicTable, slackMessageTable, slackUserTable } from './db/schema/main'
+import { cleanupTestData } from './db/cleanup'
 
 const args = parseArgs({ options: { prod: { type: 'boolean' } } })
 
-// Store bot user ID after initialization
-let botUserId: string | undefined
-
-const slackApp = new App({
-  token: process.env.PV_SLACK_BOT_TOKEN,
-  appToken: process.env.PV_SLACK_APP_TOKEN,
-  socketMode: true,
-})
-
-async function initializeSlackApp() {
-  await slackApp.start()
-  const authResult = await slackApp.client.auth.test()
-  botUserId = authResult.user_id
-  slackApp.logger.info('Slack bot is running')
-}
-
-// Only listen for real slack messages if --prod flag is present
+// Only connect to real slack if --prod flag is present
 if (args.values.prod) {
+  const slackApp = new App({
+    token: process.env.PV_SLACK_BOT_TOKEN,
+    appToken: process.env.PV_SLACK_APP_TOKEN,
+    socketMode: true,
+  })
+
   slackApp.message(async ({ message, context, client }) => {
     await handleSlackMessage(message, context.botUserId, client)
   })
-}
 
-await initializeSlackApp()
+  await slackApp.start()
+  slackApp.logger.info('Slack bot is running')
+}
 
 // Only run the flack socket server if --prod flag is not present
 if (!args.values.prod) {
   const PORT = 3001
   const honoApp = new Hono()
-    .get('/api/bot-info', (c) => {
-      return c.json({ botUserId })
-    })
-    .get('/api/users', async (c) => {
-      const users = await getSlackUsers(slackApp.client, false)
-      // Convert Map to array of [id, name] pairs for JSON serialization
-      return c.json(Array.from(users.entries()))
-    })
     .post('/api/clear-topics', async (c) => {
       // Clear topics for eval testing
       const body: { summary?: string; clearAll?: boolean } = await c.req.json()
 
       if (body.clearAll) {
-        const { cleanupTestData } = await import('./db/cleanup')
         const result = await cleanupTestData()
         return c.json({
           success: result.success,
@@ -61,11 +48,6 @@ if (!args.values.prod) {
         })
       } else if (body.summary) {
         // Clear specific topic by summary
-        const dbModule = await import('./db/engine')
-        const db = dbModule.default
-        const { topicTable, slackMessageTable } = await import('./db/schema/main')
-        const { eq } = await import('drizzle-orm')
-
         const topics = await db.select().from(topicTable).where(eq(topicTable.summary, body.summary))
         for (const topic of topics) {
           // Delete messages for this topic first
@@ -119,21 +101,28 @@ if (!args.values.prod) {
       // Exchange code for tokens
       const tokens = await exchangeCodeForTokens(code)
 
-      // Get user info from Slack to save names
+      // Get user info from database
       try {
-        const userInfo = await slackApp.client.users.info({ user: slackUserId })
-        const user = userInfo.user
+        const userFromDb = await db.select().from(slackUserTable).where(eq(slackUserTable.id, slackUserId)).limit(1)
 
-        // user.display_name lives under profile
-        await saveUserTokens(
-          slackUserId,
-          slackTeamId,
-          tokens,
-          user?.name,
-          user?.real_name || user?.profile?.display_name,
-        )
-      } catch (slackError) {
-        console.warn('Could not get Slack user info:', slackError)
+        if (userFromDb.length > 0) {
+          const user = userFromDb[0]
+          const raw = user.raw as { name?: string; profile?: { display_name?: string } }
+
+          await saveUserTokens(
+            slackUserId,
+            slackTeamId,
+            tokens,
+            raw?.name,
+            user.realName || raw?.profile?.display_name,
+          )
+        } else {
+          console.warn('User not found in database:', slackUserId)
+          // Save tokens without user names
+          await saveUserTokens(slackUserId, slackTeamId, tokens)
+        }
+      } catch (dbError) {
+        console.warn('Could not get user info from database:', dbError)
         // Save tokens without user names
         await saveUserTokens(slackUserId, slackTeamId, tokens)
       }
@@ -146,15 +135,18 @@ if (!args.values.prod) {
         console.error('Error fetching calendar after OAuth:', calendarError)
       }
 
-      // Send success message to user in Slack
+      // Note: Cannot send Slack message in development mode (no slackApp instance)
+      /*
       try {
         await slackApp.client.chat.postMessage({
           channel: slackUserId,
-          text: `✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.`,
+          text: `✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.`
+,
         })
       } catch (slackError) {
         console.warn('Could not send success message to Slack:', slackError)
       }
+      */
 
       return c.html(`
         <html>
@@ -181,7 +173,7 @@ if (!args.values.prod) {
 
   const server = serve({ fetch: honoApp.fetch, port: PORT })
   const io = new Server(server, { connectionStateRecovery: {} })
-  setupSocketServer(io, botUserId!, slackApp.client)
+  setupSocketServer(io)
   console.log(`Socket server running on port ${PORT}...`)
 }
 

@@ -10,18 +10,203 @@ interface QueuedMessage {
   user: string // The user who sent the message (bot)
 }
 
-export function setupSocketServer(io: Server, botUserId: string, slackClient: AllMiddlewareArgs['client']) {
+// Fake user data for testing
+const FAKE_USERS = new Map<string, string>([
+  ['U123456', 'Alice Johnson'],
+  ['U234567', 'Bob Smith'],
+  ['U345678', 'Charlie Brown'],
+  ['U456789', 'Diana Prince'],
+  ['U567890', 'Eve Wilson'],
+  ['U678901', 'Frank Miller'],
+  ['U789012', 'Grace Lee'],
+  ['U890123', 'Henry Davis'],
+])
+
+// Fake conversation members for testing
+const FAKE_CHANNEL_MEMBERS = new Map<string, string[]>([
+  ['C123456', ['U123456', 'U234567', 'U345678']], // General channel
+  ['C234567', ['U456789', 'U567890', 'U678901']], // Random channel
+  ['D123456', ['U123456']], // DM with Alice
+  ['D234567', ['U234567']], // DM with Bob
+])
+
+export function setupSocketServer(io: Server) {
   // Track which users are currently being impersonated by connected clients
   const impersonatedUsers = new Map<string, string>() // socketId -> userId
   const userToSocket = new Map<string, string>() // userId -> socketId (reverse mapping)
   const messageQueues = new Map<string, QueuedMessage[]>() // userId -> queued messages
+  const botUserId = 'UTESTBOT'
+
   io.on('connection', async (socket: Socket) => {
+
+    // Create a mock Slack client that doesn't make real API calls
+    const mockClient: AllMiddlewareArgs['client'] = {
+      users: {
+        list: () => {
+          // Return fake users
+          const members = Array.from(FAKE_USERS.entries()).map(([id, name]) => ({
+            id,
+            team_id: 'T123456',
+            real_name: name,
+            name: name.toLowerCase().replace(' ', '.'),
+            deleted: false,
+            is_bot: false,
+            updated: Math.floor(Date.now() / 1000),
+            tz: 'America/New_York',
+          }))
+
+          // Add the bot user
+          members.push({
+            id: botUserId,
+            team_id: 'T123456',
+            real_name: 'Pivotal Bot',
+            name: 'pivotal-bot',
+            deleted: false,
+            is_bot: true,
+            updated: Math.floor(Date.now() / 1000),
+            tz: 'America/New_York',
+          })
+
+          return {
+            ok: true,
+            members,
+            response_metadata: {},
+          }
+        },
+      },
+      conversations: {
+        open: ({ users }: { users: string }) => {
+          // Return a fake DM channel
+          const userList = users.split(',')
+          const channelId = userList.length === 1 ? `D${userList[0].substring(1)}` : `G${Date.now()}`
+
+          return {
+            ok: true,
+            channel: {
+              id: channelId,
+              created: Math.floor(Date.now() / 1000),
+              is_im: userList.length === 1,
+              is_mpim: userList.length > 1,
+            },
+          }
+        },
+        info: ({ channel }: { channel: string }) => {
+          // Return fake channel info
+          if (channel.startsWith('D')) {
+            // Direct message - extract user ID from channel ID
+            const userId = `U${channel.substring(1)}`
+            return {
+              ok: true,
+              channel: {
+                id: channel,
+                user: userId,
+                is_im: true,
+                created: Math.floor(Date.now() / 1000),
+              },
+            }
+          } else {
+            // Regular channel
+            return {
+              ok: true,
+              channel: {
+                id: channel,
+                name: 'general',
+                is_channel: true,
+                created: Math.floor(Date.now() / 1000),
+              },
+            }
+          }
+        },
+        members: ({ channel }: { channel: string }) => {
+          // Return fake channel members
+          const members = FAKE_CHANNEL_MEMBERS.get(channel) || ['U123456', 'U234567']
+          return {
+            ok: true,
+            members,
+            response_metadata: {},
+          }
+        },
+      },
+      chat: {
+        postMessage: async (params: { channel: string; text?: string; thread_ts?: string }) => {
+          const timestamp = (Date.now() / 1000).toString()
+
+          // Prepare the message
+          const message: QueuedMessage = {
+            channel: params.channel,
+            text: params.text,
+            thread_ts: params.thread_ts,
+            timestamp,
+            user: botUserId,
+          }
+
+          // Get list of users in the channel
+          try {
+            let userIds: string[] = []
+
+            if (params.channel.startsWith('D')) {
+              // Direct message - extract user ID from channel ID
+              const userId = `U${params.channel.substring(1)}`
+              userIds = [userId]
+            } else {
+              // Regular channel - get members
+              const members = FAKE_CHANNEL_MEMBERS.get(params.channel) || ['U123456', 'U234567']
+              userIds = members
+            }
+
+            // Send to active users or queue for inactive ones
+            for (const userId of userIds) {
+              if (userId === botUserId) continue // Skip the bot itself
+
+              const socketId = userToSocket.get(userId)
+              if (socketId) {
+                // User has an active socket, send the message
+                const userSocket = io.sockets.sockets.get(socketId)
+                if (userSocket) {
+                  userSocket.emit('bot-response', message)
+                }
+              } else {
+                // User doesn't have an active socket, queue the message
+                if (!messageQueues.has(userId)) {
+                  messageQueues.set(userId, [])
+                }
+                const queue = messageQueues.get(userId)
+                if (queue) {
+                  queue.push(message)
+                }
+                console.log(`Queued message for offline user ${userId}`)
+              }
+            }
+          } catch (error) {
+            console.error('Error getting channel members:', error)
+          }
+
+          return Promise.resolve({
+            ok: true,
+            ts: timestamp,
+            message: { text: params.text, user: botUserId, ts: timestamp },
+          })
+        },
+      },
+      reactions: {
+        add: (params: { name: string; channel: string; timestamp: string }) => {
+          // Send reaction event back to the specific client
+          socket.emit('bot-reaction', {
+            name: params.name,
+            channel: params.channel,
+            timestamp: params.timestamp,
+          })
+          return Promise.resolve({ ok: true })
+        },
+      },
+    } as unknown as AllMiddlewareArgs['client']
+
     console.log('Flack client connected:', socket.id)
 
     // Send users list to the client on connection
     try {
       // Get list of non-bot users
-      const users = await getSlackUsers(slackClient, false)
+      const users = await getSlackUsers(mockClient, false)
       // Get list of currently impersonated user IDs
       const impersonatedUserIds = new Set(impersonatedUsers.values())
 
@@ -68,99 +253,6 @@ export function setupSocketServer(io: Server, botUserId: string, slackClient: Al
       }
     })
 
-    // Create mock client with proper response handling
-    const mockClient: AllMiddlewareArgs['client'] = {
-      chat: {
-        postMessage: async (params: { thread_ts?: string; channel: string; text?: string }) => {
-          const timestamp = (Date.now() / 1000).toString()
-
-          // Prepare the message
-          const message: QueuedMessage = {
-            channel: params.channel,
-            text: params.text,
-            thread_ts: params.thread_ts,
-            timestamp,
-            user: botUserId,
-          }
-
-          // Get list of users in the channel
-          try {
-            let userIds: string[] = []
-
-            if (params.channel.startsWith('D')) {
-              // Direct message - get conversation info to find the users
-              const convoInfo = await slackClient.conversations.info({
-                channel: params.channel,
-              })
-              if (convoInfo.ok && convoInfo.channel && 'user' in convoInfo.channel) {
-                // In a DM, the 'user' field contains the other user's ID
-                userIds = [convoInfo.channel.user as string]
-              }
-            } else {
-              // Regular channel - get members
-              const membersResult = await slackClient.conversations.members({
-                channel: params.channel,
-              })
-              if (membersResult.ok && membersResult.members) {
-                userIds = membersResult.members
-              }
-            }
-
-            // Send to active users or queue for inactive ones
-            for (const userId of userIds) {
-              if (userId === botUserId) continue // Skip the bot itself
-
-              const socketId = userToSocket.get(userId)
-              if (socketId) {
-                // User has an active socket, send the message
-                const userSocket = io.sockets.sockets.get(socketId)
-                if (userSocket) {
-                  userSocket.emit('bot-response', message)
-                }
-              } else {
-                // User doesn't have an active socket, queue the message
-                if (!messageQueues.has(userId)) {
-                  messageQueues.set(userId, [])
-                }
-                const queue = messageQueues.get(userId)
-                if (queue) {
-                  queue.push(message)
-                }
-                console.log(`Queued message for offline user ${userId}`)
-              }
-            }
-          } catch (error) {
-            console.error('Error getting channel members:', error)
-            // Fallback: send to the originating client
-            socket.emit('bot-response', message)
-          }
-
-          return Promise.resolve({
-            ok: true,
-            ts: timestamp,
-            message: { text: params.text, user: botUserId, ts: timestamp },
-          })
-        },
-      },
-      reactions: {
-        add: (params: { name: string; channel: string; timestamp: string }) => {
-          // Send reaction event back to the client
-          socket.emit('bot-reaction', {
-            name: params.name,
-            channel: params.channel,
-            timestamp: params.timestamp,
-          })
-          return Promise.resolve({ ok: true })
-        },
-      },
-      conversations: {
-        open: slackClient.conversations.open,
-      },
-      users: {
-        list: slackClient.users.list,
-      },
-    } as unknown as AllMiddlewareArgs['client']
-
     // Handle incoming Flack messages (always DMs to the bot)
     socket.on('flack-message', async (data: { text: string }) => {
       try {
@@ -175,7 +267,7 @@ export function setupSocketServer(io: Server, botUserId: string, slackClient: Al
         }
 
         // Open DM channel with the user
-        const dmResult = await slackClient.conversations.open({ users: userId })
+        const dmResult = await mockClient.conversations.open({ users: userId })
         if (!dmResult.ok || !dmResult.channel) {
           console.error('Failed to open DM channel:', dmResult.error)
           socket.emit('error', { message: 'Failed to open DM channel' })
