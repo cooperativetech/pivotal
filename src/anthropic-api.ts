@@ -5,7 +5,7 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { getUnconnectedUsers, generateGoogleOAuthUrl, fetchAndStoreUserCalendar, getUserCalendarFromContext } from './calendar-service'
+import { getUnconnectedUsers, generateGoogleOAuthUrl, getUserCalendarText } from './calendar-service'
 import type { AllMiddlewareArgs } from '@slack/bolt'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -199,57 +199,36 @@ export async function scheduleNextStep(message: SlackMessage, topic: Topic, prev
   groupMessage?: string
   reasoning: string
 }> {
-  // Check calendar connections for all users in the topic (but make it optional)
-  if (topic.userIds.length > 0) {
-    const unconnectedUsers = await getUnconnectedUsers(topic.userIds)
+  // If user is explicitly asking for calendar connection, send link immediately
+  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
+    (message.text.toLowerCase().includes('link') ||
+     message.text.toLowerCase().includes('connect') ||
+     message.text.toLowerCase().includes('send me'))
 
-    if (unconnectedUsers.length > 0) {
-      // Only prompt for calendar connection if we haven't already asked
-      // Check if we've already sent calendar connection requests in previous messages
-      const hasAskedForCalendar = previousMessages.some(msg =>
-        msg.text.toLowerCase().includes('calendar') &&
-        msg.text.toLowerCase().includes('connect'),
-      )
-
-      if (!hasAskedForCalendar) {
-        // Get team ID from Slack client
-        let slackTeamId = 'T_UNKNOWN'
-        if (slackClient) {
-          try {
-            const teamInfo = await slackClient.team.info()
-            if (teamInfo.ok && teamInfo.team?.id) {
-              slackTeamId = teamInfo.team.id
-            }
-          } catch (error) {
-            console.warn('Could not get team info:', error)
-          }
+  if (userRequestingCalendar) {
+    // Get team ID from Slack client
+    let slackTeamId = 'T_UNKNOWN'
+    if (slackClient) {
+      try {
+        const teamInfo = await slackClient.team.info()
+        if (teamInfo.ok && teamInfo.team?.id) {
+          slackTeamId = teamInfo.team.id
         }
-
-        // Generate calendar connection messages for unconnected users
-        const messagesToUsers = unconnectedUsers.map(slackUserId => {
-          const authUrl = generateGoogleOAuthUrl(slackUserId, slackTeamId)
-
-          return {
-            userIds: [slackUserId],
-            text: `Hi! I can help schedule this meeting more efficiently if you connect your Google Calendar. This is completely optional - if you prefer, I can ask you for your availability manually instead.
-
-To connect your calendar: ${authUrl}
-
-If you'd rather not connect your calendar, just reply "skip calendar" and I'll ask for your availability the traditional way.`,
-          }
-        })
-
-        const userNames = unconnectedUsers
-          .map(userId => userMap.get(userId) || 'Unknown User')
-          .join(', ')
-
-        return {
-          action: 'request_calendar_access',
-          replyMessage: `I'm reaching out to ${userNames} to see if they'd like to connect their calendars for easier scheduling. This is optional - we can proceed with manual availability if they prefer.`,
-          messagesToUsers,
-          reasoning: `Offering optional calendar connection to ${unconnectedUsers.length} users before proceeding with manual scheduling`,
-        }
+      } catch (error) {
+        console.warn('Could not get team info:', error)
       }
+    }
+
+    const authUrl = generateGoogleOAuthUrl(message.userId, slackTeamId)
+
+    return {
+      action: 'request_calendar_access',
+      replyMessage: `Here's your Google Calendar connection link:
+
+${authUrl}
+
+This will allow me to check your availability automatically when scheduling. If you'd rather not connect your calendar, just let me know and I'll ask for your availability manually instead.`,
+      reasoning: 'User explicitly requested calendar connection link',
     }
   }
 
@@ -259,7 +238,7 @@ If you'd rather not connect your calendar, just reply "skip calendar" and I'll a
 ## Scheduling Workflow
 The scheduling process follows these steps:
 1. **Identify Users**: Determine who needs to be included in the scheduling
-2. **Request Calendar Access**: (Optional) Offer users the chance to connect Google Calendar for easier scheduling
+2. **Request Calendar Access**: For new scheduling topics, offer users calendar connections to make scheduling easier
 3. **Gather Constraints**: Collect availability and preferences from each user individually
 4. **Finalize**: Once consensus is found, get confirmation from all participants on the chosen time
 
@@ -370,6 +349,21 @@ Last updated: ${new Date(topic.updatedAt).toLocaleString()}
 
 Previous Messages in this Topic:
 ${organizeMessagesByChannelAndThread(previousMessages, userMap)}
+
+Calendar Information:
+${await Promise.all(topic.userIds.map(async userId => {
+  const userName = userMap.get(userId) || 'Unknown User'
+  try {
+    const calendarText = await getUserCalendarText(userId)
+    if (calendarText !== 'No calendar connected or no events found') {
+      return `${userName}'s calendar:\n${calendarText.split('\n').map(line => `  - ${line}`).join('\n')}`
+    }
+    return `${userName}: No calendar connected or no events found`
+  } catch (error) {
+    console.error(`Error getting calendar for ${userName}:`, error)
+    return `${userName}: Calendar unavailable`
+  }
+})).then(results => results.join('\n\n'))}
 
 Message To Reply To:
 From: ${userMap.get(message.userId) || 'Unknown User'}

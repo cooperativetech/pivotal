@@ -195,12 +195,12 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     }
 
     const mapping = userMapping[0]
-    
+
     // Create OAuth2 client
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || `${process.env.BASE_URL}/auth/google/callback`
+      process.env.GOOGLE_REDIRECT_URI || `${process.env.BASE_URL}/auth/google/callback`,
     )
 
     oauth2Client.setCredentials({
@@ -231,19 +231,19 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
 
     // Convert to the format expected by time_intersection.ts UserProfile
     const busySlots: { start: string; end: string; summary?: string }[] = []
-    
+
     for (const event of response.data.items) {
       if (!event.start || !event.end) continue
-      
+
       // Handle both dateTime (specific time) and date (all-day) events
       const startTime = event.start.dateTime || event.start.date
       const endTime = event.end.dateTime || event.end.date
-      
+
       if (!startTime || !endTime) continue
 
       const startDateObj = new Date(startTime)
       const endDateObj = new Date(endTime)
-      
+
       // Format as HH:MM (skip all-day events for now)
       if (event.start.dateTime && event.end.dateTime) {
         busySlots.push({
@@ -256,18 +256,16 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
 
     // Get existing context
     const existingContext = await getOrCreateUserContext(slackUserId)
-    
-    // Store calendar data in userContext
+
+    // Store calendar data as simple text in userContext
+    const calendarText = busySlots.map(slot => `${slot.start}-${slot.end}: ${slot.summary || 'Busy'}`).join('\n')
     const calendarData = {
-      calendar: {
-        events: busySlots,
-        lastFetched: new Date().toISOString(),
-        daysAhead: daysAhead,
-      },
+      calendar: calendarText,
+      calendarLastFetched: new Date().toISOString(),
     }
 
     await updateUserContext(slackUserId, { ...existingContext, ...calendarData })
-    
+
     console.log(`Stored ${busySlots.length} calendar events for user ${slackUserId}`)
 
   } catch (error) {
@@ -279,25 +277,18 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
  * Get calendar data from userContext for use with scheduling algorithms
  * Returns data in UserProfile format compatible with time_intersection.ts
  */
-export async function getUserCalendarFromContext(slackUserId: string, userName: string): Promise<{ name: string; calendar: { start: string; end: string }[] }> {
+export async function getUserCalendarText(slackUserId: string): Promise<string> {
   try {
     const context = await getOrCreateUserContext(slackUserId)
-    
-    if (context.calendar && Array.isArray(context.calendar.events)) {
-      return {
-        name: userName,
-        calendar: context.calendar.events.map((event: any) => ({
-          start: event.start,
-          end: event.end,
-        })),
-      }
+
+    if (context.calendar && typeof context.calendar === 'string') {
+      return context.calendar
     }
-    
-    // Return empty calendar if no data
-    return { name: userName, calendar: [] }
-    
+
+    return 'No calendar connected or no events found'
+
   } catch (error) {
     console.error(`Error getting calendar from context for user ${slackUserId}:`, error)
-    return { name: userName, calendar: [] }
+    return 'Calendar unavailable'
   }
 }

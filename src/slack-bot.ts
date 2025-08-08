@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util'
 import { handleSlackMessage } from './slack-message-handler'
 import { setupSocketServer } from './flack-socket-server.ts'
 import { exchangeCodeForTokens, saveUserTokens } from './google-oauth'
+import { fetchAndStoreUserCalendar } from './calendar-service'
 
 const args = parseArgs({ options: { prod: { type: 'boolean' } } })
 
@@ -98,6 +99,14 @@ if (!args.values.prod) {
         console.warn('Could not get Slack user info:', slackError)
         // Save tokens without user names
         await saveUserTokens(slackUserId, slackTeamId, tokens)
+      }
+
+      // Fetch and store calendar events immediately after saving tokens
+      try {
+        await fetchAndStoreUserCalendar(slackUserId)
+        console.log(`Successfully fetched calendar for user ${slackUserId}`)
+      } catch (calendarError) {
+        console.error('Error fetching calendar after OAuth:', calendarError)
       }
 
       // Send success message to user in Slack
