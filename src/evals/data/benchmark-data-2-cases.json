@@ -6,29 +6,41 @@
         "name": "Alice",
         "calendar": [
           {
-            "start": "08:30",
-            "end": "09:30",
+            "start": "09:00",
+            "end": "10:00",
             "type": "meeting",
-            "description": "Planning session"
+            "description": "Client call"
           },
           {
-            "start": "10:00",
-            "end": "10:30",
-            "type": "personal",
-            "description": "Break"
+            "start": "11:30",
+            "end": "12:00",
+            "type": "meeting",
+            "description": "1:1"
           },
           {
-            "start": "14:30",
-            "end": "16:00",
+            "start": "13:30",
+            "end": "14:30",
+            "type": "meeting",
+            "description": "1:1"
+          },
+          {
+            "start": "15:30",
+            "end": "16:30",
             "type": "personal",
-            "description": "Errand"
+            "description": "Lunch"
+          },
+          {
+            "start": "15:30",
+            "end": "16:30",
+            "type": "blocked-work",
+            "description": "Deep work"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 63,
-          "meeting": 18,
-          "personal": 36,
+          "blockedWork": 64,
+          "meeting": 20,
+          "personal": 43,
           "critical": 0
         }
       },
@@ -36,35 +48,53 @@
         "name": "Bob",
         "calendar": [
           {
+            "start": "09:00",
+            "end": "10:00",
+            "type": "meeting",
+            "description": "Review meeting"
+          },
+          {
+            "start": "10:30",
+            "end": "11:00",
+            "type": "meeting",
+            "description": "Review meeting"
+          },
+          {
             "start": "11:00",
+            "end": "11:30",
+            "type": "meeting",
+            "description": "Client call"
+          },
+          {
+            "start": "12:00",
             "end": "12:30",
-            "type": "personal",
-            "description": "Gym"
+            "type": "meeting",
+            "description": "1:1"
           },
           {
-            "start": "12:30",
+            "start": "12:00",
             "end": "13:00",
-            "type": "meeting",
-            "description": "Planning session"
-          },
-          {
-            "start": "14:00",
-            "end": "15:00",
             "type": "personal",
-            "description": "Errand"
+            "description": "Appointment"
           },
           {
-            "start": "16:30",
-            "end": "18:00",
-            "type": "meeting",
-            "description": "Planning session"
+            "start": "14:30",
+            "end": "16:00",
+            "type": "blocked-work",
+            "description": "Focus time"
+          },
+          {
+            "start": "16:00",
+            "end": "17:30",
+            "type": "blocked-work",
+            "description": "Code review"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 64,
-          "meeting": 29,
-          "personal": 41,
+          "blockedWork": 76,
+          "meeting": 24,
+          "personal": 40,
           "critical": 0
         }
       },
@@ -73,28 +103,46 @@
         "calendar": [
           {
             "start": "08:30",
-            "end": "10:00",
+            "end": "09:00",
             "type": "meeting",
-            "description": "Team sync"
+            "description": "Client call"
+          },
+          {
+            "start": "09:00",
+            "end": "10:00",
+            "type": "critical",
+            "description": "Flight"
+          },
+          {
+            "start": "11:30",
+            "end": "12:00",
+            "type": "personal",
+            "description": "Gym"
+          },
+          {
+            "start": "13:30",
+            "end": "15:00",
+            "type": "blocked-work",
+            "description": "Project work"
           },
           {
             "start": "15:00",
-            "end": "16:00",
-            "type": "blocked-work",
-            "description": "Focus time"
+            "end": "15:30",
+            "type": "meeting",
+            "description": "Client call"
           },
           {
-            "start": "16:00",
-            "end": "16:30",
-            "type": "personal",
-            "description": "Lunch"
+            "start": "15:30",
+            "end": "16:00",
+            "type": "meeting",
+            "description": "Client call"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 73,
-          "meeting": 12,
-          "personal": 39,
+          "blockedWork": 76,
+          "meeting": 29,
+          "personal": 33,
           "critical": 0
         }
       },
@@ -102,41 +150,53 @@
         "name": "Diana",
         "calendar": [
           {
-            "start": "09:00",
-            "end": "09:30",
+            "start": "09:30",
+            "end": "10:00",
             "type": "meeting",
-            "description": "Review meeting"
+            "description": "1:1"
           },
           {
-            "start": "10:30",
+            "start": "11:00",
             "end": "12:00",
+            "type": "personal",
+            "description": "Gym"
+          },
+          {
+            "start": "11:30",
+            "end": "13:00",
             "type": "meeting",
-            "description": "Team sync"
+            "description": "1:1"
+          },
+          {
+            "start": "11:30",
+            "end": "13:00",
+            "type": "blocked-work",
+            "description": "Project work"
           },
           {
             "start": "12:30",
-            "end": "13:30",
-            "type": "personal",
-            "description": "Lunch"
+            "end": "14:00",
+            "type": "blocked-work",
+            "description": "Focus time"
           },
           {
             "start": "13:30",
-            "end": "15:00",
-            "type": "meeting",
-            "description": "Client call"
+            "end": "14:30",
+            "type": "critical",
+            "description": "Medical appointment"
           },
           {
-            "start": "15:30",
-            "end": "17:00",
+            "start": "14:30",
+            "end": "15:00",
             "type": "meeting",
-            "description": "Planning session"
+            "description": "Team sync"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 62,
-          "meeting": 15,
-          "personal": 32,
+          "blockedWork": 79,
+          "meeting": 22,
+          "personal": 30,
           "critical": 0
         }
       },
@@ -150,47 +210,53 @@
             "description": "Client call"
           },
           {
-            "start": "08:00",
-            "end": "09:30",
-            "type": "blocked-work",
-            "description": "Code review"
+            "start": "08:30",
+            "end": "10:00",
+            "type": "critical",
+            "description": "Emergency"
           },
           {
             "start": "08:30",
-            "end": "10:00",
-            "type": "personal",
-            "description": "Gym"
-          },
-          {
-            "start": "12:00",
-            "end": "12:30",
-            "type": "critical",
-            "description": "Medical appointment"
-          },
-          {
-            "start": "14:00",
-            "end": "15:30",
-            "type": "critical",
-            "description": "Pick up kids"
-          },
-          {
-            "start": "15:00",
-            "end": "16:00",
+            "end": "09:30",
             "type": "blocked-work",
             "description": "Focus time"
           },
           {
-            "start": "15:00",
-            "end": "16:30",
+            "start": "11:00",
+            "end": "11:30",
+            "type": "blocked-work",
+            "description": "Focus time"
+          },
+          {
+            "start": "12:30",
+            "end": "14:00",
+            "type": "personal",
+            "description": "Break"
+          },
+          {
+            "start": "13:00",
+            "end": "13:30",
+            "type": "blocked-work",
+            "description": "Deep work"
+          },
+          {
+            "start": "13:30",
+            "end": "14:00",
             "type": "meeting",
-            "description": "Team sync"
+            "description": "Planning session"
+          },
+          {
+            "start": "16:30",
+            "end": "17:00",
+            "type": "personal",
+            "description": "Appointment"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 76,
-          "meeting": 11,
-          "personal": 46,
+          "blockedWork": 63,
+          "meeting": 23,
+          "personal": 38,
           "critical": 0
         }
       }
@@ -198,232 +264,215 @@
     "utilityDistribution": [
       {
         "timeSlot": {
-          "start": "00:00",
-          "end": "01:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "01:00",
-          "end": "02:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "02:00",
-          "end": "03:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "03:00",
-          "end": "04:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "04:00",
-          "end": "05:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "05:00",
-          "end": "06:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "06:00",
-          "end": "07:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "07:00",
-          "end": "08:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "08:00",
-          "end": "09:00"
-        },
-        "totalUtility": 241
-      },
-      {
-        "timeSlot": {
           "start": "09:00",
           "end": "10:00"
         },
-        "totalUtility": 191
+        "totalUtility": 66
+      },
+      {
+        "timeSlot": {
+          "start": "09:15",
+          "end": "10:15"
+        },
+        "totalUtility": 66
+      },
+      {
+        "timeSlot": {
+          "start": "09:30",
+          "end": "10:30"
+        },
+        "totalUtility": 66
+      },
+      {
+        "timeSlot": {
+          "start": "09:45",
+          "end": "10:45"
+        },
+        "totalUtility": 66
       },
       {
         "timeSlot": {
           "start": "10:00",
           "end": "11:00"
         },
-        "totalUtility": 351
+        "totalUtility": 424
+      },
+      {
+        "timeSlot": {
+          "start": "10:15",
+          "end": "11:15"
+        },
+        "totalUtility": 317
+      },
+      {
+        "timeSlot": {
+          "start": "10:30",
+          "end": "11:30"
+        },
+        "totalUtility": 317
+      },
+      {
+        "timeSlot": {
+          "start": "10:45",
+          "end": "11:45"
+        },
+        "totalUtility": 162
       },
       {
         "timeSlot": {
           "start": "11:00",
           "end": "12:00"
         },
-        "totalUtility": 356
+        "totalUtility": 162
+      },
+      {
+        "timeSlot": {
+          "start": "11:15",
+          "end": "12:15"
+        },
+        "totalUtility": 162
+      },
+      {
+        "timeSlot": {
+          "start": "11:30",
+          "end": "12:30"
+        },
+        "totalUtility": 199
+      },
+      {
+        "timeSlot": {
+          "start": "11:45",
+          "end": "12:45"
+        },
+        "totalUtility": 137
       },
       {
         "timeSlot": {
           "start": "12:00",
           "end": "13:00"
         },
-        "totalUtility": 261
+        "totalUtility": 284
+      },
+      {
+        "timeSlot": {
+          "start": "12:15",
+          "end": "13:15"
+        },
+        "totalUtility": 284
+      },
+      {
+        "timeSlot": {
+          "start": "12:30",
+          "end": "13:30"
+        },
+        "totalUtility": 300
+      },
+      {
+        "timeSlot": {
+          "start": "12:45",
+          "end": "13:45"
+        },
+        "totalUtility": 159
       },
       {
         "timeSlot": {
           "start": "13:00",
           "end": "14:00"
         },
-        "totalUtility": 415
+        "totalUtility": 219
+      },
+      {
+        "timeSlot": {
+          "start": "13:15",
+          "end": "14:15"
+        },
+        "totalUtility": 219
+      },
+      {
+        "timeSlot": {
+          "start": "13:30",
+          "end": "14:30"
+        },
+        "totalUtility": 219
+      },
+      {
+        "timeSlot": {
+          "start": "13:45",
+          "end": "14:45"
+        },
+        "totalUtility": 195
       },
       {
         "timeSlot": {
           "start": "14:00",
           "end": "15:00"
         },
-        "totalUtility": 192
+        "totalUtility": 272
+      },
+      {
+        "timeSlot": {
+          "start": "14:15",
+          "end": "15:15"
+        },
+        "totalUtility": 225
+      },
+      {
+        "timeSlot": {
+          "start": "14:30",
+          "end": "15:30"
+        },
+        "totalUtility": 327
+      },
+      {
+        "timeSlot": {
+          "start": "14:45",
+          "end": "15:45"
+        },
+        "totalUtility": 270
       },
       {
         "timeSlot": {
           "start": "15:00",
           "end": "16:00"
         },
-        "totalUtility": 224
+        "totalUtility": 348
+      },
+      {
+        "timeSlot": {
+          "start": "15:15",
+          "end": "16:15"
+        },
+        "totalUtility": 348
+      },
+      {
+        "timeSlot": {
+          "start": "15:30",
+          "end": "16:30"
+        },
+        "totalUtility": 348
+      },
+      {
+        "timeSlot": {
+          "start": "15:45",
+          "end": "16:45"
+        },
+        "totalUtility": 286
       },
       {
         "timeSlot": {
           "start": "16:00",
           "end": "17:00"
         },
-        "totalUtility": 194
-      },
-      {
-        "timeSlot": {
-          "start": "17:00",
-          "end": "18:00"
-        },
-        "totalUtility": 429
-      },
-      {
-        "timeSlot": {
-          "start": "18:00",
-          "end": "19:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "19:00",
-          "end": "20:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "20:00",
-          "end": "21:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "21:00",
-          "end": "22:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "22:00",
-          "end": "23:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "23:00",
-          "end": "24:00"
-        },
-        "totalUtility": 500
+        "totalUtility": 357
       }
     ],
     "optimalSlots": [
       {
-        "start": "00:00",
-        "end": "01:00"
-      },
-      {
-        "start": "01:00",
-        "end": "02:00"
-      },
-      {
-        "start": "02:00",
-        "end": "03:00"
-      },
-      {
-        "start": "03:00",
-        "end": "04:00"
-      },
-      {
-        "start": "04:00",
-        "end": "05:00"
-      },
-      {
-        "start": "05:00",
-        "end": "06:00"
-      },
-      {
-        "start": "06:00",
-        "end": "07:00"
-      },
-      {
-        "start": "07:00",
-        "end": "08:00"
-      },
-      {
-        "start": "18:00",
-        "end": "19:00"
-      },
-      {
-        "start": "19:00",
-        "end": "20:00"
-      },
-      {
-        "start": "20:00",
-        "end": "21:00"
-      },
-      {
-        "start": "21:00",
-        "end": "22:00"
-      },
-      {
-        "start": "22:00",
-        "end": "23:00"
-      },
-      {
-        "start": "23:00",
-        "end": "24:00"
+        "start": "10:00",
+        "end": "11:00"
       }
     ],
-    "optimalUtility": 500
+    "optimalUtility": 424
   },
   {
     "id": 1,
@@ -432,47 +481,53 @@
         "name": "Alice",
         "calendar": [
           {
-            "start": "08:00",
-            "end": "08:30",
-            "type": "critical",
-            "description": "School event"
-          },
-          {
-            "start": "08:30",
-            "end": "09:30",
-            "type": "blocked-work",
-            "description": "Focus time"
-          },
-          {
-            "start": "08:30",
+            "start": "09:00",
             "end": "10:00",
             "type": "personal",
-            "description": "Break"
+            "description": "Lunch"
           },
           {
-            "start": "12:00",
-            "end": "13:00",
-            "type": "meeting",
-            "description": "Planning session"
-          },
-          {
-            "start": "12:30",
-            "end": "14:00",
-            "type": "critical",
-            "description": "Emergency"
+            "start": "09:30",
+            "end": "10:30",
+            "type": "blocked-work",
+            "description": "Code review"
           },
           {
             "start": "13:00",
             "end": "14:00",
+            "type": "blocked-work",
+            "description": "Project work"
+          },
+          {
+            "start": "13:00",
+            "end": "14:30",
+            "type": "personal",
+            "description": "Appointment"
+          },
+          {
+            "start": "13:30",
+            "end": "14:30",
             "type": "meeting",
             "description": "Team sync"
+          },
+          {
+            "start": "14:30",
+            "end": "15:30",
+            "type": "personal",
+            "description": "Appointment"
+          },
+          {
+            "start": "16:30",
+            "end": "17:00",
+            "type": "critical",
+            "description": "School event"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 64,
-          "meeting": 22,
-          "personal": 44,
+          "blockedWork": 61,
+          "meeting": 29,
+          "personal": 35,
           "critical": 0
         }
       },
@@ -482,14 +537,92 @@
           {
             "start": "08:30",
             "end": "09:30",
-            "type": "personal",
-            "description": "Break"
+            "type": "meeting",
+            "description": "Client call"
+          },
+          {
+            "start": "10:30",
+            "end": "12:00",
+            "type": "blocked-work",
+            "description": "Code review"
           },
           {
             "start": "11:00",
-            "end": "12:30",
+            "end": "11:30",
+            "type": "meeting",
+            "description": "Review meeting"
+          },
+          {
+            "start": "12:30",
+            "end": "14:00",
             "type": "critical",
-            "description": "Medical appointment"
+            "description": "Emergency"
+          },
+          {
+            "start": "12:30",
+            "end": "14:00",
+            "type": "personal",
+            "description": "Lunch"
+          },
+          {
+            "start": "13:30",
+            "end": "14:30",
+            "type": "meeting",
+            "description": "Planning session"
+          },
+          {
+            "start": "14:00",
+            "end": "15:30",
+            "type": "personal",
+            "description": "Gym"
+          },
+          {
+            "start": "16:00",
+            "end": "17:00",
+            "type": "meeting",
+            "description": "1:1"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 60,
+          "meeting": 22,
+          "personal": 42,
+          "critical": 0
+        }
+      },
+      {
+        "name": "Charlie",
+        "calendar": [
+          {
+            "start": "08:30",
+            "end": "09:30",
+            "type": "blocked-work",
+            "description": "Deep work"
+          },
+          {
+            "start": "09:00",
+            "end": "10:30",
+            "type": "meeting",
+            "description": "Planning session"
+          },
+          {
+            "start": "09:00",
+            "end": "10:30",
+            "type": "blocked-work",
+            "description": "Documentation"
+          },
+          {
+            "start": "09:30",
+            "end": "10:30",
+            "type": "meeting",
+            "description": "Client call"
+          },
+          {
+            "start": "11:00",
+            "end": "11:30",
+            "type": "blocked-work",
+            "description": "Project work"
           },
           {
             "start": "11:30",
@@ -498,59 +631,23 @@
             "description": "Deep work"
           },
           {
-            "start": "14:00",
-            "end": "15:00",
-            "type": "personal",
-            "description": "Appointment"
-          },
-          {
-            "start": "14:30",
-            "end": "15:30",
+            "start": "13:00",
+            "end": "14:30",
             "type": "blocked-work",
             "description": "Project work"
           },
           {
-            "start": "16:30",
-            "end": "18:00",
-            "type": "blocked-work",
-            "description": "Code review"
+            "start": "13:00",
+            "end": "14:00",
+            "type": "critical",
+            "description": "Pick up kids"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 72,
-          "meeting": 25,
-          "personal": 43,
-          "critical": 0
-        }
-      },
-      {
-        "name": "Charlie",
-        "calendar": [
-          {
-            "start": "10:00",
-            "end": "11:30",
-            "type": "blocked-work",
-            "description": "Documentation"
-          },
-          {
-            "start": "13:30",
-            "end": "15:00",
-            "type": "blocked-work",
-            "description": "Documentation"
-          },
-          {
-            "start": "15:00",
-            "end": "16:30",
-            "type": "meeting",
-            "description": "Client call"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 62,
-          "meeting": 18,
-          "personal": 46,
+          "blockedWork": 73,
+          "meeting": 29,
+          "personal": 31,
           "critical": 0
         }
       },
@@ -558,35 +655,41 @@
         "name": "Diana",
         "calendar": [
           {
-            "start": "09:00",
-            "end": "10:30",
-            "type": "blocked-work",
-            "description": "Project work"
+            "start": "13:00",
+            "end": "13:30",
+            "type": "meeting",
+            "description": "1:1"
           },
           {
             "start": "13:00",
-            "end": "13:30",
-            "type": "blocked-work",
-            "description": "Focus time"
+            "end": "14:30",
+            "type": "meeting",
+            "description": "Team sync"
           },
           {
             "start": "13:30",
-            "end": "14:30",
-            "type": "blocked-work",
-            "description": "Deep work"
+            "end": "14:00",
+            "type": "personal",
+            "description": "Break"
           },
           {
-            "start": "14:00",
-            "end": "15:00",
-            "type": "blocked-work",
-            "description": "Project work"
+            "start": "14:30",
+            "end": "15:30",
+            "type": "meeting",
+            "description": "1:1"
+          },
+          {
+            "start": "15:30",
+            "end": "17:00",
+            "type": "personal",
+            "description": "Errand"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 60,
-          "meeting": 15,
-          "personal": 33,
+          "blockedWork": 76,
+          "meeting": 21,
+          "personal": 45,
           "critical": 0
         }
       },
@@ -594,29 +697,47 @@
         "name": "Eve",
         "calendar": [
           {
-            "start": "08:00",
+            "start": "09:00",
             "end": "09:30",
-            "type": "blocked-work",
-            "description": "Project work"
+            "type": "critical",
+            "description": "Pick up kids"
           },
           {
-            "start": "16:00",
-            "end": "17:30",
+            "start": "10:30",
+            "end": "11:00",
+            "type": "blocked-work",
+            "description": "Documentation"
+          },
+          {
+            "start": "13:00",
+            "end": "13:30",
             "type": "meeting",
-            "description": "Team sync"
+            "description": "Client call"
           },
           {
-            "start": "16:00",
-            "end": "17:00",
+            "start": "13:00",
+            "end": "14:00",
+            "type": "critical",
+            "description": "Pick up kids"
+          },
+          {
+            "start": "13:30",
+            "end": "14:00",
             "type": "blocked-work",
-            "description": "Deep work"
+            "description": "Code review"
+          },
+          {
+            "start": "14:00",
+            "end": "15:00",
+            "type": "personal",
+            "description": "Appointment"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 66,
-          "meeting": 27,
-          "personal": 45,
+          "blockedWork": 75,
+          "meeting": 10,
+          "personal": 49,
           "critical": 0
         }
       }
@@ -624,231 +745,214 @@
     "utilityDistribution": [
       {
         "timeSlot": {
-          "start": "00:00",
-          "end": "01:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "01:00",
-          "end": "02:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "02:00",
-          "end": "03:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "03:00",
-          "end": "04:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "04:00",
-          "end": "05:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "05:00",
-          "end": "06:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "06:00",
-          "end": "07:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "07:00",
-          "end": "08:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "08:00",
-          "end": "09:00"
-        },
-        "totalUtility": 309
-      },
-      {
-        "timeSlot": {
           "start": "09:00",
           "end": "10:00"
         },
-        "totalUtility": 313
+        "totalUtility": 186
+      },
+      {
+        "timeSlot": {
+          "start": "09:15",
+          "end": "10:15"
+        },
+        "totalUtility": 186
+      },
+      {
+        "timeSlot": {
+          "start": "09:30",
+          "end": "10:30"
+        },
+        "totalUtility": 364
+      },
+      {
+        "timeSlot": {
+          "start": "09:45",
+          "end": "10:45"
+        },
+        "totalUtility": 299
       },
       {
         "timeSlot": {
           "start": "10:00",
           "end": "11:00"
         },
-        "totalUtility": 422
+        "totalUtility": 325
+      },
+      {
+        "timeSlot": {
+          "start": "10:15",
+          "end": "11:15"
+        },
+        "totalUtility": 287
+      },
+      {
+        "timeSlot": {
+          "start": "10:30",
+          "end": "11:30"
+        },
+        "totalUtility": 370
+      },
+      {
+        "timeSlot": {
+          "start": "10:45",
+          "end": "11:45"
+        },
+        "totalUtility": 370
       },
       {
         "timeSlot": {
           "start": "11:00",
           "end": "12:00"
         },
-        "totalUtility": 362
+        "totalUtility": 395
+      },
+      {
+        "timeSlot": {
+          "start": "11:15",
+          "end": "12:15"
+        },
+        "totalUtility": 395
+      },
+      {
+        "timeSlot": {
+          "start": "11:30",
+          "end": "12:30"
+        },
+        "totalUtility": 433
+      },
+      {
+        "timeSlot": {
+          "start": "11:45",
+          "end": "12:45"
+        },
+        "totalUtility": 373
       },
       {
         "timeSlot": {
           "start": "12:00",
           "end": "13:00"
         },
-        "totalUtility": 300
+        "totalUtility": 373
+      },
+      {
+        "timeSlot": {
+          "start": "12:15",
+          "end": "13:15"
+        },
+        "totalUtility": 56
+      },
+      {
+        "timeSlot": {
+          "start": "12:30",
+          "end": "13:30"
+        },
+        "totalUtility": 56
+      },
+      {
+        "timeSlot": {
+          "start": "12:45",
+          "end": "13:45"
+        },
+        "totalUtility": 50
       },
       {
         "timeSlot": {
           "start": "13:00",
           "end": "14:00"
         },
-        "totalUtility": 322
+        "totalUtility": 50
+      },
+      {
+        "timeSlot": {
+          "start": "13:15",
+          "end": "14:15"
+        },
+        "totalUtility": 50
+      },
+      {
+        "timeSlot": {
+          "start": "13:30",
+          "end": "14:30"
+        },
+        "totalUtility": 50
+      },
+      {
+        "timeSlot": {
+          "start": "13:45",
+          "end": "14:45"
+        },
+        "totalUtility": 50
       },
       {
         "timeSlot": {
           "start": "14:00",
           "end": "15:00"
         },
-        "totalUtility": 365
+        "totalUtility": 194
+      },
+      {
+        "timeSlot": {
+          "start": "14:15",
+          "end": "15:15"
+        },
+        "totalUtility": 194
+      },
+      {
+        "timeSlot": {
+          "start": "14:30",
+          "end": "15:30"
+        },
+        "totalUtility": 247
+      },
+      {
+        "timeSlot": {
+          "start": "14:45",
+          "end": "15:45"
+        },
+        "totalUtility": 247
       },
       {
         "timeSlot": {
           "start": "15:00",
           "end": "16:00"
         },
-        "totalUtility": 390
+        "totalUtility": 298
+      },
+      {
+        "timeSlot": {
+          "start": "15:15",
+          "end": "16:15"
+        },
+        "totalUtility": 278
+      },
+      {
+        "timeSlot": {
+          "start": "15:30",
+          "end": "16:30"
+        },
+        "totalUtility": 367
+      },
+      {
+        "timeSlot": {
+          "start": "15:45",
+          "end": "16:45"
+        },
+        "totalUtility": 267
       },
       {
         "timeSlot": {
           "start": "16:00",
           "end": "17:00"
         },
-        "totalUtility": 317
-      },
-      {
-        "timeSlot": {
-          "start": "17:00",
-          "end": "18:00"
-        },
-        "totalUtility": 399
-      },
-      {
-        "timeSlot": {
-          "start": "18:00",
-          "end": "19:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "19:00",
-          "end": "20:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "20:00",
-          "end": "21:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "21:00",
-          "end": "22:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "22:00",
-          "end": "23:00"
-        },
-        "totalUtility": 500
-      },
-      {
-        "timeSlot": {
-          "start": "23:00",
-          "end": "24:00"
-        },
-        "totalUtility": 500
+        "totalUtility": 267
       }
     ],
     "optimalSlots": [
       {
-        "start": "00:00",
-        "end": "01:00"
-      },
-      {
-        "start": "01:00",
-        "end": "02:00"
-      },
-      {
-        "start": "02:00",
-        "end": "03:00"
-      },
-      {
-        "start": "03:00",
-        "end": "04:00"
-      },
-      {
-        "start": "04:00",
-        "end": "05:00"
-      },
-      {
-        "start": "05:00",
-        "end": "06:00"
-      },
-      {
-        "start": "06:00",
-        "end": "07:00"
-      },
-      {
-        "start": "07:00",
-        "end": "08:00"
-      },
-      {
-        "start": "18:00",
-        "end": "19:00"
-      },
-      {
-        "start": "19:00",
-        "end": "20:00"
-      },
-      {
-        "start": "20:00",
-        "end": "21:00"
-      },
-      {
-        "start": "21:00",
-        "end": "22:00"
-      },
-      {
-        "start": "22:00",
-        "end": "23:00"
-      },
-      {
-        "start": "23:00",
-        "end": "24:00"
+        "start": "11:30",
+        "end": "12:30"
       }
     ],
-    "optimalUtility": 500
+    "optimalUtility": 433
   }
 ]

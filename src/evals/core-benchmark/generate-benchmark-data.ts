@@ -125,11 +125,13 @@ function calculateTotalUtility(
 function generateAllTimeSlots(): TimeSlot[] {
   const slots: TimeSlot[] = []
 
-  // Generate 24 1-hour slots from 00:00 to 23:00
-  for (let hour = 0; hour < 24; hour++) {
+  // Generate 1-hour slots starting every 15 minutes
+  // Within working hours: 9:00 AM to 5:00 PM (last slot is 4:00-5:00)
+  // 9:00 = 540 minutes, 16:00 = 960 minutes (last start time for 1-hour slot ending at 5pm)
+  for (let startMinutes = 9 * 60; startMinutes <= 16 * 60; startMinutes += 15) {
     slots.push({
-      start: minutesToTime(hour * 60),
-      end: minutesToTime((hour + 1) * 60),
+      start: minutesToTime(startMinutes),
+      end: minutesToTime(startMinutes + 60),
     })
   }
 

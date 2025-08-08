@@ -3,15 +3,16 @@
 ## Quick Start
 
 ```bash
-# Test the LLM scheduler with existing benchmark data
-export OPENROUTER_API_KEY="your-api-key"
-npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json
-
-# Test with partial data (70% calendars)
-npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json 0.7
+# Run end-to-end evaluation with the production bot
+# (Make sure bot is running first: npm run dev)
+./run-flack-eval.sh
 
 # Generate new benchmark data
 npx tsx core-benchmark/generate-benchmark-data.ts 100
+
+# Test a standalone LLM scheduler (optional)
+export OPENROUTER_API_KEY="your-api-key"
+npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json
 ```
 
 ## Creating & Scoring Your Algorithm

@@ -4,7 +4,7 @@ import { serve } from '@hono/node-server'
 import { Server } from 'socket.io'
 import { parseArgs } from 'node:util'
 
-import { handleSlackMessage } from './slack-message-handler'
+import { handleSlackMessage, getSlackUsers } from './slack-message-handler'
 import { setupSocketServer } from './flack-socket-server.ts'
 import { exchangeCodeForTokens, saveUserTokens } from './google-oauth'
 import { fetchAndStoreUserCalendar } from './calendar-service'
@@ -40,6 +40,43 @@ await initializeSlackApp()
 if (!args.values.prod) {
   const PORT = 3001
   const honoApp = new Hono()
+    .get('/api/bot-info', (c) => {
+      return c.json({ botUserId })
+    })
+    .get('/api/users', async (c) => {
+      const users = await getSlackUsers(slackApp.client, false)
+      // Convert Map to array of [id, name] pairs for JSON serialization
+      return c.json(Array.from(users.entries()))
+    })
+    .post('/api/clear-topics', async (c) => {
+      // Clear topics for eval testing
+      const body: { summary?: string; clearAll?: boolean } = await c.req.json()
+
+      if (body.clearAll) {
+        const { cleanupTestData } = await import('./db/cleanup')
+        const result = await cleanupTestData()
+        return c.json({
+          success: result.success,
+          message: `Cleared all topics and messages from database (method: ${result.method})`,
+        })
+      } else if (body.summary) {
+        // Clear specific topic by summary
+        const dbModule = await import('./db/engine')
+        const db = dbModule.default
+        const { topicTable, slackMessageTable } = await import('./db/schema/main')
+        const { eq } = await import('drizzle-orm')
+
+        const topics = await db.select().from(topicTable).where(eq(topicTable.summary, body.summary))
+        for (const topic of topics) {
+          // Delete messages for this topic first
+          await db.delete(slackMessageTable).where(eq(slackMessageTable.topicId, topic.id))
+          // Then delete the topic
+          await db.delete(topicTable).where(eq(topicTable.id, topic.id))
+        }
+        return c.json({ success: true, message: `Cleared topics with summary: ${body.summary}` })
+      }
+      return c.json({ success: false, message: 'No summary provided' })
+    })
 
   // Google OAuth callback route
   honoApp.get('/auth/google/callback', async (c) => {
