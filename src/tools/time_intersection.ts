@@ -157,10 +157,11 @@ function normalizeCalendars(profiles: UserProfile[]): Record<string, DateTimeInt
  */
 function getAcceptableTimes(commonFree: DateTimeInterval[]): DateTimeInterval[] {
   const today = new Date()
-  const acceptableWindow: DateTimeInterval = [
-      new Date(today.setHours(ACCEPTABLE_START_HOUR, 0, 0, 0)),
-      new Date(today.setHours(ACCEPTABLE_END_HOUR, 0, 0, 0)),
-  ]
+  const startTime = new Date(today)
+  startTime.setHours(ACCEPTABLE_START_HOUR, 0, 0, 0)
+  const endTime = new Date(today)
+  endTime.setHours(ACCEPTABLE_END_HOUR, 0, 0, 0)
+  const acceptableWindow: DateTimeInterval = [startTime, endTime]
   return intersect(commonFree, [acceptableWindow])
 }
 

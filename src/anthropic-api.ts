@@ -5,7 +5,7 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { getUnconnectedUsers, generateGoogleOAuthUrl, getUserCalendarText } from './calendar-service'
+import { generateGoogleOAuthUrl, getUserCalendarText } from './calendar-service'
 import type { AllMiddlewareArgs } from '@slack/bolt'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
