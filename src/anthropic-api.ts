@@ -17,12 +17,6 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
   confidence: number
   reasoning: string
 }> {
-  // Get message thread_ts if it exists
-  let messageThreadTs: string | undefined
-  if (message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string') {
-    messageThreadTs = message.raw.thread_ts
-  }
-
   // Fetch recent messages for each topic in the same channel
   const topicMessagesMap = new Map<string, SlackMessage[]>()
 
@@ -43,18 +37,14 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
     const threadMessages: SlackMessage[] = []
     const channelMessages: SlackMessage[] = []
 
-    for (const msg of topicMessages) {
-      // Check if message is in the same thread
-      if (messageThreadTs && msg.raw && typeof msg.raw === 'object') {
-        const msgThreadTs = 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string'
-          ? msg.raw.thread_ts
-          : ('ts' in msg.raw && typeof msg.raw.ts === 'string' ? msg.raw.ts : null)
-
-        if (msgThreadTs === messageThreadTs) {
-          threadMessages.push(msg)
+    for (const prevMsg of topicMessages) {
+      if (message.threadTs) {
+        const prevMsgThreadTs = prevMsg.threadTs || prevMsg.rawTs
+        if (prevMsgThreadTs === message.threadTs) {
+          threadMessages.push(prevMsg)
         }
       }
-      channelMessages.push(msg)
+      channelMessages.push(prevMsg)
     }
 
     // Get most recent 5 from thread and channel (avoiding duplicates)
@@ -144,7 +134,7 @@ ${topics.map((topic, i) => {
 
 Message to analyze:
 From: ${userMap.get(message.userId) || 'Unknown User'}
-Channel: ${message.channelId}${messageThreadTs ? `\nIn thread: [${tsToDate(messageThreadTs).toLocaleString()}]` : ''}
+Channel: ${message.channelId}${message.threadTs ? `\nIn thread: [${tsToDate(message.threadTs).toLocaleString()}]` : ''}
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
 Text: "${replaceUserMentions(message.text, userMap)}"
 

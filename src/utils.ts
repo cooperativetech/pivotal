@@ -141,12 +141,8 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
   // Group messages by channel and thread
   const messageGroups = messages.reduce((acc, msg) => {
     const channelKey = msg.channelId
-    let threadKey = '0'
-    if (msg.raw && typeof msg.raw === 'object' && 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string') {
-      threadKey = msg.raw.thread_ts
-    } else if (msg.raw && typeof msg.raw === 'object' && 'ts' in msg.raw && typeof msg.raw.ts === 'string') {
-      threadKey = msg.raw.ts // Use message timestamp as thread key if no thread timestamp found
-    }
+    // Use message timestamp as thread key if no thread timestamp found
+    const threadKey = msg.threadTs || msg.rawTs
 
     if (!acc[channelKey]) {
       acc[channelKey] = {}

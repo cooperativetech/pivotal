@@ -31,6 +31,8 @@ export const slackMessageTable = pgTable('slack_message', {
   channelId: text().notNull(),
   text: text().notNull(),
   timestamp: timestamp({ withTimezone: true }).notNull(),
+  rawTs: text('raw_ts').notNull(),
+  threadTs: text('thread_ts'),
   raw: json().notNull(),
 })
 

@@ -164,6 +164,8 @@ async function processSchedulingActions(
           userId: botUserId || 'bot',
           text: nextStep.replyMessage,
           timestamp: tsToDate(response.ts),
+          rawTs: response.ts,
+          threadTs: message.ts,
           raw: response.message,
         })
       }
@@ -258,6 +260,8 @@ async function processSchedulingActions(
                   userId: botUserId || 'bot',
                   text: messageGroup.text,
                   timestamp: tsToDate(dmResponse.ts),
+                  rawTs: dmResponse.ts,
+                  threadTs: null,
                   raw: dmResponse.message,
                 })
               }
@@ -294,6 +298,8 @@ async function processSchedulingActions(
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
                 timestamp: tsToDate(groupResponse.ts),
+                rawTs: groupResponse.ts,
+                threadTs: null,
                 raw: groupResponse.message,
               })
             }
@@ -312,6 +318,8 @@ async function processSchedulingActions(
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
                 timestamp: tsToDate(groupResponse.ts),
+                rawTs: groupResponse.ts,
+                threadTs: message.ts,
                 raw: groupResponse.message,
               })
             }
@@ -331,6 +339,8 @@ async function processSchedulingActions(
               userId: botUserId || 'bot',
               text: nextStep.groupMessage,
               timestamp: tsToDate(groupResponse.ts),
+              rawTs: groupResponse.ts,
+              threadTs: message.ts,
               raw: groupResponse.message,
             })
           }
@@ -350,6 +360,8 @@ async function processSchedulingActions(
             userId: botUserId || 'bot',
             text: nextStep.groupMessage,
             timestamp: tsToDate(groupResponse.ts),
+            rawTs: groupResponse.ts,
+            threadTs: message.ts,
             raw: groupResponse.message,
           })
         }
@@ -406,6 +418,8 @@ export async function handleSlackMessage(
         userId: userId,
         text: message.text,
         timestamp: tsToDate(message.ts),
+        rawTs: message.ts,
+        threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
         raw: message,
       }
 
@@ -422,6 +436,8 @@ export async function handleSlackMessage(
           userId: userId,
           text: message.text,
           timestamp: tsToDate(message.ts),
+          rawTs: message.ts,
+          threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
           raw: message,
         })
 
@@ -451,6 +467,8 @@ export async function handleSlackMessage(
             userId: userId,
             text: message.text,
             timestamp: tsToDate(message.ts),
+            rawTs: message.ts,
+            threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
             raw: message,
           })
 
