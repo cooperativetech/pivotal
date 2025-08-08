@@ -1,5 +1,5 @@
 import db from './engine'
-import { topicTable, slackMessageTable, slackUserMapping, userContext, slackUserTable } from './schema/main'
+import { topicTable, slackMessageTable, slackUserMapping, slackUserTable } from './schema/main'
 import { sql } from 'drizzle-orm'
 
 /**
