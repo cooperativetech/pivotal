@@ -6,7 +6,7 @@ import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { eq, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
 
-type UsersListMember = NonNullable<UsersListResponse['members']>[number]
+export type UsersListMember = NonNullable<UsersListResponse['members']>[number]
 
 // Helper function to get all Slack users
 export async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = true): Promise<Map<string, string>> {

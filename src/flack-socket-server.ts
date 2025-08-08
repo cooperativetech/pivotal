@@ -1,7 +1,6 @@
 import { Server, Socket } from 'socket.io'
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
-import type { UsersListResponse } from '@slack/web-api'
-import { handleSlackMessage, getSlackUsers } from './slack-message-handler'
+import { handleSlackMessage, getSlackUsers, UsersListMember } from './slack-message-handler'
 
 type FlackMessage = SlackEventMiddlewareArgs<'message'>['message'] & {
   type: 'message'
@@ -15,7 +14,7 @@ type FlackMessage = SlackEventMiddlewareArgs<'message'>['message'] & {
   event_ts: string
 }
 
-type FlackUser = NonNullable<UsersListResponse['members']>[number] & {
+type FlackUser = UsersListMember & {
   id: string
   team_id: string
   real_name: string
