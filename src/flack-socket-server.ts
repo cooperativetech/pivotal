@@ -1,40 +1,94 @@
 import { Server, Socket } from 'socket.io'
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
+import type { UsersListResponse } from '@slack/web-api'
 import { handleSlackMessage, getSlackUsers } from './slack-message-handler'
 
-interface QueuedMessage {
+type FlackMessage = SlackEventMiddlewareArgs<'message'>['message'] & {
+  type: 'message'
+  subtype: string | undefined
   channel: string
-  text?: string
+  text: string
+  ts: string
   thread_ts?: string
-  timestamp: string
-  user: string // The user who sent the message (bot)
+  user: string
+  channel_type: 'im' | 'channel' | 'group'
+  event_ts: string
 }
 
-// Fake user data for testing
-const FAKE_USERS = new Map<string, string>([
-  ['U123456', 'Alice Johnson'],
-  ['U234567', 'Bob Smith'],
-  ['U345678', 'Charlie Brown'],
-  ['U456789', 'Diana Prince'],
-  ['U567890', 'Eve Wilson'],
-  ['U678901', 'Frank Miller'],
-  ['U789012', 'Grace Lee'],
-  ['U890123', 'Henry Davis'],
+type FlackUser = NonNullable<UsersListResponse['members']>[number] & {
+  id: string
+  team_id: string
+  real_name: string
+  name: string
+  deleted: boolean
+  is_bot: boolean
+  updated: number
+  tz: string
+}
+
+function makeFlackUser(id: string, real_name: string): FlackUser {
+  return {
+    id,
+    team_id: 'T123456',
+    real_name,
+    name: real_name.toLowerCase().replace(' ', '.'),
+    deleted: false,
+    is_bot: false,
+    updated: Math.floor(Date.now() / 1000),
+    tz: 'America/New_York',
+  }
+}
+
+const FAKE_USERS = new Map<string, FlackUser>([
+  ['U123456', makeFlackUser('U123456', 'Alice Johnson')],
+  ['U234567', makeFlackUser('U234567', 'Bob Smith')],
+  ['U345678', makeFlackUser('U345678', 'Charlie Brown')],
+  ['U456789', makeFlackUser('U456789', 'Diana Prince')],
+  ['U567890', makeFlackUser('U567890', 'Eve Wilson')],
+  ['U678901', makeFlackUser('U678901', 'Frank Miller')],
+  ['U789012', makeFlackUser('U789012', 'Grace Lee')],
+  ['U890123', makeFlackUser('U890123', 'Henry Davis')],
 ])
 
-// Fake conversation members for testing
-const FAKE_CHANNEL_MEMBERS = new Map<string, string[]>([
-  ['C123456', ['U123456', 'U234567', 'U345678']], // General channel
-  ['C234567', ['U456789', 'U567890', 'U678901']], // Random channel
-  ['D123456', ['U123456']], // DM with Alice
-  ['D234567', ['U234567']], // DM with Bob
-])
+// Channel management functions
+const channelToUsers = new Map<string, string[]>()
+
+function getChannelForUsers(userIds: string[]): string {
+  // Single user = DM channel
+  if (userIds.length === 1) {
+    return `D${userIds[0].substring(1)}`
+  }
+
+  // Multiple users = group channel
+  // Check if we already have a channel for these users
+  const sortedUsers = [...userIds].sort().join(',')
+  for (const [channelId, users] of channelToUsers.entries()) {
+    if ([...users].sort().join(',') === sortedUsers) {
+      return channelId
+    }
+  }
+
+  // Create new group channel
+  const newChannelId = `G${Date.now()}`
+  channelToUsers.set(newChannelId, userIds)
+  return newChannelId
+}
+
+function getUsersForChannel(channelId: string): string[] {
+  // DM channel - extract user from channel ID
+  if (channelId.startsWith('D')) {
+    return [`U${channelId.substring(1)}`]
+  }
+
+  // Group/regular channel - look up stored users
+  return channelToUsers.get(channelId) || []
+}
 
 export function setupSocketServer(io: Server) {
   // Track which users are currently being impersonated by connected clients
   const impersonatedUsers = new Map<string, string>() // socketId -> userId
   const userToSocket = new Map<string, string>() // userId -> socketId (reverse mapping)
-  const messageQueues = new Map<string, QueuedMessage[]>() // userId -> queued messages
+  const messageQueues = new Map<string, FlackMessage[]>() // userId -> queued messages
   const botUserId = 'UTESTBOT'
 
   io.on('connection', async (socket: Socket) => {
@@ -44,19 +98,10 @@ export function setupSocketServer(io: Server) {
       users: {
         list: () => {
           // Return fake users
-          const members = Array.from(FAKE_USERS.entries()).map(([id, name]) => ({
-            id,
-            team_id: 'T123456',
-            real_name: name,
-            name: name.toLowerCase().replace(' ', '.'),
-            deleted: false,
-            is_bot: false,
-            updated: Math.floor(Date.now() / 1000),
-            tz: 'America/New_York',
-          }))
+          const members = Array.from(FAKE_USERS.values())
 
           // Add the bot user
-          members.push({
+          const botUser: FlackUser = {
             id: botUserId,
             team_id: 'T123456',
             real_name: 'Pivotal Bot',
@@ -65,7 +110,8 @@ export function setupSocketServer(io: Server) {
             is_bot: true,
             updated: Math.floor(Date.now() / 1000),
             tz: 'America/New_York',
-          })
+          }
+          members.push(botUser)
 
           return {
             ok: true,
@@ -76,9 +122,9 @@ export function setupSocketServer(io: Server) {
       },
       conversations: {
         open: ({ users }: { users: string }) => {
-          // Return a fake DM channel
+          // Get or create channel for the specified users
           const userList = users.split(',')
-          const channelId = userList.length === 1 ? `D${userList[0].substring(1)}` : `G${Date.now()}`
+          const channelId = getChannelForUsers(userList)
 
           return {
             ok: true,
@@ -90,69 +136,27 @@ export function setupSocketServer(io: Server) {
             },
           }
         },
-        info: ({ channel }: { channel: string }) => {
-          // Return fake channel info
-          if (channel.startsWith('D')) {
-            // Direct message - extract user ID from channel ID
-            const userId = `U${channel.substring(1)}`
-            return {
-              ok: true,
-              channel: {
-                id: channel,
-                user: userId,
-                is_im: true,
-                created: Math.floor(Date.now() / 1000),
-              },
-            }
-          } else {
-            // Regular channel
-            return {
-              ok: true,
-              channel: {
-                id: channel,
-                name: 'general',
-                is_channel: true,
-                created: Math.floor(Date.now() / 1000),
-              },
-            }
-          }
-        },
-        members: ({ channel }: { channel: string }) => {
-          // Return fake channel members
-          const members = FAKE_CHANNEL_MEMBERS.get(channel) || ['U123456', 'U234567']
-          return {
-            ok: true,
-            members,
-            response_metadata: {},
-          }
-        },
       },
       chat: {
-        postMessage: async (params: { channel: string; text?: string; thread_ts?: string }) => {
+        postMessage: async (params: { channel: string; text: string; thread_ts?: string }) => {
           const timestamp = (Date.now() / 1000).toString()
 
-          // Prepare the message
-          const message: QueuedMessage = {
+          // Prepare the message as FlackMessage
+          const message: FlackMessage = {
+            type: 'message',
+            subtype: undefined,
             channel: params.channel,
             text: params.text,
+            ts: timestamp,
             thread_ts: params.thread_ts,
-            timestamp,
             user: botUserId,
+            channel_type: params.channel.startsWith('D') ? 'im' : 'channel',
+            event_ts: timestamp,
           }
 
           // Get list of users in the channel
           try {
-            let userIds: string[] = []
-
-            if (params.channel.startsWith('D')) {
-              // Direct message - extract user ID from channel ID
-              const userId = `U${params.channel.substring(1)}`
-              userIds = [userId]
-            } else {
-              // Regular channel - get members
-              const members = FAKE_CHANNEL_MEMBERS.get(params.channel) || ['U123456', 'U234567']
-              userIds = members
-            }
+            const userIds = getUsersForChannel(params.channel)
 
             // Send to active users or queue for inactive ones
             for (const userId of userIds) {
@@ -184,7 +188,7 @@ export function setupSocketServer(io: Server) {
           return Promise.resolve({
             ok: true,
             ts: timestamp,
-            message: { text: params.text, user: botUserId, ts: timestamp },
+            message: message,
           })
         },
       },
@@ -274,9 +278,9 @@ export function setupSocketServer(io: Server) {
           return
         }
 
-        // Construct the Slack message object
+        // Construct the FlackMessage
         const ts = (Date.now() / 1000).toString()
-        const message: SlackEventMiddlewareArgs<'message'>['message'] = {
+        const message: FlackMessage = {
           type: 'message',
           subtype: undefined,
           text: text,
