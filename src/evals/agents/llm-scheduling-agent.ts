@@ -20,7 +20,7 @@ function formatPersonForLLM(person: PersonInput): string {
   // Add calendar if available
   if (person.calendar && person.calendar.length > 0) {
     parts.push('Calendar:')
-    person.calendar.forEach(event => {
+    person.calendar.forEach((event) => {
       parts.push(`  - ${event.start}-${event.end}: ${event.title}`)
     })
   } else {
@@ -116,7 +116,7 @@ export async function evaluateLLMScheduler(benchmarkFile: string, dataAvailabili
 
     // Add delay to respect API rate limits
     // Using 500ms between requests to be safe
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
     return result
   }
 

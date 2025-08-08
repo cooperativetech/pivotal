@@ -223,7 +223,7 @@ export function setupSocketServer(io: Server) {
       const usersWithMessages: Array<{ id: string; name: string }> = []
       const usersWithoutMessages: Array<{ id: string; name: string }> = []
 
-      availableUsers.forEach(user => {
+      availableUsers.forEach((user) => {
         if (messageQueues.has(user.id) && messageQueues.get(user.id)!.length > 0) {
           usersWithMessages.push(user)
         } else {
@@ -249,7 +249,7 @@ export function setupSocketServer(io: Server) {
       const queuedMessages = messageQueues.get(userId)
       if (queuedMessages && queuedMessages.length > 0) {
         console.log(`Sending ${queuedMessages.length} queued messages to user ${userId}`)
-        queuedMessages.forEach(msg => {
+        queuedMessages.forEach((msg) => {
           socket.emit('bot-response', msg)
         })
         // Clear the queue after sending

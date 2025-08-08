@@ -140,7 +140,7 @@ function normalizeCalendars(profiles: UserProfile[]): Record<string, DateTimeInt
   const busyMap: Record<string, DateTimeInterval[]> = {}
 
   for (const profile of profiles) {
-    const rawIntervals: DateTimeInterval[] = profile.calendar.map(event => [
+    const rawIntervals: DateTimeInterval[] = profile.calendar.map((event) => [
       parseTime(event.start),
       parseTime(event.end),
     ])
@@ -199,7 +199,7 @@ export function findCommonFreeTime(profiles: UserProfile[]): FreeSlot[] {
   const window: DateTimeInterval = [startOfDay, endOfDay]
 
   // Invert each user's busy schedule to get their free time
-  const freeLists = Object.values(busyMap).map(busyIntervals => invert(busyIntervals, window))
+  const freeLists = Object.values(busyMap).map((busyIntervals) => invert(busyIntervals, window))
   // Find the intersection of all users' free time
   const commonFree = freeLists.reduce((acc, freeList) => intersect(acc, freeList), window as unknown as DateTimeInterval[])
 

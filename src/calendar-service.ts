@@ -78,8 +78,8 @@ export async function checkCalendarConnections(slackUserIds: string[]): Promise<
 export async function getUnconnectedUsers(slackUserIds: string[]): Promise<string[]> {
   const connectionStatuses = await checkCalendarConnections(slackUserIds)
   return connectionStatuses
-    .filter(status => !status.isConnected || status.needsReauth)
-    .map(status => status.slackUserId)
+    .filter((status) => !status.isConnected || status.needsReauth)
+    .map((status) => status.slackUserId)
 }
 
 /**
@@ -258,7 +258,7 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     const existingContext = await getOrCreateUserContext(slackUserId)
 
     // Store calendar data as simple text in userContext
-    const calendarText = busySlots.map(slot => `${slot.start}-${slot.end}: ${slot.summary || 'Busy'}`).join('\n')
+    const calendarText = busySlots.map((slot) => `${slot.start}-${slot.end}: ${slot.summary || 'Busy'}`).join('\n')
     const calendarData = {
       calendar: calendarText,
       calendarLastFetched: new Date().toISOString(),

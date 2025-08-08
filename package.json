@@ -23,7 +23,7 @@
     "@slack/web-api": "7.9.3",
     "ai": "4.3.19",
     "drizzle-orm": "0.44.3",
-    "googleapis": "^155.0.0",
+    "googleapis": "155.0.0",
     "hono": "4.8.12",
     "pg": "8.16.3",
     "socket.io": "4.8.1",
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.31.0",
+    "@stylistic/eslint-plugin": "5.2.3",
     "@types/pg": "8.15.4",
     "drizzle-kit": "0.31.4",
     "eslint": "9.31.0",

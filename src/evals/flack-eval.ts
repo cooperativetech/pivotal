@@ -103,7 +103,7 @@ async function simulateSchedulingConversation(
     testCaseId: testCase.id,
     model,
     startTime: new Date().toISOString(),
-    participants: testCase.profiles.map(p => p.name),
+    participants: testCase.profiles.map((p) => p.name),
     conversation: [],
     botReasoning: [],
     personaResponses: [],
@@ -179,7 +179,7 @@ async function simulateSchedulingConversation(
   // Start the conversation with the first user requesting to schedule
   const initiatorProfile = testCase.profiles[0]
   const initiatorId = 'U_USER_0'
-  const initialMessage = `<@${botUserId}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map(p => p.name).join(', ')} to attend.`
+  const initialMessage = `<@${botUserId}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
 
   console.log(`\n👤 ${initiatorProfile.name}: ${initialMessage}\n`)
   conversationHistory.push(`${initiatorProfile.name}: ${initialMessage}`)
@@ -232,7 +232,7 @@ async function simulateSchedulingConversation(
         await handleSlackMessage(personaMessage, botUserId, mockClient)
 
         // Add small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise((resolve) => setTimeout(resolve, 200))
 
         // Check if bot scheduled something after this response
         if (scheduledTime) {
@@ -248,7 +248,7 @@ async function simulateSchedulingConversation(
       }
 
       // If bot isn't asking questions and hasn't scheduled, prompt for decision
-      const promptMessage = `Can you confirm the final meeting time for Tuesday?`
+      const promptMessage = 'Can you confirm the final meeting time for Tuesday?'
       console.log(`\n👤 ${initiatorProfile.name}: ${promptMessage}\n`)
       conversationHistory.push(`${initiatorProfile.name}: ${promptMessage}`)
       detailedLog.conversation.push({
@@ -407,8 +407,8 @@ export async function evaluateWithFlack(
 
 ## Test Case Details
 
-${scoringResults.results.map(r => {
-    const log = allConversationLogs.find(l => l.testCaseId === r.testCaseId)
+${scoringResults.results.map((r) => {
+    const log = allConversationLogs.find((l) => l.testCaseId === r.testCaseId)
     return `### Test Case #${r.testCaseId}
 
 - **Scheduled:** ${r.suggestedSlot.start}-${r.suggestedSlot.end}
@@ -431,8 +431,8 @@ ${scoringResults.results.map(r => {
   console.log('DETAILED TEST CASE RESULTS')
   console.log('='.repeat(60))
 
-  scoringResults.results.forEach(r => {
-    const log = allConversationLogs.find(l => l.testCaseId === r.testCaseId)
+  scoringResults.results.forEach((r) => {
+    const log = allConversationLogs.find((l) => l.testCaseId === r.testCaseId)
     console.log(`\nTest Case #${r.testCaseId}:`)
     console.log(`  Scheduled:        ${r.suggestedSlot.start}-${r.suggestedSlot.end}`)
     console.log(`  Optimal:          ${log?.optimalSlots?.[0] ? `${log.optimalSlots[0].start}-${log.optimalSlots[0].end}` : 'N/A'}`)

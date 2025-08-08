@@ -51,7 +51,7 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
     const recentThreadMessages = threadMessages.slice(0, 5)
     const recentChannelMessages = channelMessages
       .slice(0, 5)
-      .filter(msg => !recentThreadMessages.some(tm => tm.id === msg.id))
+      .filter((msg) => !recentThreadMessages.some((tm) => tm.id === msg.id))
 
     // Combine and sort by timestamp
     const combinedMessages = [...recentThreadMessages, ...recentChannelMessages]
@@ -116,7 +116,7 @@ ${Array.from(userMap.values()).sort().join(', ')}
 ` : ''}Existing topics:
 ${topics.map((topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
-  const userNames = topic.userIds.map(id => {
+  const userNames = topic.userIds.map((id) => {
     const name = userMap.get(id)
     return name || 'Unknown User'
   }).join(', ')
@@ -124,7 +124,7 @@ ${topics.map((topic, i) => {
   // Get recent messages for this topic
   const recentMessages = topicMessagesMap.get(topic.id) || []
   const messagesFormatted = recentMessages.length > 0
-    ? `\n   Recent messages in this channel:\n${organizeMessagesByChannelAndThread(recentMessages, userMap).split('\n').map(line => '   ' + line).join('\n')}`
+    ? `\n   Recent messages in this channel:\n${organizeMessagesByChannelAndThread(recentMessages, userMap).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
@@ -330,7 +330,7 @@ ${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Current Topic:
 Summary: ${topic.summary}
-Users involved: ${topic.userIds.map(id => {
+Users involved: ${topic.userIds.map((id) => {
   const name = userMap.get(id)
   return name || 'Unknown User'
 }).join(', ')}
@@ -341,19 +341,19 @@ Previous Messages in this Topic:
 ${organizeMessagesByChannelAndThread(previousMessages, userMap)}
 
 Calendar Information:
-${await Promise.all(topic.userIds.map(async userId => {
+${await Promise.all(topic.userIds.map(async (userId) => {
   const userName = userMap.get(userId) || 'Unknown User'
   try {
     const calendarText = await getUserCalendarText(userId)
     if (calendarText !== 'No calendar connected or no events found') {
-      return `${userName}'s calendar:\n${calendarText.split('\n').map(line => `  - ${line}`).join('\n')}`
+      return `${userName}'s calendar:\n${calendarText.split('\n').map((line) => `  - ${line}`).join('\n')}`
     }
     return `${userName}: No calendar connected or no events found`
   } catch (error) {
     console.error(`Error getting calendar for ${userName}:`, error)
     return `${userName}: Calendar unavailable`
   }
-})).then(results => results.join('\n\n'))}
+})).then((results) => results.join('\n\n'))}
 
 Message To Reply To:
 From: ${userMap.get(message.userId) || 'Unknown User'}

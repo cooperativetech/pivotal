@@ -55,13 +55,13 @@ interface ScoringResults {
 
 // Convert internal profiles to public format (hide utilities and event types)
 function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvailabilityConfig): PersonInput[] {
-  return profiles.map(profile => {
+  return profiles.map((profile) => {
     // Decide whether to include calendar based on probability
     const includeCalendar = Math.random() < dataAvailability.calendarProbability
 
     return {
       name: profile.name,
-      calendar: includeCalendar && profile.calendar.length > 0 ? profile.calendar.map(event => ({
+      calendar: includeCalendar && profile.calendar.length > 0 ? profile.calendar.map((event) => ({
         start: event.start,
         end: event.end,
         title: event.description,
@@ -124,7 +124,7 @@ export async function scoreAlgorithm(
 
     // Find the utility for this slot
     const slotData = testCase.utilityDistribution.find(
-      d => d.timeSlot.start === suggestedSlot.start && d.timeSlot.end === suggestedSlot.end,
+      (d) => d.timeSlot.start === suggestedSlot.start && d.timeSlot.end === suggestedSlot.end,
     )
 
     let achievedUtility: number
@@ -144,13 +144,13 @@ export async function scoreAlgorithm(
 
       // Calculate percentile (what % of slots are worse)
       const worseCount = testCase.utilityDistribution.filter(
-        d => d.totalUtility < achievedUtility,
+        (d) => d.totalUtility < achievedUtility,
       ).length
       percentile = (worseCount / testCase.utilityDistribution.length) * 100
 
       // Check if optimal
       isOptimal = testCase.optimalSlots.some(
-        slot => slot.start === suggestedSlot.start && slot.end === suggestedSlot.end,
+        (slot) => slot.start === suggestedSlot.start && slot.end === suggestedSlot.end,
       )
     }
 
@@ -169,13 +169,13 @@ export async function scoreAlgorithm(
   const summary = {
     averagePercentile: results.reduce((sum, r) => sum + r.percentile, 0) / results.length,
     averageUtilityRatio: results.reduce((sum, r) => sum + r.utilityRatio, 0) / results.length,
-    optimalCount: results.filter(r => r.isOptimal).length,
-    optimalRate: results.filter(r => r.isOptimal).length / results.length,
+    optimalCount: results.filter((r) => r.isOptimal).length,
+    optimalRate: results.filter((r) => r.isOptimal).length / results.length,
     percentileDistribution: {
-      top10: results.filter(r => r.percentile >= 90).length,
-      top25: results.filter(r => r.percentile >= 75).length,
-      top50: results.filter(r => r.percentile >= 50).length,
-      bottom25: results.filter(r => r.percentile < 25).length,
+      top10: results.filter((r) => r.percentile >= 90).length,
+      top25: results.filter((r) => r.percentile >= 75).length,
+      top50: results.filter((r) => r.percentile >= 50).length,
+      bottom25: results.filter((r) => r.percentile < 25).length,
     },
   }
 

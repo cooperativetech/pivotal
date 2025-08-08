@@ -51,7 +51,7 @@ async function main() {
   }
 
   // Convert to array for inquirer
-  const userChoices = users.map(user => ({
+  const userChoices = users.map((user) => ({
     name: user.name,
     value: user.id,
   }))
@@ -62,14 +62,14 @@ async function main() {
     choices: userChoices,
   })
 
-  const selectedUser = users.find(u => u.id === selectedUserId)
+  const selectedUser = users.find((u) => u.id === selectedUserId)
   const selectedUserName = selectedUser?.name || 'Unknown User'
   console.log(`\n✅ You are now impersonating: ${selectedUserName}\n`)
 
   // Set up event listeners for bot responses
   socket.on('bot-response', (data: { channel: string; text: string; thread_ts?: string; timestamp: string }) => {
     if (data.thread_ts) {
-      console.log(`\n🤖 Bot (in thread):`)
+      console.log('\n🤖 Bot (in thread):')
     } else if (data.channel.startsWith('D')) {
       console.log(`\n🤖 Bot (DM to ${data.channel}):`)
     } else {

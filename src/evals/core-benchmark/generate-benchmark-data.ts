@@ -60,7 +60,7 @@ function calculatePersonUtility(
   proposedTime: TimeSlot,
 ): { utility: number; conflictingEvent?: CalendarEvent } {
   // Find all events that conflict with the proposed time
-  const conflicts = person.calendar.filter(event =>
+  const conflicts = person.calendar.filter((event) =>
     timeSlotsOverlap(proposedTime, { start: event.start, end: event.end }),
   )
 
@@ -107,7 +107,7 @@ function calculateTotalUtility(
   profiles: PersonProfile[],
   proposedTime: TimeSlot,
 ): { total: number; individual: Array<{ person: string; utility: number; conflictingEvent?: CalendarEvent }> } {
-  const individual = profiles.map(person => {
+  const individual = profiles.map((person) => {
     const result = calculatePersonUtility(person, proposedTime)
     return {
       person: person.name,
@@ -187,7 +187,7 @@ export function evaluateMeetingTime(
 
   // Calculate what percentage of slots are worse
   let worseCount = 0
-  allScores.forEach(score => {
+  allScores.forEach((score) => {
     if (score < total) worseCount++
   })
 
@@ -369,7 +369,7 @@ function generateTestCase(id: number): BenchmarkTestCase {
 
   // Calculate utility for all possible time slots
   const allSlots = generateAllTimeSlots()
-  const utilityDistribution = allSlots.map(slot => {
+  const utilityDistribution = allSlots.map((slot) => {
     const { total } = calculateTotalUtility(profiles, slot)
     return {
       timeSlot: slot,
@@ -378,10 +378,10 @@ function generateTestCase(id: number): BenchmarkTestCase {
   })
 
   // Find optimal slots (there may be ties)
-  const maxUtility = Math.max(...utilityDistribution.map(d => d.totalUtility))
+  const maxUtility = Math.max(...utilityDistribution.map((d) => d.totalUtility))
   const optimalSlots = utilityDistribution
-    .filter(d => d.totalUtility === maxUtility)
-    .map(d => d.timeSlot)
+    .filter((d) => d.totalUtility === maxUtility)
+    .map((d) => d.timeSlot)
 
   return {
     id,
@@ -420,8 +420,8 @@ export function generateBenchmarkData(numCases: number = 100): void {
   console.log(`Saved to: ${filepath}`)
 
   // Analyze utility distributions
-  const allUtilityValues = testCases.flatMap(tc =>
-    tc.utilityDistribution.map(d => d.totalUtility),
+  const allUtilityValues = testCases.flatMap((tc) =>
+    tc.utilityDistribution.map((d) => d.totalUtility),
   )
   const uniqueUtilities = [...new Set(allUtilityValues)].sort((a, b) => a - b)
 
@@ -432,8 +432,8 @@ export function generateBenchmarkData(numCases: number = 100): void {
   console.log(`  Median utility: ${uniqueUtilities[Math.floor(uniqueUtilities.length / 2)]}`)
 
   // Check how many cases have unique optimals vs ties
-  const uniqueOptimalCount = testCases.filter(tc => tc.optimalSlots.length === 1).length
-  console.log(`\nOptimal slot statistics:`)
+  const uniqueOptimalCount = testCases.filter((tc) => tc.optimalSlots.length === 1).length
+  console.log('\nOptimal slot statistics:')
   console.log(`  Cases with unique optimal: ${uniqueOptimalCount} (${(uniqueOptimalCount / numCases * 100).toFixed(1)}%)`)
   console.log(`  Cases with tied optimals: ${numCases - uniqueOptimalCount} (${((numCases - uniqueOptimalCount) / numCases * 100).toFixed(1)}%)`)
 }

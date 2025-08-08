@@ -20,7 +20,7 @@ export async function llmPersonaRespond(
 ): Promise<string> {
   // Format calendar for context
   const calendarContext = person.calendar.length > 0
-    ? person.calendar.map(event =>
+    ? person.calendar.map((event) =>
         `- ${event.start}-${event.end}: ${event.description} (${event.type})`,
       ).join('\n')
     : 'No calendar events'
@@ -63,14 +63,14 @@ Respond naturally as ${person.name} would, mentioning specific conflicts if the 
 
       if (attempt < 3) {
         console.log(`Retrying for ${person.name} after 1 second...`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
     } catch (error) {
       console.error(`Error generating response for ${person.name} (attempt ${attempt}/3):`, error)
 
       if (attempt < 3) {
         console.log(`Retrying for ${person.name} after 1 second...`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
     }
   }
@@ -79,7 +79,7 @@ Respond naturally as ${person.name} would, mentioning specific conflicts if the 
   console.error(`Failed after 3 attempts for ${person.name}. Generating fallback based on calendar.`)
 
   // Generate a simple response based on their actual calendar
-  const busyTimes = person.calendar.map(e => `${e.start}-${e.end}`).join(', ')
+  const busyTimes = person.calendar.map((e) => `${e.start}-${e.end}`).join(', ')
   if (busyTimes) {
     return `Hi! On Tuesday I have conflicts at: ${busyTimes}. Any other time should work for me.`
   } else {

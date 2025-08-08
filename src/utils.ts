@@ -45,12 +45,12 @@ export async function dumpTopic(topicId: string, messageId?: string): Promise<st
 
   // If messageId is provided, filter messages up to and including that message
   if (messageId) {
-    const targetMessage = messages.find(msg => msg.id === messageId)
+    const targetMessage = messages.find((msg) => msg.id === messageId)
     if (!targetMessage) {
       throw new Error(`Message with id ${messageId} not found in topic ${topicId}`)
     }
     // Filter to only include messages up to and including the target message's timestamp
-    messages = messages.filter(msg =>
+    messages = messages.filter((msg) =>
       new Date(msg.timestamp).getTime() <= new Date(targetMessage.timestamp).getTime(),
     )
   }
@@ -177,7 +177,7 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       )
 
-      sortedMessages.forEach(msg => {
+      sortedMessages.forEach((msg) => {
         // Adjust indent based on whether we're showing thread header
         const indent = messages.length > 1 ? '    ' : '  '
         const userName = userMap?.get(msg.userId) || 'Unknown User'
@@ -213,12 +213,12 @@ export async function showTopic(topicId: string, messageId?: string): Promise<vo
 
   // If messageId is provided, filter messages up to and including that message
   if (messageId) {
-    const targetMessage = messages.find(msg => msg.id === messageId)
+    const targetMessage = messages.find((msg) => msg.id === messageId)
     if (!targetMessage) {
       throw new Error(`Message with id ${messageId} not found in topic ${topicId}`)
     }
     // Filter to only include messages up to and including the target message's timestamp
-    messages = messages.filter(msg =>
+    messages = messages.filter((msg) =>
       new Date(msg.timestamp).getTime() <= new Date(targetMessage.timestamp).getTime(),
     )
   }
@@ -234,7 +234,7 @@ export async function showTopic(topicId: string, messageId?: string): Promise<vo
   const output = `Topic:
 ID: ${topic[0].id}
 Summary: ${topic[0].summary}
-Users involved: ${topic[0].userIds.map(id => {
+Users involved: ${topic[0].userIds.map((id) => {
   const name = userMap.get(id)
   return name || 'Unknown User'
 }).join(', ')}
