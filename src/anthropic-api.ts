@@ -4,26 +4,13 @@ import { generateText } from 'ai'
 import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
-import { tsToDate } from './shared/utils'
+import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { getUnconnectedUsers, generateGoogleOAuthUrl } from './calendar-service'
 import type { AllMiddlewareArgs } from '@slack/bolt'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
-// Helper function to replace user ID mentions with user names
-function replaceUserMentions(text: string, userMap?: Map<string, string>): string {
-  if (!userMap || userMap.size === 0) {
-    return text
-  }
-
-  // Replace all <@USERID> patterns with the user's name
-  return text.replace(/<@([A-Z0-9]+)>/g, (match, userId: string) => {
-    const userName = userMap.get(userId)
-    return userName ? `<@${userName}>` : match
-  })
-}
-
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap?: Map<string, string>, botUserId?: string): Promise<{
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId?: string): Promise<{
   relevantTopicId?: string
   suggestedNewTopic?: string
   workflowType?: 'scheduling' | 'other'
@@ -129,7 +116,7 @@ The JSON structure must be:
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
   // Create a map for bot name
-  const botName = botUserId && userMap?.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
+  const botName = botUserId && userMap.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
 
   const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
 
@@ -140,7 +127,7 @@ ${Array.from(userMap.values()).sort().join(', ')}
 ${topics.map((topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
   const userNames = topic.userIds.map(id => {
-    const name = userMap?.get(id)
+    const name = userMap.get(id)
     return name || 'Unknown User'
   }).join(', ')
 
@@ -156,7 +143,7 @@ ${topics.map((topic, i) => {
 }).join('\n\n')}
 
 Message to analyze:
-From: ${userMap?.get(message.userId) || 'Unknown User'}
+From: ${userMap.get(message.userId) || 'Unknown User'}
 Channel: ${message.channelId}${messageThreadTs ? `\nIn thread: [${tsToDate(messageThreadTs).toLocaleString()}]` : ''}
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
 Text: "${replaceUserMentions(message.text, userMap)}"
@@ -197,69 +184,7 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   }
 }
 
-function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap?: Map<string, string>): string {
-  if (messages.length === 0) {
-    return 'No previous messages'
-  }
-
-  // Group messages by channel and thread
-  const messageGroups = messages.reduce((acc, msg) => {
-    const channelKey = msg.channelId
-    let threadKey = '0'
-    if (msg.raw && typeof msg.raw === 'object' && 'thread_ts' in msg.raw && typeof msg.raw.thread_ts === 'string') {
-      threadKey = msg.raw.thread_ts
-    } else if (msg.raw && typeof msg.raw === 'object' && 'ts' in msg.raw && typeof msg.raw.ts === 'string') {
-      threadKey = msg.raw.ts // Use message timestamp as thread key if no thread timestamp found
-    }
-
-    if (!acc[channelKey]) {
-      acc[channelKey] = {}
-    }
-    if (!acc[channelKey][threadKey]) {
-      acc[channelKey][threadKey] = []
-    }
-
-    acc[channelKey][threadKey].push(msg)
-    return acc
-  }, {} as Record<string, Record<string, SlackMessage[]>>)
-
-  // Sort messages within each group by timestamp and format output
-  let output = ''
-  Object.entries(messageGroups).forEach(([channelId, threads]) => {
-    output += `Channel ${channelId}:\n`
-
-    // Sort threads by threadId converted to number
-    const sortedThreads = Object.entries(threads).sort(([aId], [bId]) => {
-      return Number(aId) - Number(bId)
-    })
-
-    sortedThreads.forEach(([threadId, messages]) => {
-      // Only show thread header if there's more than one message in the thread
-      if (messages.length > 1) {
-        // Convert threadId (timestamp string) to formatted date
-        output += `  Thread [${tsToDate(threadId).toLocaleString()}]:\n`
-      }
-
-      // Sort messages by timestamp
-      const sortedMessages = messages.sort((a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-      )
-
-      sortedMessages.forEach(msg => {
-        // Adjust indent based on whether we're showing thread header
-        const indent = messages.length > 1 ? '    ' : '  '
-        const userName = userMap?.get(msg.userId) || 'Unknown User'
-        const processedText = replaceUserMentions(msg.text, userMap)
-        output += `${indent}[${new Date(msg.timestamp).toLocaleString()}] ${userName}: "${processedText}"\n`
-      })
-    })
-    output += '\n'
-  })
-
-  return output.trim()
-}
-
-export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap?: Map<string, string>, botUserId?: string, slackClient?: AllMiddlewareArgs['client']): Promise<{
+export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId?: string, slackClient?: AllMiddlewareArgs['client']): Promise<{
   action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateUserIds?: string[]
@@ -315,7 +240,7 @@ If you'd rather not connect your calendar, just reply "skip calendar" and I'll a
         })
 
         const userNames = unconnectedUsers
-          .map(userId => userMap?.get(userId) || 'Unknown User')
+          .map(userId => userMap.get(userId) || 'Unknown User')
           .join(', ')
 
         return {
@@ -426,7 +351,7 @@ Return ONLY a JSON object with the appropriate fields based on the action:
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
   // Create a map for bot name
-  const botName = botUserId && userMap?.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
+  const botName = botUserId && userMap.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
 
   const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
 
@@ -434,10 +359,9 @@ IMPORTANT: Return ONLY the JSON object. Do not include any text before or after 
 ${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Current Topic:
-ID: ${topic.id}
 Summary: ${topic.summary}
 Users involved: ${topic.userIds.map(id => {
-  const name = userMap?.get(id)
+  const name = userMap.get(id)
   return name || 'Unknown User'
 }).join(', ')}
 Created: ${new Date(topic.createdAt).toLocaleString()}
@@ -447,7 +371,7 @@ Previous Messages in this Topic:
 ${organizeMessagesByChannelAndThread(previousMessages, userMap)}
 
 Message To Reply To:
-From: ${userMap?.get(message.userId) || 'Unknown User'}
+From: ${userMap.get(message.userId) || 'Unknown User'}
 Text: "${replaceUserMentions(message.text, userMap)}"
 Channel: ${message.channelId}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'

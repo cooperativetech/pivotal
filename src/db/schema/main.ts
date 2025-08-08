@@ -8,7 +8,8 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import { WorkflowType } from '../../shared/api-types.ts'
+
+export type WorkflowType = 'scheduling' | 'other'
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),

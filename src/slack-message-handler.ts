@@ -4,7 +4,7 @@ import db from './db/engine'
 import { topicTable, slackMessageTable, TopicInsert, slackUserTable, SlackUserInsert } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { eq, sql } from 'drizzle-orm'
-import { tsToDate } from './shared/utils'
+import { tsToDate } from './utils'
 
 type UsersListMember = NonNullable<UsersListResponse['members']>[number];
 
