@@ -67,7 +67,7 @@ export const setupTestUsers = async () => {
           slackDisplayName: user.displayName,
         })
         .onConflictDoNothing()
-        
+
       // Also insert into slackUserTable
       await db
         .insert(slackUserTable)
