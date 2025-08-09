@@ -1,5 +1,5 @@
 import db from './engine'
-import { topicTable, slackMessageTable, slackUserMapping, slackUserTable } from './schema/main'
+import { topicTable, slackMessageTable, userContextTable, slackUserTable } from './schema/main'
 import { sql } from 'drizzle-orm'
 
 /**
@@ -56,15 +56,17 @@ export const setupTestUsers = async () => {
   ]
 
   try {
-    // Insert test users into slack_user_mapping table
+    // Insert test users into user_context table
     for (const user of testUsers) {
       await db
-        .insert(slackUserMapping)
+        .insert(userContextTable)
         .values({
           slackUserId: user.id,
-          slackTeamId: 'T_TEST_TEAM',
-          slackUserName: user.name,
-          slackDisplayName: user.displayName,
+          context: {
+            slackTeamId: 'T_TEST_TEAM',
+            slackUserName: user.name,
+            slackDisplayName: user.displayName,
+          },
         })
         .onConflictDoNothing()
 

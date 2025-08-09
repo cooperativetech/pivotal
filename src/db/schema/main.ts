@@ -5,7 +5,7 @@ import {
   json,
   uuid,
   boolean,
-  jsonb,
+  unique,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 
@@ -53,25 +53,18 @@ export const slackUserTable = pgTable('slack_user', {
 export type SlackUserInsert = InferInsertModel<typeof slackUserTable>
 export type SlackUser = InferSelectModel<typeof slackUserTable>
 
-export const slackUserMapping = pgTable('slack_user_mapping', {
-  slackUserId: text('slack_user_id').primaryKey(),
-  googleAccessToken: text('google_access_token'),
-  googleRefreshToken: text('google_refresh_token'),
-  googleTokenExpiresAt: timestamp('google_token_expires_at', { withTimezone: true }),
-  slackTeamId: text('slack_team_id').notNull(),
-  linkedAt: timestamp('linked_at', { withTimezone: true }).notNull().defaultNow(),
-  slackUserName: text('slack_user_name'),
-  slackDisplayName: text('slack_display_name'),
-})
+export const userContextTable = pgTable('user_context', {
+  id: uuid().primaryKey().defaultRandom(),
+  slackUserId: text().notNull().references(() => slackUserTable.id),
+  googleAccessToken: text(),
+  googleRefreshToken: text(),
+  googleTokenExpiresAt: timestamp({ withTimezone: true }),
+  context: json().notNull().default({}),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => ({
+  slackUserIdUnique: unique('user_context_slack_user_id_unique').on(table.slackUserId),
+}))
 
-export type SlackUserMappingInsert = InferInsertModel<typeof slackUserMapping>
-export type SlackUserMapping = InferSelectModel<typeof slackUserMapping>
-
-export const userContext = pgTable('user_context', {
-  slackUserId: text('slack_user_id').primaryKey().references(() => slackUserMapping.slackUserId),
-  context: jsonb('context').default({}).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-})
-
-export type UserContextInsert = InferInsertModel<typeof userContext>
-export type UserContext = InferSelectModel<typeof userContext>
+export type UserContextInsert = InferInsertModel<typeof userContextTable>
+export type UserContext = InferSelectModel<typeof userContextTable>

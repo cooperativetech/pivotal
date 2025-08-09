@@ -1,5 +1,5 @@
 import db from './db/engine'
-import { slackUserMapping, userContext } from './db/schema/main'
+import { userContextTable } from './db/schema/main'
 import { eq } from 'drizzle-orm'
 import { google } from 'googleapis'
 
@@ -21,8 +21,8 @@ export async function checkCalendarConnections(slackUserIds: string[]): Promise<
     try {
       const userMapping = await db
         .select()
-        .from(slackUserMapping)
-        .where(eq(slackUserMapping.slackUserId, slackUserId))
+        .from(userContextTable)
+        .where(eq(userContextTable.slackUserId, slackUserId))
         .limit(1)
 
       if (userMapping.length === 0) {
@@ -90,8 +90,8 @@ export async function getOrCreateUserContext(slackUserId: string): Promise<Recor
   try {
     const existingContext = await db
       .select()
-      .from(userContext)
-      .where(eq(userContext.slackUserId, slackUserId))
+      .from(userContextTable)
+      .where(eq(userContextTable.slackUserId, slackUserId))
       .limit(1)
 
     if (existingContext.length > 0) {
@@ -100,7 +100,7 @@ export async function getOrCreateUserContext(slackUserId: string): Promise<Recor
 
     // Create new context entry
     await db
-      .insert(userContext)
+      .insert(userContextTable)
       .values({
         slackUserId,
         context: {},
@@ -131,16 +131,15 @@ export async function updateUserContext(
 
     // Update in database
     await db
-      .insert(userContext)
+      .insert(userContextTable)
       .values({
         slackUserId,
         context: mergedContext,
       })
       .onConflictDoUpdate({
-        target: userContext.slackUserId,
+        target: userContextTable.slackUserId,
         set: {
           context: mergedContext,
-          updatedAt: new Date(),
         },
       })
 
@@ -185,8 +184,8 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     // Get tokens from current location (will change after Ben's refactoring)
     const userMapping = await db
       .select()
-      .from(slackUserMapping)
-      .where(eq(slackUserMapping.slackUserId, slackUserId))
+      .from(userContextTable)
+      .where(eq(userContextTable.slackUserId, slackUserId))
       .limit(1)
 
     if (userMapping.length === 0 || !userMapping[0].googleAccessToken) {

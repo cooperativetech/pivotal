@@ -1,4 +1,5 @@
-import { slackUserMapping } from './db/schema/main'
+import { sql } from 'drizzle-orm'
+import { userContextTable } from './db/schema/main'
 import db from './db/engine'
 
 export interface GoogleTokenResponse {
@@ -40,33 +41,24 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleTokenRe
  */
 export async function saveUserTokens(
   slackUserId: string,
-  slackTeamId: string,
   tokens: GoogleTokenResponse,
-  slackUserName?: string,
-  slackDisplayName?: string,
 ): Promise<void> {
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
 
   await db
-    .insert(slackUserMapping)
+    .insert(userContextTable)
     .values({
       slackUserId,
-      slackTeamId,
       googleAccessToken: tokens.access_token,
       googleRefreshToken: tokens.refresh_token || null,
       googleTokenExpiresAt: expiresAt,
-      slackUserName: slackUserName || null,
-      slackDisplayName: slackDisplayName || null,
     })
     .onConflictDoUpdate({
-      target: slackUserMapping.slackUserId,
+      target: userContextTable.slackUserId,
       set: {
-        googleAccessToken: tokens.access_token,
-        googleRefreshToken: tokens.refresh_token || null,
-        googleTokenExpiresAt: expiresAt,
-        slackUserName: slackUserName || null,
-        slackDisplayName: slackDisplayName || null,
-        linkedAt: new Date(),
+        googleAccessToken: sql.raw('excluded.google_access_token'),
+        googleRefreshToken: sql.raw('excluded.google_refresh_token'),
+        googleTokenExpiresAt: sql.raw('excluded.google_token_expires_at'),
       },
     })
 }

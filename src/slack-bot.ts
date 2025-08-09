@@ -11,7 +11,7 @@ import { setupSocketServer } from './flack-socket-server.ts'
 import { exchangeCodeForTokens, saveUserTokens } from './google-oauth'
 import { fetchAndStoreUserCalendar } from './calendar-service'
 import db from './db/engine'
-import { topicTable, slackMessageTable, slackUserTable } from './db/schema/main'
+import { topicTable, slackMessageTable } from './db/schema/main'
 import { cleanupTestData } from './db/cleanup'
 
 const args = parseArgs({ options: { prod: { type: 'boolean' } } })
@@ -100,32 +100,7 @@ if (!args.values.prod) {
 
       // Exchange code for tokens
       const tokens = await exchangeCodeForTokens(code)
-
-      // Get user info from database
-      try {
-        const userFromDb = await db.select().from(slackUserTable).where(eq(slackUserTable.id, slackUserId)).limit(1)
-
-        if (userFromDb.length > 0) {
-          const user = userFromDb[0]
-          const raw = user.raw as { name?: string; profile?: { display_name?: string } }
-
-          await saveUserTokens(
-            slackUserId,
-            slackTeamId,
-            tokens,
-            raw?.name,
-            user.realName || raw?.profile?.display_name,
-          )
-        } else {
-          console.warn('User not found in database:', slackUserId)
-          // Save tokens without user names
-          await saveUserTokens(slackUserId, slackTeamId, tokens)
-        }
-      } catch (dbError) {
-        console.warn('Could not get user info from database:', dbError)
-        // Save tokens without user names
-        await saveUserTokens(slackUserId, slackTeamId, tokens)
-      }
+      await saveUserTokens(slackUserId, tokens)
 
       // Fetch and store calendar events immediately after saving tokens
       try {
