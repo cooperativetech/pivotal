@@ -1,5 +1,6 @@
 // @slack/bolt requires this import syntax for some reason
 const { App } = await import('@slack/bolt')
+import type { AllMiddlewareArgs } from '@slack/bolt'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Server } from 'socket.io'
@@ -16,6 +17,8 @@ import { cleanupTestData } from './db/cleanup'
 
 const args = parseArgs({ options: { prod: { type: 'boolean' } } })
 
+let slackClient: AllMiddlewareArgs['client']
+
 // Only connect to real slack if --prod flag is present
 if (args.values.prod) {
   const slackApp = new App({
@@ -29,39 +32,38 @@ if (args.values.prod) {
   })
 
   await slackApp.start()
+  slackClient = slackApp.client
   slackApp.logger.info('Slack bot is running')
 }
 
-// Only run the flack socket server if --prod flag is not present
-if (!args.values.prod) {
-  const PORT = 3001
-  const honoApp = new Hono()
-    .post('/api/clear-topics', async (c) => {
-      // Clear topics for eval testing
-      const body: { summary?: string; clearAll?: boolean } = await c.req.json()
+const PORT = 3001
+const honoApp = new Hono()
+  .post('/api/clear-topics', async (c) => {
+    // Clear topics for eval testing
+    const body: { summary?: string; clearAll?: boolean } = await c.req.json()
 
-      if (body.clearAll) {
-        const result = await cleanupTestData()
-        return c.json({
-          success: result.success,
-          message: `Cleared all topics and messages from database (method: ${result.method})`,
-        })
-      } else if (body.summary) {
-        // Clear specific topic by summary
-        const topics = await db.select().from(topicTable).where(eq(topicTable.summary, body.summary))
-        for (const topic of topics) {
-          // Delete messages for this topic first
-          await db.delete(slackMessageTable).where(eq(slackMessageTable.topicId, topic.id))
-          // Then delete the topic
-          await db.delete(topicTable).where(eq(topicTable.id, topic.id))
-        }
-        return c.json({ success: true, message: `Cleared topics with summary: ${body.summary}` })
+    if (body.clearAll) {
+      const result = await cleanupTestData()
+      return c.json({
+        success: result.success,
+        message: `Cleared all topics and messages from database (method: ${result.method})`,
+      })
+    } else if (body.summary) {
+      // Clear specific topic by summary
+      const topics = await db.select().from(topicTable).where(eq(topicTable.summary, body.summary))
+      for (const topic of topics) {
+        // Delete messages for this topic first
+        await db.delete(slackMessageTable).where(eq(slackMessageTable.topicId, topic.id))
+        // Then delete the topic
+        await db.delete(topicTable).where(eq(topicTable.id, topic.id))
       }
-      return c.json({ success: false, message: 'No summary provided' })
-    })
+      return c.json({ success: true, message: `Cleared topics with summary: ${body.summary}` })
+    }
+    return c.json({ success: false, message: 'No summary provided' })
+  })
 
   // Google OAuth callback route
-  honoApp.get('/auth/google/callback', async (c) => {
+  .get('/auth/google/callback', async (c) => {
     const code = c.req.query('code')
     const state = c.req.query('state')
     const error = c.req.query('error')
@@ -110,18 +112,15 @@ if (!args.values.prod) {
         console.error('Error fetching calendar after OAuth:', calendarError)
       }
 
-      // Note: Cannot send Slack message in development mode (no slackApp instance)
-      /*
       try {
-        await slackApp.client.chat.postMessage({
+        await slackClient.chat.postMessage({
           channel: slackUserId,
-          text: `✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.`
-,
+          text: '✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.'
+  ,
         })
       } catch (slackError) {
         console.warn('Could not send success message to Slack:', slackError)
       }
-      */
 
       return c.html(`
         <html>
@@ -146,10 +145,10 @@ if (!args.values.prod) {
     }
   })
 
+// Only run the flack socket server if --prod flag is not present
+if (!args.values.prod) {
   const server = serve({ fetch: honoApp.fetch, port: PORT })
   const io = new Server(server, { connectionStateRecovery: {} })
-  setupSocketServer(io)
+  slackClient = setupSocketServer(io)
   console.log(`Socket server running on port ${PORT}...`)
 }
-
-export {}
