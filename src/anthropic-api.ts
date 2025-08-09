@@ -5,8 +5,7 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { generateGoogleOAuthUrl, getUserCalendarText } from './calendar-service'
-import type { AllMiddlewareArgs } from '@slack/bolt'
+import { generateGoogleAuthUrl, getUserCalendarText } from './calendar-service'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -174,7 +173,7 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   }
 }
 
-export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId?: string, slackClient?: AllMiddlewareArgs['client']): Promise<{
+export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId?: string): Promise<{
   action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateUserIds?: string[]
@@ -196,20 +195,7 @@ export async function scheduleNextStep(message: SlackMessage, topic: Topic, prev
      message.text.toLowerCase().includes('send me'))
 
   if (userRequestingCalendar) {
-    // Get team ID from Slack client
-    let slackTeamId = 'T_UNKNOWN'
-    if (slackClient) {
-      try {
-        const teamInfo = await slackClient.team.info()
-        if (teamInfo.ok && teamInfo.team?.id) {
-          slackTeamId = teamInfo.team.id
-        }
-      } catch (error) {
-        console.warn('Could not get team info:', error)
-      }
-    }
-
-    const authUrl = generateGoogleOAuthUrl(message.userId, slackTeamId)
+    const authUrl = generateGoogleAuthUrl(message.userId)
 
     return {
       action: 'request_calendar_access',
@@ -345,7 +331,7 @@ ${await Promise.all(topic.userIds.map(async (userId) => {
   const userName = userMap.get(userId) || 'Unknown User'
   try {
     const calendarText = await getUserCalendarText(userId)
-    if (calendarText !== 'No calendar connected or no events found') {
+    if (calendarText) {
       return `${userName}'s calendar:\n${calendarText.split('\n').map((line) => `  - ${line}`).join('\n')}`
     }
     return `${userName}: No calendar connected or no events found`

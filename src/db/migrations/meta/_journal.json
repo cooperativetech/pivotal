@@ -71,6 +71,13 @@
       "when": 1754707566156,
       "tag": "0009_add_named_unique_constraint_slack_user_id",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1754735668856,
+      "tag": "0010_rename_user_context_table_to_user_data",
+      "breakpoints": true
     }
   ]
 }

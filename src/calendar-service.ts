@@ -1,173 +1,72 @@
 import db from './db/engine'
-import { userContextTable } from './db/schema/main'
-import { eq } from 'drizzle-orm'
+import { userDataTable, UserContext } from './db/schema/main'
+import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 
-export interface CalendarConnectionStatus {
-  slackUserId: string
-  isConnected: boolean
-  hasValidToken?: boolean
-  needsReauth?: boolean
+export interface GoogleAuthTokenResponse {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  scope: string
+  token_type: string
 }
 
-/**
- * Check calendar connection status for multiple Slack users
- * Returns array indicating which users are connected to Google Calendar
- */
-export async function checkCalendarConnections(slackUserIds: string[]): Promise<CalendarConnectionStatus[]> {
-  const results: CalendarConnectionStatus[] = []
-
-  for (const slackUserId of slackUserIds) {
-    try {
-      const userMapping = await db
-        .select()
-        .from(userContextTable)
-        .where(eq(userContextTable.slackUserId, slackUserId))
-        .limit(1)
-
-      if (userMapping.length === 0) {
-        // User not found in mapping table - not connected
-        results.push({
-          slackUserId,
-          isConnected: false,
-        })
-        continue
-      }
-
-      const mapping = userMapping[0]
-
-      // Check if user has Google tokens
-      if (!mapping.googleAccessToken || !mapping.googleRefreshToken) {
-        results.push({
-          slackUserId,
-          isConnected: false,
-        })
-        continue
-      }
-
-      // Check if token is expired (with 5 minute buffer)
-      const now = new Date()
-      const bufferTime = 5 * 60 * 1000 // 5 minutes in milliseconds
-      const isTokenExpired = mapping.googleTokenExpiresAt
-        ? new Date(mapping.googleTokenExpiresAt).getTime() < (now.getTime() + bufferTime)
-        : false
-
-      results.push({
-        slackUserId,
-        isConnected: true,
-        hasValidToken: !isTokenExpired,
-        needsReauth: isTokenExpired,
-      })
-
-    } catch (error) {
-      console.error(`Error checking calendar connection for user ${slackUserId}:`, error)
-      results.push({
-        slackUserId,
-        isConnected: false,
-      })
-    }
-  }
-
-  return results
-}
+const API_BASE_URL = process.env.PV_BASE_URL || 'http://localhost:3001'
+const GOOGLE_AUTH_REDIRECT_URI = `${API_BASE_URL}/api/google_auth_callback`
 
 /**
- * Get list of Slack user IDs that don't have valid calendar connections
- * Used by scheduling workflow to determine who needs to authenticate
+ * Get stored user context
  */
-export async function getUnconnectedUsers(slackUserIds: string[]): Promise<string[]> {
-  const connectionStatuses = await checkCalendarConnections(slackUserIds)
-  return connectionStatuses
-    .filter((status) => !status.isConnected || status.needsReauth)
-    .map((status) => status.slackUserId)
-}
-
-/**
- * Get or create user context for a Slack user
- * Returns existing context or creates empty context if none exists
- */
-export async function getOrCreateUserContext(slackUserId: string): Promise<Record<string, unknown>> {
-  try {
-    const existingContext = await db
-      .select()
-      .from(userContextTable)
-      .where(eq(userContextTable.slackUserId, slackUserId))
-      .limit(1)
-
-    if (existingContext.length > 0) {
-      return existingContext[0].context as Record<string, unknown>
-    }
-
-    // Create new context entry
-    await db
-      .insert(userContextTable)
-      .values({
-        slackUserId,
-        context: {},
-      })
-      .onConflictDoNothing()
-
-    return {}
-  } catch (error) {
-    console.error(`Error getting/creating user context for ${slackUserId}:`, error)
-    return {}
-  }
+export async function getUserContext(slackUserId: string): Promise<UserContext> {
+  const [userData] = await db
+    .select()
+    .from(userDataTable)
+    .where(eq(userDataTable.slackUserId, slackUserId))
+    .limit(1)
+  return userData?.context || {}
 }
 
 /**
  * Update user context with new information learned by the LLM
  * Merges new context with existing context
  */
-export async function updateUserContext(
-  slackUserId: string,
-  newContext: Record<string, unknown>,
-): Promise<void> {
-  try {
-    // Get existing context first
-    const existingContext = await getOrCreateUserContext(slackUserId)
+export async function updateUserContext(slackUserId: string, newContext: UserContext) {
+  const existingContext = await getUserContext(slackUserId)
+  const mergedContext = { ...existingContext, ...newContext }
 
-    // Merge new context with existing
-    const mergedContext = { ...existingContext, ...newContext }
+  const [userData] = await db
+    .insert(userDataTable)
+    .values({
+      slackUserId,
+      context: mergedContext,
+    })
+    .onConflictDoUpdate({
+      target: userDataTable.slackUserId,
+      set: {
+        context: sql.raw('excluded.context'),
+      },
+    })
+    .returning()
 
-    // Update in database
-    await db
-      .insert(userContextTable)
-      .values({
-        slackUserId,
-        context: mergedContext,
-      })
-      .onConflictDoUpdate({
-        target: userContextTable.slackUserId,
-        set: {
-          context: mergedContext,
-        },
-      })
-
-  } catch (error) {
-    console.error(`Error updating user context for ${slackUserId}:`, error)
-  }
+  return userData.context
 }
 
 /**
  * Generate Google OAuth URL for a specific Slack user
  * Includes state parameter to link back to the Slack user after auth
  */
-export function generateGoogleOAuthUrl(slackUserId: string, slackTeamId: string): string {
-  const state = `slack:${slackUserId}:${slackTeamId}`
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.BASE_URL}/auth/google/callback`
-
-  const scopes = [
+export function generateGoogleAuthUrl(slackUserId: string): string {
+  const scope = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events.readonly',
   ].join(' ')
 
   const params = new URLSearchParams({
-    client_id: clientId!,
-    redirect_uri: redirectUri,
+    client_id: process.env.PV_GOOGLE_CLIENT_ID!,
+    redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
     response_type: 'code',
-    scope: scopes,
-    state,
+    scope,
+    state: `slack:${slackUserId}`,
     access_type: 'offline',
     prompt: 'consent', // Force consent to ensure we get refresh token
   })
@@ -176,35 +75,71 @@ export function generateGoogleOAuthUrl(slackUserId: string, slackTeamId: string)
 }
 
 /**
- * Fetch calendar events for a user and store in userContext
- * This caches calendar data for the LLM to use during scheduling
+ * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
-export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead = 7): Promise<void> {
-  try {
-    // Get tokens from current location (will change after Ben's refactoring)
-    const userMapping = await db
-      .select()
-      .from(userContextTable)
-      .where(eq(userContextTable.slackUserId, slackUserId))
-      .limit(1)
+export async function fetchAndStoreGoogleAuthTokens(code: string, state: string): Promise<string> {
+    // Parse state to get Slack user info: "slack:U123ABC"
+    const [prefix, slackUserId] = state.split(':')
 
-    if (userMapping.length === 0 || !userMapping[0].googleAccessToken) {
-      console.log(`No calendar tokens found for user ${slackUserId}`)
-      return
+    if (prefix !== 'slack' || !slackUserId) {
+      throw new Error(`Invalid state parameter: ${state}`)
     }
 
-    const mapping = userMapping[0]
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: process.env.PV_GOOGLE_CLIENT_ID!,
+      client_secret: process.env.PV_GOOGLE_CLIENT_SECRET!,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to exchange code for tokens: ${error}`)
+  }
+  const tokens = await response.json() as GoogleAuthTokenResponse
+
+  // Give a 5 second buffer for refreshing auth token
+  const expiryDate = Date.now() + (tokens.expires_in - 5) * 1000
+
+  await updateUserContext(slackUserId, {
+    googleAccessToken: tokens.access_token,
+    googleRefreshToken: tokens.refresh_token,
+    googleTokenExpiryDate: expiryDate,
+  })
+  return slackUserId
+}
+
+/**
+ * Fetch calendar events for a user and store in user context
+ * This caches calendar data for the LLM to use during scheduling
+ */
+export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead = 7): Promise<UserContext> {
+  try {
+    const userContext = await getUserContext(slackUserId)
+
+    if (!userContext.googleAccessToken) {
+      console.error(`No google auth token found for user ${slackUserId}`)
+      return {}
+    }
 
     // Create OAuth2 client
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || `${process.env.BASE_URL}/auth/google/callback`,
+      process.env.PV_GOOGLE_CLIENT_ID,
+      process.env.PV_GOOGLE_CLIENT_SECRET,
+      GOOGLE_AUTH_REDIRECT_URI,
     )
 
     oauth2Client.setCredentials({
-      access_token: mapping.googleAccessToken,
-      refresh_token: mapping.googleRefreshToken,
+      access_token: userContext.googleAccessToken,
+      refresh_token: userContext.googleRefreshToken,
+      expiry_date: userContext.googleTokenExpiryDate,
     })
 
     // Create calendar client
@@ -225,7 +160,8 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     })
 
     if (!response.data.items) {
-      return
+      console.error(`No calendar events found for user ${slackUserId}`)
+      return {}
     }
 
     // Convert to the format expected by time_intersection.ts UserProfile
@@ -253,9 +189,6 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       }
     }
 
-    // Get existing context
-    const existingContext = await getOrCreateUserContext(slackUserId)
-
     // Store calendar data as simple text in userContext
     const calendarText = busySlots.map((slot) => `${slot.start}-${slot.end}: ${slot.summary || 'Busy'}`).join('\n')
     const calendarData = {
@@ -263,12 +196,23 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       calendarLastFetched: new Date().toISOString(),
     }
 
-    await updateUserContext(slackUserId, { ...existingContext, ...calendarData })
+    // Update google auth credentials in case they were refreshed
+    const googleAuthData = (
+      oauth2Client.credentials.access_token
+      ? {
+        googleAccessToken: oauth2Client.credentials.access_token,
+        googleTokenExpiryDate: oauth2Client.credentials.expiry_date || undefined,
+      } : {}
+    )
 
+    const newContext = await updateUserContext(slackUserId, { ...calendarData, ...googleAuthData })
     console.log(`Stored ${busySlots.length} calendar events for user ${slackUserId}`)
+
+    return newContext
 
   } catch (error) {
     console.error(`Error fetching calendar for user ${slackUserId}:`, error)
+    return {}
   }
 }
 
@@ -276,18 +220,26 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
  * Get calendar data from userContext for use with scheduling algorithms
  * Returns data in UserProfile format compatible with time_intersection.ts
  */
-export async function getUserCalendarText(slackUserId: string): Promise<string> {
+export async function getUserCalendarText(slackUserId: string): Promise<string | null> {
   try {
-    const context = await getOrCreateUserContext(slackUserId)
+    let context = await getUserContext(slackUserId)
 
-    if (context.calendar && typeof context.calendar === 'string') {
+    // Fetch calendar again if more than 15 minutes have passed since last fetch
+    const bufferTime = 15 * 60 * 1000
+    if (
+      context.calendarLastFetched &&
+      new Date(context.calendarLastFetched).getTime() + bufferTime < Date.now()
+    ) {
+      context = await fetchAndStoreUserCalendar(slackUserId)
+    }
+
+    if (context.calendar) {
       return context.calendar
     }
 
-    return 'No calendar connected or no events found'
-
   } catch (error) {
     console.error(`Error getting calendar from context for user ${slackUserId}:`, error)
-    return 'Calendar unavailable'
   }
+
+  return null
 }

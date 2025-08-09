@@ -3,14 +3,15 @@ const { App } = await import('@slack/bolt')
 import type { AllMiddlewareArgs } from '@slack/bolt'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
+import { zValidator } from '@hono/zod-validator'
 import { Server } from 'socket.io'
 import { parseArgs } from 'node:util'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 import { handleSlackMessage } from './slack-message-handler'
 import { setupSocketServer } from './flack-socket-server.ts'
-import { exchangeCodeForTokens, saveUserTokens } from './google-oauth'
-import { fetchAndStoreUserCalendar } from './calendar-service'
+import { fetchAndStoreGoogleAuthTokens, fetchAndStoreUserCalendar } from './calendar-service'
 import db from './db/engine'
 import { topicTable, slackMessageTable } from './db/schema/main'
 import { cleanupTestData } from './db/cleanup'
@@ -35,6 +36,15 @@ if (args.values.prod) {
   slackClient = slackApp.client
   slackApp.logger.info('Slack bot is running')
 }
+
+const GoogleAuthCallbackReq = z.strictObject({
+  code: z.string().optional(),
+  state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+  error_uri: z.string().optional(),
+})
+type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 
 const PORT = 3001
 const honoApp = new Hono()
@@ -63,54 +73,25 @@ const honoApp = new Hono()
   })
 
   // Google OAuth callback route
-  .get('/auth/google/callback', async (c) => {
-    const code = c.req.query('code')
-    const state = c.req.query('state')
-    const error = c.req.query('error')
+  .get('/api/google_auth_callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
+    const { code, state, error, error_description } = c.req.valid('query')
 
-    if (error) {
-      console.error('OAuth error:', error)
+    if (error || !code) {
+      console.error(`OAuth error: ${error} | ${error_description}`)
       return c.html(`
         <html>
           <body>
             <h2>Calendar Connection Failed</h2>
-            <p>Error: ${error}</p>
+            <p>Error: ${error} | ${error_description}</p>
             <p>You can close this window and try again in Slack.</p>
           </body>
         </html>
       `)
     }
 
-    if (!code || !state) {
-      return c.html(`
-        <html>
-          <body>
-            <h2>Calendar Connection Failed</h2>
-            <p>Missing required parameters. Please try again.</p>
-          </body>
-        </html>
-      `)
-    }
-
     try {
-      // Parse state to get Slack user info: "slack:U123ABC:T456DEF"
-      const [prefix, slackUserId, slackTeamId] = state.split(':')
-
-      if (prefix !== 'slack' || !slackUserId || !slackTeamId) {
-        throw new Error('Invalid state parameter')
-      }
-
-      // Exchange code for tokens
-      const tokens = await exchangeCodeForTokens(code)
-      await saveUserTokens(slackUserId, tokens)
-
-      // Fetch and store calendar events immediately after saving tokens
-      try {
-        await fetchAndStoreUserCalendar(slackUserId)
-        console.log(`Successfully fetched calendar for user ${slackUserId}`)
-      } catch (calendarError) {
-        console.error('Error fetching calendar after OAuth:', calendarError)
-      }
+      const slackUserId = await fetchAndStoreGoogleAuthTokens(code, state)
+      await fetchAndStoreUserCalendar(slackUserId)
 
       try {
         await slackClient.chat.postMessage({

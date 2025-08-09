@@ -53,18 +53,26 @@ export const slackUserTable = pgTable('slack_user', {
 export type SlackUserInsert = InferInsertModel<typeof slackUserTable>
 export type SlackUser = InferSelectModel<typeof slackUserTable>
 
-export const userContextTable = pgTable('user_context', {
+export interface UserContext {
+  googleAccessToken?: string,
+  googleRefreshToken?: string,
+  googleTokenExpiryDate?: number,
+  calendar?: string,
+  calendarLastFetched?: string,
+  slackTeamId?: string,
+  slackUserName?: string,
+  slackDisplayName?: string,
+}
+
+export const userDataTable = pgTable('user_data', {
   id: uuid().primaryKey().defaultRandom(),
   slackUserId: text().notNull().references(() => slackUserTable.id),
-  googleAccessToken: text(),
-  googleRefreshToken: text(),
-  googleTokenExpiresAt: timestamp({ withTimezone: true }),
-  context: json().notNull().default({}),
+  context: json().$type<UserContext>().notNull().default({}),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (table) => ({
-  slackUserIdUnique: unique('user_context_slack_user_id_unique').on(table.slackUserId),
+  slackUserIdUnique: unique('user_data_slack_user_id_unique').on(table.slackUserId),
 }))
 
-export type UserContextInsert = InferInsertModel<typeof userContextTable>
-export type UserContext = InferSelectModel<typeof userContextTable>
+export type UserDataInsert = InferInsertModel<typeof userDataTable>
+export type UserData = InferSelectModel<typeof userDataTable>
