@@ -5,9 +5,9 @@ import type { PersonInput } from '../core-benchmark/score-algorithm'
 import { scoreAlgorithm, printScoringResults } from '../core-benchmark/score-algorithm'
 
 // Initialize OpenRouter with API key from environment
-const apiKey = process.env.OPENROUTER_API_KEY
+const apiKey = process.env.PV_OPENROUTER_API_KEY
 if (!apiKey) {
-  throw new Error('OPENROUTER_API_KEY environment variable is required')
+  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
 }
 const openrouter = createOpenRouter({
   apiKey,

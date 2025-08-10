@@ -11,14 +11,9 @@ if [ -f ../../.env ]; then
 fi
 
 # Make sure we have the required environment variable
-if [ -z "$OPENROUTER_API_KEY" ] && [ -z "$PV_OPENROUTER_API_KEY" ]; then
-    echo "Error: OPENROUTER_API_KEY or PV_OPENROUTER_API_KEY environment variable is not set"
+if [ -z "$PV_OPENROUTER_API_KEY" ]; then
+    echo "Error: PV_OPENROUTER_API_KEY environment variable is not set"
     exit 1
-fi
-
-# Use PV_OPENROUTER_API_KEY if OPENROUTER_API_KEY is not set
-if [ -z "$OPENROUTER_API_KEY" ]; then
-    export OPENROUTER_API_KEY="$PV_OPENROUTER_API_KEY"
 fi
 
 # Run with 2-case benchmark for testing (use benchmark-data-100-cases.json for full eval)

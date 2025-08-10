@@ -3,9 +3,9 @@ import { generateText } from 'ai'
 import type { PersonProfile } from '../core-benchmark/generate-benchmark-data'
 
 // Initialize OpenRouter with API key from environment
-const apiKey = process.env.OPENROUTER_API_KEY
+const apiKey = process.env.PV_OPENROUTER_API_KEY
 if (!apiKey) {
-  throw new Error('OPENROUTER_API_KEY environment variable is required')
+  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
 }
 const openrouter = createOpenRouter({
   apiKey,
@@ -25,14 +25,14 @@ export async function llmPersonaRespond(
       ).join('\n')
     : 'No calendar events'
 
-  const prompt = `You are ${person.name}, responding to a scheduling request. 
+  const prompt = `You are ${person.name}, responding to a scheduling request.
 
 Your Tuesday calendar:
 ${calendarContext}
 
 Calendar event types and how you feel about scheduling over them:
 - "critical" (medical, flights, childcare): NEVER available, will strongly refuse
-- "meeting": Try to avoid but could reschedule if really needed  
+- "meeting": Try to avoid but could reschedule if really needed
 - "personal" (gym, lunch, errands): Prefer not to but flexible if necessary
 - "blocked-work" (focus time): Can interrupt if needed but not ideal
 
@@ -92,7 +92,7 @@ export async function extractScheduledTime(
   botMessage: string,
   model = 'google/gemini-2.5-flash',
 ): Promise<{ start: string; end: string } | null> {
-  const prompt = `Extract the final scheduled meeting time from this bot message. 
+  const prompt = `Extract the final scheduled meeting time from this bot message.
 
 Bot message:
 "${botMessage}"

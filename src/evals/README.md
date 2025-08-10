@@ -11,7 +11,7 @@
 npx tsx core-benchmark/generate-benchmark-data.ts 100
 
 # Test a standalone LLM scheduler (optional)
-export OPENROUTER_API_KEY="your-api-key"
+export PV_OPENROUTER_API_KEY="your-api-key"
 npx tsx agents/llm-scheduling-agent.ts data/benchmark-data-100-cases.json
 ```
 
