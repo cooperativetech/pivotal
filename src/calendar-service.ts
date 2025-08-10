@@ -1,7 +1,11 @@
-import db from './db/engine'
-import { userDataTable, UserContext } from './db/schema/main'
+import type { AllMiddlewareArgs } from '@slack/bolt'
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
+import type { Context } from 'hono'
+import { z } from 'zod'
+
+import db from './db/engine'
+import { userDataTable, UserContext } from './db/schema/main'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -72,6 +76,73 @@ export function generateGoogleAuthUrl(slackUserId: string): string {
   })
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+}
+
+export const GoogleAuthCallbackReq = z.strictObject({
+  code: z.string().optional(),
+  state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+  error_uri: z.string().optional(),
+  scope: z.string(),
+})
+export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
+
+export async function handleGoogleAuthCallback(
+  c: Context,
+  queryParams: GoogleAuthCallbackReq,
+  slackClient: AllMiddlewareArgs['client'],
+): Promise<Response> {
+    const { code, state, error, error_description } = queryParams
+
+    if (error || !code) {
+      console.error(`OAuth error: ${error} | ${error_description}`)
+      return c.html(`
+        <html>
+          <body>
+            <h2>Calendar Connection Failed</h2>
+            <p>Error: ${error} | ${error_description}</p>
+            <p>You can close this window and try again in Slack.</p>
+          </body>
+        </html>
+      `)
+    }
+
+    try {
+      const slackUserId = await fetchAndStoreGoogleAuthTokens(code, state)
+      await fetchAndStoreUserCalendar(slackUserId)
+
+      try {
+        await slackClient.chat.postMessage({
+          channel: slackUserId,
+          text: '✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.'
+  ,
+        })
+      } catch (slackError) {
+        console.warn('Could not send success message to Slack:', slackError)
+      }
+
+      return c.html(`
+        <html>
+          <body>
+            <h2>Calendar Connected Successfully!</h2>
+            <p>Your Google Calendar has been connected to the scheduling bot.</p>
+            <p>You can close this window and return to Slack.</p>
+          </body>
+        </html>
+      `)
+
+    } catch (tokenError) {
+      console.error('Error processing OAuth callback:', tokenError)
+      return c.html(`
+        <html>
+          <body>
+            <h2>Calendar Connection Failed</h2>
+            <p>There was an error connecting your calendar. Please try again.</p>
+          </body>
+        </html>
+      `)
+    }
 }
 
 /**

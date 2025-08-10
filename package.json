@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch ./src/slack-bot.ts",
-    "prod": "tsx ./src/slack-bot.ts --prod",
+    "dev": "tsx watch ./src/flack-server.ts",
+    "prod": "tsx ./src/slack-bot.ts",
     "flack": "tsx ./src/flack-client.ts",
     "dkgen": "drizzle-kit generate",
     "dkmig": "drizzle-kit migrate",

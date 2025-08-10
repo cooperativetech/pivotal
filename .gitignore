@@ -2,6 +2,7 @@ node_modules
 dist
 package-lock.json
 pnpm-lock.yaml
+eval-results
 pv.log
 .DS_Store
 .env
