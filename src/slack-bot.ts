@@ -43,6 +43,7 @@ const GoogleAuthCallbackReq = z.strictObject({
   error: z.string().optional(),
   error_description: z.string().optional(),
   error_uri: z.string().optional(),
+  scope: z.string(),
 })
 type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 
@@ -73,7 +74,7 @@ const honoApp = new Hono()
   })
 
   // Google OAuth callback route
-  .get('/api/google_auth_callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
+  .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     const { code, state, error, error_description } = c.req.valid('query')
 
     if (error || !code) {

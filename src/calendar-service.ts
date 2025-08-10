@@ -12,7 +12,7 @@ export interface GoogleAuthTokenResponse {
 }
 
 const API_BASE_URL = process.env.PV_BASE_URL || 'http://localhost:3001'
-const GOOGLE_AUTH_REDIRECT_URI = `${API_BASE_URL}/api/google_auth_callback`
+const GOOGLE_AUTH_REDIRECT_URI = `${API_BASE_URL}/auth/google/callback`
 
 /**
  * Get stored user context
