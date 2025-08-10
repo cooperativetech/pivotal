@@ -50,7 +50,7 @@ Respond naturally as ${person.name} would, mentioning specific conflicts if the 
       const result = await generateText({
         model: openrouter(model),
         prompt,
-        maxTokens: 200,
+        maxTokens: 1024,
         temperature: 0.7,
       })
       const responseText = result.text.trim()
