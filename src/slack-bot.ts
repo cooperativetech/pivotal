@@ -20,8 +20,12 @@ slackApp.message(async ({ message, context, client }) => {
 await slackApp.start()
 slackApp.logger.info('Slack bot is running')
 
-const PORT = 3001
+const PORT = 3009
 const honoApp = new Hono()
+  .get('/healthcheck', (c) => {
+    return c.text('okay')
+  })
+
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     return handleGoogleAuthCallback(c, c.req.valid('query'), slackApp.client)
   })
