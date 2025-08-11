@@ -3,8 +3,12 @@
 ## Quick Start
 
 ```bash
-# Run end-to-end evaluation with the production bot
-# (Make sure bot is running first: npm run dev)
+# Run end-to-end evaluation
+# Requires either the flack server or slack bot running on port 3001:
+# npm run dev    # (for flack server) OR
+# npm run prod   # (for slack bot)
+
+# Then run the evaluation:
 ./run-flack-eval.sh
 
 # Generate new benchmark data
@@ -49,12 +53,16 @@ printScoringResults(results)
 
 ## Files
 
+- `flack-eval.ts` - Main evaluation script that simulates scheduling conversations using the production bot with LLM personas
+- `run-flack-eval.sh` - Shell script to run the flack evaluation with default parameters
+
 **core-benchmark/**
 - `generate-benchmark-data.ts` - Creates test cases with random calendars and hidden utility values
 - `score-algorithm.ts` - Framework for scoring scheduling algorithms against benchmark data
 
 **agents/**
 - `llm-scheduling-agent.ts` - Example scheduler using OpenRouter (Gemini 2.5 Pro) to find optimal meeting times
+- `llm-persona-agent.ts` - Creates LLM personas that respond to scheduling requests based on calendar constraints
 
 **data/**
 - `benchmark-data-*.json` - Pre-generated test cases for evaluation
