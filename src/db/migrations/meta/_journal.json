@@ -78,6 +78,13 @@
       "when": 1754735668856,
       "tag": "0010_rename_user_context_table_to_user_data",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1754952858209,
+      "tag": "0011_add_slack_channel_table",
+      "breakpoints": true
     }
   ]
 }

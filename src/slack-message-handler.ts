@@ -1,12 +1,31 @@
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
 import type { UsersListResponse } from '@slack/web-api'
 import db from './db/engine'
-import { topicTable, slackMessageTable, TopicInsert, slackUserTable, SlackUserInsert } from './db/schema/main'
+import { topicTable, slackMessageTable, TopicInsert, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { eq, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
 
 export type UsersListMember = NonNullable<UsersListResponse['members']>[number]
+
+// Helper function to create or update slackChannel record
+async function upsertSlackChannel(channelId: string, userIds: string[]): Promise<void> {
+  try {
+    await db.insert(slackChannelTable)
+      .values({
+        id: channelId,
+        userIds: userIds,
+      })
+      .onConflictDoUpdate({
+        target: slackChannelTable.id,
+        set: {
+          userIds: sql.raw('excluded.user_ids'),
+        },
+      })
+  } catch (error) {
+    console.error('Error upserting slackChannel:', error)
+  }
+}
 
 // Helper function to get all Slack users
 export async function getSlackUsers(client: AllMiddlewareArgs['client'], includeBots = true): Promise<Map<string, string>> {
@@ -245,8 +264,11 @@ async function processSchedulingActions(
               users: userId,
             })
 
-            // Send the message
             if (dmChannel.ok && dmChannel.channel?.id) {
+              // Create or update slackChannel record for DM in the DB
+              await upsertSlackChannel(dmChannel.channel.id, [userId])
+
+              // Send the message
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
                 text: messageGroup.text,
@@ -284,6 +306,9 @@ async function processSchedulingActions(
           })
 
           if (mpimResult.ok && mpimResult.channel?.id) {
+            // Create or update slackChannel record for MPIM in the DB
+            await upsertSlackChannel(mpimResult.channel.id, topic.userIds)
+
             // Send the group message to the MPIM
             const groupResponse = await client.chat.postMessage({
               channel: mpimResult.channel.id,

@@ -9,11 +9,29 @@ import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-serv
 import db from './db/engine'
 import { topicTable, slackMessageTable } from './db/schema/main'
 import { cleanupTestData } from './db/cleanup'
+import { GetTopicReq, dumpTopic } from './utils'
 
 const PORT = 3001
 const honoApp = new Hono()
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     return handleGoogleAuthCallback(c, c.req.valid('query'), slackClient)
+  })
+
+  .get('/api/topic/:topicId', zValidator('query', GetTopicReq), async (c) => {
+    const topicId = c.req.param('topicId')
+
+    try {
+      const topicData = await dumpTopic(topicId, c.req.valid('query'))
+      return c.json(topicData)
+    } catch (error) {
+      console.error('Error fetching topic data:', error)
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          return c.json({ error: error.message }, 404)
+        }
+      }
+      return c.json({ error: 'Internal server error' }, 500)
+    }
   })
 
   .post('/api/clear-topics', async (c) => {

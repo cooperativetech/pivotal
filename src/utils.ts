@@ -1,7 +1,8 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, and, sql } from 'drizzle-orm'
+import { z } from 'zod'
 
 import db from './db/engine'
 import {
@@ -14,6 +15,7 @@ import {
   slackUserTable,
   SlackUser,
   SlackUserInsert,
+  slackChannelTable,
 } from './db/schema/main'
 
 export function tsToDate(ts: string): Date {
@@ -26,7 +28,15 @@ export interface TopicData {
   users: SlackUser[]
 }
 
-export async function dumpTopic(topicId: string, messageId?: string): Promise<string> {
+export const GetTopicReq = z.strictObject({
+  lastMessageId: z.string().optional(),
+  visibleToUserId: z.string().optional(),
+})
+export type GetTopicReq = z.infer<typeof GetTopicReq>
+
+export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
+  const { lastMessageId, visibleToUserId } = options
+
   const [topic] = await db
     .select()
     .from(topicTable)
@@ -37,17 +47,38 @@ export async function dumpTopic(topicId: string, messageId?: string): Promise<st
     throw new Error(`Topic with id ${topicId} not found`)
   }
 
-  let messages = await db
-    .select()
-    .from(slackMessageTable)
-    .where(eq(slackMessageTable.topicId, topicId))
-    .orderBy(slackMessageTable.timestamp)
+  // Build the messages query with optional channel filtering
+  let messages: SlackMessage[]
 
-  // If messageId is provided, filter messages up to and including that message
-  if (messageId) {
-    const targetMessage = messages.find((msg) => msg.id === messageId)
+  if (visibleToUserId) {
+    // If visibleToUserId is provided, join with slackChannelTable and filter
+    const messagesResult = await db
+      .select({ message: slackMessageTable })
+      .from(slackMessageTable)
+      .leftJoin(slackChannelTable, eq(slackMessageTable.channelId, slackChannelTable.id))
+      .where(
+        and(
+          eq(slackMessageTable.topicId, topicId),
+          sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([visibleToUserId])}::jsonb`,
+        ),
+      )
+      .orderBy(slackMessageTable.timestamp)
+
+    messages = messagesResult.map((row) => row.message)
+  } else {
+    // Simple query without join
+    messages = await db
+      .select()
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.topicId, topicId))
+      .orderBy(slackMessageTable.timestamp)
+  }
+
+  // If lastMessageId is provided, filter messages up to and including that message
+  if (lastMessageId) {
+    const targetMessage = messages.find((msg) => msg.id === lastMessageId)
     if (!targetMessage) {
-      throw new Error(`Message with id ${messageId} not found in topic ${topicId}`)
+      throw new Error(`Message with id ${lastMessageId} not found in topic ${topicId}`)
     }
     // Filter to only include messages up to and including the target message's timestamp
     messages = messages.filter((msg) =>
@@ -69,7 +100,7 @@ export async function dumpTopic(topicId: string, messageId?: string): Promise<st
     users,
   }
 
-  return JSON.stringify(result, null, 2)
+  return result
 }
 
 export async function loadTopic(jsonData: string | TopicData): Promise<{ topicId: string }> {
@@ -192,57 +223,30 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
   return output.trim()
 }
 
-export async function showTopic(topicId: string, messageId?: string): Promise<void> {
-  // Fetch topic
-  const topic = await db
-    .select()
-    .from(topicTable)
-    .where(eq(topicTable.id, topicId))
-    .limit(1)
+export async function showTopic(topicId: string, options: GetTopicReq = {}): Promise<void> {
+  // Use dumpTopic to get all the data
+  const topicData = await dumpTopic(topicId, options)
 
-  if (!topic[0]) {
-    throw new Error(`Topic with id ${topicId} not found`)
-  }
-
-  // Fetch messages
-  let messages = await db
-    .select()
-    .from(slackMessageTable)
-    .where(eq(slackMessageTable.topicId, topicId))
-    .orderBy(slackMessageTable.timestamp)
-
-  // If messageId is provided, filter messages up to and including that message
-  if (messageId) {
-    const targetMessage = messages.find((msg) => msg.id === messageId)
-    if (!targetMessage) {
-      throw new Error(`Message with id ${messageId} not found in topic ${topicId}`)
-    }
-    // Filter to only include messages up to and including the target message's timestamp
-    messages = messages.filter((msg) =>
-      new Date(msg.timestamp).getTime() <= new Date(targetMessage.timestamp).getTime(),
-    )
-  }
-
-  // Fetch all users to build user map
-  const users = await db.select().from(slackUserTable)
+  // Build user map from all users in the database for message formatting
+  const allUsers = await db.select().from(slackUserTable)
   const userMap = new Map<string, string>()
-  for (const user of users) {
+  for (const user of allUsers) {
     const name = user.realName || user.id
     userMap.set(user.id, name)
   }
 
   const output = `Topic:
-ID: ${topic[0].id}
-Summary: ${topic[0].summary}
-Users involved: ${topic[0].userIds.map((id) => {
+ID: ${topicData.topic.id}
+Summary: ${topicData.topic.summary}
+Users involved: ${topicData.topic.userIds.map((id) => {
   const name = userMap.get(id)
   return name || 'Unknown User'
 }).join(', ')}
-Created: ${new Date(topic[0].createdAt).toLocaleString()}
-Last updated: ${new Date(topic[0].updatedAt).toLocaleString()}
+Created: ${new Date(topicData.topic.createdAt).toLocaleString()}
+Last updated: ${new Date(topicData.topic.updatedAt).toLocaleString()}
 
 Messages in this Topic:
-${organizeMessagesByChannelAndThread(messages, userMap, true)}`
+${organizeMessagesByChannelAndThread(topicData.messages, userMap, true)}`
 
   console.log(output)
 }
@@ -287,7 +291,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     }
 
     const messageId = positionals[2]
-    await showTopic(topicId, messageId)
+    await showTopic(topicId, { lastMessageId: messageId })
   } else if (command === 'dump') {
     const topicId = positionals[1]
     if (!topicId) {
@@ -297,7 +301,8 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     }
 
     const messageId = positionals[2]
-    const jsonData = await dumpTopic(topicId, messageId)
+    const topicData = await dumpTopic(topicId, { lastMessageId: messageId })
+    const jsonData = JSON.stringify(topicData, null, 2)
     if (values.output) {
       await fs.writeFile(values.output, jsonData)
       console.log(`Topic data written to ${values.output}`)
