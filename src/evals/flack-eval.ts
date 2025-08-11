@@ -4,7 +4,7 @@ import { join } from 'path'
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
 import { handleSlackMessage } from '../slack-message-handler'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
-import { scoreAlgorithm, printScoringResults, type PersonInput, type DataAvailabilityConfig } from './core-benchmark/score-algorithm'
+import { scoreAlgorithm, type PersonInput, type DataAvailabilityConfig } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
 
 // Type definitions
@@ -114,6 +114,10 @@ async function simulateSchedulingConversation(
   let lastBotMessage = ''
   let scheduledTime: TimeSlot | null = null
 
+  // Track DM messages sent to each user
+  const dmMessagesPerUser = new Map<string, string[]>()
+  const openDmChannels = new Map<string, string>() // userId -> dmChannelId
+
   // Create mock users map
   const userMap = new Map<string, string>()
   testCase.profiles.forEach((profile, idx) => {
@@ -129,7 +133,25 @@ async function simulateSchedulingConversation(
         const timestamp = (Date.now() / 1000).toString()
         lastBotMessage = params.text || ''
 
-        console.log(`\n🤖 Bot: ${lastBotMessage}\n`)
+        // Check if this is a DM by looking at the channel ID
+        const isDm = params.channel.startsWith('D_')
+        if (isDm) {
+          // Find which user this DM is for
+          for (const [userId, dmChannelId] of openDmChannels.entries()) {
+            if (dmChannelId === params.channel) {
+              // Track this DM message for the specific user
+              if (!dmMessagesPerUser.has(userId)) {
+                dmMessagesPerUser.set(userId, [])
+              }
+              dmMessagesPerUser.get(userId)!.push(lastBotMessage)
+              const userName = userMap.get(userId) || userId
+              console.log(`\n🤖 Bot -> ${userName} (DM): ${lastBotMessage}\n`)
+              break
+            }
+          }
+        } else {
+          console.log(`\n🤖 Bot: ${lastBotMessage}\n`)
+        }
         conversationHistory.push(`Bot: ${lastBotMessage}`)
         detailedLog.conversation.push({
           timestamp: new Date().toISOString(),
@@ -158,7 +180,12 @@ async function simulateSchedulingConversation(
       add: () => Promise.resolve({ ok: true }),
     },
     conversations: {
-      open: () => Promise.resolve({ ok: true, channel: { id: 'D_MOCK' } }),
+      open: async (params: { users: string }) => {
+        // Create a unique DM channel ID for this user
+        const dmChannelId = `D_${params.users}_${Date.now()}`
+        openDmChannels.set(params.users, dmChannelId)
+        return Promise.resolve({ ok: true, channel: { id: dmChannelId } })
+      },
     },
     users: {
       list: () => Promise.resolve({
@@ -201,10 +228,59 @@ async function simulateSchedulingConversation(
       break
     }
 
-    // Each person responds to the bot's last message if it seems to be asking for input
-    if (lastBotMessage.includes('?') || lastBotMessage.toLowerCase().includes('available') ||
-        lastBotMessage.toLowerCase().includes('work') || lastBotMessage.toLowerCase().includes('conflict')) {
+    // Check if bot sent DM messages to users
+    const hasDmMessages = dmMessagesPerUser.size > 0
 
+    if (hasDmMessages) {
+      // Each person responds to their specific DM if they received one
+      for (let i = 0; i < testCase.profiles.length; i++) {
+        const profile = testCase.profiles[i]
+        const userId = `U_USER_${i}`
+
+        // Check if this user received a DM
+        const userDmMessages = dmMessagesPerUser.get(userId)
+        if (userDmMessages && userDmMessages.length > 0) {
+          // Get the most recent DM for this user
+          const latestDm = userDmMessages[userDmMessages.length - 1]
+
+          // Generate persona response based on their calendar and the DM they received
+          const response = await llmPersonaRespond(profile, latestDm, conversationHistory, model)
+
+          console.log(`\n👤 ${profile.name}: ${response}\n`)
+          conversationHistory.push(`${profile.name}: ${response}`)
+          detailedLog.conversation.push({
+            timestamp: new Date().toISOString(),
+            speaker: profile.name,
+            message: response,
+            type: 'user',
+          })
+          detailedLog.personaResponses.push({
+            timestamp: new Date().toISOString(),
+            persona: profile.name,
+            response,
+            calendar: profile.calendar,
+          })
+
+          // Send this response through the bot (responding in DM channel)
+          const dmChannelId = openDmChannels.get(userId) || channelId
+          const personaMessage = createMockMessage(userId, response, dmChannelId)
+          await handleSlackMessage(personaMessage, botUserId, mockClient)
+
+          // Clear this user's DM messages after they respond
+          dmMessagesPerUser.set(userId, [])
+
+          // Add small delay to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 200))
+
+          // Check if bot scheduled something after this response
+          if (scheduledTime) {
+            break
+          }
+        }
+      }
+    } else if (lastBotMessage.includes('?') || lastBotMessage.toLowerCase().includes('available') ||
+               lastBotMessage.toLowerCase().includes('work') || lastBotMessage.toLowerCase().includes('conflict')) {
+      // Fallback: respond to channel messages (original logic)
       for (let i = 0; i < testCase.profiles.length; i++) {
         const profile = testCase.profiles[i]
         const userId = `U_USER_${i}`
@@ -366,7 +442,30 @@ export async function evaluateWithFlack(
     dataAvailability,
   )
 
-  printScoringResults(scoringResults)
+  // Calculate efficiency metrics
+  const totalMessagesAcrossTests = allConversationLogs.reduce((sum, log) => sum + (log.conversation?.length || 0), 0)
+  const avgMessagesPerConversation = totalMessagesAcrossTests / allConversationLogs.length
+
+  // Print simplified results
+  console.log('\n' + '='.repeat(60))
+  console.log('EVALUATION RESULTS')
+  console.log('='.repeat(60))
+  console.log(`Average Percentile: ${scoringResults.summary.averagePercentile.toFixed(1)}%`)
+  console.log(`Average Messages: ${avgMessagesPerConversation.toFixed(0)}`)
+  console.log('='.repeat(60))
+
+  // Print detailed test case results
+  console.log('\nDETAILED TEST CASE RESULTS')
+  console.log('='.repeat(60))
+  scoringResults.results.forEach((result, idx) => {
+    const log = allConversationLogs[idx]
+    const messageCount = log?.conversation?.length || 0
+    console.log(`\nTest Case #${result.testCaseId}:`)
+    console.log(`  Percentile: ${result.percentile.toFixed(1)}%`)
+    console.log(`  Messages: ${messageCount}`)
+    console.log(`  Status: ${result.isOptimal ? '✅ OPTIMAL' : '❌ SUB-OPTIMAL'}`)
+  })
+  console.log('\n' + '='.repeat(60))
 
   // Save evaluation results to files
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -389,61 +488,27 @@ export async function evaluateWithFlack(
 
 **Date:** ${new Date().toISOString()}
 **Model:** ${model}
-**Algorithm:** ${scoringResults.algorithmName}
-**Total Test Cases:** ${scoringResults.totalCases}
 
-## Performance Metrics
+## Results
 
 - **Average Percentile:** ${scoringResults.summary.averagePercentile.toFixed(1)}%
-- **Average Utility Ratio:** ${(scoringResults.summary.averageUtilityRatio * 100).toFixed(1)}%
-- **Times Optimal Found:** ${scoringResults.summary.optimalCount} (${(scoringResults.summary.optimalRate * 100).toFixed(1)}%)
-
-## Percentile Distribution
-
-- ≥90th percentile: ${scoringResults.summary.percentileDistribution.top10} cases (${(scoringResults.summary.percentileDistribution.top10 / scoringResults.totalCases * 100).toFixed(1)}%)
-- ≥75th percentile: ${scoringResults.summary.percentileDistribution.top25} cases (${(scoringResults.summary.percentileDistribution.top25 / scoringResults.totalCases * 100).toFixed(1)}%)
-- ≥50th percentile: ${scoringResults.summary.percentileDistribution.top50} cases (${(scoringResults.summary.percentileDistribution.top50 / scoringResults.totalCases * 100).toFixed(1)}%)
-- <25th percentile: ${scoringResults.summary.percentileDistribution.bottom25} cases (${(scoringResults.summary.percentileDistribution.bottom25 / scoringResults.totalCases * 100).toFixed(1)}%)
+- **Average Messages:** ${avgMessagesPerConversation.toFixed(0)}
 
 ## Test Case Details
 
-${scoringResults.results.map((r) => {
-    const log = allConversationLogs.find((l) => l.testCaseId === r.testCaseId)
+${scoringResults.results.map((r, idx) => {
+    const log = allConversationLogs[idx]
+    const messageCount = log?.conversation?.length || 0
     return `### Test Case #${r.testCaseId}
-
-- **Scheduled:** ${r.suggestedSlot.start}-${r.suggestedSlot.end}
-- **Optimal Slots:** ${log?.optimalSlots?.map((s: TimeSlot) => `${s.start}-${s.end}`).join(', ') || 'N/A'}
-- **Achieved Utility:** ${r.achievedUtility}
-- **Optimal Utility:** ${r.optimalUtility}
-- **Percentile:** ${r.percentile}%
-- **Is Optimal:** ${r.isOptimal ? '✅' : '❌'}
-- **Participants:** ${log?.participants?.join(', ') || 'N/A'}
-- **Conversation Length:** ${log?.conversationLength || 0} messages\n`
-  }).join('\n')}
+- **Percentile:** ${r.percentile.toFixed(1)}%
+- **Messages:** ${messageCount}
+- **Status:** ${r.isOptimal ? '✅ OPTIMAL' : '❌ SUB-OPTIMAL'}`
+  }).join('\n\n')}
 `
   writeFileSync(summaryPath, summaryContent)
   console.log(`📄 Summary report saved to: ${summaryPath}`)
 
-  console.log(`\n✨ All evaluation results saved in: ${resultsDir}`)
-
-  // Print detailed test case results to console
-  console.log('\n' + '='.repeat(60))
-  console.log('DETAILED TEST CASE RESULTS')
-  console.log('='.repeat(60))
-
-  scoringResults.results.forEach((r) => {
-    const log = allConversationLogs.find((l) => l.testCaseId === r.testCaseId)
-    console.log(`\nTest Case #${r.testCaseId}:`)
-    console.log(`  Scheduled:        ${r.suggestedSlot.start}-${r.suggestedSlot.end}`)
-    console.log(`  Optimal:          ${log?.optimalSlots?.[0] ? `${log.optimalSlots[0].start}-${log.optimalSlots[0].end}` : 'N/A'}`)
-    console.log(`  Achieved Utility: ${r.achievedUtility}`)
-    console.log(`  Optimal Utility:  ${r.optimalUtility}`)
-    console.log(`  Utility Ratio:    ${(r.utilityRatio * 100).toFixed(1)}%`)
-    console.log(`  Percentile:       ${r.percentile}%`)
-    console.log(`  Status:           ${r.isOptimal ? '✅ OPTIMAL' : '❌ SUB-OPTIMAL'}`)
-  })
-
-  console.log('\n' + '='.repeat(60))
+  console.log(`\n✨ All evaluation results saved in: ${resultsDir}\n`)
 }
 
 // Run the evaluation

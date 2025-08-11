@@ -189,19 +189,9 @@ export async function scoreAlgorithm(
 
 export function printScoringResults(results: ScoringResults): void {
   console.log('\n' + '='.repeat(60))
-  console.log(`SCORING RESULTS: ${results.algorithmName}`)
+  console.log('EVALUATION RESULTS')
   console.log('='.repeat(60))
-  console.log(`Total test cases: ${results.totalCases}`)
-  console.log('')
   console.log(`Average Percentile: ${results.summary.averagePercentile.toFixed(1)}%`)
-  console.log(`Average Utility Ratio: ${(results.summary.averageUtilityRatio * 100).toFixed(1)}%`)
-  console.log(`Times Optimal Found: ${results.summary.optimalCount} (${(results.summary.optimalRate * 100).toFixed(1)}%)`)
-  console.log('')
-  console.log('Percentile Distribution:')
-  console.log(`  ≥90th percentile: ${results.summary.percentileDistribution.top10} (${(results.summary.percentileDistribution.top10 / results.totalCases * 100).toFixed(1)}%)`)
-  console.log(`  ≥75th percentile: ${results.summary.percentileDistribution.top25} (${(results.summary.percentileDistribution.top25 / results.totalCases * 100).toFixed(1)}%)`)
-  console.log(`  ≥50th percentile: ${results.summary.percentileDistribution.top50} (${(results.summary.percentileDistribution.top50 / results.totalCases * 100).toFixed(1)}%)`)
-  console.log(`  <25th percentile: ${results.summary.percentileDistribution.bottom25} (${(results.summary.percentileDistribution.bottom25 / results.totalCases * 100).toFixed(1)}%)`)
   console.log('='.repeat(60))
 }
 
