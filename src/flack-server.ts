@@ -56,7 +56,7 @@ const honoApp = new Hono()
   })
 
   .post('/api/clear_test_data', async (c) => {
-    slackClient.clearTestData()
+    await slackClient.clearTestData()
     const result = await cleanupTestData()
     return c.json({
       success: result.success,

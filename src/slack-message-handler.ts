@@ -128,10 +128,24 @@ export const messageProcessingLock = {
       this.isLocked = false
     }
   },
-  clear(): void {
+  clear(): Promise<void> {
     this.rejectQueue.forEach((reject) => reject())
     this.queue = []
     this.rejectQueue = []
+
+    // Wait for lock to be released, to finish any ongoing processing
+    return new Promise((resolve) => {
+      if (!this.isLocked) {
+        resolve()
+        return
+      }
+      const checkInterval = setInterval(() => {
+        if (!this.isLocked) {
+          clearInterval(checkInterval)
+          resolve()
+        }
+      }, 100)
+    })
   },
 }
 

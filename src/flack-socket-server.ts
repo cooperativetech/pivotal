@@ -4,7 +4,7 @@ import { handleSlackMessage, getSlackUsers, UsersListMember, messageProcessingLo
 
 // Extended Slack client type with Flack-specific methods
 export type FlackSlackClient = AllMiddlewareArgs['client'] & {
-  clearTestData: () => void
+  clearTestData: () => Promise<void>
   createFakeUser: (userId: string, realName: string) => void
 }
 
@@ -85,11 +85,12 @@ function getUsersForChannel(channelId: string): string[] {
 function genMockSlackClient(io: Server): FlackSlackClient {
   return {
     // This method only exists in Flack, not real slack
-    clearTestData: () => {
+    clearTestData: async () => {
+      await messageProcessingLock.clear()
       fakeUsers.clear()
-      messageQueues.clear()
-      messageProcessingLock.clear()
       channelToUsers.clear()
+      messageQueues.clear()
+      console.log('Cleared fakeUsers, channelToUsers, and messageQueues')
     },
     // This method only exists in Flack, not real slack
     createFakeUser: (userId: string, realName: string) => {
