@@ -2,12 +2,13 @@ import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { zValidator } from '@hono/zod-validator'
 import { Server } from 'socket.io'
-import { eq } from 'drizzle-orm'
+import { desc } from 'drizzle-orm'
+import { z } from 'zod'
 
-import { setupSocketServer } from './flack-socket-server.ts'
+import { setupSocketServer, FlackSlackClient } from './flack-socket-server.ts'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import db from './db/engine'
-import { topicTable, slackMessageTable } from './db/schema/main'
+import { topicTable } from './db/schema/main'
 import { cleanupTestData } from './db/cleanup'
 import { GetTopicReq, dumpTopic } from './utils'
 
@@ -17,7 +18,7 @@ const honoApp = new Hono()
     return handleGoogleAuthCallback(c, c.req.valid('query'), slackClient)
   })
 
-  .get('/api/topic/:topicId', zValidator('query', GetTopicReq), async (c) => {
+  .get('/api/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
     const topicId = c.req.param('topicId')
 
     try {
@@ -34,31 +35,47 @@ const honoApp = new Hono()
     }
   })
 
-  .post('/api/clear-topics', async (c) => {
-    // Clear topics for eval testing
-    const body: { summary?: string; clearAll?: boolean } = await c.req.json()
+  .get('/api/latest_topic_id', async (c) => {
+    try {
+      // Get the most recently created topic
+      const [latestTopic] = await db
+        .select()
+        .from(topicTable)
+        .orderBy(desc(topicTable.createdAt))
+        .limit(1)
 
-    if (body.clearAll) {
-      const result = await cleanupTestData()
-      return c.json({
-        success: result.success,
-        message: `Cleared all topics and messages from database (method: ${result.method})`,
-      })
-    } else if (body.summary) {
-      // Clear specific topic by summary
-      const topics = await db.select().from(topicTable).where(eq(topicTable.summary, body.summary))
-      for (const topic of topics) {
-        // Delete messages for this topic first
-        await db.delete(slackMessageTable).where(eq(slackMessageTable.topicId, topic.id))
-        // Then delete the topic
-        await db.delete(topicTable).where(eq(topicTable.id, topic.id))
+      if (!latestTopic) {
+        return c.json({ error: 'No topics found' }, 404)
       }
-      return c.json({ success: true, message: `Cleared topics with summary: ${body.summary}` })
+
+      return c.json({ topicId: latestTopic.id })
+    } catch (error) {
+      console.error('Error fetching latest topic:', error)
+      return c.json({ error: 'Internal server error' }, 500)
     }
-    return c.json({ success: false, message: 'No summary provided' })
   })
+
+  .post('/api/clear_test_data', async (c) => {
+    slackClient.clearTestData()
+    const result = await cleanupTestData()
+    return c.json({
+      success: result.success,
+      message: `Cleared all topics and messages from database (method: ${result.method})`,
+    })
+  })
+
+  .post('/api/users/create_fake', zValidator('json', z.strictObject({
+    userId: z.string(),
+    realName: z.string(),
+  })), (c) => {
+    const body = c.req.valid('json')
+    slackClient.createFakeUser(body.userId, body.realName)
+    return c.json({ success: true, message: `Created fake user ${body.userId}` })
+  })
+
+export type AppType = typeof honoApp
 
 const server = serve({ fetch: honoApp.fetch, port: PORT })
 const io = new Server(server, { connectionStateRecovery: {} })
-const slackClient = setupSocketServer(io)
+const slackClient: FlackSlackClient = setupSocketServer(io)
 console.log(`Flack webserver running on port ${PORT}...`)

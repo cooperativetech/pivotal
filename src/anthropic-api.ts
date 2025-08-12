@@ -9,13 +9,15 @@ import { generateGoogleAuthUrl, getUserCalendarText } from './calendar-service'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId?: string): Promise<{
+export interface AnalyzeTopicRes {
   relevantTopicId?: string
   suggestedNewTopic?: string
   workflowType?: 'scheduling' | 'other'
   confidence: number
   reasoning: string
-}> {
+}
+
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId?: string): Promise<AnalyzeTopicRes> {
   // Fetch recent messages for each topic in the same channel
   const topicMessagesMap = new Map<string, SlackMessage[]>()
 

@@ -1,44 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
-import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
-import { handleSlackMessage } from '../slack-message-handler'
+import { io, Socket } from 'socket.io-client'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
-import { scoreAlgorithm, type PersonInput, type DataAvailabilityConfig } from './core-benchmark/score-algorithm'
+import { scoreAlgorithm, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
-
-// Type definitions
-interface ConversationLog {
-  testCaseId: number
-  model: string
-  startTime: string
-  participants: string[]
-  conversation: Array<{
-    timestamp: string
-    speaker: string
-    message: string
-    type: 'user' | 'bot'
-  }>
-  botReasoning: Array<{
-    timestamp: string
-    message: string
-    extractedTime: TimeSlot | null
-  }>
-  personaResponses: Array<{
-    timestamp: string
-    persona: string
-    response: string
-    calendar: PersonProfile['calendar']
-  }>
-  finalScheduledTime: TimeSlot | null
-  optimalSlots: TimeSlot[]
-  optimalUtility: number
-  endTime?: string
-  conversationLength?: number
-}
-
-// API base URL
-const API_BASE_URL = 'http://localhost:3001'
+import { api, unserializeTopicTimestamps } from './api-client'
+import { TopicData } from '../utils'
 
 interface BenchmarkTestCase {
   id: number
@@ -52,302 +20,157 @@ interface BenchmarkTestCase {
   optimalUtility: number
 }
 
-// Create a mock message event
-function createMockMessage(userId: string, text: string, channel: string, ts?: string): SlackEventMiddlewareArgs<'message'>['message'] {
-  const timestamp = ts || (Date.now() / 1000).toString()
-  return {
-    type: 'message',
-    subtype: undefined,
-    text: text,
-    ts: timestamp,
-    user: userId,
-    channel: channel,
-    channel_type: 'channel',
-    event_ts: timestamp,
-  }
+const API_BASE_URL = 'http://localhost:3001'
+
+// Create a socket.io client that impersonates a specific user
+async function createUserSocketClient(userId: string): Promise<Socket> {
+  const socket: Socket = io(API_BASE_URL)
+
+  return new Promise<Socket>((resolve, reject) => {
+    let connected = false
+    let userListReceived = false
+
+    // Handle connection
+    socket.on('connect', () => {
+      console.log(`Socket connected for user ${userId}`)
+      connected = true
+    })
+
+    // Handle users list and immediately select the user
+    socket.on('users-list', () => {
+      userListReceived = true
+      // Emit user selection to impersonate the specified user
+      socket.emit('user-selected', userId)
+      console.log(`Socket impersonating user: ${userId}`)
+      resolve(socket)
+    })
+
+    // Handle errors
+    socket.on('error', (data: { message: string }) => {
+      console.error(`Socket error for user ${userId}: ${data.message}`)
+      reject(new Error(data.message))
+    })
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      if (!connected || !userListReceived) {
+        reject(new Error(`Timeout: Failed to connect socket for user ${userId}`))
+      }
+    }, 5000)
+  })
 }
 
 // Simulate a scheduling conversation using personas
 async function simulateSchedulingConversation(
   testCase: BenchmarkTestCase,
   botUserId: string,
-  model = 'google/gemini-2.5-pro',
-): Promise<{ scheduledTime: TimeSlot | null; conversationLog: ConversationLog }> {
+): Promise<TopicData> {
   console.log(`\n${'='.repeat(60)}`)
   console.log(`Test Case #${testCase.id}`)
   console.log(`${'='.repeat(60)}`)
 
-  // Clear ALL topics before each test to ensure clean state
+  // Clear ALL topics, users, and queued messages before each test to ensure clean state
   try {
-    const clearResponse = await fetch(`${API_BASE_URL}/api/clear-topics`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clearAll: true }),
-    })
-    if (clearResponse.ok) {
-      const result = await clearResponse.json() as { message: string }
-      console.log(`Database cleared: ${result.message}`)
+    const result = await api.clear_test_data.$post()
+    if (result.ok) {
+      const data = await result.json()
+      console.log(`Database cleared: ${data.message}`)
     }
   } catch (error) {
     console.error('Warning: Could not clear database:', error)
   }
 
-  // Use a unique channel for each test run to avoid collision
-  const timestamp = Date.now()
-  const channelId = `C_EVAL_${timestamp}_${testCase.id}`
-  console.log(`Using channel: ${channelId}\n`)
-
-  // Track conversation history and detailed logs
-  const conversationHistory: string[] = []
-  const detailedLog: ConversationLog = {
-    testCaseId: testCase.id,
-    model,
-    startTime: new Date().toISOString(),
-    participants: testCase.profiles.map((p) => p.name),
-    conversation: [],
-    botReasoning: [],
-    personaResponses: [],
-    finalScheduledTime: null,
-    optimalSlots: testCase.optimalSlots,
-    optimalUtility: testCase.optimalUtility,
-  }
-  let lastBotMessage = ''
-  let scheduledTime: TimeSlot | null = null
-
-  // Track DM messages sent to each user
-  const dmMessagesPerUser = new Map<string, string[]>()
-  const openDmChannels = new Map<string, string>() // userId -> dmChannelId
-
-  // Create mock users map
-  const userMap = new Map<string, string>()
-  testCase.profiles.forEach((profile, idx) => {
+  // Create a server-side user for each test case profile
+  for (let idx = 0; idx < testCase.profiles.length; idx++) {
+    const profile = testCase.profiles[idx]
     const userId = `U_USER_${idx}`
-    userMap.set(userId, profile.name)
-  })
-  userMap.set(botUserId, 'SchedulerBot')
-
-  // Create mock client that captures bot responses
-  const mockClient = {
-    chat: {
-      postMessage: async (params: { thread_ts?: string; channel: string; text?: string }) => {
-        const timestamp = (Date.now() / 1000).toString()
-        lastBotMessage = params.text || ''
-
-        // Check if this is a DM by looking at the channel ID
-        const isDm = params.channel.startsWith('D_')
-        if (isDm) {
-          // Find which user this DM is for
-          for (const [userId, dmChannelId] of openDmChannels.entries()) {
-            if (dmChannelId === params.channel) {
-              // Track this DM message for the specific user
-              if (!dmMessagesPerUser.has(userId)) {
-                dmMessagesPerUser.set(userId, [])
-              }
-              dmMessagesPerUser.get(userId)!.push(lastBotMessage)
-              const userName = userMap.get(userId) || userId
-              console.log(`\n🤖 Bot -> ${userName} (DM): ${lastBotMessage}\n`)
-              break
-            }
-          }
-        } else {
-          console.log(`\n🤖 Bot: ${lastBotMessage}\n`)
-        }
-        conversationHistory.push(`Bot: ${lastBotMessage}`)
-        detailedLog.conversation.push({
-          timestamp: new Date().toISOString(),
-          speaker: 'Bot',
-          message: lastBotMessage,
-          type: 'bot',
-        })
-        detailedLog.botReasoning.push({
-          timestamp: new Date().toISOString(),
-          message: lastBotMessage,
-          extractedTime: null,
-        })
-
-        // Check if this message contains a confirmed time
-        const extractedTime = await extractScheduledTime(lastBotMessage, model)
-        if (extractedTime) {
-          scheduledTime = extractedTime
-          console.log(`\n✅ Scheduled time detected: ${extractedTime.start}-${extractedTime.end}\n`)
-          detailedLog.botReasoning[detailedLog.botReasoning.length - 1].extractedTime = extractedTime
-        }
-
-        return { ok: true, ts: timestamp, message: { text: lastBotMessage, user: botUserId, ts: timestamp } }
-      },
-    },
-    reactions: {
-      add: () => Promise.resolve({ ok: true }),
-    },
-    conversations: {
-      open: async (params: { users: string }) => {
-        // Create a unique DM channel ID for this user
-        const dmChannelId = `D_${params.users}_${Date.now()}`
-        openDmChannels.set(params.users, dmChannelId)
-        return Promise.resolve({ ok: true, channel: { id: dmChannelId } })
-      },
-    },
-    users: {
-      list: () => Promise.resolve({
-        ok: true,
-        members: Array.from(userMap.entries()).map(([id, name]) => ({
-          id,
-          team_id: 'T_TEST_TEAM',
-          real_name: name,
-          is_bot: id === botUserId,
-          deleted: false,
-          updated: Math.floor(Date.now() / 1000),
-          tz: 'America/New_York',
-        })),
-      }),
-    },
-  } as unknown as AllMiddlewareArgs['client']
-
-  // Start the conversation with the first user requesting to schedule
-  const initiatorProfile = testCase.profiles[0]
-  const initiatorId = 'U_USER_0'
-  const initialMessage = `<@${botUserId}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
-
-  console.log(`\n👤 ${initiatorProfile.name}: ${initialMessage}\n`)
-  conversationHistory.push(`${initiatorProfile.name}: ${initialMessage}`)
-  detailedLog.conversation.push({
-    timestamp: new Date().toISOString(),
-    speaker: initiatorProfile.name,
-    message: initialMessage,
-    type: 'user',
-  })
-
-  // Process initial message through the bot
-  const mockMessage = createMockMessage(initiatorId, initialMessage, channelId)
-  await handleSlackMessage(mockMessage, botUserId, mockClient)
-
-  // Simulate back-and-forth for up to 10 rounds
-  for (let round = 0; round < 10; round++) {
-    // If we already have a scheduled time, we're done
-    if (scheduledTime) {
-      break
-    }
-
-    // Check if bot sent DM messages to users
-    const hasDmMessages = dmMessagesPerUser.size > 0
-
-    if (hasDmMessages) {
-      // Each person responds to their specific DM if they received one
-      for (let i = 0; i < testCase.profiles.length; i++) {
-        const profile = testCase.profiles[i]
-        const userId = `U_USER_${i}`
-
-        // Check if this user received a DM
-        const userDmMessages = dmMessagesPerUser.get(userId)
-        if (userDmMessages && userDmMessages.length > 0) {
-          // Get the most recent DM for this user
-          const latestDm = userDmMessages[userDmMessages.length - 1]
-
-          // Generate persona response based on their calendar and the DM they received
-          const response = await llmPersonaRespond(profile, latestDm, conversationHistory, model)
-
-          console.log(`\n👤 ${profile.name}: ${response}\n`)
-          conversationHistory.push(`${profile.name}: ${response}`)
-          detailedLog.conversation.push({
-            timestamp: new Date().toISOString(),
-            speaker: profile.name,
-            message: response,
-            type: 'user',
-          })
-          detailedLog.personaResponses.push({
-            timestamp: new Date().toISOString(),
-            persona: profile.name,
-            response,
-            calendar: profile.calendar,
-          })
-
-          // Send this response through the bot (responding in DM channel)
-          const dmChannelId = openDmChannels.get(userId) || channelId
-          const personaMessage = createMockMessage(userId, response, dmChannelId)
-          await handleSlackMessage(personaMessage, botUserId, mockClient)
-
-          // Clear this user's DM messages after they respond
-          dmMessagesPerUser.set(userId, [])
-
-          // Add small delay to avoid rate limiting
-          await new Promise((resolve) => setTimeout(resolve, 200))
-
-          // Check if bot scheduled something after this response
-          if (scheduledTime) {
-            break
-          }
-        }
-      }
-    } else if (lastBotMessage.includes('?') || lastBotMessage.toLowerCase().includes('available') ||
-               lastBotMessage.toLowerCase().includes('work') || lastBotMessage.toLowerCase().includes('conflict')) {
-      // Fallback: respond to channel messages (original logic)
-      for (let i = 0; i < testCase.profiles.length; i++) {
-        const profile = testCase.profiles[i]
-        const userId = `U_USER_${i}`
-
-        // Generate persona response based on their calendar
-        const response = await llmPersonaRespond(profile, lastBotMessage, conversationHistory, model)
-
-        console.log(`\n👤 ${profile.name}: ${response}\n`)
-        conversationHistory.push(`${profile.name}: ${response}`)
-        detailedLog.conversation.push({
-          timestamp: new Date().toISOString(),
-          speaker: profile.name,
-          message: response,
-          type: 'user',
-        })
-        detailedLog.personaResponses.push({
-          timestamp: new Date().toISOString(),
-          persona: profile.name,
-          response,
-          calendar: profile.calendar,
-        })
-
-        // Send this response through the bot
-        const personaMessage = createMockMessage(userId, response, channelId)
-        await handleSlackMessage(personaMessage, botUserId, mockClient)
-
-        // Add small delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 200))
-
-        // Check if bot scheduled something after this response
-        if (scheduledTime) {
-          break
-        }
-      }
+    const result = await api.users.create_fake.$post({
+      json: { userId, realName: profile.name },
+    })
+    if (result.ok) {
+      console.log(`Created user: ${profile.name} (${userId})`)
     } else {
-      // Bot might have made a final decision, try to extract it
-      const extractedTime = await extractScheduledTime(lastBotMessage, model)
-      if (extractedTime) {
-        scheduledTime = extractedTime
-        break
-      }
-
-      // If bot isn't asking questions and hasn't scheduled, prompt for decision
-      const promptMessage = 'Can you confirm the final meeting time for Tuesday?'
-      console.log(`\n👤 ${initiatorProfile.name}: ${promptMessage}\n`)
-      conversationHistory.push(`${initiatorProfile.name}: ${promptMessage}`)
-      detailedLog.conversation.push({
-        timestamp: new Date().toISOString(),
-        speaker: initiatorProfile.name,
-        message: promptMessage,
-        type: 'user',
-      })
-
-      const promptMsg = createMockMessage(initiatorId, promptMessage, channelId)
-      await handleSlackMessage(promptMsg, botUserId, mockClient)
+      throw new Error(`Failed to create user: ${profile.name} (${userId})`)
     }
   }
+
+  let topicId: string | null = null
+
+  // Create a socket for every test user, and listen for bot responses
+  const promises = testCase.profiles.map(async (profile, idx) => {
+    const userId = `U_USER_${idx}`
+    const socket = await createUserSocketClient(userId)
+
+    // Send initial message
+    if (idx == 0) {
+      const initMessage = `<@${botUserId}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
+      console.log(`Sending initial message from ${userId}: ${initMessage}`)
+      socket.emit('flack-message', { text: initMessage })
+    }
+
+    let msgCount = 0
+    socket.on('bot-response', async (data: { channel: string; text: string; thread_ts?: string; timestamp: string }) => {
+      console.log(`Message received for ${userId}: ${data.text}`)
+      // Get the topicId (latest topic created) if it has not yet been fetched
+      if (topicId === null) {
+        const response = await api.latest_topic_id.$get()
+        if (response.ok) {
+          const data = await response.json()
+          topicId = data.topicId
+          console.log(`Retrieved latest topic ID: ${topicId}`)
+        } else {
+          throw new Error(`Failed to get latest topic: ${response.statusText}`)
+        }
+      }
+
+      // Respond if direct message, or if the group message includes a question, or the word available, work, or conflict
+      if (msgCount < 10 && (data.channel.startsWith('D') || (
+        data.text.includes('?') ||
+        data.text.toLowerCase().includes('available') ||
+        data.text.toLowerCase().includes('work') ||
+        data.text.toLowerCase().includes('conflict')
+      ))) {
+        const message = await llmPersonaRespond(topicId, userId, profile, data.text, data.timestamp)
+        console.log(`Sending response from ${userId}: ${message}`)
+        socket.emit('flack-message', { topicId: topicId, text: message })
+        msgCount += 1
+
+      // Otherwise, close the socket
+      } else {
+        socket.removeAllListeners('bot-response')
+        socket.disconnect()
+      }
+    })
+
+    const resPromise = new Promise<void>((resolve) => {
+      socket.on('disconnect', () => resolve())
+    })
+
+    return resPromise
+  })
+
+  await Promise.all(promises)
+
+  // Get topic data and extract scheduled time from last message
+  if (topicId === null) {
+    throw new Error('Topic id never fetched from server')
+  }
+
+  const topicResponse = await api.topics[':topicId'].$get({
+    param: { topicId },
+    query: {},
+  })
+
+  if (!topicResponse.ok) {
+    throw new Error(`Failed to get topic data: ${topicResponse.statusText}`)
+  }
+  const topicData = unserializeTopicTimestamps(await topicResponse.json())
 
   console.log(`\n${'='.repeat(60)}`)
   console.log('Conversation ended')
   console.log(`${'='.repeat(60)}\n`)
 
-  detailedLog.endTime = new Date().toISOString()
-  detailedLog.finalScheduledTime = scheduledTime
-  detailedLog.conversationLength = conversationHistory.length
-
-  return { scheduledTime, conversationLog: detailedLog }
+  return topicData
 }
 
 // Evaluate using flack infrastructure
@@ -370,33 +193,6 @@ export async function evaluateWithFlack(
   }
   console.log(`✅ Connected! Bot User ID: ${botUserId}\n`)
 
-  // Clear ALL topics from database before starting evaluation
-  console.log('Clearing all topics from database...')
-  try {
-    const clearResponse = await fetch(`${API_BASE_URL}/api/clear-topics`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clearAll: true }),
-    })
-    if (clearResponse.ok) {
-      const result = await clearResponse.json() as { message: string }
-      console.log(`✅ ${result.message}\n`)
-    } else {
-      console.error('Warning: Could not clear database')
-    }
-  } catch (error) {
-    console.error('Warning: Could not clear database:', error)
-  }
-
-  // Set up test users in database
-  console.log('Setting up test users...')
-  try {
-    const { setupTestUsers } = await import('../db/cleanup')
-    await setupTestUsers()
-  } catch (error) {
-    console.error('Warning: Could not set up test users:', error)
-  }
-
   // Load benchmark data
   const dataDir = join(import.meta.dirname, 'data')
   let filepath = join(dataDir, benchmarkFile)
@@ -414,7 +210,7 @@ export async function evaluateWithFlack(
 
   // Track which test case we're on and collect all logs
   let testCaseIndex = 0
-  const allConversationLogs: ConversationLog[] = []
+  const allConversationLogs: TopicData[] = []
 
   // Create algorithm function that uses flack simulation
   const flackAlgorithm = async (_inputs: PersonInput[]): Promise<TimeSlot> => {
@@ -423,8 +219,13 @@ export async function evaluateWithFlack(
     const currentTestCase = testCases[testCaseIndex]
     testCaseIndex++ // Increment for next call
 
-    const { scheduledTime, conversationLog } = await simulateSchedulingConversation(currentTestCase, botUserId, model)
-    allConversationLogs.push(conversationLog)
+    const topicData = await simulateSchedulingConversation(currentTestCase, botUserId)
+    allConversationLogs.push(topicData)
+
+    const lastMessage = topicData.messages.sort((a, b) =>
+      Number(b.rawTs) - Number(a.rawTs),
+    )[0]
+    const scheduledTime = await extractScheduledTime(lastMessage.text)
 
     if (!scheduledTime) {
       console.error('Failed to extract scheduled time from conversation')
@@ -443,7 +244,7 @@ export async function evaluateWithFlack(
   )
 
   // Calculate efficiency metrics
-  const totalMessagesAcrossTests = allConversationLogs.reduce((sum, log) => sum + (log.conversation?.length || 0), 0)
+  const totalMessagesAcrossTests = allConversationLogs.reduce((sum, log) => sum + (log.messages.length || 0), 0)
   const avgMessagesPerConversation = totalMessagesAcrossTests / allConversationLogs.length
 
   // Print simplified results
@@ -459,7 +260,7 @@ export async function evaluateWithFlack(
   console.log('='.repeat(60))
   scoringResults.results.forEach((result, idx) => {
     const log = allConversationLogs[idx]
-    const messageCount = log?.conversation?.length || 0
+    const messageCount = log.messages.length || 0
     console.log(`\nTest Case #${result.testCaseId}:`)
     console.log(`  Percentile: ${result.percentile.toFixed(1)}%`)
     console.log(`  Messages: ${messageCount}`)
@@ -498,7 +299,7 @@ export async function evaluateWithFlack(
 
 ${scoringResults.results.map((r, idx) => {
     const log = allConversationLogs[idx]
-    const messageCount = log?.conversation?.length || 0
+    const messageCount = log.messages.length || 0
     return `### Test Case #${r.testCaseId}
 - **Percentile:** ${r.percentile.toFixed(1)}%
 - **Messages:** ${messageCount}

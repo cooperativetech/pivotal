@@ -19,7 +19,7 @@ import {
 } from './db/schema/main'
 
 export function tsToDate(ts: string): Date {
-  return new Date(parseFloat(ts) * 1000)
+  return new Date(Number(ts) * 1000)
 }
 
 export interface TopicData {
@@ -31,11 +31,12 @@ export interface TopicData {
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
   visibleToUserId: z.string().optional(),
+  beforeRawTs: z.string().optional(),
 })
 export type GetTopicReq = z.infer<typeof GetTopicReq>
 
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
-  const { lastMessageId, visibleToUserId } = options
+  const { lastMessageId, visibleToUserId, beforeRawTs } = options
 
   const [topic] = await db
     .select()
@@ -82,7 +83,14 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
     }
     // Filter to only include messages up to and including the target message's timestamp
     messages = messages.filter((msg) =>
-      new Date(msg.timestamp).getTime() <= new Date(targetMessage.timestamp).getTime(),
+      Number(msg.rawTs) <= Number(targetMessage.rawTs),
+    )
+  }
+
+  // If beforeRawTs is provided, filter messages before that raw timestamp
+  if (beforeRawTs) {
+    messages = messages.filter((msg) =>
+      Number(msg.rawTs) < Number(beforeRawTs),
     )
   }
 

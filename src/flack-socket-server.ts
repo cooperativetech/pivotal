@@ -1,6 +1,12 @@
 import { Server, Socket } from 'socket.io'
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
-import { handleSlackMessage, getSlackUsers, UsersListMember } from './slack-message-handler'
+import { handleSlackMessage, getSlackUsers, UsersListMember, messageProcessingLock } from './slack-message-handler'
+
+// Extended Slack client type with Flack-specific methods
+export type FlackSlackClient = AllMiddlewareArgs['client'] & {
+  clearTestData: () => void
+  createFakeUser: (userId: string, realName: string) => void
+}
 
 type FlackMessage = SlackEventMiddlewareArgs<'message'>['message'] & {
   type: 'message'
@@ -40,7 +46,7 @@ function makeFakeUser(id: string, real_name: string): FlackUser {
   }
 }
 
-const FAKE_USERS = new Map<string, FlackUser>([
+const fakeUsers = new Map<string, FlackUser>([
   ['U123456', makeFakeUser('U123456', 'Alice Johnson')],
   ['U234567', makeFakeUser('U234567', 'Bob Smith')],
   ['U345678', makeFakeUser('U345678', 'Charlie Brown')],
@@ -57,12 +63,6 @@ const messageQueues = new Map<string, FlackMessage[]>() // userId -> queued mess
 const channelToUsers = new Map<string, string[]>() // channelId -> userId[]
 
 function getChannelForUsers(userIds: string[]): string {
-  // Single user = DM channel
-  if (userIds.length === 1) {
-    return `D${userIds[0].substring(1)}`
-  }
-
-  // Multiple users = group channel
   // Check if we already have a channel for these users
   const sortedUsers = [...userIds].sort().join(',')
   for (const [channelId, users] of channelToUsers.entries()) {
@@ -71,29 +71,34 @@ function getChannelForUsers(userIds: string[]): string {
     }
   }
 
-  // Create new group channel
-  const newChannelId = `G${Date.now()}`
+  // Otherwise, create new channel
+  const newChannelId = userIds.length === 1 ? `D${Date.now()}` : `G${Date.now()}`
   channelToUsers.set(newChannelId, userIds)
   return newChannelId
 }
 
 function getUsersForChannel(channelId: string): string[] {
-  // DM channel - extract user from channel ID
-  if (channelId.startsWith('D')) {
-    return [`U${channelId.substring(1)}`]
-  }
-
-  // Group/regular channel - look up stored users
   return channelToUsers.get(channelId) || []
 }
 
 // Create a mock Slack client that doesn't make real API calls
-function genMockSlackClient(io: Server): AllMiddlewareArgs['client'] {
+function genMockSlackClient(io: Server): FlackSlackClient {
   return {
+    // This method only exists in Flack, not real slack
+    clearTestData: () => {
+      fakeUsers.clear()
+      messageQueues.clear()
+      messageProcessingLock.clear()
+      channelToUsers.clear()
+    },
+    // This method only exists in Flack, not real slack
+    createFakeUser: (userId: string, realName: string) => {
+      fakeUsers.set(userId, makeFakeUser(userId, realName))
+    },
     users: {
       list: () => {
         // Return fake users
-        const members = Array.from(FAKE_USERS.values())
+        const members = Array.from(fakeUsers.values())
 
         // Add the bot user
         const botUser: FlackUser = {
@@ -202,10 +207,10 @@ function genMockSlackClient(io: Server): AllMiddlewareArgs['client'] {
         return Promise.resolve({ ok: true })
       },
     },
-  } as unknown as AllMiddlewareArgs['client']
+  } as unknown as FlackSlackClient
 }
 
-export function setupSocketServer(io: Server): AllMiddlewareArgs['client'] {
+export function setupSocketServer(io: Server): FlackSlackClient {
   const mockSlackClient = genMockSlackClient(io)
 
   io.on('connection', async (socket: Socket) => {
@@ -262,9 +267,9 @@ export function setupSocketServer(io: Server): AllMiddlewareArgs['client'] {
     })
 
     // Handle incoming Flack messages (always DMs to the bot)
-    socket.on('flack-message', async (data: { text: string }) => {
+    socket.on('flack-message', async (data: { text: string, topicId?: string }) => {
       try {
-        const { text } = data
+        const { text, topicId } = data
 
         // Get the user ID who sent this message
         const userId = impersonatedUsers.get(socket.id)
@@ -296,7 +301,7 @@ export function setupSocketServer(io: Server): AllMiddlewareArgs['client'] {
         }
 
         // Call the shared message handler
-        await handleSlackMessage(message, BOT_USER_ID, mockSlackClient)
+        await handleSlackMessage(message, BOT_USER_ID, mockSlackClient, topicId)
       } catch (error) {
         console.error('Error processing message:', error)
         socket.emit('error', { message: 'Error processing message' })
