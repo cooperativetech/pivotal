@@ -85,6 +85,13 @@
       "when": 1754952858209,
       "tag": "0011_add_slack_channel_table",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1755042236048,
+      "tag": "0012_add_llm_response_table",
+      "breakpoints": true
     }
   ]
 }
