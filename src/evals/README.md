@@ -5,8 +5,7 @@
 ```bash
 # Run end-to-end evaluation
 # Requires either the flack server or slack bot running on port 3001:
-# npm run dev    # (for flack server) OR
-# npm run prod   # (for slack bot)
+# npm run dev    # (for flack server)
 
 # Then run the evaluation:
 ./run-flack-eval.sh
@@ -53,7 +52,7 @@ printScoringResults(results)
 
 ## Files
 
-- `flack-eval.ts` - Main evaluation script that simulates scheduling conversations using the production bot with LLM personas
+- `flack-eval.ts` - Main evaluation script that simulates scheduling conversations using the bot with LLM personas
 - `run-flack-eval.sh` - Shell script to run the flack evaluation with default parameters
 
 **core-benchmark/**
