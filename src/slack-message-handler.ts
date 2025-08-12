@@ -103,63 +103,67 @@ export async function getSlackUsers(client: AllMiddlewareArgs['client'], include
   return userMap
 }
 
-// Global lock for message processing
-export const messageProcessingLock = {
-  isLocked: false,
-  queue: [] as (() => void)[],
-  rejectQueue: [] as (() => void)[],
-  acquire(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.isLocked) {
-        this.isLocked = true
-        resolve()
-      } else {
-        this.queue.push(resolve)
-        this.rejectQueue.push(reject)
-      }
-    })
-  },
-  release(): void {
-    if (this.queue.length > 0) {
-      const next = this.queue.shift()
-      this.rejectQueue.shift()
-      next?.()
-    } else {
-      this.isLocked = false
-    }
-  },
-  clear(): Promise<void> {
-    this.rejectQueue.forEach((reject) => reject())
-    this.queue = []
-    this.rejectQueue = []
-
-    // Wait for lock to be released, to finish any ongoing processing
-    return new Promise((resolve) => {
-      if (!this.isLocked) {
-        resolve()
-        return
-      }
-      const checkInterval = setInterval(() => {
+// Global locks for message processing
+function generateLock() {
+  return {
+    isLocked: false,
+    queue: [] as (() => void)[],
+    rejectQueue: [] as (() => void)[],
+    acquire(): Promise<void> {
+      return new Promise((resolve, reject) => {
         if (!this.isLocked) {
-          clearInterval(checkInterval)
+          this.isLocked = true
           resolve()
+        } else {
+          this.queue.push(resolve)
+          this.rejectQueue.push(reject)
         }
-      }, 100)
-    })
-  },
+      })
+    },
+    release(): void {
+      if (this.queue.length > 0) {
+        const next = this.queue.shift()
+        this.rejectQueue.shift()
+        next?.()
+      } else {
+        this.isLocked = false
+      }
+    },
+    clear(): Promise<void> {
+      this.rejectQueue.forEach((reject) => reject())
+      this.queue = []
+      this.rejectQueue = []
+
+      // Wait for lock to be released, to finish any ongoing processing
+      return new Promise((resolve) => {
+        if (!this.isLocked) {
+          resolve()
+          return
+        }
+        const checkInterval = setInterval(() => {
+          if (!this.isLocked) {
+            clearInterval(checkInterval)
+            resolve()
+          }
+        }, 100)
+      })
+    },
+  }
 }
 
+export const topicRoutingLock = generateLock()
+export const messageProcessingLock = generateLock()
+
 async function processSchedulingActions(
-  topicId: string,
   message: SlackMessage,
   client: AllMiddlewareArgs['client'],
   botUserId: string | undefined,
 ) {
   try {
     // Get the topic details
-    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, message.topicId))
     if (!topic) {
-      console.error('Topic not found:', topicId)
+      console.error('Topic not found:', message.topicId)
       return
     }
 
@@ -173,7 +177,7 @@ async function processSchedulingActions(
       .select()
       .from(slackMessageTable)
       .where(and(
-        eq(slackMessageTable.topicId, topicId),
+        eq(slackMessageTable.topicId, message.topicId),
         ne(slackMessageTable.id, message.id),
       ))
       .orderBy(slackMessageTable.timestamp)
@@ -195,7 +199,7 @@ async function processSchedulingActions(
     // Save the bot's reply to the database immediately
     if (response.ok && response.ts) {
       await db.insert(slackMessageTable).values({
-        topicId: topicId,
+        topicId: message.topicId,
         channelId: message.channelId,
         userId: botUserId || 'bot',
         text: nextStep.replyMessage,
@@ -243,7 +247,7 @@ async function processSchedulingActions(
 
       await db.update(topicTable)
         .set(updates)
-        .where(eq(topicTable.id, topicId))
+        .where(eq(topicTable.id, message.topicId))
     }
 
     // Send individual messages if needed
@@ -293,7 +297,7 @@ async function processSchedulingActions(
               // Save the bot's DM to the database immediately
               if (dmResponse.ok && dmResponse.ts) {
                 await db.insert(slackMessageTable).values({
-                  topicId: topicId,
+                  topicId: message.topicId,
                   channelId: dmChannel.channel.id,
                   userId: botUserId || 'bot',
                   text: messageGroup.text,
@@ -334,7 +338,7 @@ async function processSchedulingActions(
             // Save the bot's group message to the database immediately
             if (groupResponse.ok && groupResponse.ts) {
               await db.insert(slackMessageTable).values({
-                topicId: topicId,
+                topicId: message.topicId,
                 channelId: mpimResult.channel.id,
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
@@ -354,7 +358,7 @@ async function processSchedulingActions(
 
             if (groupResponse.ok && groupResponse.ts) {
               await db.insert(slackMessageTable).values({
-                topicId: topicId,
+                topicId: message.topicId,
                 channelId: message.channelId,
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
@@ -375,7 +379,7 @@ async function processSchedulingActions(
 
           if (groupResponse.ok && groupResponse.ts) {
             await db.insert(slackMessageTable).values({
-              topicId: topicId,
+              topicId: message.topicId,
               channelId: message.channelId,
               userId: botUserId || 'bot',
               text: nextStep.groupMessage,
@@ -396,7 +400,7 @@ async function processSchedulingActions(
 
         if (groupResponse.ok && groupResponse.ts) {
           await db.insert(slackMessageTable).values({
-            topicId: topicId,
+            topicId: message.topicId,
             channelId: message.channelId,
             userId: botUserId || 'bot',
             text: nextStep.groupMessage,
@@ -411,13 +415,13 @@ async function processSchedulingActions(
 
     // Handle completion and mark topic as inactive if requested
     if (nextStep.action === 'complete') {
-      console.log('Scheduling workflow completed for topic:', topicId)
+      console.log('Scheduling workflow completed for topic:', message.topicId)
 
       if (nextStep.markTopicInactive) {
         await db.update(topicTable)
           .set({ isActive: false, updatedAt: new Date() })
-          .where(eq(topicTable.id, topicId))
-        console.log('Topic marked as inactive:', topicId)
+          .where(eq(topicTable.id, message.topicId))
+        console.log('Topic marked as inactive:', message.topicId)
       }
     }
   } catch (error) {
@@ -433,16 +437,17 @@ export async function handleSlackMessage(
 ) {
   // Check if message has required fields
   if ('text' in message && message.text && message.ts && message.channel) {
-    // Acquire the global lock before processing
+
+    // Acquire the global lock before determining the topic of the message
     try {
-      await messageProcessingLock.acquire()
+      await topicRoutingLock.acquire()
+      console.log('Starting topic routing for message:', message)
     } catch {
-      console.log('Clearing queue, skipping handleSlackMessage for message:', message)
+      console.log('Clearing queue, skipping topic routing for message:', message)
       return
     }
 
-    console.log(message)
-
+    // For bot messages, we need to check differently since they don't have a user field
     // For bot messages, we need to check differently since they don't have a user field
     const isBotMessage = 'bot_id' in message && message.bot_id
     const userId = isBotMessage ? message.bot_id! : message.user!
@@ -450,23 +455,25 @@ export async function handleSlackMessage(
     const isDirectMessage = message.channel_type === 'im'
     const isBotMentioned = message.text.includes(`<@${botUserId}>`)
 
-    try {
-      // Step 0: Skip topic router if we've preset the topic id
-      let analysis: AnalyzeTopicRes = {
-        relevantTopicId: presetTopicId,
-        confidence: 1,
-        reasoning: 'preset',
-      }
+    let messageToProcess: SlackMessage | null = null
 
+    // Skip topic router if we've preset the topic id
+    let analysis: AnalyzeTopicRes = {
+      relevantTopicId: presetTopicId,
+      confidence: 1,
+      reasoning: 'preset',
+    }
+
+    try {
       if (!presetTopicId) {
-        // Step 1: Query all active topics from the DB
+        // Query all active topics from the DB
         const topics = await db.select().from(topicTable).where(eq(topicTable.isActive, true))
 
         // Get Slack users for name mapping (including bots to get bot's name)
         const userMap = await getSlackUsers(client)
 
         // Create slack message object for analysis
-        const slackMessage = {
+        const messageToAnalyze = {
           id: '', // Will be set when inserting
           topicId: '', // Will be set based on analysis
           channelId: message.channel,
@@ -478,15 +485,15 @@ export async function handleSlackMessage(
           raw: message,
         }
 
-        // Step 2: Call analyzeTopicRelevance for non-bot messages
-        analysis = await analyzeTopicRelevance(topics, slackMessage, userMap, botUserId)
+        // Call analyzeTopicRelevance for non-bot messages
+        analysis = await analyzeTopicRelevance(topics, messageToAnalyze, userMap, botUserId)
         console.log('Analysis result:', analysis)
       }
 
-      // Step 3: If message is relevant to existing topic
+      // If message is relevant to existing topic
       if (analysis.relevantTopicId) {
         // Save message to DB related to that topic
-        const [slackMessage] = await db.insert(slackMessageTable).values({
+        const slackMessageRes = await db.insert(slackMessageTable).values({
           topicId: analysis.relevantTopicId,
           channelId: message.channel,
           userId: userId,
@@ -497,60 +504,78 @@ export async function handleSlackMessage(
           raw: message,
         }).returning()
 
+        if (slackMessageRes && slackMessageRes.length > 0) {
+          messageToProcess = slackMessageRes[0]
+        }
+
         // Update the topic's updatedAt timestamp
         await db.update(topicTable)
           .set({ updatedAt: new Date() })
           .where(eq(topicTable.id, analysis.relevantTopicId))
 
-        // Process scheduling actions for this topic
-        await processSchedulingActions(analysis.relevantTopicId, slackMessage, client, botUserId)
-      }
-      // Step 4: If DM or bot mentioned and could form new topic
-      else if ((isDirectMessage || isBotMentioned) && analysis.suggestedNewTopic) {
-        // Check if it's a scheduling workflow
-        if (analysis.workflowType === 'scheduling') {
-          // Create new topic
-          const [newTopic] = await db.insert(topicTable).values({
-            userIds: [userId],
-            summary: analysis.suggestedNewTopic,
-            workflowType: analysis.workflowType,
-          }).returning()
+      // If DM or bot mentioned and could form new topic
+      } else if (
+        (isDirectMessage || isBotMentioned) &&
+        analysis.suggestedNewTopic &&
+        analysis.workflowType === 'scheduling'
+      ) {
+        // Create new topic
+        const [newTopic] = await db.insert(topicTable).values({
+          userIds: [userId],
+          summary: analysis.suggestedNewTopic,
+          workflowType: analysis.workflowType,
+        }).returning()
 
-          // Save message related to new topic
-          const [slackMessage] = await db.insert(slackMessageTable).values({
-            topicId: newTopic.id,
-            channelId: message.channel,
-            userId: userId,
-            text: message.text,
-            timestamp: tsToDate(message.ts),
-            rawTs: message.ts,
-            threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
-            raw: message,
-          }).returning()
+        // Save message related to new topic
+        const slackMessageRes = await db.insert(slackMessageTable).values({
+          topicId: newTopic.id,
+          channelId: message.channel,
+          userId: userId,
+          text: message.text,
+          timestamp: tsToDate(message.ts),
+          rawTs: message.ts,
+          threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
+          raw: message,
+        }).returning()
 
-          // Process scheduling actions for this new topic
-          await processSchedulingActions(newTopic.id, slackMessage, client, botUserId)
-        } else {
-          // Non-scheduling workflow - send canned response in thread
-          await client.chat.postMessage({
-            channel: message.channel,
-            thread_ts: message.ts,
-            text: 'Sorry, but I\'m only set up for scheduling requests at the moment. Try something like "plan lunch with the team" or "schedule a meeting for next week".',
-          })
+        if (slackMessageRes && slackMessageRes.length > 0) {
+          messageToProcess = slackMessageRes[0]
         }
-      }
-    } catch (error) {
-      console.error('Error processing message:', error)
-      // Optionally add an error reaction
-      try {
-        await client.reactions.add({
+
+      // Non-scheduling workflow - send canned response in thread
+      } else {
+        await client.chat.postMessage({
           channel: message.channel,
-          name: 'x',
-          timestamp: message.ts,
+          thread_ts: message.ts,
+          text: 'Sorry, but I\'m only set up for scheduling requests at the moment. Try something like "plan lunch with the team" or "schedule a meeting for next week".',
         })
-      } catch (reactionError) {
-        console.error('Error adding error reaction:', reactionError)
       }
+
+    } catch (error) {
+      console.error('Error routing message to topic:', error)
+    } finally {
+      // Always release the lock when done
+      topicRoutingLock.release()
+    }
+
+    // If we didn't find or create an appropriate active topic for the message, skip responding to it
+    if (!messageToProcess) {
+      return
+    }
+
+    // Acquire the global lock before processing the message
+    try {
+      await messageProcessingLock.acquire()
+      console.log('Starting processing for message:', message)
+    } catch {
+      console.log('Clearing queue, skipping processing for message:', message)
+      return
+    }
+
+    try {
+      await processSchedulingActions(messageToProcess, client, botUserId)
+    } catch (error) {
+      console.error('Error responding to message:', error)
     } finally {
       // Always release the lock when done
       messageProcessingLock.release()

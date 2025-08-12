@@ -1,6 +1,12 @@
 import { Server, Socket } from 'socket.io'
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
-import { handleSlackMessage, getSlackUsers, UsersListMember, messageProcessingLock } from './slack-message-handler'
+import {
+  handleSlackMessage,
+  getSlackUsers,
+  UsersListMember,
+  topicRoutingLock,
+  messageProcessingLock,
+} from './slack-message-handler'
 
 // Extended Slack client type with Flack-specific methods
 export type FlackSlackClient = AllMiddlewareArgs['client'] & {
@@ -86,7 +92,7 @@ function genMockSlackClient(io: Server): FlackSlackClient {
   return {
     // This method only exists in Flack, not real slack
     clearTestData: async () => {
-      await messageProcessingLock.clear()
+      await Promise.all([topicRoutingLock.clear(), messageProcessingLock.clear()])
       fakeUsers.clear()
       channelToUsers.clear()
       messageQueues.clear()
