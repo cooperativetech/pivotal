@@ -1,9 +1,9 @@
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
 import type { UsersListResponse } from '@slack/web-api'
 import db from './db/engine'
-import { topicTable, TopicInsert, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
+import { topicTable, TopicInsert, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable, llmResponseTable } from './db/schema/main'
 import { analyzeTopicRelevance, AnalyzeTopicRes, scheduleNextStep } from './anthropic-api'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
 
 export type UsersListMember = NonNullable<UsersListResponse['members']>[number]
@@ -155,15 +155,17 @@ export const topicRoutingLock = generateLock()
 export const messageProcessingLock = generateLock()
 
 async function processSchedulingActions(
-  message: SlackMessage,
+  messageToProcess: SlackMessage,
   client: AllMiddlewareArgs['client'],
   botUserId: string | undefined,
 ) {
   try {
+    const { topicId, channelId } = messageToProcess
+
     // Get the topic details
-    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, message.topicId))
+    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
     if (!topic) {
-      console.error('Topic not found:', message.topicId)
+      console.error('Topic not found:', topicId)
       return
     }
 
@@ -176,36 +178,50 @@ async function processSchedulingActions(
     const previousMessages = await db
       .select()
       .from(slackMessageTable)
-      .where(and(
-        eq(slackMessageTable.topicId, message.topicId),
-        ne(slackMessageTable.id, message.id),
-      ))
+      .where(eq(slackMessageTable.topicId, topicId))
       .orderBy(slackMessageTable.timestamp)
+
+    const channelPreviousMessages = previousMessages.filter((msg) => (
+      msg.channelId === channelId &&
+      msg.userId !== botUserId
+    ))
+    const latestChannelMessage = channelPreviousMessages[channelPreviousMessages.length - 1]
+
+    const [llmResponseExists] = await db
+      .select()
+      .from(llmResponseTable)
+      .where(eq(llmResponseTable.slackMessageId, latestChannelMessage.id))
+      .limit(1)
+
+    if (llmResponseExists) {
+      console.log('Skipping processing latest channel message, LLM response already exists:', latestChannelMessage)
+      return
+    }
 
     // Get Slack users for name mapping (including bots to get bot's name)
     const userMap = await getSlackUsers(client)
 
     // Call scheduleNextStep to determine actions
-    const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap, botUserId)
+    const nextStep = await scheduleNextStep(latestChannelMessage, topic, previousMessages, userMap, botUserId)
     console.log('Next scheduling step:', nextStep)
 
     // Always send the reply message in thread
     const response = await client.chat.postMessage({
-      channel: message.channelId,
-      thread_ts: message.rawTs,
+      channel: channelId,
+      thread_ts: latestChannelMessage.rawTs,
       text: nextStep.replyMessage,
     })
 
     // Save the bot's reply to the database immediately
     if (response.ok && response.ts) {
       await db.insert(slackMessageTable).values({
-        topicId: message.topicId,
-        channelId: message.channelId,
+        topicId: topicId,
+        channelId: channelId,
         userId: botUserId || 'bot',
         text: nextStep.replyMessage,
         timestamp: tsToDate(response.ts),
         rawTs: response.ts,
-        threadTs: message.rawTs,
+        threadTs: latestChannelMessage.rawTs,
         raw: response.message,
       })
     }
@@ -247,7 +263,7 @@ async function processSchedulingActions(
 
       await db.update(topicTable)
         .set(updates)
-        .where(eq(topicTable.id, message.topicId))
+        .where(eq(topicTable.id, topicId))
     }
 
     // Send individual messages if needed
@@ -297,7 +313,7 @@ async function processSchedulingActions(
               // Save the bot's DM to the database immediately
               if (dmResponse.ok && dmResponse.ts) {
                 await db.insert(slackMessageTable).values({
-                  topicId: message.topicId,
+                  topicId: topicId,
                   channelId: dmChannel.channel.id,
                   userId: botUserId || 'bot',
                   text: messageGroup.text,
@@ -338,7 +354,7 @@ async function processSchedulingActions(
             // Save the bot's group message to the database immediately
             if (groupResponse.ok && groupResponse.ts) {
               await db.insert(slackMessageTable).values({
-                topicId: message.topicId,
+                topicId: topicId,
                 channelId: mpimResult.channel.id,
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
@@ -352,19 +368,19 @@ async function processSchedulingActions(
             console.error('Failed to open MPIM:', mpimResult.error)
             // Fallback to posting in the original channel
             const groupResponse = await client.chat.postMessage({
-              channel: message.channelId,
+              channel: channelId,
               text: nextStep.groupMessage,
             })
 
             if (groupResponse.ok && groupResponse.ts) {
               await db.insert(slackMessageTable).values({
-                topicId: message.topicId,
-                channelId: message.channelId,
+                topicId: topicId,
+                channelId: channelId,
                 userId: botUserId || 'bot',
                 text: nextStep.groupMessage,
                 timestamp: tsToDate(groupResponse.ts),
                 rawTs: groupResponse.ts,
-                threadTs: message.rawTs,
+                threadTs: latestChannelMessage.rawTs,
                 raw: groupResponse.message,
               })
             }
@@ -373,19 +389,19 @@ async function processSchedulingActions(
           console.error('Error creating MPIM:', mpimError)
           // Fallback to posting in the original channel
           const groupResponse = await client.chat.postMessage({
-            channel: message.channelId,
+            channel: channelId,
             text: nextStep.groupMessage,
           })
 
           if (groupResponse.ok && groupResponse.ts) {
             await db.insert(slackMessageTable).values({
-              topicId: message.topicId,
-              channelId: message.channelId,
+              topicId: topicId,
+              channelId: channelId,
               userId: botUserId || 'bot',
               text: nextStep.groupMessage,
               timestamp: tsToDate(groupResponse.ts),
               rawTs: groupResponse.ts,
-              threadTs: message.rawTs,
+              threadTs: latestChannelMessage.rawTs,
               raw: groupResponse.message,
             })
           }
@@ -394,19 +410,19 @@ async function processSchedulingActions(
         console.warn('No userIds found in topic for group message')
         // Fallback to posting in the original channel
         const groupResponse = await client.chat.postMessage({
-          channel: message.channelId,
+          channel: channelId,
           text: nextStep.groupMessage,
         })
 
         if (groupResponse.ok && groupResponse.ts) {
           await db.insert(slackMessageTable).values({
-            topicId: message.topicId,
-            channelId: message.channelId,
+            topicId: topicId,
+            channelId: channelId,
             userId: botUserId || 'bot',
             text: nextStep.groupMessage,
             timestamp: tsToDate(groupResponse.ts),
             rawTs: groupResponse.ts,
-            threadTs: message.rawTs,
+            threadTs: latestChannelMessage.rawTs,
             raw: groupResponse.message,
           })
         }
@@ -415,13 +431,13 @@ async function processSchedulingActions(
 
     // Handle completion and mark topic as inactive if requested
     if (nextStep.action === 'complete') {
-      console.log('Scheduling workflow completed for topic:', message.topicId)
+      console.log('Scheduling workflow completed for topic:', topicId)
 
       if (nextStep.markTopicInactive) {
         await db.update(topicTable)
           .set({ isActive: false, updatedAt: new Date() })
-          .where(eq(topicTable.id, message.topicId))
-        console.log('Topic marked as inactive:', message.topicId)
+          .where(eq(topicTable.id, topicId))
+        console.log('Topic marked as inactive:', topicId)
       }
     }
   } catch (error) {
