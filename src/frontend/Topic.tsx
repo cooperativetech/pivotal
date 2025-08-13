@@ -346,13 +346,19 @@ function Topic() {
                         className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                          className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer hover:opacity-90 transition-opacity ${
                             isBot
                               ? 'bg-blue-500 text-white'
                               : 'bg-gray-200 text-gray-900'
                           } ${
                             isLatestOverall ? 'ring-2 ring-offset-2 ring-amber-500' : ''
                           }`}
+                          onClick={() => {
+                            const messageIndex = sortedMessages.findIndex((m) => m.id === msg.id)
+                            if (messageIndex !== -1) {
+                              setTimelinePosition(messageIndex)
+                            }
+                          }}
                         >
                           <div
                             className={`text-xs mb-1 ${
