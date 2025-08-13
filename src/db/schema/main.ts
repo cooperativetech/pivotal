@@ -57,6 +57,19 @@ export const slackChannelTable = pgTable('slack_channel', {
 export type SlackChannelInsert = InferInsertModel<typeof slackChannelTable>
 export type SlackChannel = InferSelectModel<typeof slackChannelTable>
 
+export const llmResponseTable = pgTable('llm_response', {
+  id: uuid().primaryKey().defaultRandom(),
+  slackMessageId: uuid().notNull().references(() => slackMessageTable.id),
+  systemPrompt: text().notNull(),
+  userPrompt: text().notNull(),
+  response: text().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  slackMessageIdUnique: unique('llm_response_slack_message_id_unique').on(table.slackMessageId),
+}))
+export type LLMResponseInsert = InferInsertModel<typeof llmResponseTable>
+export type LLMResponse = InferSelectModel<typeof llmResponseTable>
+
 export interface UserContext {
   googleAccessToken?: string,
   googleRefreshToken?: string,

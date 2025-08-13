@@ -2,7 +2,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 
 import db from './db/engine'
-import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
+import { Topic, slackMessageTable, SlackMessage, llmResponseTable } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { generateGoogleAuthUrl, getUserCalendarText } from './calendar-service'
@@ -370,6 +370,15 @@ Based on the conversation history and current message, determine the next step i
         },
       ],
     })
+
+    await db
+      .insert(llmResponseTable)
+      .values({
+        slackMessageId: message.id,
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+        response: res.text,
+      })
 
     // Parse the JSON response
     const nextStep = JSON.parse(res.text) as {
