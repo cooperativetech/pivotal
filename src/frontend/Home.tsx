@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { api } from '@shared/api-client'
 
 interface Topic {
   id: string
@@ -19,11 +20,11 @@ function Home() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await fetch('/api/topics')
+        const response = await api.topics.$get()
         if (!response.ok) {
           throw new Error('Failed to fetch topics')
         }
-        const data = await response.json() as { topics: Topic[] }
+        const data = await response.json()
         setTopics(data.topics)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')

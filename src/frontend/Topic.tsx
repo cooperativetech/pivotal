@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
+import { api } from '@shared/api-client'
 
 interface SlackMessage {
   id: string
@@ -53,6 +54,9 @@ function Topic() {
   const [error, setError] = useState<string | null>(null)
   const [timelinePosition, setTimelinePosition] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [testingMessageId, setTestingMessageId] = useState<string | null>(null)
+  const [llmResponse, setLlmResponse] = useState<string | null>(null)
+  const [showPopup, setShowPopup] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
@@ -64,11 +68,14 @@ function Topic() {
       if (!topicId) return
 
       try {
-        const response = await fetch(`/api/topics/${topicId}`)
+        const response = await api.topics[':topicId'].$get({
+          param: { topicId },
+          query: {},
+        })
         if (!response.ok) {
           throw new Error('Failed to fetch topic data')
         }
-        const data = await response.json() as TopicData
+        const data = await response.json()
         setTopicData(data)
 
         // Only read query params on initial load
@@ -180,6 +187,35 @@ function Topic() {
     const position = Math.round((x / width) * (sortedMessages.length - 1))
     setTimelinePosition(Math.max(0, Math.min(sortedMessages.length - 1, position)))
   }, [sortedMessages.length])
+
+  // Handle test LLM response
+  const handleTestLlmResponse = useCallback(async (messageId: string) => {
+    if (!topicId) return
+
+    setTestingMessageId(messageId)
+    try {
+      const response = await api.test_llm_response.$post({
+        json: {
+          topicId,
+          messageId,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to test LLM response')
+      }
+
+      const data = await response.json()
+      setLlmResponse(JSON.stringify(data, null, 2))
+      setShowPopup(true)
+    } catch (err) {
+      console.error('Error testing LLM response:', err)
+      setLlmResponse(JSON.stringify({ error: err instanceof Error ? err.message : 'Failed to test LLM response' }, null, 2))
+      setShowPopup(true)
+    } finally {
+      setTestingMessageId(null)
+    }
+  }, [topicId])
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -334,50 +370,62 @@ function Topic() {
                 }}
               >
                   {channel.messages.map((msg) => {
-                    const userName = userMap.get(msg.userId) || 'Pivotal Bot'
+                    const userName = userMap.get(msg.userId) || 'Pivotal'
                     const isBot = !userMap.has(msg.userId)
                     // Check if this is the latest message overall based on timeline position
                     const isLatestOverall = timelinePosition !== null &&
                       sortedMessages[timelinePosition]?.id === msg.id
 
                     return (
-                      <div
-                        key={msg.id}
-                        className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
-                      >
+                      <div key={msg.id} className="space-y-2">
                         <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer hover:opacity-90 transition-opacity ${
-                            isBot
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-200 text-gray-900'
-                          } ${
-                            isLatestOverall ? 'ring-2 ring-offset-2 ring-amber-500' : ''
-                          }`}
-                          onClick={() => {
-                            const messageIndex = sortedMessages.findIndex((m) => m.id === msg.id)
-                            if (messageIndex !== -1) {
-                              setTimelinePosition(messageIndex)
-                            }
-                          }}
+                          className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`text-xs mb-1 ${
-                              isBot ? 'text-blue-100' : 'text-gray-600'
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer hover:opacity-90 transition-opacity ${
+                              isBot
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-900'
+                            } ${
+                              isLatestOverall ? 'ring-2 ring-offset-2 ring-amber-500' : ''
                             }`}
+                            onClick={() => {
+                              const messageIndex = sortedMessages.findIndex((m) => m.id === msg.id)
+                              if (messageIndex !== -1) {
+                                setTimelinePosition(messageIndex)
+                              }
+                            }}
                           >
-                            {userName}
-                          </div>
-                          <div className="text-sm whitespace-pre-wrap break-words">
-                            {msg.text}
-                          </div>
-                          <div
-                            className={`text-xs mt-1 ${
-                              isBot ? 'text-blue-100' : 'text-gray-500'
-                            }`}
-                          >
-                            {new Date(msg.timestamp).toLocaleTimeString()} ({msg.id})
+                            <div
+                              className={`text-xs mb-1 ${
+                                isBot ? 'text-blue-100' : 'text-gray-600'
+                              }`}
+                            >
+                              {userName}
+                            </div>
+                            <div className="text-sm whitespace-pre-wrap break-words">
+                              {msg.text}
+                            </div>
+                            <div
+                              className={`text-xs mt-1 ${
+                                isBot ? 'text-blue-100' : 'text-gray-500'
+                              }`}
+                            >
+                              {new Date(msg.timestamp).toLocaleTimeString()} ({msg.id})
+                            </div>
                           </div>
                         </div>
+                        {!isBot && isLatestOverall && (
+                          <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
+                            <button
+                              onClick={() => { void handleTestLlmResponse(msg.id) }}
+                              disabled={testingMessageId === msg.id}
+                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hover:cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {testingMessageId === msg.id ? 'Testing...' : 'Test LLM Response'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -447,6 +495,36 @@ function Topic() {
             {/* Navigation hint */}
             <div className="mt-2 text-xs text-gray-500 text-center">
               Use arrow keys (← →) or drag to navigate through time
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* JSON Response Popup */}
+      {showPopup && (
+        <div
+          className="fixed inset-0 bg-gray-600/60 flex items-center justify-center z-50 p-4 cursor-pointer"
+          onClick={() => setShowPopup(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[80vh] w-full overflow-hidden flex flex-col cursor-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">LLM Response</h2>
+              <button
+                onClick={() => setShowPopup(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <pre className="text-xs font-mono whitespace-pre-wrap">
+                {llmResponse}
+              </pre>
             </div>
           </div>
         </div>
