@@ -250,11 +250,11 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       const startDateObj = new Date(startTime)
       const endDateObj = new Date(endTime)
 
-      // Format as HH:MM (skip all-day events for now)
+      // Format as "date HH:MM (timezone)" (skip all-day events for now)
       if (event.start.dateTime && event.end.dateTime) {
         busySlots.push({
-          start: startDateObj.toTimeString().slice(0, 5), // HH:MM
-          end: endDateObj.toTimeString().slice(0, 5), // HH:MM
+          start: startDateObj.toString(), // Date HH:MM (timezone)
+          end: endDateObj.toString(), // Date HH:MM (timezone)
           summary: event.summary || 'Busy',
         })
       }
