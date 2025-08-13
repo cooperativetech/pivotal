@@ -27,6 +27,11 @@ export function unserializeTopicTimestamps(topicRes: TopicRes): TopicData {
       ...user,
       updated: new Date(user.updated),
     })),
+    userData: topicRes.userData?.map((userData) => ({
+      ...userData,
+      createdAt: new Date(userData.createdAt),
+      updatedAt: new Date(userData.updatedAt),
+    })),
   }
 }
 

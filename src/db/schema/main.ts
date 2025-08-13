@@ -58,14 +58,14 @@ export type SlackChannelInsert = InferInsertModel<typeof slackChannelTable>
 export type SlackChannel = InferSelectModel<typeof slackChannelTable>
 
 export interface UserContext {
-  googleAccessToken?: string,
-  googleRefreshToken?: string,
-  googleTokenExpiryDate?: number,
-  calendar?: string,
-  calendarLastFetched?: string,
-  slackTeamId?: string,
-  slackUserName?: string,
-  slackDisplayName?: string,
+  googleAccessToken?: string
+  googleRefreshToken?: string
+  googleTokenExpiryDate?: number
+  calendar?: string
+  calendarLastFetched?: string
+  slackTeamId?: string
+  slackUserName?: string
+  slackDisplayName?: string
 }
 
 export const userDataTable = pgTable('user_data', {

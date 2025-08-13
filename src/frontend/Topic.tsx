@@ -25,6 +25,25 @@ interface SlackUser {
   raw: unknown
 }
 
+interface UserContext {
+  googleAccessToken?: string
+  googleRefreshToken?: string
+  googleTokenExpiryDate?: number
+  calendar?: string
+  calendarLastFetched?: string
+  slackTeamId?: string
+  slackUserName?: string
+  slackDisplayName?: string
+}
+
+interface UserData {
+  id: string
+  slackUserId: string
+  context: UserContext
+  createdAt: string
+  updatedAt: string
+}
+
 interface Topic {
   id: string
   userIds: string[]
@@ -39,6 +58,7 @@ interface TopicData {
   topic: Topic
   messages: SlackMessage[]
   users: SlackUser[]
+  userData?: UserData[]
 }
 
 interface ChannelGroup {

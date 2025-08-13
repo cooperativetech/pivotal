@@ -16,6 +16,9 @@ import {
   SlackUser,
   SlackUserInsert,
   slackChannelTable,
+  userDataTable,
+  UserData,
+  UserDataInsert,
 } from './db/schema/main'
 import { TopicRes, unserializeTopicTimestamps } from './shared/api-client'
 
@@ -27,6 +30,7 @@ export interface TopicData {
   topic: Topic
   messages: SlackMessage[]
   users: SlackUser[]
+  userData?: UserData[]
 }
 
 export const GetTopicReq = z.strictObject({
@@ -103,10 +107,19 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
         .where(inArray(slackUserTable.id, topic.userIds))
     : []
 
+  // Fetch userData for users referenced in the topic
+  const userData = topic.userIds.length > 0
+    ? await db
+        .select()
+        .from(userDataTable)
+        .where(inArray(userDataTable.slackUserId, topic.userIds))
+    : []
+
   const result: TopicData = {
     topic: topic,
     messages,
     users,
+    userData,
   }
 
   return result
@@ -126,20 +139,38 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
     // Insert or update users
     if (data.users && data.users.length > 0) {
       for (const user of data.users) {
-        const userData: SlackUserInsert = { ...user }
+        const userInsert: SlackUserInsert = { ...user }
         await db
           .insert(slackUserTable)
-          .values(userData)
+          .values(userInsert)
           .onConflictDoUpdate({
             target: slackUserTable.id,
             set: {
-              teamId: userData.teamId,
-              realName: userData.realName,
-              tz: userData.tz,
-              isBot: userData.isBot,
-              deleted: userData.deleted,
-              updated: userData.updated,
-              raw: userData.raw,
+              teamId: userInsert.teamId,
+              realName: userInsert.realName,
+              tz: userInsert.tz,
+              isBot: userInsert.isBot,
+              deleted: userInsert.deleted,
+              updated: userInsert.updated,
+              raw: userInsert.raw,
+            },
+          })
+      }
+    }
+
+    // Insert or update userData
+    if (data.userData && data.userData.length > 0) {
+      for (const userDataItem of data.userData) {
+        const userDataInsert: UserDataInsert = { ...userDataItem }
+        delete userDataInsert.id
+        await db
+          .insert(userDataTable)
+          .values(userDataInsert)
+          .onConflictDoUpdate({
+            target: userDataTable.slackUserId,
+            set: {
+              context: userDataInsert.context,
+              updatedAt: new Date(),
             },
           })
       }
