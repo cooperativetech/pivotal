@@ -35,13 +35,28 @@ const honoApp = new Hono()
     }
   })
 
+  .get('/api/topics', async (c) => {
+    try {
+      // Get all active topics, ordered by most recent first
+      const topics = await db
+        .select()
+        .from(topicTable)
+        .orderBy(desc(topicTable.updatedAt))
+
+      return c.json({ topics })
+    } catch (error) {
+      console.error('Error fetching topics:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
   .get('/api/latest_topic_id', async (c) => {
     try {
       // Get the most recently created topic
       const [latestTopic] = await db
         .select()
         .from(topicTable)
-        .orderBy(desc(topicTable.createdAt))
+        .orderBy(desc(topicTable.updatedAt))
         .limit(1)
 
       if (!latestTopic) {

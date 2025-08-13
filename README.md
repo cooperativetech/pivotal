@@ -6,17 +6,17 @@ brew install pnpm
 pnpm install
 ```
 
-Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_GOOGLE_CLIENT_ID`, and `PV_GOOGLE_CLIENT_SECRET` env vars set (e.g. in your ~/.bashrc). Then, run the bot:
+Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_GOOGLE_CLIENT_ID`, and `PV_GOOGLE_CLIENT_SECRET` env vars set (e.g. in your ~/.bashrc). Then, run the flack server:
 ```
 pnpm run dev
 ```
 
-While the bot is running, you can test it with fake slack messages using the flack command line tool:
+You can then visit the dev-only website in your browser at http://localhost:5173. While the flack server is running, you can also test it with fake slack messages using the flack command line tool:
 ```
 pnpm run flack
 ```
 
-To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack, and disallow flack access:
+To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack, avoid starting the dev-only website, and disallow flack access:
 ```
 pnpm run prod
 ```

@@ -1,7 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { PersonProfile, TimeSlot } from '../core-benchmark/generate-benchmark-data'
-import { api, unserializeTopicTimestamps } from '../api-client'
+import { api, unserializeTopicTimestamps } from '../../shared/api-client'
 import { organizeMessagesByChannelAndThread } from '../../utils'
 
 // Initialize OpenRouter with API key from environment

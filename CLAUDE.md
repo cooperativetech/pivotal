@@ -5,52 +5,88 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 - `pnpm run lint` - Run ESLint and TypeScript type checking
-- `pnpm run dkgen --name migration_name` - Create a drizzle migration
+- `pnpm run dkgen --name migration_name` - Generate Drizzle migration after schema changes
+
+## Environment Variables
+
+Required for development:
+- `PV_DB_URL` - PostgreSQL connection string (e.g., `postgresql://localhost:5432/pivotal`)
+- `PV_OPENROUTER_API_KEY` - OpenRouter API key for LLM interactions
+- `PV_GOOGLE_CLIENT_ID` - Google OAuth client ID for calendar integration
+- `PV_GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+
+Additional for production:
+- `PV_BASE_URL` - Base URL for callbacks (e.g., `https://yourdomain.com`)
+- `PV_SLACK_BOT_TOKEN` - Slack bot user OAuth token
+- `PV_SLACK_APP_TOKEN` - Slack app-level token for socket mode
 
 ## Architecture Overview
 
-This is a full-stack chat application built with modern web technologies.
+This is a Slack bot for AI-assisted scheduling with evaluation framework.
 
-**Tech Stack:**
-- Backend: Hono framework on Node.js with TypeScript
-- Frontend: React with TypeScript, built with Vite
-- Database: PostgreSQL with Drizzle ORM
-- Authentication: better-auth library
-- AI Integration: OpenRouter AI SDK provider
-- Styling: Tailwind CSS v4
+**Core Components:**
 
-**Core Flow:**
-1. Users authenticate via better-auth system
-2. Authenticated users can see other users and create group chats
-3. Group chats support public context and individual chat histories
-4. Chat data stored in PostgreSQL with JSON columns for flexible chat structure
+1. **Slack Integration** (`src/slack-bot.ts`, `src/slack-message-handler.ts`)
+   - Real Slack bot using Bolt framework in socket mode
+   - Flack server (`src/flack-server.ts`) for local development/testing
+   - Message handling with topic tracking and thread organization
 
-**Key Files:**
-- `src/server.ts` - Main Hono server with API routes and authentication
-- `src/auth.ts` - Better-auth configuration
-- `src/db/schema/main.ts` - Database schema for chat table
-- `src/db/schema/auth.ts` - Database schema for authentication (user, session, etc.)
-- `src/shared/api-types.ts` - Shared TypeScript interfaces with Zod validation
-- `src/frontend/` - React components and client-side code
+2. **AI Processing** (`src/anthropic-api.ts`)
+   - Uses OpenRouter AI SDK provider for LLM interactions
+   - Analyzes message relevance to existing topics
+   - Generates scheduling responses based on conversation context
+
+3. **Calendar Integration** (`src/calendar-service.ts`)
+   - Google Calendar OAuth flow
+   - Fetches and analyzes user availability
+   - Stores tokens in user_data table
+
+4. **Database** (PostgreSQL with Drizzle ORM)
+   - `topic` - Conversation topics with workflow types (scheduling/other)
+   - `slack_message` - All messages linked to topics
+   - `slack_user` - Slack user profiles
+   - `slack_channel` - Channel membership tracking
+   - `user_data` - User context including calendar tokens
+   - `llm_response` - Cached LLM responses
+
+5. **Evaluation Framework** (`src/evals/`)
+   - Benchmark data generation for scheduling scenarios
+   - LLM persona agents that simulate users in conversations
+   - Scoring algorithms to evaluate scheduling performance
+   - End-to-end evaluation via flack-eval
+
+**Request Flow:**
+1. Slack message received → Analyzed for topic relevance
+2. New topic created or message added to existing topic
+3. For scheduling topics → Calendar data fetched if available
+4. LLM generates contextual response considering full conversation
+5. Response sent back to Slack thread
 
 ## Important ESLint Rules
 
-```
+```javascript
 {
-    'quotes': ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
-    'semi': ['error', 'never'],
-    'comma-dangle': ['error', 'always-multiline'],
-    'object-curly-spacing': ['error', 'always'],
-    'array-bracket-spacing': ['error', 'never'],
-    'no-trailing-spaces': ['error'],
-    '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+  '@stylistic/quotes': ['error', 'single', { avoidEscape: true, allowTemplateLiterals: 'avoidEscape' }],
+  '@stylistic/semi': ['error', 'never'],
+  '@stylistic/comma-dangle': ['error', 'always-multiline'],
+  '@stylistic/object-curly-spacing': ['error', 'always'],
+  '@stylistic/array-bracket-spacing': ['error', 'never'],
+  '@stylistic/no-trailing-spaces': ['error'],
+  '@stylistic/arrow-parens': ['error', 'always'],
+  '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }]
 }
 ```
 
-## Other Principles
+## Database Conventions
 
-- Backend code should never import from the src/frontend folder
-- Frontend code should only import from src/frontend and src/shared folders (plus third-party libs)
-- Shared code between frontend and backend goes in src/shared folder
-- For every API route, define request/response types in src/shared/api-types.ts using Zod schemas
-- Drizzle uses snake_case naming convention for database columns
+- Drizzle uses snake_case naming for database columns
+- All tables use UUID primary keys except Slack-specific tables (use Slack IDs)
+- Timestamps include timezone information
+- JSON columns store structured data (user arrays, raw Slack payloads)
+
+## TypeScript Conventions
+
+- Path alias `@shared/*` maps to `src/shared/*`
+- Use `.ts` file extensions in imports (required for tsx)
+- Strict mode enabled with no unused locals/parameters
+- All imports must have checked side effects

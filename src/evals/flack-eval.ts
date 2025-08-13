@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
 import { scoreAlgorithm, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
-import { api, unserializeTopicTimestamps } from './api-client'
+import { api, unserializeTopicTimestamps } from '../shared/api-client'
 import { TopicData } from '../utils'
 
 interface BenchmarkTestCase {
