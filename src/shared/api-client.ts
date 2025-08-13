@@ -32,6 +32,7 @@ export function unserializeTopicTimestamps(topicRes: TopicRes): TopicData {
       createdAt: new Date(userData.createdAt),
       updatedAt: new Date(userData.updatedAt),
     })),
+    channels: topicRes.channels,
   }
 }
 

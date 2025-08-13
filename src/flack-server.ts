@@ -110,14 +110,30 @@ const honoApp = new Hono()
       const topicUserIds = new Set(topicData.topic.userIds)
       const botUserIds = new Set<string>()
       const slackUserIds = new Set<string>()
+      const slackChannelIds = new Set<string>()
 
       previousMessages.forEach((msg) => {
+        slackChannelIds.add(msg.channelId)
         if (!topicUserIds.has(msg.userId)) {
           botUserIds.add(msg.userId)
         } else {
           slackUserIds.add(msg.userId)
         }
       })
+
+      // If we have channels, add all users in currently open channels as well
+      if (topicData.channels) {
+        for (const channel of topicData.channels) {
+          if (!slackChannelIds.has(channel.id)) {
+            continue
+          }
+          for (const userId of channel.userIds) {
+            if (!botUserIds.has(userId)) {
+              slackUserIds.add(userId)
+            }
+          }
+        }
+      }
 
       // Set topic to only have users it had at the time of this message
       const topicWithCurrentUsers: Topic = {

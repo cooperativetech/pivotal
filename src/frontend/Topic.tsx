@@ -44,6 +44,11 @@ interface UserData {
   updatedAt: string
 }
 
+interface SlackChannel {
+  id: string
+  userIds: string[]
+}
+
 interface Topic {
   id: string
   userIds: string[]
@@ -59,6 +64,7 @@ interface TopicData {
   messages: SlackMessage[]
   users: SlackUser[]
   userData?: UserData[]
+  channels?: SlackChannel[]
 }
 
 interface ChannelGroup {

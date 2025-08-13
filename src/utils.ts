@@ -16,6 +16,8 @@ import {
   SlackUser,
   SlackUserInsert,
   slackChannelTable,
+  SlackChannel,
+  SlackChannelInsert,
   userDataTable,
   UserData,
   UserDataInsert,
@@ -31,6 +33,7 @@ export interface TopicData {
   messages: SlackMessage[]
   users: SlackUser[]
   userData?: UserData[]
+  channels?: SlackChannel[]
 }
 
 export const GetTopicReq = z.strictObject({
@@ -115,11 +118,21 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
         .where(inArray(userDataTable.slackUserId, topic.userIds))
     : []
 
+  // Fetch unique channel IDs from messages
+  const channelIds = [...new Set(messages.map((msg) => msg.channelId))]
+  const channels = channelIds.length > 0
+    ? await db
+        .select()
+        .from(slackChannelTable)
+        .where(inArray(slackChannelTable.id, channelIds))
+    : []
+
   const result: TopicData = {
     topic: topic,
     messages,
     users,
     userData,
+    channels,
   }
 
   return result
@@ -171,6 +184,22 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
             set: {
               context: userDataInsert.context,
               updatedAt: new Date(),
+            },
+          })
+      }
+    }
+
+    // Insert or update channels
+    if (data.channels && data.channels.length > 0) {
+      for (const channel of data.channels) {
+        const channelInsert: SlackChannelInsert = { ...channel }
+        await db
+          .insert(slackChannelTable)
+          .values(channelInsert)
+          .onConflictDoUpdate({
+            target: slackChannelTable.id,
+            set: {
+              userIds: channelInsert.userIds,
             },
           })
       }
