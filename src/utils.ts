@@ -17,6 +17,7 @@ import {
   SlackUserInsert,
   slackChannelTable,
 } from './db/schema/main'
+import { TopicRes, unserializeTopicTimestamps } from './shared/api-client'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
@@ -111,54 +112,65 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
   return result
 }
 
-export async function loadTopic(jsonData: string | TopicData): Promise<{ topicId: string }> {
-  const data: TopicData = typeof jsonData === 'string' ? JSON.parse(jsonData) as TopicData : jsonData
+export async function loadTopics(jsonData: string): Promise<{ topicIds: string[] }> {
+  // Parse string input if needed
+  const parsedData = JSON.parse(jsonData) as TopicRes | TopicRes[]
 
-  // Insert or update users
-  if (data.users && data.users.length > 0) {
-    for (const user of data.users) {
-      const userData: SlackUserInsert = { ...user }
-      await db
-        .insert(slackUserTable)
-        .values(userData)
-        .onConflictDoUpdate({
-          target: slackUserTable.id,
-          set: {
-            teamId: userData.teamId,
-            realName: userData.realName,
-            tz: userData.tz,
-            isBot: userData.isBot,
-            deleted: userData.deleted,
-            updated: userData.updated,
-            raw: userData.raw,
-          },
-        })
-    }
-  }
+  // Normalize to array with Date objects
+  const topicReqsArray: TopicRes[] = Array.isArray(parsedData) ? parsedData : [parsedData]
+  const topicsArray: TopicData[] = topicReqsArray.map((topicRes) => unserializeTopicTimestamps(topicRes))
 
-  // Insert topic (excluding id to let DB generate new one)
-  const topicData: TopicInsert = { ...data.topic }
-  delete topicData.id
-  const [insertedTopic] = await db
-    .insert(topicTable)
-    .values(topicData)
-    .returning()
+  const topicIds: string[] = []
 
-  // Insert messages with new topic ID
-  if (data.messages.length > 0) {
-    const messagesWithNewTopicId = data.messages.map((msg) => {
-      const msgData: SlackMessageInsert = { ...msg }
-      delete msgData.id
-      return {
-        ...msgData,
-        topicId: insertedTopic.id,
+  for (const data of topicsArray) {
+    // Insert or update users
+    if (data.users && data.users.length > 0) {
+      for (const user of data.users) {
+        const userData: SlackUserInsert = { ...user }
+        await db
+          .insert(slackUserTable)
+          .values(userData)
+          .onConflictDoUpdate({
+            target: slackUserTable.id,
+            set: {
+              teamId: userData.teamId,
+              realName: userData.realName,
+              tz: userData.tz,
+              isBot: userData.isBot,
+              deleted: userData.deleted,
+              updated: userData.updated,
+              raw: userData.raw,
+            },
+          })
       }
-    })
+    }
 
-    await db.insert(slackMessageTable).values(messagesWithNewTopicId)
+    // Insert topic (excluding id to let DB generate new one)
+    const topicData: TopicInsert = { ...data.topic }
+    delete topicData.id
+    const [insertedTopic] = await db
+      .insert(topicTable)
+      .values(topicData)
+      .returning()
+
+    // Insert messages with new topic ID
+    if (data.messages.length > 0) {
+      const messagesWithNewTopicId = data.messages.map((msg) => {
+        const msgData: SlackMessageInsert = { ...msg }
+        delete msgData.id
+        return {
+          ...msgData,
+          topicId: insertedTopic.id,
+        }
+      })
+
+      await db.insert(slackMessageTable).values(messagesWithNewTopicId)
+    }
+
+    topicIds.push(insertedTopic.id)
   }
 
-  return { topicId: insertedTopic.id }
+  return { topicIds }
 }
 
 export function replaceUserMentions(text: string, userMap: Map<string, string>): string {
@@ -327,8 +339,12 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     }
 
     const jsonData = await fs.readFile(jsonFile, 'utf-8')
-    const result = await loadTopic(jsonData)
-    console.log(`Topic loaded with new ID: ${result.topicId}`)
+    const result = await loadTopics(jsonData)
+    if (result.topicIds.length === 1) {
+      console.log(`Topic loaded with new ID: ${result.topicIds[0]}`)
+    } else {
+      console.log(`${result.topicIds.length} topics loaded with IDs: ${result.topicIds.join(', ')}`)
+    }
 
   } else {
     console.error(`Error: Unknown command '${command}'`)

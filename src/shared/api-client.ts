@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://localhost:3001'
 
 export const api = hc<AppType>(API_BASE_URL).api
 
-type TopicRes = InferResponseType<typeof api.topics[':topicId']['$get'], 200>
+export type TopicRes = InferResponseType<typeof api.topics[':topicId']['$get'], 200>
 
 export function unserializeTopicTimestamps(topicRes: TopicRes): TopicData {
   return {
