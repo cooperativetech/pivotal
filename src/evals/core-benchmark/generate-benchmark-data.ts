@@ -1,12 +1,36 @@
 import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 
-// Types for calendar events and scheduling
+// Types for calendar events and scheduling (matching Google Calendar API structure)
 export interface CalendarEvent {
-  start: string // Time in HH:MM format (24hr)
-  end: string   // Time in HH:MM format (24hr)
-  type: 'free' | 'blocked-work' | 'meeting' | 'personal' | 'critical' // Event type
-  description: string
+  id: string
+  status: 'confirmed' | 'tentative' | 'cancelled'
+  summary: string
+  description?: string
+  location?: string
+  organizer?: {
+    email: string
+  }
+  start: {
+    dateTime?: string // ISO 8601 format with timezone
+    date?: string // For all-day events
+    timeZone?: string
+  }
+  end: {
+    dateTime?: string
+    date?: string
+    timeZone?: string
+  }
+  attendees?: Array<{
+    email: string
+    responseStatus: 'accepted' | 'declined' | 'tentative' | 'needsAction'
+    self?: boolean
+    organizer?: boolean
+  }>
+  recurringEventId?: string
+  transparency?: 'opaque' | 'transparent'
+  visibility?: 'default' | 'public' | 'private' | 'confidential'
+  type?: 'free' | 'blocked-work' | 'meeting' | 'personal' | 'critical' // Custom field for utility calculation
 }
 
 // Utility values for different event types when scheduling over them
@@ -54,15 +78,38 @@ function timeSlotsOverlap(slot1: TimeSlot, slot2: TimeSlot): boolean {
   return start1 < end2 && start2 < end1
 }
 
+// Extract time from ISO datetime string to HH:MM format
+function extractTime(dateTime: string): string {
+  const date = new Date(dateTime)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+// Create ISO datetime string for a specific date and time
+function createDateTime(date: Date, time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  const dt = new Date(date)
+  dt.setHours(hours, minutes, 0, 0)
+  return dt.toISOString()
+}
+
 // Calculate utility for a person given a proposed time slot
 function calculatePersonUtility(
   person: PersonProfile,
   proposedTime: TimeSlot,
 ): { utility: number; conflictingEvent?: CalendarEvent } {
   // Find all events that conflict with the proposed time
-  const conflicts = person.calendar.filter((event) =>
-    timeSlotsOverlap(proposedTime, { start: event.start, end: event.end }),
-  )
+  const conflicts = person.calendar.filter((event) => {
+    if (event.status === 'cancelled') return false
+    if (!event.start.dateTime || !event.end.dateTime) return false
+    
+    const eventSlot = {
+      start: extractTime(event.start.dateTime),
+      end: extractTime(event.end.dateTime)
+    }
+    return timeSlotsOverlap(proposedTime, eventSlot)
+  })
 
   // If no conflicts, return max utility (free time)
   if (conflicts.length === 0) {
@@ -90,6 +137,10 @@ function calculatePersonUtility(
         break
       case 'critical':
         utility = person.utilityConfig.critical
+        break
+      default:
+        // Default to meeting if type is not specified
+        utility = person.utilityConfig.meeting
         break
     }
 
@@ -219,12 +270,18 @@ interface CalendarGenerationConfig {
 }
 
 // Generate a random calendar for one person
-function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent[] {
+function generateRandomCalendar(config: CalendarGenerationConfig, personName: string): CalendarEvent[] {
   const events: CalendarEvent[] = []
   const numEvents = Math.floor(Math.random() * (config.maxEvents - config.minEvents + 1)) + config.minEvents
 
   // Track occupied time slots to avoid overlaps
   const occupiedSlots = new Set<string>()
+  
+  // Use next Tuesday as the base date for all events
+  const baseDate = new Date()
+  const daysUntilTuesday = (2 - baseDate.getDay() + 7) % 7 || 7
+  baseDate.setDate(baseDate.getDate() + daysUntilTuesday)
+  baseDate.setHours(0, 0, 0, 0)
 
   for (let i = 0; i < numEvents; i++) {
     let attempts = 0
@@ -268,18 +325,66 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
         }
 
         // Generate description based on type
-        const descriptions = {
-          meeting: ['Team sync', 'Client call', '1:1', 'Planning session', 'Review meeting'],
-          'blocked-work': ['Focus time', 'Deep work', 'Project work', 'Code review', 'Documentation'],
-          personal: ['Lunch', 'Gym', 'Errand', 'Appointment', 'Break'],
-          critical: ['Pick up kids', 'Medical appointment', 'Flight', 'School event', 'Emergency'],
+        const summaries = {
+          meeting: ['Team sync', 'Client call', '1:1 with manager', 'Planning session', 'Review meeting', 'Standup', 'Product demo', 'Design review'],
+          'blocked-work': ['Focus time', 'Deep work', 'Project work', 'Code review', 'Documentation', 'Development time'],
+          personal: ['Lunch', 'Gym', 'Errand', 'Doctor appointment', 'Break', 'Personal time'],
+          critical: ['Pick up kids from school', 'Medical appointment', 'Flight to conference', 'School event', 'Emergency meeting'],
         }
+        
+        const summary = summaries[eventType][Math.floor(Math.random() * summaries[eventType].length)]
+        
+        // Generate event ID similar to Google's format
+        const eventId = `${Math.random().toString(36).substring(2, 15)}_${baseDate.toISOString().replace(/[-:]/g, '').substring(0, 8)}T${roundedStart.toString().padStart(4, '0')}00Z`
+        
+        // Create start and end DateTimes
+        const startDateTime = createDateTime(baseDate, minutesToTime(roundedStart))
+        const endDateTime = createDateTime(baseDate, minutesToTime(endMinutes))
+        
+        // Create email for the person
+        const email = `${personName.toLowerCase().replace(/\s+/g, '.')}@example.com`
 
         event = {
-          start: minutesToTime(roundedStart),
-          end: minutesToTime(endMinutes),
-          type: eventType,
-          description: descriptions[eventType][Math.floor(Math.random() * descriptions[eventType].length)],
+          id: eventId,
+          status: 'confirmed',
+          summary,
+          description: eventType === 'critical' ? 'Cannot be moved or rescheduled' : undefined,
+          start: {
+            dateTime: startDateTime,
+            timeZone: 'America/Los_Angeles'
+          },
+          end: {
+            dateTime: endDateTime,
+            timeZone: 'America/Los_Angeles'
+          },
+          organizer: {
+            email
+          },
+          attendees: [
+            {
+              email,
+              responseStatus: 'accepted',
+              self: true,
+              organizer: true
+            }
+          ],
+          type: eventType, // Custom field for utility calculation
+        }
+        
+        // Add additional attendees for meetings
+        if (eventType === 'meeting' && Math.random() > 0.3) {
+          const numAttendees = Math.floor(Math.random() * 3) + 1
+          for (let j = 0; j < numAttendees; j++) {
+            event.attendees?.push({
+              email: `colleague${j + 1}@example.com`,
+              responseStatus: Math.random() > 0.2 ? 'accepted' : 'tentative'
+            })
+          }
+        }
+        
+        // Some events might be recurring
+        if (eventType === 'meeting' && Math.random() > 0.7) {
+          event.recurringEventId = `${Math.random().toString(36).substring(2, 10)}`
         }
       }
 
@@ -293,8 +398,8 @@ function generateRandomCalendar(config: CalendarGenerationConfig): CalendarEvent
 
   // Sort events by start time
   events.sort((a, b) => {
-    const aStart = parseInt(a.start.split(':')[0]) * 60 + parseInt(a.start.split(':')[1])
-    const bStart = parseInt(b.start.split(':')[0]) * 60 + parseInt(b.start.split(':')[1])
+    const aStart = new Date(a.start.dateTime!).getTime()
+    const bStart = new Date(b.start.dateTime!).getTime()
     return aStart - bStart
   })
 
@@ -341,9 +446,10 @@ export function generateRandomProfiles(
   const profiles: PersonProfile[] = []
 
   for (let i = 0; i < numPeople; i++) {
+    const personName = names[i % names.length] + (i >= names.length ? i.toString() : '')
     profiles.push({
-      name: names[i % names.length] + (i >= names.length ? i.toString() : ''),
-      calendar: generateRandomCalendar(config),
+      name: personName,
+      calendar: generateRandomCalendar(config, personName),
       utilityConfig: generateRandomUtilityConfig(),
     })
   }

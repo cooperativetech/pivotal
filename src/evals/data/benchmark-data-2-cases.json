@@ -6,41 +6,217 @@
         "name": "Alice",
         "calendar": [
           {
-            "start": "09:00",
-            "end": "10:00",
+            "id": "hpeavu4lcru_20250819T048000Z",
+            "status": "confirmed",
+            "summary": "1:1 with manager",
+            "start": {
+              "dateTime": "2025-08-19T12:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T12:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
             "type": "meeting",
-            "description": "Client call"
+            "recurringEventId": "5zqq9uk9"
           },
           {
-            "start": "11:30",
-            "end": "12:00",
+            "id": "tn67em0gilf_20250819T051000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T12:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "l82ggh364ri_20250819T060000Z",
+            "status": "confirmed",
+            "summary": "Development time",
+            "start": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "j3cf1nrc6pq_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "qv608tp1e2l_20250819T072000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "mimn2dvoata_20250819T078000Z",
+            "status": "confirmed",
+            "summary": "Code review",
+            "start": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "jof3tjqqua_20250819T078000Z",
+            "status": "confirmed",
+            "summary": "Design review",
+            "start": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
             "type": "meeting",
-            "description": "1:1"
+            "recurringEventId": "lvgsgtxs"
           },
           {
-            "start": "13:30",
-            "end": "14:30",
-            "type": "meeting",
-            "description": "1:1"
-          },
-          {
-            "start": "15:30",
-            "end": "16:30",
-            "type": "personal",
-            "description": "Lunch"
-          },
-          {
-            "start": "15:30",
-            "end": "16:30",
-            "type": "blocked-work",
-            "description": "Deep work"
+            "id": "o1k1pnufyr_20250819T096000Z",
+            "status": "confirmed",
+            "summary": "Lunch",
+            "start": {
+              "dateTime": "2025-08-19T20:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T21:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 64,
-          "meeting": 20,
-          "personal": 43,
+          "blockedWork": 66,
+          "meeting": 19,
+          "personal": 37,
           "critical": 0
         }
       },
@@ -48,545 +224,131 @@
         "name": "Bob",
         "calendar": [
           {
-            "start": "09:00",
-            "end": "10:00",
+            "id": "wjiaya58ys_20250819T048000Z",
+            "status": "confirmed",
+            "summary": "Design review",
+            "start": {
+              "dateTime": "2025-08-19T12:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "ye6s3lbel1f_20250819T054000Z",
+            "status": "confirmed",
+            "summary": "Client call",
+            "start": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
             "type": "meeting",
-            "description": "Review meeting"
+            "recurringEventId": "tnd501tt"
           },
           {
-            "start": "10:30",
-            "end": "11:00",
-            "type": "meeting",
-            "description": "Review meeting"
+            "id": "o9x44tbi06_20250819T060000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           },
           {
-            "start": "11:00",
-            "end": "11:30",
-            "type": "meeting",
-            "description": "Client call"
-          },
-          {
-            "start": "12:00",
-            "end": "12:30",
-            "type": "meeting",
-            "description": "1:1"
-          },
-          {
-            "start": "12:00",
-            "end": "13:00",
-            "type": "personal",
-            "description": "Appointment"
-          },
-          {
-            "start": "14:30",
-            "end": "16:00",
-            "type": "blocked-work",
-            "description": "Focus time"
-          },
-          {
-            "start": "16:00",
-            "end": "17:30",
-            "type": "blocked-work",
-            "description": "Code review"
+            "id": "18drtjzoisy_20250819T099000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T20:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T21:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague3@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 76,
-          "meeting": 24,
-          "personal": 40,
-          "critical": 0
-        }
-      },
-      {
-        "name": "Charlie",
-        "calendar": [
-          {
-            "start": "08:30",
-            "end": "09:00",
-            "type": "meeting",
-            "description": "Client call"
-          },
-          {
-            "start": "09:00",
-            "end": "10:00",
-            "type": "critical",
-            "description": "Flight"
-          },
-          {
-            "start": "11:30",
-            "end": "12:00",
-            "type": "personal",
-            "description": "Gym"
-          },
-          {
-            "start": "13:30",
-            "end": "15:00",
-            "type": "blocked-work",
-            "description": "Project work"
-          },
-          {
-            "start": "15:00",
-            "end": "15:30",
-            "type": "meeting",
-            "description": "Client call"
-          },
-          {
-            "start": "15:30",
-            "end": "16:00",
-            "type": "meeting",
-            "description": "Client call"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 76,
-          "meeting": 29,
-          "personal": 33,
-          "critical": 0
-        }
-      },
-      {
-        "name": "Diana",
-        "calendar": [
-          {
-            "start": "09:30",
-            "end": "10:00",
-            "type": "meeting",
-            "description": "1:1"
-          },
-          {
-            "start": "11:00",
-            "end": "12:00",
-            "type": "personal",
-            "description": "Gym"
-          },
-          {
-            "start": "11:30",
-            "end": "13:00",
-            "type": "meeting",
-            "description": "1:1"
-          },
-          {
-            "start": "11:30",
-            "end": "13:00",
-            "type": "blocked-work",
-            "description": "Project work"
-          },
-          {
-            "start": "12:30",
-            "end": "14:00",
-            "type": "blocked-work",
-            "description": "Focus time"
-          },
-          {
-            "start": "13:30",
-            "end": "14:30",
-            "type": "critical",
-            "description": "Medical appointment"
-          },
-          {
-            "start": "14:30",
-            "end": "15:00",
-            "type": "meeting",
-            "description": "Team sync"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 79,
-          "meeting": 22,
-          "personal": 30,
-          "critical": 0
-        }
-      },
-      {
-        "name": "Eve",
-        "calendar": [
-          {
-            "start": "08:00",
-            "end": "09:00",
-            "type": "meeting",
-            "description": "Client call"
-          },
-          {
-            "start": "08:30",
-            "end": "10:00",
-            "type": "critical",
-            "description": "Emergency"
-          },
-          {
-            "start": "08:30",
-            "end": "09:30",
-            "type": "blocked-work",
-            "description": "Focus time"
-          },
-          {
-            "start": "11:00",
-            "end": "11:30",
-            "type": "blocked-work",
-            "description": "Focus time"
-          },
-          {
-            "start": "12:30",
-            "end": "14:00",
-            "type": "personal",
-            "description": "Break"
-          },
-          {
-            "start": "13:00",
-            "end": "13:30",
-            "type": "blocked-work",
-            "description": "Deep work"
-          },
-          {
-            "start": "13:30",
-            "end": "14:00",
-            "type": "meeting",
-            "description": "Planning session"
-          },
-          {
-            "start": "16:30",
-            "end": "17:00",
-            "type": "personal",
-            "description": "Appointment"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 63,
-          "meeting": 23,
-          "personal": 38,
-          "critical": 0
-        }
-      }
-    ],
-    "utilityDistribution": [
-      {
-        "timeSlot": {
-          "start": "09:00",
-          "end": "10:00"
-        },
-        "totalUtility": 66
-      },
-      {
-        "timeSlot": {
-          "start": "09:15",
-          "end": "10:15"
-        },
-        "totalUtility": 66
-      },
-      {
-        "timeSlot": {
-          "start": "09:30",
-          "end": "10:30"
-        },
-        "totalUtility": 66
-      },
-      {
-        "timeSlot": {
-          "start": "09:45",
-          "end": "10:45"
-        },
-        "totalUtility": 66
-      },
-      {
-        "timeSlot": {
-          "start": "10:00",
-          "end": "11:00"
-        },
-        "totalUtility": 424
-      },
-      {
-        "timeSlot": {
-          "start": "10:15",
-          "end": "11:15"
-        },
-        "totalUtility": 317
-      },
-      {
-        "timeSlot": {
-          "start": "10:30",
-          "end": "11:30"
-        },
-        "totalUtility": 317
-      },
-      {
-        "timeSlot": {
-          "start": "10:45",
-          "end": "11:45"
-        },
-        "totalUtility": 162
-      },
-      {
-        "timeSlot": {
-          "start": "11:00",
-          "end": "12:00"
-        },
-        "totalUtility": 162
-      },
-      {
-        "timeSlot": {
-          "start": "11:15",
-          "end": "12:15"
-        },
-        "totalUtility": 162
-      },
-      {
-        "timeSlot": {
-          "start": "11:30",
-          "end": "12:30"
-        },
-        "totalUtility": 199
-      },
-      {
-        "timeSlot": {
-          "start": "11:45",
-          "end": "12:45"
-        },
-        "totalUtility": 137
-      },
-      {
-        "timeSlot": {
-          "start": "12:00",
-          "end": "13:00"
-        },
-        "totalUtility": 284
-      },
-      {
-        "timeSlot": {
-          "start": "12:15",
-          "end": "13:15"
-        },
-        "totalUtility": 284
-      },
-      {
-        "timeSlot": {
-          "start": "12:30",
-          "end": "13:30"
-        },
-        "totalUtility": 300
-      },
-      {
-        "timeSlot": {
-          "start": "12:45",
-          "end": "13:45"
-        },
-        "totalUtility": 159
-      },
-      {
-        "timeSlot": {
-          "start": "13:00",
-          "end": "14:00"
-        },
-        "totalUtility": 219
-      },
-      {
-        "timeSlot": {
-          "start": "13:15",
-          "end": "14:15"
-        },
-        "totalUtility": 219
-      },
-      {
-        "timeSlot": {
-          "start": "13:30",
-          "end": "14:30"
-        },
-        "totalUtility": 219
-      },
-      {
-        "timeSlot": {
-          "start": "13:45",
-          "end": "14:45"
-        },
-        "totalUtility": 195
-      },
-      {
-        "timeSlot": {
-          "start": "14:00",
-          "end": "15:00"
-        },
-        "totalUtility": 272
-      },
-      {
-        "timeSlot": {
-          "start": "14:15",
-          "end": "15:15"
-        },
-        "totalUtility": 225
-      },
-      {
-        "timeSlot": {
-          "start": "14:30",
-          "end": "15:30"
-        },
-        "totalUtility": 327
-      },
-      {
-        "timeSlot": {
-          "start": "14:45",
-          "end": "15:45"
-        },
-        "totalUtility": 270
-      },
-      {
-        "timeSlot": {
-          "start": "15:00",
-          "end": "16:00"
-        },
-        "totalUtility": 348
-      },
-      {
-        "timeSlot": {
-          "start": "15:15",
-          "end": "16:15"
-        },
-        "totalUtility": 348
-      },
-      {
-        "timeSlot": {
-          "start": "15:30",
-          "end": "16:30"
-        },
-        "totalUtility": 348
-      },
-      {
-        "timeSlot": {
-          "start": "15:45",
-          "end": "16:45"
-        },
-        "totalUtility": 286
-      },
-      {
-        "timeSlot": {
-          "start": "16:00",
-          "end": "17:00"
-        },
-        "totalUtility": 357
-      }
-    ],
-    "optimalSlots": [
-      {
-        "start": "10:00",
-        "end": "11:00"
-      }
-    ],
-    "optimalUtility": 424
-  },
-  {
-    "id": 1,
-    "profiles": [
-      {
-        "name": "Alice",
-        "calendar": [
-          {
-            "start": "09:00",
-            "end": "10:00",
-            "type": "personal",
-            "description": "Lunch"
-          },
-          {
-            "start": "09:30",
-            "end": "10:30",
-            "type": "blocked-work",
-            "description": "Code review"
-          },
-          {
-            "start": "13:00",
-            "end": "14:00",
-            "type": "blocked-work",
-            "description": "Project work"
-          },
-          {
-            "start": "13:00",
-            "end": "14:30",
-            "type": "personal",
-            "description": "Appointment"
-          },
-          {
-            "start": "13:30",
-            "end": "14:30",
-            "type": "meeting",
-            "description": "Team sync"
-          },
-          {
-            "start": "14:30",
-            "end": "15:30",
-            "type": "personal",
-            "description": "Appointment"
-          },
-          {
-            "start": "16:30",
-            "end": "17:00",
-            "type": "critical",
-            "description": "School event"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 61,
-          "meeting": 29,
-          "personal": 35,
-          "critical": 0
-        }
-      },
-      {
-        "name": "Bob",
-        "calendar": [
-          {
-            "start": "08:30",
-            "end": "09:30",
-            "type": "meeting",
-            "description": "Client call"
-          },
-          {
-            "start": "10:30",
-            "end": "12:00",
-            "type": "blocked-work",
-            "description": "Code review"
-          },
-          {
-            "start": "11:00",
-            "end": "11:30",
-            "type": "meeting",
-            "description": "Review meeting"
-          },
-          {
-            "start": "12:30",
-            "end": "14:00",
-            "type": "critical",
-            "description": "Emergency"
-          },
-          {
-            "start": "12:30",
-            "end": "14:00",
-            "type": "personal",
-            "description": "Lunch"
-          },
-          {
-            "start": "13:30",
-            "end": "14:30",
-            "type": "meeting",
-            "description": "Planning session"
-          },
-          {
-            "start": "14:00",
-            "end": "15:30",
-            "type": "personal",
-            "description": "Gym"
-          },
-          {
-            "start": "16:00",
-            "end": "17:00",
-            "type": "meeting",
-            "description": "1:1"
-          }
-        ],
-        "utilityConfig": {
-          "free": 100,
-          "blockedWork": 60,
-          "meeting": 22,
+          "blockedWork": 67,
+          "meeting": 21,
           "personal": 42,
           "critical": 0
         }
@@ -595,59 +357,180 @@
         "name": "Charlie",
         "calendar": [
           {
-            "start": "08:30",
-            "end": "09:30",
-            "type": "blocked-work",
-            "description": "Deep work"
+            "id": "eq1dgcwvrxm_20250819T057000Z",
+            "status": "confirmed",
+            "summary": "Code review",
+            "start": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           },
           {
-            "start": "09:00",
-            "end": "10:30",
+            "id": "rri1fjqnl0q_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
             "type": "meeting",
-            "description": "Planning session"
+            "recurringEventId": "i3zpgxhy"
           },
           {
-            "start": "09:00",
-            "end": "10:30",
-            "type": "blocked-work",
-            "description": "Documentation"
+            "id": "ih1nomrlx_20250819T069000Z",
+            "status": "confirmed",
+            "summary": "Development time",
+            "start": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           },
           {
-            "start": "09:30",
-            "end": "10:30",
+            "id": "wkqez3m5crj_20250819T072000Z",
+            "status": "confirmed",
+            "summary": "Product demo",
+            "start": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague3@example.com",
+                "responseStatus": "tentative"
+              }
+            ],
             "type": "meeting",
-            "description": "Client call"
+            "recurringEventId": "ny7oz56y"
           },
           {
-            "start": "11:00",
-            "end": "11:30",
-            "type": "blocked-work",
-            "description": "Project work"
+            "id": "l3hk1b4ueyb_20250819T093000Z",
+            "status": "confirmed",
+            "summary": "School event",
+            "description": "Cannot be moved or rescheduled",
+            "start": {
+              "dateTime": "2025-08-19T19:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T20:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "critical"
           },
           {
-            "start": "11:30",
-            "end": "13:00",
-            "type": "blocked-work",
-            "description": "Deep work"
-          },
-          {
-            "start": "13:00",
-            "end": "14:30",
-            "type": "blocked-work",
-            "description": "Project work"
-          },
-          {
-            "start": "13:00",
-            "end": "14:00",
-            "type": "critical",
-            "description": "Pick up kids"
+            "id": "tukbhen5x0n_20250819T099000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T20:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T22:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 73,
-          "meeting": 29,
-          "personal": 31,
+          "blockedWork": 69,
+          "meeting": 11,
+          "personal": 49,
           "critical": 0
         }
       },
@@ -655,41 +538,215 @@
         "name": "Diana",
         "calendar": [
           {
-            "start": "13:00",
-            "end": "13:30",
-            "type": "meeting",
-            "description": "1:1"
+            "id": "0yj1dw7l74k_20250819T051000Z",
+            "status": "confirmed",
+            "summary": "Client call",
+            "start": {
+              "dateTime": "2025-08-19T12:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "meeting"
           },
           {
-            "start": "13:00",
-            "end": "14:30",
-            "type": "meeting",
-            "description": "Team sync"
+            "id": "rrr3hklrszq_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Documentation",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           },
           {
-            "start": "13:30",
-            "end": "14:00",
-            "type": "personal",
-            "description": "Break"
+            "id": "2qpg39fhd2j_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           },
           {
-            "start": "14:30",
-            "end": "15:30",
-            "type": "meeting",
-            "description": "1:1"
+            "id": "hnujlhacuf7_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Doctor appointment",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
           },
           {
-            "start": "15:30",
-            "end": "17:00",
-            "type": "personal",
-            "description": "Errand"
+            "id": "pb5n2cduw4j_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Documentation",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "oqd1pd89rrb_20250819T075000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "biegadiuvcb_20250819T090000Z",
+            "status": "confirmed",
+            "summary": "Code review",
+            "start": {
+              "dateTime": "2025-08-19T19:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T20:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "13mvwdbnyydb_20250819T099000Z",
+            "status": "confirmed",
+            "summary": "Code review",
+            "start": {
+              "dateTime": "2025-08-19T20:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T21:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 76,
-          "meeting": 21,
-          "personal": 45,
+          "blockedWork": 65,
+          "meeting": 25,
+          "personal": 31,
           "critical": 0
         }
       },
@@ -697,47 +754,175 @@
         "name": "Eve",
         "calendar": [
           {
-            "start": "09:00",
-            "end": "09:30",
-            "type": "critical",
-            "description": "Pick up kids"
-          },
-          {
-            "start": "10:30",
-            "end": "11:00",
-            "type": "blocked-work",
-            "description": "Documentation"
-          },
-          {
-            "start": "13:00",
-            "end": "13:30",
+            "id": "1vkzgqabql7_20250819T054000Z",
+            "status": "confirmed",
+            "summary": "Standup",
+            "start": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "tentative"
+              }
+            ],
             "type": "meeting",
-            "description": "Client call"
+            "recurringEventId": "cbez3c3h"
           },
           {
-            "start": "13:00",
-            "end": "14:00",
-            "type": "critical",
-            "description": "Pick up kids"
+            "id": "cv412ompd37_20250819T057000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting",
+            "recurringEventId": "px4c37oa"
           },
           {
-            "start": "13:30",
-            "end": "14:00",
-            "type": "blocked-work",
-            "description": "Code review"
+            "id": "90nob3v5e4v_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Personal time",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
           },
           {
-            "start": "14:00",
-            "end": "15:00",
-            "type": "personal",
-            "description": "Appointment"
+            "id": "12lkssa58fx_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "fow1epxhizh_20250819T075000Z",
+            "status": "confirmed",
+            "summary": "Lunch",
+            "start": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "w9v01zndgqa_20250819T081000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
           }
         ],
         "utilityConfig": {
           "free": 100,
-          "blockedWork": 75,
-          "meeting": 10,
-          "personal": 49,
+          "blockedWork": 68,
+          "meeting": 20,
+          "personal": 45,
           "critical": 0
         }
       }
@@ -748,14 +933,1079 @@
           "start": "09:00",
           "end": "10:00"
         },
-        "totalUtility": 186
+        "totalUtility": 235
       },
       {
         "timeSlot": {
           "start": "09:15",
           "end": "10:15"
         },
-        "totalUtility": 186
+        "totalUtility": 201
+      },
+      {
+        "timeSlot": {
+          "start": "09:30",
+          "end": "10:30"
+        },
+        "totalUtility": 276
+      },
+      {
+        "timeSlot": {
+          "start": "09:45",
+          "end": "10:45"
+        },
+        "totalUtility": 149
+      },
+      {
+        "timeSlot": {
+          "start": "10:00",
+          "end": "11:00"
+        },
+        "totalUtility": 195
+      },
+      {
+        "timeSlot": {
+          "start": "10:15",
+          "end": "11:15"
+        },
+        "totalUtility": 195
+      },
+      {
+        "timeSlot": {
+          "start": "10:30",
+          "end": "11:30"
+        },
+        "totalUtility": 220
+      },
+      {
+        "timeSlot": {
+          "start": "10:45",
+          "end": "11:45"
+        },
+        "totalUtility": 220
+      },
+      {
+        "timeSlot": {
+          "start": "11:00",
+          "end": "12:00"
+        },
+        "totalUtility": 311
+      },
+      {
+        "timeSlot": {
+          "start": "11:15",
+          "end": "12:15"
+        },
+        "totalUtility": 253
+      },
+      {
+        "timeSlot": {
+          "start": "11:30",
+          "end": "12:30"
+        },
+        "totalUtility": 287
+      },
+      {
+        "timeSlot": {
+          "start": "11:45",
+          "end": "12:45"
+        },
+        "totalUtility": 247
+      },
+      {
+        "timeSlot": {
+          "start": "12:00",
+          "end": "13:00"
+        },
+        "totalUtility": 247
+      },
+      {
+        "timeSlot": {
+          "start": "12:15",
+          "end": "13:15"
+        },
+        "totalUtility": 200
+      },
+      {
+        "timeSlot": {
+          "start": "12:30",
+          "end": "13:30"
+        },
+        "totalUtility": 200
+      },
+      {
+        "timeSlot": {
+          "start": "12:45",
+          "end": "13:45"
+        },
+        "totalUtility": 200
+      },
+      {
+        "timeSlot": {
+          "start": "13:00",
+          "end": "14:00"
+        },
+        "totalUtility": 364
+      },
+      {
+        "timeSlot": {
+          "start": "13:15",
+          "end": "14:15"
+        },
+        "totalUtility": 364
+      },
+      {
+        "timeSlot": {
+          "start": "13:30",
+          "end": "14:30"
+        },
+        "totalUtility": 364
+      },
+      {
+        "timeSlot": {
+          "start": "13:45",
+          "end": "14:45"
+        },
+        "totalUtility": 364
+      },
+      {
+        "timeSlot": {
+          "start": "14:00",
+          "end": "15:00"
+        },
+        "totalUtility": 387
+      },
+      {
+        "timeSlot": {
+          "start": "14:15",
+          "end": "15:15"
+        },
+        "totalUtility": 352
+      },
+      {
+        "timeSlot": {
+          "start": "14:30",
+          "end": "15:30"
+        },
+        "totalUtility": 433
+      },
+      {
+        "timeSlot": {
+          "start": "14:45",
+          "end": "15:45"
+        },
+        "totalUtility": 333
+      },
+      {
+        "timeSlot": {
+          "start": "15:00",
+          "end": "16:00"
+        },
+        "totalUtility": 365
+      },
+      {
+        "timeSlot": {
+          "start": "15:15",
+          "end": "16:15"
+        },
+        "totalUtility": 302
+      },
+      {
+        "timeSlot": {
+          "start": "15:30",
+          "end": "16:30"
+        },
+        "totalUtility": 302
+      },
+      {
+        "timeSlot": {
+          "start": "15:45",
+          "end": "16:45"
+        },
+        "totalUtility": 223
+      },
+      {
+        "timeSlot": {
+          "start": "16:00",
+          "end": "17:00"
+        },
+        "totalUtility": 223
+      }
+    ],
+    "optimalSlots": [
+      {
+        "start": "14:30",
+        "end": "15:30"
+      }
+    ],
+    "optimalUtility": 433
+  },
+  {
+    "id": 1,
+    "profiles": [
+      {
+        "name": "Alice",
+        "calendar": [
+          {
+            "id": "q31yv0r69qb_20250819T051000Z",
+            "status": "confirmed",
+            "summary": "Planning session",
+            "start": {
+              "dateTime": "2025-08-19T12:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "pz2hy0ad4c_20250819T060000Z",
+            "status": "confirmed",
+            "summary": "Product demo",
+            "start": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "k0q5aw3vr6_20250819T063000Z",
+            "status": "confirmed",
+            "summary": "Focus time",
+            "start": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "019z7wysn4tn_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Personal time",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "rc28t8x93mq_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Documentation",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "rrarlart2z_20250819T084000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "7bhw2npyxeh_20250819T087000Z",
+            "status": "confirmed",
+            "summary": "Focus time",
+            "start": {
+              "dateTime": "2025-08-19T18:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "alice@example.com"
+            },
+            "attendees": [
+              {
+                "email": "alice@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 61,
+          "meeting": 16,
+          "personal": 39,
+          "critical": 0
+        }
+      },
+      {
+        "name": "Bob",
+        "calendar": [
+          {
+            "id": "bpgxsff6m_20250819T078000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "hqa4u115cvb_20250819T081000Z",
+            "status": "confirmed",
+            "summary": "Errand",
+            "start": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "iy266e5zzu_20250819T093000Z",
+            "status": "confirmed",
+            "summary": "Product demo",
+            "start": {
+              "dateTime": "2025-08-19T19:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T21:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting",
+            "recurringEventId": "4yacs4g5"
+          },
+          {
+            "id": "y9d2z3xmgbg_20250819T096000Z",
+            "status": "confirmed",
+            "summary": "Development time",
+            "start": {
+              "dateTime": "2025-08-19T20:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T21:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "bob@example.com"
+            },
+            "attendees": [
+              {
+                "email": "bob@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 70,
+          "meeting": 28,
+          "personal": 47,
+          "critical": 0
+        }
+      },
+      {
+        "name": "Charlie",
+        "calendar": [
+          {
+            "id": "8iu5bua41fi_20250819T057000Z",
+            "status": "confirmed",
+            "summary": "Documentation",
+            "start": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "hcd3onnkyn_20250819T069000Z",
+            "status": "confirmed",
+            "summary": "Standup",
+            "start": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "tentative"
+              },
+              {
+                "email": "colleague3@example.com",
+                "responseStatus": "tentative"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "9d75fuj1k1d_20250819T078000Z",
+            "status": "confirmed",
+            "summary": "Personal time",
+            "start": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "2pxvlsc1r6i_20250819T081000Z",
+            "status": "confirmed",
+            "summary": "Documentation",
+            "start": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "2spgxsmtcyp_20250819T084000Z",
+            "status": "confirmed",
+            "summary": "Planning session",
+            "start": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "tentative"
+              }
+            ],
+            "type": "meeting",
+            "recurringEventId": "djp6t739"
+          },
+          {
+            "id": "hp9fn7qeo4_20250819T087000Z",
+            "status": "confirmed",
+            "summary": "Personal time",
+            "start": {
+              "dateTime": "2025-08-19T18:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "charlie@example.com"
+            },
+            "attendees": [
+              {
+                "email": "charlie@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 72,
+          "meeting": 29,
+          "personal": 41,
+          "critical": 0
+        }
+      },
+      {
+        "name": "Diana",
+        "calendar": [
+          {
+            "id": "ljv2t3gs76q_20250819T054000Z",
+            "status": "confirmed",
+            "summary": "Gym",
+            "start": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "pc3zkfbz4j_20250819T066000Z",
+            "status": "confirmed",
+            "summary": "Code review",
+            "start": {
+              "dateTime": "2025-08-19T15:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "hie2kmxs0w_20250819T075000Z",
+            "status": "confirmed",
+            "summary": "1:1 with manager",
+            "start": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting",
+            "recurringEventId": "9u5viawe"
+          },
+          {
+            "id": "0kraxua19gva_20250819T081000Z",
+            "status": "confirmed",
+            "summary": "Break",
+            "start": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T19:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "diana@example.com"
+            },
+            "attendees": [
+              {
+                "email": "diana@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 61,
+          "meeting": 18,
+          "personal": 30,
+          "critical": 0
+        }
+      },
+      {
+        "name": "Eve",
+        "calendar": [
+          {
+            "id": "c0lki8xv57n_20250819T048000Z",
+            "status": "confirmed",
+            "summary": "Doctor appointment",
+            "start": {
+              "dateTime": "2025-08-19T12:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T12:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "fdpzi95qytf_20250819T054000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T13:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "c35oaffam69_20250819T054000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T13:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T14:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "n5fgmrhmqgc_20250819T069000Z",
+            "status": "confirmed",
+            "summary": "Deep work",
+            "start": {
+              "dateTime": "2025-08-19T15:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          },
+          {
+            "id": "2vxjzeowwv3_20250819T072000Z",
+            "status": "confirmed",
+            "summary": "Lunch",
+            "start": {
+              "dateTime": "2025-08-19T16:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "personal"
+          },
+          {
+            "id": "f2m1cal1z8r_20250819T075000Z",
+            "status": "confirmed",
+            "summary": "Team sync",
+            "start": {
+              "dateTime": "2025-08-19T16:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T17:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "accepted"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "9cof7gszxq_20250819T078000Z",
+            "status": "confirmed",
+            "summary": "Review meeting",
+            "start": {
+              "dateTime": "2025-08-19T17:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T18:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              },
+              {
+                "email": "colleague1@example.com",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "colleague2@example.com",
+                "responseStatus": "tentative"
+              }
+            ],
+            "type": "meeting"
+          },
+          {
+            "id": "co2t6rjn2ak_20250819T093000Z",
+            "status": "confirmed",
+            "summary": "Project work",
+            "start": {
+              "dateTime": "2025-08-19T19:30:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "end": {
+              "dateTime": "2025-08-19T20:00:00.000Z",
+              "timeZone": "America/Los_Angeles"
+            },
+            "organizer": {
+              "email": "eve@example.com"
+            },
+            "attendees": [
+              {
+                "email": "eve@example.com",
+                "responseStatus": "accepted",
+                "self": true,
+                "organizer": true
+              }
+            ],
+            "type": "blocked-work"
+          }
+        ],
+        "utilityConfig": {
+          "free": 100,
+          "blockedWork": 76,
+          "meeting": 20,
+          "personal": 37,
+          "critical": 0
+        }
+      }
+    ],
+    "utilityDistribution": [
+      {
+        "timeSlot": {
+          "start": "09:00",
+          "end": "10:00"
+        },
+        "totalUtility": 378
+      },
+      {
+        "timeSlot": {
+          "start": "09:15",
+          "end": "10:15"
+        },
+        "totalUtility": 294
       },
       {
         "timeSlot": {
@@ -769,190 +2019,190 @@
           "start": "09:45",
           "end": "10:45"
         },
-        "totalUtility": 299
+        "totalUtility": 364
       },
       {
         "timeSlot": {
           "start": "10:00",
           "end": "11:00"
         },
-        "totalUtility": 325
+        "totalUtility": 392
       },
       {
         "timeSlot": {
           "start": "10:15",
           "end": "11:15"
         },
-        "totalUtility": 287
+        "totalUtility": 353
       },
       {
         "timeSlot": {
           "start": "10:30",
           "end": "11:30"
         },
-        "totalUtility": 370
+        "totalUtility": 377
       },
       {
         "timeSlot": {
           "start": "10:45",
           "end": "11:45"
         },
-        "totalUtility": 370
+        "totalUtility": 282
       },
       {
         "timeSlot": {
           "start": "11:00",
           "end": "12:00"
         },
-        "totalUtility": 395
+        "totalUtility": 305
       },
       {
         "timeSlot": {
           "start": "11:15",
           "end": "12:15"
         },
-        "totalUtility": 395
+        "totalUtility": 266
       },
       {
         "timeSlot": {
           "start": "11:30",
           "end": "12:30"
         },
-        "totalUtility": 433
+        "totalUtility": 305
       },
       {
         "timeSlot": {
           "start": "11:45",
           "end": "12:45"
         },
-        "totalUtility": 373
+        "totalUtility": 206
       },
       {
         "timeSlot": {
           "start": "12:00",
           "end": "13:00"
         },
-        "totalUtility": 373
+        "totalUtility": 206
       },
       {
         "timeSlot": {
           "start": "12:15",
           "end": "13:15"
         },
-        "totalUtility": 56
+        "totalUtility": 176
       },
       {
         "timeSlot": {
           "start": "12:30",
           "end": "13:30"
         },
-        "totalUtility": 56
+        "totalUtility": 249
       },
       {
         "timeSlot": {
           "start": "12:45",
           "end": "13:45"
         },
-        "totalUtility": 50
+        "totalUtility": 226
       },
       {
         "timeSlot": {
           "start": "13:00",
           "end": "14:00"
         },
-        "totalUtility": 50
+        "totalUtility": 226
       },
       {
         "timeSlot": {
           "start": "13:15",
           "end": "14:15"
         },
-        "totalUtility": 50
+        "totalUtility": 130
       },
       {
         "timeSlot": {
           "start": "13:30",
           "end": "14:30"
         },
-        "totalUtility": 50
+        "totalUtility": 142
       },
       {
         "timeSlot": {
           "start": "13:45",
           "end": "14:45"
         },
-        "totalUtility": 50
+        "totalUtility": 142
       },
       {
         "timeSlot": {
           "start": "14:00",
           "end": "15:00"
         },
-        "totalUtility": 194
+        "totalUtility": 222
       },
       {
         "timeSlot": {
           "start": "14:15",
           "end": "15:15"
         },
-        "totalUtility": 194
+        "totalUtility": 222
       },
       {
         "timeSlot": {
           "start": "14:30",
           "end": "15:30"
         },
-        "totalUtility": 247
+        "totalUtility": 287
       },
       {
         "timeSlot": {
           "start": "14:45",
           "end": "15:45"
         },
-        "totalUtility": 247
+        "totalUtility": 191
       },
       {
         "timeSlot": {
           "start": "15:00",
           "end": "16:00"
         },
-        "totalUtility": 298
+        "totalUtility": 320
       },
       {
         "timeSlot": {
           "start": "15:15",
           "end": "16:15"
         },
-        "totalUtility": 278
+        "totalUtility": 320
       },
       {
         "timeSlot": {
           "start": "15:30",
           "end": "16:30"
         },
-        "totalUtility": 367
+        "totalUtility": 404
       },
       {
         "timeSlot": {
           "start": "15:45",
           "end": "16:45"
         },
-        "totalUtility": 267
+        "totalUtility": 404
       },
       {
         "timeSlot": {
           "start": "16:00",
           "end": "17:00"
         },
-        "totalUtility": 267
+        "totalUtility": 428
       }
     ],
     "optimalSlots": [
       {
-        "start": "11:30",
-        "end": "12:30"
+        "start": "16:00",
+        "end": "17:00"
       }
     ],
-    "optimalUtility": 433
+    "optimalUtility": 428
   }
 ]

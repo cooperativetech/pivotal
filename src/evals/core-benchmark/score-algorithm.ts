@@ -61,11 +61,24 @@ function toPublicProfiles(profiles: PersonProfile[], dataAvailability: DataAvail
 
     return {
       name: profile.name,
-      calendar: includeCalendar && profile.calendar.length > 0 ? profile.calendar.map((event) => ({
-        start: event.start,
-        end: event.end,
-        title: event.description,
-      })) : undefined,
+      calendar: includeCalendar && profile.calendar.length > 0 ? profile.calendar.map((event) => {
+        // Extract time from Google Calendar format
+        let start = '09:00'
+        let end = '10:00'
+        
+        if (event.start.dateTime && event.end.dateTime) {
+          const startDate = new Date(event.start.dateTime)
+          const endDate = new Date(event.end.dateTime)
+          start = `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`
+          end = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+        }
+        
+        return {
+          start,
+          end,
+          title: event.summary || 'Busy',
+        }
+      }) : undefined,
     }
   })
 }
