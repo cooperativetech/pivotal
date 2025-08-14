@@ -185,25 +185,28 @@ async function processSchedulingActions(
     const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap, botUserId)
     console.log('Next scheduling step:', nextStep)
 
-    // Always send the reply message in thread
-    const response = await client.chat.postMessage({
-      channel: message.channelId,
-      thread_ts: message.rawTs,
-      text: nextStep.replyMessage,
-    })
-
-    // Save the bot's reply to the database immediately
-    if (response.ok && response.ts) {
-      await db.insert(slackMessageTable).values({
-        topicId: topicId,
-        channelId: message.channelId,
-        userId: botUserId || 'bot',
+    // Only send the reply message if it's not empty
+    let response: any = null
+    if (nextStep.replyMessage && nextStep.replyMessage.trim()) {
+      response = await client.chat.postMessage({
+        channel: message.channelId,
+        thread_ts: message.rawTs,
         text: nextStep.replyMessage,
-        timestamp: tsToDate(response.ts),
-        rawTs: response.ts,
-        threadTs: message.rawTs,
-        raw: response.message,
       })
+
+      // Save the bot's reply to the database immediately
+      if (response.ok && response.ts) {
+        await db.insert(slackMessageTable).values({
+          topicId: topicId,
+          channelId: message.channelId,
+          userId: botUserId || 'bot',
+          text: nextStep.replyMessage,
+          timestamp: tsToDate(response.ts),
+          rawTs: response.ts,
+          threadTs: message.rawTs,
+          raw: response.message,
+        })
+      }
     }
 
     // Process other actions based on the response
@@ -282,7 +285,12 @@ async function processSchedulingActions(
 
             if (dmChannel.ok && dmChannel.channel?.id) {
               // Create or update slackChannel record for DM in the DB
-              await upsertSlackChannel(dmChannel.channel.id, [userId])
+              // Include both the user and the bot in the channel's userIds
+              const channelUserIds = [userId]
+              if (botUserId && !channelUserIds.includes(botUserId)) {
+                channelUserIds.push(botUserId)
+              }
+              await upsertSlackChannel(dmChannel.channel.id, channelUserIds)
 
               // Send the message
               const dmResponse = await client.chat.postMessage({
@@ -451,6 +459,9 @@ export async function handleSlackMessage(
     const isBotMentioned = message.text.includes(`<@${botUserId}>`)
 
     try {
+      // Get Slack users for name mapping (including bots to get bot's name)
+      const userMap = await getSlackUsers(client)
+      
       // Step 0: Skip topic router if we've preset the topic id
       let analysis: AnalyzeTopicRes = {
         relevantTopicId: presetTopicId,
@@ -461,9 +472,6 @@ export async function handleSlackMessage(
       if (!presetTopicId) {
         // Step 1: Query all active topics from the DB
         const topics = await db.select().from(topicTable).where(eq(topicTable.isActive, true))
-
-        // Get Slack users for name mapping (including bots to get bot's name)
-        const userMap = await getSlackUsers(client)
 
         // Create slack message object for analysis
         const slackMessage = {
@@ -485,6 +493,20 @@ export async function handleSlackMessage(
 
       // Step 3: If message is relevant to existing topic
       if (analysis.relevantTopicId) {
+        // For DM channels, ensure the channel record exists with both users
+        if (isDirectMessage) {
+          // Get the topic to find the other participant (the bot)
+          const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, analysis.relevantTopicId))
+          if (topic) {
+            // For DMs, ensure both the user and bot are in the channel's userIds
+            const channelUserIds = [userId]
+            if (botUserId && !channelUserIds.includes(botUserId)) {
+              channelUserIds.push(botUserId)
+            }
+            await upsertSlackChannel(message.channel, channelUserIds)
+          }
+        }
+        
         // Save message to DB related to that topic
         const [slackMessage] = await db.insert(slackMessageTable).values({
           topicId: analysis.relevantTopicId,
@@ -509,12 +531,46 @@ export async function handleSlackMessage(
       else if ((isDirectMessage || isBotMentioned) && analysis.suggestedNewTopic) {
         // Check if it's a scheduling workflow
         if (analysis.workflowType === 'scheduling') {
-          // Create new topic
+          // Extract mentioned users from the message text
+          const mentionedUserIds = new Set<string>([userId]) // Start with the sender
+          
+          // Look for user mentions in the format <@USERID>
+          const mentionPattern = /<@([A-Z0-9_]+)>/g
+          let match
+          while ((match = mentionPattern.exec(message.text)) !== null) {
+            const mentionedId = match[1]
+            if (mentionedId !== botUserId) { // Don't include the bot
+              mentionedUserIds.add(mentionedId)
+            }
+          }
+          
+          // Also look for mentioned names if we have the user map
+          if (userMap.size > 0) {
+            userMap.forEach((name, id) => {
+              // Check if this user's name appears in the message
+              if (message.text.includes(name) && id !== botUserId) {
+                mentionedUserIds.add(id)
+              }
+            })
+          }
+          
+          console.log(`Creating topic with users: ${Array.from(mentionedUserIds).join(', ')}`)
+          
+          // Create new topic with all mentioned users
           const [newTopic] = await db.insert(topicTable).values({
-            userIds: [userId],
+            userIds: Array.from(mentionedUserIds),
             summary: analysis.suggestedNewTopic,
             workflowType: analysis.workflowType,
           }).returning()
+
+          // For DM channels, ensure the channel record exists with both users
+          if (isDirectMessage) {
+            const channelUserIds = [userId]
+            if (botUserId && !channelUserIds.includes(botUserId)) {
+              channelUserIds.push(botUserId)
+            }
+            await upsertSlackChannel(message.channel, channelUserIds)
+          }
 
           // Save message related to new topic
           const [slackMessage] = await db.insert(slackMessageTable).values({
