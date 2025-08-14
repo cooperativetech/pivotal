@@ -1,5 +1,5 @@
 import type { SlackEventMiddlewareArgs, AllMiddlewareArgs } from '@slack/bolt'
-import type { UsersListResponse } from '@slack/web-api'
+import type { UsersListResponse, ChatPostMessageResponse } from '@slack/web-api'
 import db from './db/engine'
 import { topicTable, TopicInsert, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
 import { analyzeTopicRelevance, AnalyzeTopicRes, scheduleNextStep } from './anthropic-api'
@@ -186,7 +186,7 @@ async function processSchedulingActions(
     console.log('Next scheduling step:', nextStep)
 
     // Only send the reply message if it's not empty
-    let response: any = null
+    let response: ChatPostMessageResponse | null = null
     if (nextStep.replyMessage && nextStep.replyMessage.trim()) {
       response = await client.chat.postMessage({
         channel: message.channelId,
@@ -461,7 +461,7 @@ export async function handleSlackMessage(
     try {
       // Get Slack users for name mapping (including bots to get bot's name)
       const userMap = await getSlackUsers(client)
-      
+
       // Step 0: Skip topic router if we've preset the topic id
       let analysis: AnalyzeTopicRes = {
         relevantTopicId: presetTopicId,
@@ -506,7 +506,7 @@ export async function handleSlackMessage(
             await upsertSlackChannel(message.channel, channelUserIds)
           }
         }
-        
+
         // Save message to DB related to that topic
         const [slackMessage] = await db.insert(slackMessageTable).values({
           topicId: analysis.relevantTopicId,
@@ -533,7 +533,7 @@ export async function handleSlackMessage(
         if (analysis.workflowType === 'scheduling') {
           // Extract mentioned users from the message text
           const mentionedUserIds = new Set<string>([userId]) // Start with the sender
-          
+
           // Look for user mentions in the format <@USERID>
           const mentionPattern = /<@([A-Z0-9_]+)>/g
           let match
@@ -543,19 +543,19 @@ export async function handleSlackMessage(
               mentionedUserIds.add(mentionedId)
             }
           }
-          
+
           // Also look for mentioned names if we have the user map
-          if (userMap.size > 0) {
+          if (userMap.size > 0 && message.text) {
             userMap.forEach((name, id) => {
               // Check if this user's name appears in the message
-              if (message.text.includes(name) && id !== botUserId) {
+              if (message.text!.includes(name) && id !== botUserId) {
                 mentionedUserIds.add(id)
               }
             })
           }
-          
+
           console.log(`Creating topic with users: ${Array.from(mentionedUserIds).join(', ')}`)
-          
+
           // Create new topic with all mentioned users
           const [newTopic] = await db.insert(topicTable).values({
             userIds: Array.from(mentionedUserIds),
