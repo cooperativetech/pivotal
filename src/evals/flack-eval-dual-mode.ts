@@ -149,7 +149,7 @@ async function simulateSchedulingConversation(
             msgCount += 1
           }
         }
-        
+
         // Disconnect after we've seen enough messages or sent enough responses
         if (msgCount >= 3 || data.text.toLowerCase().includes('scheduled for')) {
           setTimeout(() => {

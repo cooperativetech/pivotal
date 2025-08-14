@@ -103,10 +103,10 @@ function calculatePersonUtility(
   const conflicts = person.calendar.filter((event) => {
     if (event.status === 'cancelled') return false
     if (!event.start.dateTime || !event.end.dateTime) return false
-    
+
     const eventSlot = {
       start: extractTime(event.start.dateTime),
-      end: extractTime(event.end.dateTime)
+      end: extractTime(event.end.dateTime),
     }
     return timeSlotsOverlap(proposedTime, eventSlot)
   })
@@ -276,7 +276,7 @@ function generateRandomCalendar(config: CalendarGenerationConfig, personName: st
 
   // Track occupied time slots to avoid overlaps
   const occupiedSlots = new Set<string>()
-  
+
   // Use next Tuesday as the base date for all events
   const baseDate = new Date()
   const daysUntilTuesday = (2 - baseDate.getDay() + 7) % 7 || 7
@@ -331,16 +331,16 @@ function generateRandomCalendar(config: CalendarGenerationConfig, personName: st
           personal: ['Lunch', 'Gym', 'Errand', 'Doctor appointment', 'Break', 'Personal time'],
           critical: ['Pick up kids from school', 'Medical appointment', 'Flight to conference', 'School event', 'Emergency meeting'],
         }
-        
+
         const summary = summaries[eventType][Math.floor(Math.random() * summaries[eventType].length)]
-        
+
         // Generate event ID similar to Google's format
         const eventId = `${Math.random().toString(36).substring(2, 15)}_${baseDate.toISOString().replace(/[-:]/g, '').substring(0, 8)}T${roundedStart.toString().padStart(4, '0')}00Z`
-        
+
         // Create start and end DateTimes
         const startDateTime = createDateTime(baseDate, minutesToTime(roundedStart))
         const endDateTime = createDateTime(baseDate, minutesToTime(endMinutes))
-        
+
         // Create email for the person
         const email = `${personName.toLowerCase().replace(/\s+/g, '.')}@example.com`
 
@@ -351,37 +351,37 @@ function generateRandomCalendar(config: CalendarGenerationConfig, personName: st
           description: eventType === 'critical' ? 'Cannot be moved or rescheduled' : undefined,
           start: {
             dateTime: startDateTime,
-            timeZone: 'America/Los_Angeles'
+            timeZone: 'America/Los_Angeles',
           },
           end: {
             dateTime: endDateTime,
-            timeZone: 'America/Los_Angeles'
+            timeZone: 'America/Los_Angeles',
           },
           organizer: {
-            email
+            email,
           },
           attendees: [
             {
               email,
               responseStatus: 'accepted',
               self: true,
-              organizer: true
-            }
+              organizer: true,
+            },
           ],
           type: eventType, // Custom field for utility calculation
         }
-        
+
         // Add additional attendees for meetings
         if (eventType === 'meeting' && Math.random() > 0.3) {
           const numAttendees = Math.floor(Math.random() * 3) + 1
           for (let j = 0; j < numAttendees; j++) {
             event.attendees?.push({
               email: `colleague${j + 1}@example.com`,
-              responseStatus: Math.random() > 0.2 ? 'accepted' : 'tentative'
+              responseStatus: Math.random() > 0.2 ? 'accepted' : 'tentative',
             })
           }
         }
-        
+
         // Some events might be recurring
         if (eventType === 'meeting' && Math.random() > 0.7) {
           event.recurringEventId = `${Math.random().toString(36).substring(2, 10)}`

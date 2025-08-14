@@ -45,9 +45,18 @@ export async function llmPersonaRespond(
   const conversationHistory = organizeMessagesByChannelAndThread(topicData.messages, userMap)
   // Format calendar for context
   const calendarContext = profile.calendar.length > 0
-    ? profile.calendar.map((event) =>
-        `- ${event.start}-${event.end}: ${event.description} (${event.type})`,
-      ).join('\n')
+    ? profile.calendar.map((event) => {
+        // Extract times from Google Calendar format
+        let startTime = '09:00'
+        let endTime = '10:00'
+        if (event.start.dateTime && event.end.dateTime) {
+          const start = new Date(event.start.dateTime)
+          const end = new Date(event.end.dateTime)
+          startTime = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+          endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`
+        }
+        return `- ${startTime}-${endTime}: ${event.summary} (${event.type})`
+      }).join('\n')
     : 'No calendar events'
 
   const prompt = `You are ${profile.name}, responding to a scheduling request.
@@ -104,7 +113,17 @@ Respond naturally as ${profile.name} would, mentioning specific conflicts if the
   console.error(`Failed after 3 attempts for ${profile.name}. Generating fallback based on calendar.`)
 
   // Generate a simple response based on their actual calendar
-  const busyTimes = profile.calendar.map((e) => `${e.start}-${e.end}`).join(', ')
+  const busyTimes = profile.calendar.map((e) => {
+    let startTime = '09:00'
+    let endTime = '10:00'
+    if (e.start.dateTime && e.end.dateTime) {
+      const start = new Date(e.start.dateTime)
+      const end = new Date(e.end.dateTime)
+      startTime = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+      endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`
+    }
+    return `${startTime}-${endTime}`
+  }).join(', ')
   if (busyTimes) {
     return `Hi! On Tuesday I have conflicts at: ${busyTimes}. Any other time should work for me.`
   } else {
