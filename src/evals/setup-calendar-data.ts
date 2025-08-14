@@ -80,7 +80,8 @@ export async function setupCalendarDataForEval(
 
     await updateUserContext(userId, {
       calendar: calendarText,
-      calendarLastFetched: new Date().toISOString(),
+      // Always set calendar as fetched 1 minute ago so it never triggers refresh
+      calendarLastFetched: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
       // Simulate having Google auth (so bot thinks calendar is connected)
       googleAccessToken: 'fake-token-for-eval',
       googleRefreshToken: 'fake-refresh-for-eval',
