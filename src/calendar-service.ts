@@ -250,8 +250,8 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       // Skip all-day events for now
       if (event.start.dateTime && event.end.dateTime) {
         calendarEvents.push({
-          start: startTime, // Keep ISO format from Google
-          end: endTime,     // Keep ISO format from Google
+          start: new Date(startTime).toISOString(), // Normalize to UTC
+          end: new Date(endTime).toISOString(),     // Normalize to UTC
           summary: event.summary || 'Busy',
           type: 'busy',     // Default type, could be enhanced later
         })
