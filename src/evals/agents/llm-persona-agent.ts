@@ -2,7 +2,6 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { PersonProfile, TimeSlot } from '../core-benchmark/generate-benchmark-data'
 import { api, unserializeTopicTimestamps } from '../../shared/api-client'
-import { organizeMessagesByChannelAndThread } from '../../utils'
 
 // Initialize OpenRouter with API key from environment
 const apiKey = process.env.PV_OPENROUTER_API_KEY
@@ -35,14 +34,24 @@ export async function llmPersonaRespond(
 
   const topicData = unserializeTopicTimestamps(await topicResponse.json())
 
-  // Create user map for organizeMessagesByChannelAndThread
-  const userMap = new Map<string, string>()
-  topicData.users.forEach((user: { id: string; realName?: string | null }) => {
-    userMap.set(user.id, user.realName || user.id)
+  // Filter messages to only show what this persona has said before and bot messages
+  console.log(`Total messages in topic: ${topicData.messages.length}`)
+  console.log(`Messages for ${userId}:`)
+  topicData.messages.forEach((msg) => {
+    console.log(`  - ${msg.userId}: "${msg.text.substring(0, 50)}..." (ts: ${msg.rawTs})`)
   })
 
-  // Get conversation history using organizeMessagesByChannelAndThread
-  const conversationHistory = organizeMessagesByChannelAndThread(topicData.messages, userMap)
+  const myPreviousMessages = topicData.messages
+    .filter((msg) => msg.userId === userId || msg.userId === 'UTESTBOT')
+    .sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
+    .map((msg) => {
+      const sender = msg.userId === userId ? profile.name : 'Scheduling Bot'
+      return `${sender}: ${msg.text}`
+    })
+    .join('\n')
+
+  console.log(`Filtered to ${myPreviousMessages.split('\n').filter((m) => m).length} messages for context`)
+
   // Format calendar for context
   const calendarContext = profile.calendar.length > 0
     ? profile.calendar.map((event) => {
@@ -59,24 +68,55 @@ export async function llmPersonaRespond(
       }).join('\n')
     : 'No calendar events'
 
-  const prompt = `You are ${profile.name}, responding to a scheduling request.
+  // Debug logging to understand what context each persona has
+  console.log(`\n=== PERSONA CONTEXT: ${profile.name} ===`)
+  console.log(`Calendar (${profile.calendar.length} events):`)
+  profile.calendar.forEach((event) => {
+    let startTime = '09:00'
+    let endTime = '10:00'
+    if (event.start.dateTime && event.end.dateTime) {
+      const start = new Date(event.start.dateTime)
+      const end = new Date(event.end.dateTime)
+      startTime = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+      endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`
+    }
+    console.log(`  ${startTime}-${endTime}: ${event.summary} (${event.type})`)
+  })
+  console.log('\nPrevious messages in conversation:')
+  console.log(myPreviousMessages || '  [No previous messages]')
+  console.log('\nResponding to bot message:')
+  console.log(`  "${botMessage}"`)
+  console.log('===================================\n')
+
+  const prompt = `You are ${profile.name}, a busy professional responding to a scheduling request.
 
 Your Tuesday calendar:
 ${calendarContext}
 
-Calendar event types and how you feel about scheduling over them:
-- "critical" (medical, flights, childcare): NEVER available, will strongly refuse
-- "meeting": Try to avoid but could reschedule if really needed
-- "personal" (gym, lunch, errands): Prefer not to but flexible if necessary
-- "blocked-work" (focus time): Can interrupt if needed but not ideal
+Calendar priorities:
+- "critical" (medical, flights, childcare): Absolutely cannot move
+- "meeting": Prefer not to move but could if really needed 
+- "personal" (gym, lunch, errands): Can move if necessary
+- "blocked-work" (focus time): Can interrupt if needed
 
-Conversation so far:
-${conversationHistory}
+Your previous messages in this conversation:
+${myPreviousMessages || 'You haven\'t responded yet.'}
 
 Latest message from scheduling bot:
 ${botMessage}
 
-Respond naturally as ${profile.name} would, mentioning specific conflicts if the bot proposes times that overlap with your calendar. Be conversational but concise. If you have a conflict, explain what it is. If you're free, confirm availability.`
+IMPORTANT RULES:
+- Act like a real person scheduling a meeting via chat/email
+- When sharing availability, list your conflicts/free times clearly (this can take a few sentences)
+- Don't repeat availability you've already shared - just say "as I mentioned" if needed
+- Don't acknowledge or thank unless truly necessary
+- Be direct and businesslike
+- If confirming a proposed time: just say if it works or not
+- If you have a conflict at a proposed time, briefly state what it is
+- Focus on answering what was asked, nothing more
+- NEVER echo or repeat back what the bot just said to you
+- If the bot is just confirming/acknowledging, you don't need to respond unless asked a question
+- If the bot says it's waiting for others, you don't need to respond`
 
   // Retry up to 3 times if we get empty responses
   for (let attempt = 1; attempt <= 3; attempt++) {
