@@ -25,11 +25,18 @@ interface SlackUser {
   raw: unknown
 }
 
+interface CalendarEvent {
+  start: string
+  end: string
+  summary?: string
+  type?: 'free' | 'busy' | 'meeting' | 'personal' | 'critical'
+}
+
 interface UserContext {
   googleAccessToken?: string
   googleRefreshToken?: string
   googleTokenExpiryDate?: number
-  calendar?: string
+  calendar?: string | CalendarEvent[]
   calendarLastFetched?: string
   slackTeamId?: string
   slackUserName?: string

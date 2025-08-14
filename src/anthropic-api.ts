@@ -340,7 +340,7 @@ Users involved: ${topic.userIds.map((id) => {
   const name = userMap.get(id)
   return `${name || 'Unknown User'} (${id})`
 }).join(', ')}
-User IDs for tool calls: [${topic.userIds.map(id => `"${id}"`).join(', ')}]
+User IDs for tool calls: [${topic.userIds.map((id) => `"${id}"`).join(', ')}]
 Created: ${new Date(topic.createdAt).toLocaleString()}
 Last updated: ${new Date(topic.updatedAt).toLocaleString()}
 
@@ -385,13 +385,13 @@ Based on the conversation history and current message, determine the next step i
       }),
       execute: async ({ userIds }) => {
         console.log('Tool called: findFreeSlots for user IDs:', userIds)
-        
+
         // Build profiles for the time intersection tool
         const profiles: UserProfile[] = []
         for (const userId of userIds) {
           const userName = userMap.get(userId) || userId
           const calendar = await getUserCalendarStructured(userId)
-          
+
           if (calendar && calendar.length > 0) {
             profiles.push({
               name: userName,
@@ -405,16 +405,16 @@ Based on the conversation history and current message, determine the next step i
             })
           }
         }
-        
+
         // Use the time intersection tool to find common free slots
         const freeSlots = findCommonFreeTime(profiles)
         console.log('Found free slots:', freeSlots)
-        
+
         return {
           freeSlots: freeSlots,
-          message: freeSlots.length > 0 
-            ? `Found ${freeSlots.length} available time slots` 
-            : 'No common free slots found for all participants'
+          message: freeSlots.length > 0
+            ? `Found ${freeSlots.length} available time slots`
+            : 'No common free slots found for all participants',
         }
       },
     }),
@@ -439,21 +439,24 @@ Based on the conversation history and current message, determine the next step i
     console.log('LLM response text:', res.text)
     console.log('Tool calls:', res.toolCalls)
     console.log('Tool results:', res.toolResults)
-    
+
     // If tools were called, we need to continue the conversation with the tool results
     if (res.toolCalls && res.toolCalls.length > 0) {
       // The AI SDK should handle the tool execution and continuation automatically
       // But if there's no text response, we need to prompt again with the tool results
       if (!res.text) {
         // Build a new prompt that includes the tool results
-        const toolResult = res.toolResults?.[0]?.result as any
+        interface ToolResultWithSlots {
+          freeSlots?: Array<{ start: string, end: string }>
+        }
+        const toolResult = res.toolResults?.[0]?.result as ToolResultWithSlots
         const freeSlots = toolResult?.freeSlots || []
-        
+
         const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
-${freeSlots.map((slot: any) => `- ${slot.start} to ${slot.end}`).join('\n')}
+${freeSlots.map((slot) => `- ${slot.start} to ${slot.end}`).join('\n')}
 
 Based on these available times, determine the next step in the scheduling workflow.`
-        
+
         // Make a new call without tools to get the final response
         const finalRes = await generateText({
           model: openrouter('anthropic/claude-sonnet-4'),
@@ -467,7 +470,7 @@ Based on these available times, determine the next step in the scheduling workfl
             },
           ],
         })
-        
+
         console.log('Final LLM response after tool use:', finalRes.text)
         const nextStep = JSON.parse(finalRes.text) as {
           action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
@@ -484,11 +487,11 @@ Based on these available times, determine the next step in the scheduling workfl
           groupMessage?: string
           reasoning: string
         }
-        
+
         return nextStep
       }
     }
-    
+
     // Parse the response (either direct or after tool use)
     const nextStep = JSON.parse(res.text) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'

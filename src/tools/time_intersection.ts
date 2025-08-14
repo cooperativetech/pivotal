@@ -17,7 +17,7 @@ type DateTimeInterval = [Date, Date]
 /** The expected structure for a user's profile and calendar data. */
 export interface UserProfile {
   name: string
-  calendar: { 
+  calendar: {
     start: string  // Can be either "HH:MM" or ISO datetime string
     end: string    // Can be either "HH:MM" or ISO datetime string
     summary?: string
@@ -134,7 +134,7 @@ function parseTime(timeStr: string): Date {
     if (timeStr.includes('T') || timeStr.includes('-')) {
         return new Date(timeStr)
     }
-    
+
     // Otherwise, assume it's HH:MM format
     const [hours, minutes] = timeStr.split(':').map(Number)
     const date = new Date()
@@ -216,7 +216,7 @@ export function findCommonFreeTime(profiles: UserProfile[]): FreeSlot[] {
   const freeLists = Object.values(busyMap).map((busyIntervals) => invert(busyIntervals, window))
   // Find the intersection of all users' free time
   // Start with the full window as the initial free time, then intersect with each user's free time
-  const commonFree = freeLists.length > 0 
+  const commonFree = freeLists.length > 0
     ? freeLists.reduce((acc, freeList) => intersect(acc, freeList), [window])
     : []
 

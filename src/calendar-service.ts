@@ -6,7 +6,6 @@ import { z } from 'zod'
 
 import db from './db/engine'
 import { userDataTable, UserContext, CalendarEvent } from './db/schema/main'
-import { findCommonFreeTime, UserProfile, FreeSlot } from '../tools/time_intersection'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
