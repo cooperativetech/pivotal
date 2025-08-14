@@ -17,7 +17,12 @@ type DateTimeInterval = [Date, Date]
 /** The expected structure for a user's profile and calendar data. */
 export interface UserProfile {
   name: string
-  calendar: { start: string; end: string }[]
+  calendar: { 
+    start: string  // Can be either "HH:MM" or ISO datetime string
+    end: string    // Can be either "HH:MM" or ISO datetime string
+    summary?: string
+    type?: string
+  }[]
 }
 
 /** The structure for a calculated free time slot. */
@@ -119,11 +124,18 @@ function intersect(a: DateTimeInterval[], b: DateTimeInterval[]): DateTimeInterv
 // --- Pipeline Functions ---
 
 /**
- * Parses a time string (HH:MM) and returns a Date object for today with that time.
- * @param timeStr - The time string in "HH:MM" format.
+ * Parses a time string and returns a Date object.
+ * Handles both "HH:MM" format and ISO datetime strings.
+ * @param timeStr - The time string in "HH:MM" or ISO format.
  * @returns A Date object.
  */
 function parseTime(timeStr: string): Date {
+    // Check if it's an ISO datetime string (contains 'T' or looks like a date)
+    if (timeStr.includes('T') || timeStr.includes('-')) {
+        return new Date(timeStr)
+    }
+    
+    // Otherwise, assume it's HH:MM format
     const [hours, minutes] = timeStr.split(':').map(Number)
     const date = new Date()
     date.setHours(hours, minutes, 0, 0)
@@ -194,14 +206,19 @@ export function findCommonFreeTime(profiles: UserProfile[]): FreeSlot[] {
 
   // Define the full day window for today
   const today = new Date()
-  const startOfDay = new Date(today.setHours(0, 0, 0, 0))
-  const endOfDay = new Date(today.setHours(23, 59, 59, 999))
+  const startOfDay = new Date(today)
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date(today)
+  endOfDay.setHours(23, 59, 59, 999)
   const window: DateTimeInterval = [startOfDay, endOfDay]
 
   // Invert each user's busy schedule to get their free time
   const freeLists = Object.values(busyMap).map((busyIntervals) => invert(busyIntervals, window))
   // Find the intersection of all users' free time
-  const commonFree = freeLists.reduce((acc, freeList) => intersect(acc, freeList), window as unknown as DateTimeInterval[])
+  // Start with the full window as the initial free time, then intersect with each user's free time
+  const commonFree = freeLists.length > 0 
+    ? freeLists.reduce((acc, freeList) => intersect(acc, freeList), [window])
+    : []
 
   // Filter for acceptable times
   const acceptableSlots = getAcceptableTimes(commonFree)

@@ -133,25 +133,26 @@ async function simulateSchedulingConversation(
       }
 
       if (mode === 'calendar') {
-        // In calendar mode, personas wait for proposals and respond to confirmations
-        if (
+        // In calendar mode, use LLM personas but with simpler logic
+        // Respond to DMs or messages that seem to need a response
+        if (msgCount < 10 && (
+          data.channel.startsWith('D') || // Direct messages
+          data.text.includes('?') ||
+          data.text.toLowerCase().includes('available') ||
+          data.text.toLowerCase().includes('preferences') ||
+          data.text.toLowerCase().includes('work') ||
           data.text.toLowerCase().includes('confirm') ||
-          data.text.toLowerCase().includes('scheduled') ||
-          data.text.toLowerCase().includes('work for everyone') ||
-          data.text.toLowerCase().includes('does this work') ||
-          data.text.toLowerCase().includes('would work') ||
           data.text.toLowerCase().includes('how about')
-        ) {
-          if (msgCount < 3) {
-            const message = 'That time works for me!'
-            console.log(`Sending confirmation from ${userId}: ${message}`)
-            socket.emit('flack-message', { topicId: topicId, text: message })
-            msgCount += 1
-          }
+        )) {
+          // Use the LLM persona to generate an intelligent response
+          const message = await llmPersonaRespond(topicId, userId, profile, data.text, data.timestamp)
+          console.log(`Sending response from ${userId}: ${message.substring(0, 100)}...`)
+          socket.emit('flack-message', { topicId: topicId, text: message })
+          msgCount += 1
         }
 
-        // Disconnect after we've seen enough messages or sent enough responses
-        if (msgCount >= 3 || data.text.toLowerCase().includes('scheduled for')) {
+        // Disconnect after we've seen enough messages or a final confirmation
+        if (msgCount >= 10 || data.text.toLowerCase().includes('scheduled for')) {
           setTimeout(() => {
             socket.removeAllListeners('bot-response')
             socket.disconnect()

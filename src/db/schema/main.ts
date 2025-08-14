@@ -57,11 +57,18 @@ export const slackChannelTable = pgTable('slack_channel', {
 export type SlackChannelInsert = InferInsertModel<typeof slackChannelTable>
 export type SlackChannel = InferSelectModel<typeof slackChannelTable>
 
+export interface CalendarEvent {
+  start: string  // ISO datetime or HH:MM format
+  end: string    // ISO datetime or HH:MM format
+  summary?: string
+  type?: 'free' | 'busy' | 'meeting' | 'personal' | 'critical'
+}
+
 export interface UserContext {
   googleAccessToken?: string
   googleRefreshToken?: string
   googleTokenExpiryDate?: number
-  calendar?: string
+  calendar?: string | CalendarEvent[]  // Support both old text format and new structured format
   calendarLastFetched?: string
   slackTeamId?: string
   slackUserName?: string

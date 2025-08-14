@@ -5,7 +5,8 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, UserContext } from './db/schema/main'
+import { userDataTable, UserContext, CalendarEvent } from './db/schema/main'
+import { findCommonFreeTime, UserProfile, FreeSlot } from '../tools/time_intersection'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -235,8 +236,8 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       return {}
     }
 
-    // Convert to the format expected by time_intersection.ts UserProfile
-    const busySlots: { start: string; end: string; summary?: string }[] = []
+    // Convert to structured format for storage
+    const calendarEvents: CalendarEvent[] = []
 
     for (const event of response.data.items) {
       if (!event.start || !event.end) continue
@@ -247,23 +248,20 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
 
       if (!startTime || !endTime) continue
 
-      const startDateObj = new Date(startTime)
-      const endDateObj = new Date(endTime)
-
-      // Format as "date HH:MM (timezone)" (skip all-day events for now)
+      // Skip all-day events for now
       if (event.start.dateTime && event.end.dateTime) {
-        busySlots.push({
-          start: startDateObj.toString(), // Date HH:MM (timezone)
-          end: endDateObj.toString(), // Date HH:MM (timezone)
+        calendarEvents.push({
+          start: startTime, // Keep ISO format from Google
+          end: endTime,     // Keep ISO format from Google
           summary: event.summary || 'Busy',
+          type: 'busy',     // Default type, could be enhanced later
         })
       }
     }
 
-    // Store calendar data as simple text in userContext
-    const calendarText = busySlots.map((slot) => `${slot.start}-${slot.end}: ${slot.summary || 'Busy'}`).join('\n')
+    // Store structured calendar data
     const calendarData = {
-      calendar: calendarText,
+      calendar: calendarEvents,  // Store as structured array
       calendarLastFetched: new Date().toISOString(),
     }
 
@@ -277,7 +275,7 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     )
 
     const newContext = await updateUserContext(slackUserId, { ...calendarData, ...googleAuthData })
-    console.log(`Stored ${busySlots.length} calendar events for user ${slackUserId}`)
+    console.log(`Stored ${calendarEvents.length} calendar events for user ${slackUserId}`)
 
     return newContext
 
@@ -285,6 +283,52 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     console.error(`Error fetching calendar for user ${slackUserId}:`, error)
     return {}
   }
+}
+
+/**
+ * Get structured calendar data from userContext
+ * Returns calendar events in structured format
+ */
+export async function getUserCalendarStructured(slackUserId: string): Promise<CalendarEvent[] | null> {
+  try {
+    let context = await getUserContext(slackUserId)
+
+    // Fetch calendar again if more than 15 minutes have passed since last fetch
+    const bufferTime = 15 * 60 * 1000
+    if (
+      context.calendarLastFetched &&
+      new Date(context.calendarLastFetched).getTime() + bufferTime < Date.now() &&
+      !slackUserId.startsWith('U_USER_') // Don't fetch for test users
+    ) {
+      context = await fetchAndStoreUserCalendar(slackUserId)
+    }
+
+    if (context.calendar) {
+      // Return structured format if available
+      if (Array.isArray(context.calendar)) {
+        return context.calendar
+      } else if (typeof context.calendar === 'string') {
+        // Parse old text format back to structured
+        const events: CalendarEvent[] = []
+        const lines = context.calendar.split('\n')
+        for (const line of lines) {
+          const match = line.match(/(\d{2}:\d{2})-(\d{2}:\d{2}):\s*(.*)/)
+          if (match) {
+            events.push({
+              start: match[1],
+              end: match[2],
+              summary: match[3] || 'Busy',
+            })
+          }
+        }
+        return events
+      }
+    }
+  } catch (error) {
+    console.error(`Error getting structured calendar for user ${slackUserId}:`, error)
+  }
+
+  return null
 }
 
 /**
@@ -305,7 +349,19 @@ export async function getUserCalendarText(slackUserId: string): Promise<string |
     }
 
     if (context.calendar) {
-      return context.calendar
+      // Handle both old text format and new structured format
+      if (typeof context.calendar === 'string') {
+        return context.calendar
+      } else if (Array.isArray(context.calendar)) {
+        // Convert structured calendar to text format for backward compatibility
+        return context.calendar.map((event) => {
+          const start = new Date(event.start)
+          const end = new Date(event.end)
+          const startTime = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+          const endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`
+          return `${startTime}-${endTime}: ${event.summary || 'Busy'}`
+        }).join('\n')
+      }
     }
 
   } catch (error) {

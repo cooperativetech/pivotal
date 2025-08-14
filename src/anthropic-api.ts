@@ -1,11 +1,13 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
+import { generateText, tool } from 'ai'
+import { z } from 'zod'
 
 import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { generateGoogleAuthUrl, getUserCalendarText } from './calendar-service'
+import { generateGoogleAuthUrl, getUserCalendarText, getUserCalendarStructured } from './calendar-service'
+import { findCommonFreeTime, UserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -275,7 +277,9 @@ Based on the current state, determine:
 ## Important Guidelines
 - BE EXTREMELY CONCISE - keep all messages brief and to the point (1-2 sentences max unless proposing times)
 - NEVER send messages that just confirm or acknowledge information - if someone tells you their availability, DON'T say "Thanks for sharing" or "I've noted that"
-- IMMEDIATELY PROPOSE OPTIONS: As soon as you have availability from all participants, propose 2-3 specific time slots in your very next message
+- CRITICAL: When you have calendar data for all users, ALWAYS use the findFreeSlots tool to find accurate available times before proposing any meeting slots
+- NEVER propose times without first calling findFreeSlots - this ensures you only suggest times that actually work for everyone
+- After calling findFreeSlots, propose 2-3 specific time slots from the results in your very next message
 - Skip pleasantries and acknowledgments - get straight to business
 - Respect privacy - don't share individual constraints publicly
 - Only move to finalize when you've found a time that works for all participants
@@ -334,8 +338,9 @@ ${Array.from(userMap.values()).sort().join(', ')}
 Summary: ${topic.summary}
 Users involved: ${topic.userIds.map((id) => {
   const name = userMap.get(id)
-  return name || 'Unknown User'
+  return `${name || 'Unknown User'} (${id})`
 }).join(', ')}
+User IDs for tool calls: [${topic.userIds.map(id => `"${id}"`).join(', ')}]
 Created: ${new Date(topic.createdAt).toLocaleString()}
 Last updated: ${new Date(topic.updatedAt).toLocaleString()}
 
@@ -371,12 +376,57 @@ Based on the conversation history and current message, determine the next step i
 
   console.log(userPrompt)
 
+  // Define the findFreeSlots tool
+  const findFreeSlotsTools = {
+    findFreeSlots: tool({
+      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the actual user IDs from the topic.',
+      parameters: z.object({
+        userIds: z.array(z.string()).describe('Array of actual user IDs (not names) to find free slots for'),
+      }),
+      execute: async ({ userIds }) => {
+        console.log('Tool called: findFreeSlots for user IDs:', userIds)
+        
+        // Build profiles for the time intersection tool
+        const profiles: UserProfile[] = []
+        for (const userId of userIds) {
+          const userName = userMap.get(userId) || userId
+          const calendar = await getUserCalendarStructured(userId)
+          
+          if (calendar && calendar.length > 0) {
+            profiles.push({
+              name: userName,
+              calendar: calendar,
+            })
+          } else {
+            // User has no calendar data, treat as fully available
+            profiles.push({
+              name: userName,
+              calendar: [],
+            })
+          }
+        }
+        
+        // Use the time intersection tool to find common free slots
+        const freeSlots = findCommonFreeTime(profiles)
+        console.log('Found free slots:', freeSlots)
+        
+        return {
+          freeSlots: freeSlots,
+          message: freeSlots.length > 0 
+            ? `Found ${freeSlots.length} available time slots` 
+            : 'No common free slots found for all participants'
+        }
+      },
+    }),
+  }
+
   try {
     const res = await generateText({
       model: openrouter('anthropic/claude-sonnet-4'),
       maxTokens: 1024,
       temperature: 0.7,
-      system: systemPrompt,
+      system: systemPrompt + '\n\n## CRITICAL TOOL USAGE\nYou have access to a findFreeSlots tool that finds mathematically accurate free time slots. YOU MUST USE THIS TOOL before proposing any meeting times when you have calendar data for users. Pass the actual user IDs from topic.userIds (like U_USER_0, U_USER_1, etc.) NOT the user names. The tool will return guaranteed-free slots that work for everyone. Never propose times based on reading calendar text - always use the tool with the correct user IDs.',
+      tools: findFreeSlotsTools,
       messages: [
         {
           role: 'user',
@@ -386,6 +436,60 @@ Based on the conversation history and current message, determine the next step i
     })
 
     // Parse the JSON response
+    console.log('LLM response text:', res.text)
+    console.log('Tool calls:', res.toolCalls)
+    console.log('Tool results:', res.toolResults)
+    
+    // If tools were called, we need to continue the conversation with the tool results
+    if (res.toolCalls && res.toolCalls.length > 0) {
+      // The AI SDK should handle the tool execution and continuation automatically
+      // But if there's no text response, we need to prompt again with the tool results
+      if (!res.text) {
+        // Build a new prompt that includes the tool results
+        const toolResult = res.toolResults?.[0]?.result as any
+        const freeSlots = toolResult?.freeSlots || []
+        
+        const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
+${freeSlots.map((slot: any) => `- ${slot.start} to ${slot.end}`).join('\n')}
+
+Based on these available times, determine the next step in the scheduling workflow.`
+        
+        // Make a new call without tools to get the final response
+        const finalRes = await generateText({
+          model: openrouter('anthropic/claude-sonnet-4'),
+          maxTokens: 1024,
+          temperature: 0.7,
+          system: systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: updatedPrompt,
+            },
+          ],
+        })
+        
+        console.log('Final LLM response after tool use:', finalRes.text)
+        const nextStep = JSON.parse(finalRes.text) as {
+          action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
+          replyMessage: string
+          updateUserIds?: string[]
+          updateUserNames?: string[]
+          updateSummary?: string
+          markTopicInactive?: boolean
+          messagesToUsers?: {
+            userIds: string[]
+            userNames?: string[]
+            text: string
+          }[]
+          groupMessage?: string
+          reasoning: string
+        }
+        
+        return nextStep
+      }
+    }
+    
+    // Parse the response (either direct or after tool use)
     const nextStep = JSON.parse(res.text) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
