@@ -11,7 +11,7 @@ import { findCommonFreeTime, UserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
-export interface AnalyzeTopicRes {
+interface AnalyzeTopicRes {
   relevantTopicId?: string
   suggestedNewTopic?: string
   workflowType?: 'scheduling' | 'other'
@@ -19,7 +19,7 @@ export interface AnalyzeTopicRes {
   reasoning: string
 }
 
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId?: string): Promise<AnalyzeTopicRes> {
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId: string): Promise<AnalyzeTopicRes> {
   // Fetch recent messages for each topic in the same channel
   const topicMessagesMap = new Map<string, SlackMessage[]>()
 
@@ -108,12 +108,9 @@ The JSON structure must be:
 
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
-  // Create a map for bot name
-  const botName = botUserId && userMap.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
+  const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
 
-  const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
-
-` : ''}${userMap && userMap.size > 0 ? `User Directory:
+${userMap && userMap.size > 0 ? `User Directory:
 ${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Existing topics:
@@ -177,7 +174,7 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   }
 }
 
-export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId?: string): Promise<{
+export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId: string): Promise<{
   action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateUserIds?: string[]
@@ -326,12 +323,9 @@ Return ONLY a JSON object with the appropriate fields based on the action:
 
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
-  // Create a map for bot name
-  const botName = botUserId && userMap.get(botUserId) ? userMap.get(botUserId) : 'Assistant'
+  const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
 
-  const userPrompt = `${botUserId ? `Your name in conversations: ${botName}
-
-` : ''}${userMap && userMap.size > 0 ? `User Directory:
+${userMap && userMap.size > 0 ? `User Directory:
 ${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Current Topic:

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
-import { io, Socket } from 'socket.io-client'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
 import { scoreAlgorithm, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
@@ -21,47 +20,13 @@ interface BenchmarkTestCase {
   optimalUtility: number
 }
 
-const API_BASE_URL = 'http://localhost:3001'
+const BOT_USER_ID = 'UTESTBOT'
 
 type EvalMode = 'persona' | 'calendar'
-
-// Create a socket.io client that impersonates a specific user
-async function createUserSocketClient(userId: string): Promise<Socket> {
-  const socket: Socket = io(API_BASE_URL)
-
-  return new Promise<Socket>((resolve, reject) => {
-    let connected = false
-    let userListReceived = false
-
-    socket.on('connect', () => {
-      console.log(`Socket connected for user ${userId}`)
-      connected = true
-    })
-
-    socket.on('users-list', () => {
-      userListReceived = true
-      socket.emit('user-selected', userId)
-      console.log(`Socket impersonating user: ${userId}`)
-      resolve(socket)
-    })
-
-    socket.on('error', (data: { message: string }) => {
-      console.error(`Socket error for user ${userId}: ${data.message}`)
-      reject(new Error(data.message))
-    })
-
-    setTimeout(() => {
-      if (!connected || !userListReceived) {
-        reject(new Error(`Timeout: Failed to connect socket for user ${userId}`))
-      }
-    }, 5000)
-  })
-}
 
 // Simulate a scheduling conversation using personas or calendar mode
 async function simulateSchedulingConversation(
   testCase: BenchmarkTestCase,
-  botUserId: string,
   mode: EvalMode = 'persona',
 ): Promise<TopicData> {
   console.log(`\n${'='.repeat(60)}`)
@@ -85,110 +50,101 @@ async function simulateSchedulingConversation(
     await setupCalendarDataForEval(testCase.profiles, false)
   }
 
-  // Create server-side users
-  for (let idx = 0; idx < testCase.profiles.length; idx++) {
-    const profile = testCase.profiles[idx]
-    const userId = `U_USER_${idx}`
-    const result = await api.users.create_fake.$post({
-      json: { userId, realName: profile.name },
-    })
-    if (result.ok) {
-      console.log(`Created user: ${profile.name} (${userId})`)
-    } else {
-      throw new Error(`Failed to create user: ${profile.name} (${userId})`)
-    }
+  // Create all server-side users for this test case at once
+  const usersToCreate = testCase.profiles.map((profile, idx) => ({
+    id: `U_USER_${idx}`,
+    realName: profile.name,
+    isBot: false,
+  }))
+  const userIdProfileMap = new Map<string, PersonProfile>()
+  testCase.profiles.forEach((profile, idx) => userIdProfileMap.set(`U_USER_${idx}`, profile))
+
+  const createUsersRes = await api.users.create_fake.$post({
+    json: { users: usersToCreate },
+  })
+  if (!createUsersRes.ok) {
+    throw new Error(`Failed to create users: ${createUsersRes.statusText}`)
   }
 
-  let topicId: string | null = null
+  const { userIds } = await createUsersRes.json()
+  console.log(`Created ${userIds.length} test users`)
+  if (userIds.length < 1) {
+    throw new Error('Eval requires at least 1 test user')
+  }
 
-  // Create a socket for every test user
-  const promises = testCase.profiles.map(async (profile, idx) => {
-    const userId = `U_USER_${idx}`
-    const socket = await createUserSocketClient(userId)
+  const initMessage = `<@${BOT_USER_ID}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
+  console.log(`Sending initial message from ${userIds[0]}: ${initMessage}`)
 
-    // Send initial message
-    if (idx == 0) {
-      // In both modes, just ask for help scheduling
-      // In calendar mode, the bot will fetch calendars from the database
-      const initMessage = `<@${botUserId}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
-
-      console.log(`Sending initial message from ${userId}: ${initMessage}`)
-      socket.emit('flack-message', { text: initMessage })
-    }
-
-    let msgCount = 0
-    socket.on('bot-response', async (data: { channel: string; text: string; thread_ts?: string; timestamp: string }) => {
-      console.log(`Message received for ${userId}: ${data.text.substring(0, 100)}...`)
-
-      // Get the topicId if not yet fetched
-      if (topicId === null) {
-        const response = await api.latest_topic_id.$get()
-        if (response.ok) {
-          const data = await response.json()
-          topicId = data.topicId
-          console.log(`Retrieved latest topic ID: ${topicId}`)
-        } else {
-          throw new Error(`Failed to get latest topic: ${response.statusText}`)
-        }
-      }
-
-      if (mode === 'calendar') {
-        // In calendar mode, use LLM personas but with simpler logic
-        // Respond to DMs or messages that seem to need a response
-        if (msgCount < 10 && (
-          data.channel.startsWith('D') || // Direct messages
-          data.text.includes('?') ||
-          data.text.toLowerCase().includes('available') ||
-          data.text.toLowerCase().includes('preferences') ||
-          data.text.toLowerCase().includes('work') ||
-          data.text.toLowerCase().includes('confirm') ||
-          data.text.toLowerCase().includes('how about')
-        )) {
-          // Use the LLM persona to generate an intelligent response
-          const message = await llmPersonaRespond(topicId, userId, profile, data.text, data.timestamp)
-          console.log(`Sending response from ${userId}: ${message.substring(0, 100)}...`)
-          socket.emit('flack-message', { topicId: topicId, text: message })
-          msgCount += 1
-        }
-
-        // Disconnect after we've seen enough messages or a final confirmation
-        if (msgCount >= 10 || data.text.toLowerCase().includes('scheduled for')) {
-          setTimeout(() => {
-            socket.removeAllListeners('bot-response')
-            socket.disconnect()
-          }, 1000) // Give a moment for final messages
-        }
-      } else {
-        // In persona mode, use the existing LLM persona logic
-        if (msgCount < 10 && (data.channel.startsWith('D') || (
-          data.text.includes('?') ||
-          data.text.toLowerCase().includes('available') ||
-          data.text.toLowerCase().includes('work') ||
-          data.text.toLowerCase().includes('conflict')
-        ))) {
-          const message = await llmPersonaRespond(topicId, userId, profile, data.text, data.timestamp)
-          console.log(`Sending response from ${userId}: ${message.substring(0, 100)}...`)
-          socket.emit('flack-message', { topicId: topicId, text: message })
-          msgCount += 1
-        } else {
-          socket.removeAllListeners('bot-response')
-          socket.disconnect()
-        }
-      }
-    })
-
-    const resPromise = new Promise<void>((resolve) => {
-      socket.on('disconnect', () => resolve())
-    })
-
-    return resPromise
+  const initMessageRes = await api.message.$post({
+    json: { userId: userIds[0], text: initMessage },
   })
+  if (!initMessageRes.ok) {
+    throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
+  }
 
-  await Promise.all(promises)
+  const initResData = await initMessageRes.json()
+  const topicId = initResData.topicId
+  let msgsToReplyTo = initResData.resMessages
 
-  // Get topic data
-  if (topicId === null) {
-    throw new Error('Topic id never fetched from server')
+  // In a loop: reply to every recent message from the bot, and collect all the bot responses
+  // to respond to on the next loop iteration.
+  // Continue until there are no messages left to respond to, for a maximum of 10 rounds
+  let msgRoundCount = 0
+  while (msgsToReplyTo.length > 0 && msgRoundCount < 10) {
+    const nestedMsgsToSend = await Promise.all(msgsToReplyTo.map(async (message) => {
+      // If the message includes the text 'scheduled for', don't respond
+      if (message.text.includes('scheduled for')) {
+        return []
+      }
+
+      // Respond if direct message, or if the group message includes a question, or the word available, work, or conflict
+      if (message.channelId.startsWith('D') || (
+        message.text.includes('?') ||
+        message.text.toLowerCase().includes('available') ||
+        message.text.toLowerCase().includes('preferences') ||
+        message.text.toLowerCase().includes('work') ||
+        message.text.toLowerCase().includes('confirm') ||
+        message.text.toLowerCase().includes('how about')
+      )) {
+        const channelRes = await api.channels[':channelId'].$get({
+          param: { channelId: message.channelId  },
+        })
+        if (!channelRes.ok) {
+          throw new Error(`Failed to get channel info: ${message.channelId}`)
+        }
+
+        // Generate response from all non-bot users in channel
+        const { userIds } = await channelRes.json()
+        const usersToReply = userIds.filter((userId) => userId !== BOT_USER_ID)
+        return Promise.all(usersToReply.map(async (userId) => {
+          const profile = userIdProfileMap.get(userId)
+          if (!profile) {
+            throw new Error(`Profile not found for userId: ${userId}`)
+          }
+          const userMsg = await llmPersonaRespond(topicId, userId, profile, message.text, message.timestamp)
+          return { userId, userMsg }
+        }))
+      }
+      return []
+    }))
+
+    // Send the messages, and collect the bot responses to reply to in the next round
+    const msgsToSend = nestedMsgsToSend.flat()
+    const nestedMsgsToReplyTo = await Promise.all(msgsToSend.map(async ({ userId, userMsg }) => {
+      console.log(`Sending response from ${userId}: ${userMsg}`)
+      const messageRes = await api.message.$post({
+        json: { topicId, userId, text: userMsg },
+      })
+      if (!messageRes.ok) {
+        throw new Error(`Failed to process message: ${messageRes.statusText}`)
+      }
+
+      const { resMessages } = await messageRes.json()
+      return resMessages
+    }))
+
+    msgsToReplyTo = nestedMsgsToReplyTo.flat()
+    msgRoundCount += 1
   }
 
   const topicResponse = await api.topics[':topicId'].$get({
@@ -220,15 +176,6 @@ export async function evaluateWithFlack(
   console.log(`Persona Model: ${model}`)
   console.log(`Data availability: ${dataAvailability.calendarProbability * 100}% calendar\n`)
 
-  // Check if bot is running
-  console.log('Connecting to Slack bot at http://localhost:3001...')
-  const botUserId = 'UTESTBOT'
-  if (!botUserId) {
-    console.error('❌ Could not connect to Slack bot. Make sure the bot is running on http://localhost:3001')
-    process.exit(1)
-  }
-  console.log(`✅ Connected! Bot User ID: ${botUserId}\n`)
-
   // Load benchmark data
   const dataDir = join(import.meta.dirname, 'data')
   let filepath = join(dataDir, benchmarkFile)
@@ -252,7 +199,7 @@ export async function evaluateWithFlack(
     const currentTestCase = testCases[testCaseIndex]
     testCaseIndex++
 
-    const topicData = await simulateSchedulingConversation(currentTestCase, botUserId, mode)
+    const topicData = await simulateSchedulingConversation(currentTestCase, mode)
     allConversationLogs.push(topicData)
 
     const lastMessage = topicData.messages.sort((a, b) =>

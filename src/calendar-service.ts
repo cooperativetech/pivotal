@@ -1,4 +1,3 @@
-import type { AllMiddlewareArgs } from '@slack/bolt'
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 import type { Context } from 'hono'
@@ -91,7 +90,6 @@ export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 export async function handleGoogleAuthCallback(
   c: Context,
   queryParams: GoogleAuthCallbackReq,
-  slackClient: AllMiddlewareArgs['client'],
 ): Promise<Response> {
     const { code, state, error, error_description } = queryParams
 
@@ -111,16 +109,6 @@ export async function handleGoogleAuthCallback(
     try {
       const slackUserId = await fetchAndStoreGoogleAuthTokens(code, state)
       await fetchAndStoreUserCalendar(slackUserId)
-
-      try {
-        await slackClient.chat.postMessage({
-          channel: slackUserId,
-          text: '✅ Your Google Calendar has been successfully connected! I can now check your availability when scheduling meetings.'
-  ,
-        })
-      } catch (slackError) {
-        console.warn('Could not send success message to Slack:', slackError)
-      }
 
       return c.html(`
         <html>

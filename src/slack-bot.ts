@@ -14,7 +14,13 @@ const slackApp = new App({
 })
 
 slackApp.message(async ({ message, context, client }) => {
-  await handleSlackMessage(message, context.botUserId, client)
+  if (!context.botUserId) {
+    throw new Error('Bot user id not found in context for message')
+  }
+  // Only handle GenericMessageEvent and BotMessageEvent for now
+  if (message.subtype === undefined || message.subtype === 'bot_message') {
+    await handleSlackMessage(message, context.botUserId, client)
+  }
 })
 
 await slackApp.start()
@@ -27,7 +33,7 @@ const honoApp = new Hono()
   })
 
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'), slackApp.client)
+    return handleGoogleAuthCallback(c, c.req.valid('query'))
   })
 
 serve({ fetch: honoApp.fetch, port: PORT })

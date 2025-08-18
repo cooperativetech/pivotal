@@ -1,22 +1,27 @@
 import { Hono } from 'hono'
+import { logger } from 'hono/logger'
 import { serve } from '@hono/node-server'
 import { zValidator } from '@hono/zod-validator'
-import { Server } from 'socket.io'
-import { desc } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { setupSocketServer, FlackSlackClient } from './flack-socket-server.ts'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import db from './db/engine'
-import { topicTable, Topic } from './db/schema/main'
-import { cleanupTestData } from './db/cleanup'
+import { topicTable, Topic, slackChannelTable } from './db/schema/main'
+import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from './flack-helpers.ts'
+import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
+import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
 import { GetTopicReq, dumpTopic } from './utils'
 import { scheduleNextStep } from './anthropic-api'
 
 const PORT = 3001
 const honoApp = new Hono()
+  .use(logger((message) => {
+    const logEntry = `[${new Date().toISOString()}] ${message}`
+    console.log(logEntry)
+  }))
+
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'), slackClient)
+    return handleGoogleAuthCallback(c, c.req.valid('query'))
   })
 
   .get('/api/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -51,28 +56,8 @@ const honoApp = new Hono()
     }
   })
 
-  .get('/api/latest_topic_id', async (c) => {
-    try {
-      // Get the most recently created topic
-      const [latestTopic] = await db
-        .select()
-        .from(topicTable)
-        .orderBy(desc(topicTable.updatedAt))
-        .limit(1)
-
-      if (!latestTopic) {
-        return c.json({ error: 'No topics found' }, 404)
-      }
-
-      return c.json({ topicId: latestTopic.id })
-    } catch (error) {
-      console.error('Error fetching latest topic:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
   .post('/api/clear_test_data', async (c) => {
-    await slackClient.clearTestData()
+    await messageProcessingLock.clear()
     const result = await cleanupTestData()
     return c.json({
       success: result.success,
@@ -81,12 +66,20 @@ const honoApp = new Hono()
   })
 
   .post('/api/users/create_fake', zValidator('json', z.strictObject({
-    userId: z.string(),
-    realName: z.string(),
-  })), (c) => {
+    users: z.array(z.object({
+      id: z.string(),
+      realName: z.string(),
+      isBot: z.boolean().optional(),
+      tz: z.string().optional(),
+    })),
+  })), async (c) => {
     const body = c.req.valid('json')
-    slackClient.createFakeUser(body.userId, body.realName)
-    return c.json({ success: true, message: `Created fake user ${body.userId}` })
+    const createdUsers = await Promise.all(body.users.map((user) => upsertFakeUser(user)))
+    return c.json({
+      success: true,
+      message: `Created ${createdUsers.length} fake user(s)`,
+      userIds: createdUsers.map((user) => user.id),
+    })
   })
 
   .post('/api/test_llm_response', zValidator('json', z.strictObject({
@@ -171,9 +164,74 @@ const honoApp = new Hono()
     }
   })
 
+  .post('/api/message', zValidator('json', z.strictObject({
+    userId: z.string(),
+    text: z.string(),
+    topicId: z.string().optional(),
+  })), async (c) => {
+    const { userId, text, topicId } = c.req.valid('json')
+
+    try {
+      const channelId = await getOrCreateChannelForUsers([userId])
+
+      // Create a SlackAPIMessage
+      const ts = (Date.now() / 1000).toString()
+      const message: SlackAPIMessage = {
+        type: 'message',
+        subtype: undefined,
+        text: text,
+        ts: ts,
+        user: userId,
+        channel: channelId,
+        channel_type: 'im',
+        event_ts: ts,
+      }
+
+      const result = await handleSlackMessage(
+        message,
+        BOT_USER_ID,
+        mockSlackClient,
+        topicId || null,
+        true, // if topicId is null, create a new topic rather than routing to existing ones
+      )
+      if (!result) {
+        throw new Error('Failed to process message')
+      }
+
+      return c.json(result)
+    } catch (error) {
+      console.error('Error processing message:', error)
+      return c.json({
+        error: error instanceof Error ? error.message : 'Internal server error',
+      }, 500)
+    }
+  })
+
+  .get('/api/channels/:channelId', async (c) => {
+    const channelId = c.req.param('channelId')
+
+    try {
+      const [channel] = await db
+        .select()
+        .from(slackChannelTable)
+        .where(eq(slackChannelTable.id, channelId))
+      if (!channel) {
+        return c.json({ error: `Channel not found: ${channelId}` }, 404)
+      }
+
+      return c.json(channel)
+    } catch (error) {
+      console.error('Error fetching channel:', error)
+      return c.json({
+        error: error instanceof Error ? error.message : 'Internal server error',
+      }, 500)
+    }
+  })
+
 export type AppType = typeof honoApp
 
-const server = serve({ fetch: honoApp.fetch, port: PORT })
-const io = new Server(server, { connectionStateRecovery: {} })
-const slackClient: FlackSlackClient = setupSocketServer(io)
+// Insert bot user if it doesn't exist
+await upsertFakeUser({ id: BOT_USER_ID, realName: 'Pivotal', isBot: true })
+
+serve({ fetch: honoApp.fetch, port: PORT })
 console.log(`Flack webserver running on port ${PORT}...`)
