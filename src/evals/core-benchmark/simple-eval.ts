@@ -16,7 +16,7 @@ interface SimpleTestCase {
 function generateSimpleTestCase(): SimpleTestCase {
   // The ONE time everyone is free
   const freeSlot = { start: '14:00', end: '15:00' }
-  
+
   // Create calendars that block everything EXCEPT the free slot
   const profiles = [
     {
@@ -29,7 +29,7 @@ function generateSimpleTestCase(): SimpleTestCase {
       ],
     },
     {
-      name: 'Bob', 
+      name: 'Bob',
       busySlots: [
         { start: '08:00', end: '10:00', title: 'Client calls' },
         { start: '10:00', end: '14:00', title: 'Project work' },
@@ -47,7 +47,7 @@ function generateSimpleTestCase(): SimpleTestCase {
       ],
     },
   ]
-  
+
   return {
     profiles,
     guaranteedFreeSlot: freeSlot,
@@ -62,14 +62,14 @@ function convertToFullFormat(simpleCase: SimpleTestCase) {
   const daysUntilTuesday = (2 - baseDate.getDay() + 7) % 7 || 7
   baseDate.setDate(baseDate.getDate() + daysUntilTuesday)
   baseDate.setHours(0, 0, 0, 0)
-  
+
   const createDateTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number)
     const dt = new Date(baseDate)
     dt.setHours(hours, minutes, 0, 0)
     return dt.toISOString()
   }
-  
+
   // Convert to full benchmark format
   const profiles = simpleCase.profiles.map((person) => ({
     name: person.name,
@@ -95,16 +95,16 @@ function convertToFullFormat(simpleCase: SimpleTestCase) {
       critical: 0,
     },
   }))
-  
+
   // Calculate utility distribution (simplified - only the free slot gets max utility)
   const utilityDistribution = []
-  
+
   // Add some blocked slots with low utility
   for (let hour = 9; hour < 18; hour++) {
     for (let min = 0; min < 60; min += 30) {
       const start = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
       const end = `${hour.toString().padStart(2, '0')}:${(min + 60).toString().padStart(2, '0')}`
-      
+
       if (start === simpleCase.guaranteedFreeSlot.start) {
         // This is THE free slot - everyone gets max utility
         utilityDistribution.push({
@@ -120,7 +120,7 @@ function convertToFullFormat(simpleCase: SimpleTestCase) {
       }
     }
   }
-  
+
   return {
     id: 0,
     profiles,
