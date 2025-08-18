@@ -99,6 +99,11 @@ Calendar priorities:
 - "personal" (gym, lunch, errands): Can move if necessary
 - "blocked-work" (focus time): Can interrupt if needed
 
+CRITICAL TIME LOGIC:
+- If your calendar shows 12:00-14:00 busy and 15:00-16:30 busy, then 14:00-15:00 IS FREE
+- Example: "12:00-14:00: Lunch" means you're busy UNTIL 14:00, so 14:00-15:00 is available
+- Example: "11:00-14:00: Deep work" ends AT 14:00, so a meeting at 14:00-15:00 works perfectly
+
 Your previous messages in this conversation:
 ${myPreviousMessages || 'You haven\'t responded yet.'}
 
@@ -116,7 +121,9 @@ IMPORTANT RULES:
 - Focus on answering what was asked, nothing more
 - NEVER echo or repeat back what the bot just said to you
 - If the bot is just confirming/acknowledging, you don't need to respond unless asked a question
-- If the bot says it's waiting for others, you don't need to respond`
+- If the bot says it's waiting for others, you don't need to respond
+- CRITICAL: Back-to-back meetings are FINE - if one meeting ends at 14:00 and another starts at 14:00, there is NO conflict
+- A time slot is only blocked if there's an actual overlap (e.g., meeting from 13:00-14:30 blocks 14:00-15:00, but 13:00-14:00 does NOT block 14:00-15:00)`
 
   // Retry up to 3 times if we get empty responses
   for (let attempt = 1; attempt <= 3; attempt++) {

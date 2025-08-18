@@ -421,6 +421,11 @@ Based on the conversation history and current message, determine the next step i
   }
 
   try {
+    console.log('=== CALLING LLM IN scheduleNextStep ===')
+    console.log('User prompt length:', userPrompt.length)
+    console.log('Topic user IDs:', topic.userIds)
+    console.log('Message user ID:', message.userId)
+    
     const res = await generateText({
       model: openrouter('anthropic/claude-sonnet-4'),
       maxTokens: 1024,
@@ -493,7 +498,53 @@ Based on these available times, determine the next step in the scheduling workfl
     }
 
     // Parse the response (either direct or after tool use)
-    const nextStep = JSON.parse(res.text) as {
+    // If res.text starts with explanation text instead of JSON, we need to extract the JSON
+    let textToParse = res.text
+    
+    // Check if the response contains non-JSON explanation before the actual JSON
+    if (!res.text.trim().startsWith('{')) {
+      console.log('LLM response contains non-JSON text, attempting to extract JSON...')
+      // Try to find JSON in the response (look for first { to last })
+      const jsonStart = res.text.indexOf('{')
+      const jsonEnd = res.text.lastIndexOf('}')
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        textToParse = res.text.substring(jsonStart, jsonEnd + 1)
+        console.log('Extracted JSON from response')
+      } else {
+        // No JSON found in response - this happens when LLM uses tool but doesn't format response
+        console.error('No JSON found in LLM response after tool use')
+        console.error('Full response:', res.text)
+        
+        // Create a default response based on tool results
+        if (res.toolResults && res.toolResults.length > 0) {
+          const toolResult = res.toolResults[0]?.result as any
+          if (toolResult?.freeSlots) {
+            // We have free slots, create a finalize response
+            const slots = toolResult.freeSlots as Array<{start: string, end: string}>
+            const slotDescriptions = slots.map((s: any) => {
+              const startHour = parseInt(s.start.split(':')[0])
+              const endHour = parseInt(s.end.split(':')[0])
+              const startPeriod = startHour >= 12 ? 'PM' : 'AM'
+              const endPeriod = endHour >= 12 ? 'PM' : 'AM'
+              const displayStart = startHour > 12 ? startHour - 12 : startHour
+              const displayEnd = endHour > 12 ? endHour - 12 : endHour
+              return `${displayStart}:00-${displayEnd}:00 ${startPeriod === endPeriod ? startPeriod : startPeriod + '-' + endPeriod}`
+            }).join(', ')
+            
+            return {
+              action: 'finalize' as const,
+              replyMessage: `I found available times for everyone on Tuesday: ${slotDescriptions}. Which works best?`,
+              reasoning: 'Used tool to find free slots, formatted response',
+            }
+          }
+        }
+        
+        throw new Error('Could not parse LLM response as JSON and no tool results to fall back on')
+      }
+    }
+    
+    const nextStep = JSON.parse(textToParse) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
       updateUserIds?: string[]
@@ -511,12 +562,18 @@ Based on these available times, determine the next step in the scheduling workfl
 
     return nextStep
   } catch (error) {
-    console.error('Error in scheduleNextStep:', error)
+    console.error('=== ERROR IN scheduleNextStep ===')
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+    console.error('Error message:', error instanceof Error ? error.message : String(error))
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Full error object:', JSON.stringify(error, null, 2))
+    console.error('=================================')
+    
     // Return a safe default response
     return {
       action: 'other',
       replyMessage: 'I encountered an error processing the scheduling request.',
-      reasoning: 'Error occurred during processing',
+      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
   }
 }
