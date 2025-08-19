@@ -1,7 +1,7 @@
 import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, ChatPostMessageResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
-import { topicTable, TopicInsert, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
+import { topicTable, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
@@ -213,42 +213,13 @@ async function processSchedulingActions(
     }
 
     // Process other actions based on the response
-    // Update topic if needed
-    if (nextStep.updateUserIds || nextStep.updateUserNames || nextStep.updateSummary) {
-      const updates: Partial<TopicInsert> = {}
-
-      // Handle updateUserNames by mapping names back to userIds
-      if (nextStep.updateUserNames) {
-        const nameToIdMap = new Map<string, string>()
-        userMap.forEach((name, id) => {
-          nameToIdMap.set(name, id)
-        })
-
-        const updatedUserIds: string[] = []
-        for (const name of nextStep.updateUserNames) {
-          const userId = nameToIdMap.get(name)
-          if (userId) {
-            updatedUserIds.push(userId)
-          } else {
-            console.warn(`Could not find userId for name: ${name}`)
-          }
-        }
-
-        if (updatedUserIds.length > 0) {
-          updates.userIds = updatedUserIds
-        }
-      } else if (nextStep.updateUserIds) {
-        // Fallback to direct userIds if provided
-        updates.userIds = nextStep.updateUserIds
-      }
-
-      if (nextStep.updateSummary) {
-        updates.summary = nextStep.updateSummary
-      }
-      updates.updatedAt = new Date()
-
+    // Update topic summary if needed (userIds are now updated directly in the tool)
+    if (nextStep.updateSummary) {
       await db.update(topicTable)
-        .set(updates)
+        .set({
+          summary: nextStep.updateSummary,
+          updatedAt: new Date(),
+        })
         .where(eq(topicTable.id, topicId))
     }
 

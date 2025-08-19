@@ -3,7 +3,7 @@ import { generateText, tool } from 'ai'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
+import { Topic, slackMessageTable, SlackMessage, topicTable } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { generateGoogleAuthUrl, getUserCalendarStructured } from './calendar-service'
@@ -174,11 +174,19 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   }
 }
 
-export async function scheduleNextStep(message: SlackMessage, topic: Topic, previousMessages: SlackMessage[], userMap: Map<string, string>, botUserId: string): Promise<{
+export async function scheduleNextStep(
+  message: SlackMessage,
+  topic: Topic,
+  previousMessages: SlackMessage[],
+  userMap: Map<string, string>,
+  botUserId: string,
+  prevToolResults?: {
+    toolsCalled: string[]
+    userPromptSuffix: string
+  },
+): Promise<{
   action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
-  updateUserIds?: string[]
-  updateUserNames?: string[] // Names that will be mapped back to userIds
   updateSummary?: string
   markTopicInactive?: boolean
   messagesToUsers?: {
@@ -233,9 +241,9 @@ Based on the current state, determine:
 
 ## Action Types
 - "identify_users": Need to determine who should be involved
-  - Return updateUserNames array with the COMPLETE list of user names who should be involved in the topic going forward
+  - Use the updateUserNames tool to specify the COMPLETE list of user names who should be involved
   - IMPORTANT: Use the exact full names from the User Directory (e.g., "John Smith", not "John" or "Smith")
-  - This replaces the existing user list, not appends to it
+  - The tool will replace the existing user list, not append to it
   - Return replyMessage asking about missing participants or confirming who will be included
 
 - "request_calendar_access": (Handled automatically - you should not use this action)
@@ -269,7 +277,7 @@ Based on the current state, determine:
   - Return replyMessage with the appropriate response
   - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
   - Optionally return groupMessage for updates to all users in shared channel
-  - Optionally return updateUserNames if users need to be added/removed (use exact names from User Directory)
+  - Can use updateUserNames tool if users need to be added/removed (use exact names from User Directory)
 
 ## Important Guidelines
 - BE EXTREMELY CONCISE - keep all messages brief and to the point (1-2 sentences max unless proposing times)
@@ -304,7 +312,6 @@ Return ONLY a JSON object with the appropriate fields based on the action:
 {
   "action": "identify_users|gather_constraints|finalize|complete|other",
   "replyMessage": "Message text",  // REQUIRED field but can be empty string ("") when no response is needed
-  "updateUserNames": ["John Smith", "Jane Doe"],  // Complete list of user names (MUST use exact names from User Directory)
   "updateSummary": "Updated topic summary",  // Optional for ANY action - updates topic when details change
   "markTopicInactive": true,      // Optional: Include when action is "complete" to mark topic as inactive
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
@@ -321,7 +328,24 @@ Return ONLY a JSON object with the appropriate fields based on the action:
   "reasoning": "Brief explanation of the decision"
 }
 
-IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
+IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.
+
+## CRITICAL TOOL USAGE
+You have access to TWO tools, but you can ONLY USE ONE per response:
+
+1. **findFreeSlots**: Finds mathematically accurate free time slots
+   - USE THIS before proposing any meeting times when you have calendar data
+   - Pass the exact user names from the User Directory (e.g., "John Smith", "Jane Doe")
+   - Returns guaranteed-free slots that work for everyone
+   - Never propose times without using this tool first
+
+2. **updateUserNames**: Updates the list of users involved in the scheduling
+   - USE THIS when you need to add/remove users from the topic (action: "identify_users")
+   - Provide the COMPLETE list of user names (this replaces the existing list)
+   - Use exact names from the User Directory
+
+IMPORTANT: You can only call ONE tool per response. Choose the most appropriate one for your current action.
+${prevToolResults ? `\n## PREVIOUS TOOL CALLS\nThe following tools have already been called: ${prevToolResults.toolsCalled.join(', ')}. The results are included in the user prompt. Do not call these tools again.` : ''}`
 
   const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
 
@@ -332,9 +356,8 @@ ${Array.from(userMap.values()).sort().join(', ')}
 Summary: ${topic.summary}
 Users involved: ${topic.userIds.map((id) => {
   const name = userMap.get(id)
-  return `${name || 'Unknown User'} (${id})`
+  return name || 'Unknown User'
 }).join(', ')}
-User IDs for tool calls: [${topic.userIds.map((id) => `"${id}"`).join(', ')}]
 Created: ${new Date(topic.createdAt).toLocaleString()}
 Last updated: ${new Date(topic.updatedAt).toLocaleString()}
 
@@ -365,24 +388,34 @@ Channel: ${message.channelId}${
 }
 Timestamp: ${new Date(message.timestamp).toLocaleString()}
 
-Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
+Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.${prevToolResults ? prevToolResults.userPromptSuffix : ''}`
 
   console.log(userPrompt)
 
-  // Define the findFreeSlots tool
-  const findFreeSlotsTools = {
+  // Define the tools - only one can be used at a time
+  const availableTools = {
     findFreeSlots: tool({
-      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the actual user IDs from the topic.',
+      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the exact user names from the User Directory.',
       parameters: z.object({
-        userIds: z.array(z.string()).describe('Array of actual user IDs (not names) to find free slots for'),
+        userNames: z.array(z.string()).describe('Array of user names (exact names from User Directory) to find free slots for'),
       }),
-      execute: async ({ userIds }) => {
-        console.log('Tool called: findFreeSlots for user IDs:', userIds)
+      execute: async ({ userNames }) => {
+        console.log('Tool called: findFreeSlots for users:', userNames)
+
+        // Map names to user IDs for calendar lookup
+        const nameToIdMap = new Map<string, string>()
+        userMap.forEach((name, id) => {
+          nameToIdMap.set(name, id)
+        })
 
         // Build profiles for the time intersection tool
         const profiles: UserProfile[] = []
-        for (const userId of userIds) {
-          const userName = userMap.get(userId) || userId
+        for (const userName of userNames) {
+          const userId = nameToIdMap.get(userName)
+          if (!userId) {
+            console.warn(`Could not find user ID for name: ${userName}`)
+            continue
+          }
           const calendar = await getUserCalendarStructured(userId)
 
           if (calendar && calendar.length > 0) {
@@ -411,6 +444,56 @@ Based on the conversation history and current message, determine the next step i
         }
       },
     }),
+    updateUserNames: tool({
+      description: 'Update the list of users involved in the scheduling topic. Provide the COMPLETE list of user names who should be involved going forward (this replaces the existing list).',
+      parameters: z.object({
+        userNames: z.array(z.string()).describe('Complete list of user names who should be involved (use exact names from User Directory)'),
+      }),
+      execute: async ({ userNames }) => {
+        console.log('Tool called: updateUserNames with names:', userNames)
+
+        // Map names to user IDs
+        const updatedUserIds: string[] = []
+        const unmappedNames: string[] = []
+
+        for (const name of userNames) {
+          let foundId: string | undefined
+          for (const [id, mappedName] of userMap.entries()) {
+            if (mappedName === name) {
+              foundId = id
+              break
+            }
+          }
+
+          if (foundId) {
+            updatedUserIds.push(foundId)
+          } else {
+            unmappedNames.push(name)
+          }
+        }
+
+        // Update the topic in the database with the new user IDs
+        const [updatedTopic] = await db
+          .update(topicTable)
+          .set({
+            userIds: updatedUserIds,
+            updatedAt: new Date(),
+          })
+          .where(eq(topicTable.id, topic.id))
+          .returning()
+
+        // Map IDs back to names for the response
+        const updatedUserNames = updatedUserIds.map((id) => userMap.get(id) || id)
+
+        return {
+          updatedTopic,
+          updatedUserNames,
+          message: unmappedNames.length > 0
+            ? `Updated user list to: ${updatedUserNames.join(', ')}. Warning: Could not find users: ${unmappedNames.join(', ')}`
+            : `Successfully updated user list to: ${updatedUserNames.join(', ')}`,
+        }
+      },
+    }),
   }
 
   try {
@@ -419,12 +502,21 @@ Based on the conversation history and current message, determine the next step i
     console.log('Topic user IDs:', topic.userIds)
     console.log('Message user ID:', message.userId)
 
+    // Only pass tools that haven't been called yet
+    const toolsToPass = prevToolResults
+      ? Object.fromEntries(
+          Object.entries(availableTools).filter(([toolName]) =>
+            !prevToolResults.toolsCalled.includes(toolName),
+          ),
+        )
+      : availableTools
+
     const res = await generateText({
       model: openrouter('anthropic/claude-sonnet-4'),
       maxTokens: 1024,
       temperature: 0.7,
-      system: systemPrompt + '\n\n## CRITICAL TOOL USAGE\nYou have access to a findFreeSlots tool that finds mathematically accurate free time slots. YOU MUST USE THIS TOOL before proposing any meeting times when you have calendar data for users. Pass the actual user IDs from topic.userIds (like U_USER_0, U_USER_1, etc.) NOT the user names. The tool will return guaranteed-free slots that work for everyone. Never propose times based on reading calendar text - always use the tool with the correct user IDs.',
-      tools: findFreeSlotsTools,
+      system: systemPrompt,
+      tools: toolsToPass,
       messages: [
         {
           role: 'user',
@@ -438,52 +530,78 @@ Based on the conversation history and current message, determine the next step i
     console.log('Tool calls:', res.toolCalls)
     console.log('Tool results:', res.toolResults)
 
-    // If tools were called, we need to continue the conversation with the tool results
+    // If tools were called, we need to recursively call scheduleNextStep with the tool results
     if (res.toolCalls && res.toolCalls.length > 0) {
-      // Build a new prompt that includes the tool results
-      interface ToolResultWithSlots {
-        freeSlots?: Array<{ start: Date, end: Date }>
-      }
-      const toolResult = res.toolResults?.[0]?.result as ToolResultWithSlots
-      const freeSlots = toolResult?.freeSlots || []
+      const toolCall = res.toolCalls[0]
+      const toolResult = res.toolResults?.[0]
 
-      const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
+      // Handle different tool results
+      let userPromptSuffix = ''
+      let updatedTopic: Topic | undefined
+
+      // Type guards for tool results
+      interface ToolCallWithName {
+        toolName: string
+      }
+
+      interface FreeSlotsResult {
+        result: {
+          freeSlots: Array<{ start: Date, end: Date }>
+          message: string
+        }
+      }
+
+      interface UpdateUserNamesResult {
+        result: {
+          updatedTopic: Topic
+          updatedUserNames: string[]
+          message: string
+        }
+      }
+
+      if (toolCall && typeof toolCall === 'object' && 'toolName' in toolCall) {
+        const toolName = (toolCall as ToolCallWithName).toolName
+
+        if (toolName === 'findFreeSlots' && toolResult) {
+          const result = toolResult as FreeSlotsResult
+          const freeSlots = result.result?.freeSlots || []
+          userPromptSuffix = `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
 ${freeSlots.map((slot) => `- ${slot.start.toISOString()} to ${slot.end.toISOString()}`).join('\n')}
 
 Based on these available times, determine the next step in the scheduling workflow.`
+        } else if (toolName === 'updateUserNames' && toolResult) {
+          const result = toolResult as UpdateUserNamesResult
+          updatedTopic = result.result?.updatedTopic
+          const updatedUserNames = result.result?.updatedUserNames || []
 
-      // Make a new call without tools to get the final response
-      const finalRes = await generateText({
-        model: openrouter('anthropic/claude-sonnet-4'),
-        maxTokens: 1024,
-        temperature: 0.7,
-        system: systemPrompt,
-        messages: [
+          userPromptSuffix = `\n\nThe updateUserNames tool was called and updated the user list.
+Updated users: ${updatedUserNames.join(', ')}
+
+Based on this update, determine the next step in the scheduling workflow.`
+        }
+
+        // Recursively call scheduleNextStep with the tool results
+        // Use the updated topic if updateUserNames was called
+        const topicToUse = toolName === 'updateUserNames' && updatedTopic ? updatedTopic : topic
+
+        // Accumulate tools called and append to existing prompt suffix
+        const allToolsCalled = [...(prevToolResults?.toolsCalled || []), toolName]
+        const fullPromptSuffix = (prevToolResults?.userPromptSuffix || '') + userPromptSuffix
+
+        const result = await scheduleNextStep(
+          message,
+          topicToUse,
+          previousMessages,
+          userMap,
+          botUserId,
           {
-            role: 'user',
-            content: updatedPrompt,
+            toolsCalled: allToolsCalled,
+            userPromptSuffix: fullPromptSuffix,
           },
-        ],
-      })
+        )
 
-      console.log('Final LLM response after tool use:', finalRes.text)
-      const nextStep = JSON.parse(finalRes.text) as {
-        action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
-        replyMessage: string
-        updateUserIds?: string[]
-        updateUserNames?: string[]
-        updateSummary?: string
-        markTopicInactive?: boolean
-        messagesToUsers?: {
-          userIds: string[]
-          userNames?: string[]
-          text: string
-        }[]
-        groupMessage?: string
-        reasoning: string
+        return result
       }
-
-      return nextStep
     }
 
     // If there are no tool calls, parse the response
@@ -491,8 +609,6 @@ Based on these available times, determine the next step in the scheduling workfl
     const nextStep = JSON.parse(res.text) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
-      updateUserIds?: string[]
-      updateUserNames?: string[]
       updateSummary?: string
       markTopicInactive?: boolean
       messagesToUsers?: {
