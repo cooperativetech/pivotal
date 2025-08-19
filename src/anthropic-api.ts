@@ -440,108 +440,55 @@ Based on the conversation history and current message, determine the next step i
 
     // If tools were called, we need to continue the conversation with the tool results
     if (res.toolCalls && res.toolCalls.length > 0) {
-      // The AI SDK should handle the tool execution and continuation automatically
-      // But if there's no text response, we need to prompt again with the tool results
-      if (!res.text) {
-        // Build a new prompt that includes the tool results
-        interface ToolResultWithSlots {
-          freeSlots?: Array<{ start: Date, end: Date }>
-        }
-        const toolResult = res.toolResults?.[0]?.result as ToolResultWithSlots
-        const freeSlots = toolResult?.freeSlots || []
+      // Build a new prompt that includes the tool results
+      interface ToolResultWithSlots {
+        freeSlots?: Array<{ start: Date, end: Date }>
+      }
+      const toolResult = res.toolResults?.[0]?.result as ToolResultWithSlots
+      const freeSlots = toolResult?.freeSlots || []
 
-        const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
+      const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
 ${freeSlots.map((slot) => `- ${slot.start.toISOString()} to ${slot.end.toISOString()}`).join('\n')}
 
 Based on these available times, determine the next step in the scheduling workflow.`
 
-        // Make a new call without tools to get the final response
-        const finalRes = await generateText({
-          model: openrouter('anthropic/claude-sonnet-4'),
-          maxTokens: 1024,
-          temperature: 0.7,
-          system: systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: updatedPrompt,
-            },
-          ],
-        })
+      // Make a new call without tools to get the final response
+      const finalRes = await generateText({
+        model: openrouter('anthropic/claude-sonnet-4'),
+        maxTokens: 1024,
+        temperature: 0.7,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: updatedPrompt,
+          },
+        ],
+      })
 
-        console.log('Final LLM response after tool use:', finalRes.text)
-        const nextStep = JSON.parse(finalRes.text) as {
-          action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
-          replyMessage: string
-          updateUserIds?: string[]
-          updateUserNames?: string[]
-          updateSummary?: string
-          markTopicInactive?: boolean
-          messagesToUsers?: {
-            userIds: string[]
-            userNames?: string[]
-            text: string
-          }[]
-          groupMessage?: string
-          reasoning: string
-        }
-
-        return nextStep
+      console.log('Final LLM response after tool use:', finalRes.text)
+      const nextStep = JSON.parse(finalRes.text) as {
+        action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
+        replyMessage: string
+        updateUserIds?: string[]
+        updateUserNames?: string[]
+        updateSummary?: string
+        markTopicInactive?: boolean
+        messagesToUsers?: {
+          userIds: string[]
+          userNames?: string[]
+          text: string
+        }[]
+        groupMessage?: string
+        reasoning: string
       }
+
+      return nextStep
     }
 
-    // Parse the response (either direct or after tool use)
+    // If there are no tool calls, parse the response
     // If res.text starts with explanation text instead of JSON, we need to extract the JSON
-    let textToParse = res.text
-
-    // Check if the response contains non-JSON explanation before the actual JSON
-    if (!res.text.trim().startsWith('{')) {
-      console.log('LLM response contains non-JSON text, attempting to extract JSON...')
-      // Try to find JSON in the response (look for first { to last })
-      const jsonStart = res.text.indexOf('{')
-      const jsonEnd = res.text.lastIndexOf('}')
-
-      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-        textToParse = res.text.substring(jsonStart, jsonEnd + 1)
-        console.log('Extracted JSON from response')
-      } else {
-        // No JSON found in response - this happens when LLM uses tool but doesn't format response
-        console.error('No JSON found in LLM response after tool use')
-        console.error('Full response:', res.text)
-
-        // Create a default response based on tool results
-        if (res.toolResults && res.toolResults.length > 0) {
-          interface ToolResultWithSlots {
-            freeSlots?: Array<{ start: Date; end: Date }>
-            message?: string
-          }
-          const toolResult = res.toolResults[0]?.result as ToolResultWithSlots
-          if (toolResult?.freeSlots) {
-            // We have free slots, create a finalize response
-            const slots = toolResult.freeSlots
-            const slotDescriptions = slots.map((s) => {
-              const startHour = s.start.getHours()
-              const endHour = s.end.getHours()
-              const startPeriod = startHour >= 12 ? 'PM' : 'AM'
-              const endPeriod = endHour >= 12 ? 'PM' : 'AM'
-              const displayStart = startHour > 12 ? startHour - 12 : startHour
-              const displayEnd = endHour > 12 ? endHour - 12 : endHour
-              return `${displayStart}:00-${displayEnd}:00 ${startPeriod === endPeriod ? startPeriod : startPeriod + '-' + endPeriod}`
-            }).join(', ')
-
-            return {
-              action: 'finalize' as const,
-              replyMessage: `I found available times for everyone on Tuesday: ${slotDescriptions}. Which works best?`,
-              reasoning: 'Used tool to find free slots, formatted response',
-            }
-          }
-        }
-
-        throw new Error('Could not parse LLM response as JSON and no tool results to fall back on')
-      }
-    }
-
-    const nextStep = JSON.parse(textToParse) as {
+    const nextStep = JSON.parse(res.text) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
       updateUserIds?: string[]
