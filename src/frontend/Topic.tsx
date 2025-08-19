@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { api, unserializeTopicTimestamps } from '@shared/api-client'
-import type { TopicData, SlackMessage } from '@shared/api-types'
+import { api } from '@shared/api-client'
+import { unserializeTopicTimestamps, type TopicData, type SlackMessage } from '@shared/api-types'
+import { getShortTimezoneFromIANA, getShortTimezone } from './utils'
+import { UserContextView } from './UserContextView'
 
 interface ChannelGroup {
   channelId: string
@@ -21,6 +23,7 @@ function Topic() {
   const [showPopup, setShowPopup] = useState(false)
   const [chatInputs, setChatInputs] = useState<Map<string, string>>(new Map())
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
+  const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
@@ -282,6 +285,38 @@ function Topic() {
     return channel?.userIds.find((uid) => userMap.has(uid))
   }
 
+  // Helper to get DM user info (for channel title)
+  const getDMUserInfo = (channelId: string) => {
+    const channel = topicData.channels?.find((ch) => ch.id === channelId)
+    if (!channel || channel.userIds.length !== 2) return null
+
+    // Find the non-bot user ID (the one in userMap)
+    const userId = channel.userIds.find((uid) => userMap.has(uid))
+    if (!userId) return null
+
+    // Get the user details
+    const user = topicData.users.find((u) => u.id === userId)
+    if (!user) return null
+
+    return {
+      realName: user.realName || user.id,
+      timezone: user.tz ? getShortTimezoneFromIANA(user.tz) : '',
+    }
+  }
+
+  // Handle toggling user context expansion
+  const toggleContextExpansion = (channelId: string) => {
+    setExpandedContexts((prev) => {
+      const next = new Set(prev)
+      if (next.has(channelId)) {
+        next.delete(channelId)
+      } else {
+        next.add(channelId)
+      }
+      return next
+    })
+  }
+
   // Handle sending a message
   const handleSendMessage = async (channelId: string) => {
     const chatInput = chatInputs.get(channelId) || ''
@@ -310,6 +345,35 @@ function Topic() {
           ...msg,
           timestamp: new Date(msg.timestamp),
         }))
+
+        // Check for any new channelIds that aren't in topicData
+        const existingChannelIds = new Set(topicData.channels?.map((ch) => ch.id) || [])
+        const newChannelIds = newMessages
+          .map((msg) => msg.channelId)
+          .filter((channelId) => !existingChannelIds.has(channelId))
+
+        // Fetch channel info for any new channels
+        const newChannels = await Promise.all(
+          [...new Set(newChannelIds)].map(async (channelId) => {
+            try {
+              const response = await api.channels[':channelId'].$get({
+                param: { channelId },
+              })
+              if (response.ok) {
+                return await response.json()
+              }
+              console.error(`Failed to fetch channel ${channelId}`)
+              return null
+            } catch (err) {
+              console.error(`Error fetching channel ${channelId}:`, err)
+              return null
+            }
+          }),
+        )
+
+        // Filter out any null results
+        const validChannels = newChannels.filter((ch) => ch !== null)
+
         setTopicData((prev) => {
           if (!prev) return prev
           const updatedMessages = [...prev.messages, ...newMessages]
@@ -317,9 +381,17 @@ function Topic() {
           // Sort to find the correct position
           const sorted = [...updatedMessages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
           setTimelinePosition(sorted.length - 1)
+
+          // Merge new channels with existing ones
+          const updatedChannels = [
+            ...(prev.channels || []),
+            ...validChannels,
+          ]
+
           return {
             ...prev,
             messages: updatedMessages,
+            channels: updatedChannels,
           }
         })
       }
@@ -387,19 +459,69 @@ function Topic() {
         </div>
         ) : (
         <div className="flex-1 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
-            {channelGroups.map((channel) => (
-              <div
-                key={channel.channelId}
-              className="bg-white rounded-lg shadow-md p-2 overflow-y-auto flex flex-col"
-              >
-              <div className="flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between">
-                  <div className="text-xs font-medium text-gray-700">
-                    #{channel.channelId}
+            {channelGroups.map((channel) => {
+              const isExpanded = expandedContexts.has(channel.channelId)
+              const isDM = isDMChannel(channel.channelId)
+              const userId = isDM ? getCurrentUserId(channel.channelId) : null
+              const user = userId ? topicData.users.find((u) => u.id === userId) : null
+              const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
+
+              return (
+                <div
+                  key={channel.channelId}
+                  className="bg-white rounded-lg shadow-md p-2 overflow-y-auto flex flex-col"
+                >
+                  <div
+                    className={`flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between -m-2 p-2 mb-0 rounded-t-lg ${
+                      isDM ? 'cursor-pointer hover:bg-gray-200 transition-colors' : ''
+                    }`}
+                    onClick={isDM ? () => toggleContextExpansion(channel.channelId) : undefined}
+                  >
+                    <div className="text-xs font-medium text-gray-700">
+                      {isDM ? (
+                        (() => {
+                          const userInfo = getDMUserInfo(channel.channelId)
+                          return userInfo ? (
+                            <>
+                              {userInfo.realName}
+                              {userInfo.timezone && ` (${userInfo.timezone})`}
+                              <span className="text-gray-400 ml-1">
+                                (#{channel.channelId})
+                              </span>
+                            </>
+                          ) : (
+                            `#${channel.channelId}`
+                          )
+                        })()
+                      ) : (
+                        `#${channel.channelId}`
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-gray-500">
+                        {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
+                      </div>
+                      {isDM && (
+                        <svg
+                          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
-                  </div>
-              </div>
+
+                  {isExpanded && isDM && (
+                    <div className="mb-2 -mx-2 px-2">
+                      <UserContextView
+                        context={userData?.context}
+                        userTimezone={user?.tz || null}
+                      />
+                    </div>
+                  )}
 
               <div
                 className="flex-1 space-y-3 overflow-y-auto px-1 py-1"
@@ -453,7 +575,7 @@ function Topic() {
                                 isBot ? 'text-blue-100' : 'text-gray-500'
                               }`}
                             >
-                              {new Date(msg.timestamp).toLocaleTimeString()} ({msg.id})
+                              {new Date(msg.timestamp).toLocaleTimeString()} ({getShortTimezone()}) ({msg.id})
                             </div>
                           </div>
                         </div>
@@ -474,7 +596,7 @@ function Topic() {
                 </div>
 
                 {/* Chat Bar for DM Channels */}
-                {isDMChannel(channel.channelId) && isViewingLatest && (
+                {isDM && isViewingLatest && (
                   <div className="mt-2 -mx-2 -mb-2">
                     <div className="flex">
                       <input
@@ -507,8 +629,9 @@ function Topic() {
                     </div>
                   </div>
                 )}
-              </div>
-            ))}
+                </div>
+              )
+            })}
           </div>
       )}
 

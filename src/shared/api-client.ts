@@ -1,9 +1,6 @@
 import { hc } from 'hono/client'
 import type { AppType } from '../flack-server'
 
-export type { TopicRes } from './api-types'
-export { unserializeTopicTimestamps } from './api-types'
-
 // Use relative URL when running through Vite to use proxy
 // Use direct URL when running outside of Vite (e.g., in server or flack-eval)
 const isViteDev = import.meta.env ?? false

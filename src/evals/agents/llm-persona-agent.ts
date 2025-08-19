@@ -1,7 +1,8 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { PersonProfile, TimeSlot } from '../core-benchmark/generate-benchmark-data'
-import { api, unserializeTopicTimestamps } from '../../shared/api-client'
+import { api } from '../../shared/api-client'
+import { unserializeTopicTimestamps } from '../../shared/api-types'
 
 // Initialize OpenRouter with API key from environment
 const apiKey = process.env.PV_OPENROUTER_API_KEY

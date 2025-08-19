@@ -18,8 +18,7 @@ import {
   userDataTable,
   UserDataInsert,
 } from './db/schema/main'
-import { TopicRes, unserializeTopicTimestamps } from './shared/api-client'
-import type { TopicData } from '@shared/api-types'
+import { unserializeTopicTimestamps, type TopicData, type TopicRes } from '@shared/api-types'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
