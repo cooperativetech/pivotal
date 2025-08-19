@@ -112,7 +112,7 @@ function TopicCreation() {
                 id="user"
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={sending}
               >
                 {users.map((user) => (
@@ -132,7 +132,7 @@ function TopicCreation() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Type your message here..."
                 disabled={sending}
               />
@@ -142,14 +142,14 @@ function TopicCreation() {
               <button
                 type="button"
                 onClick={() => void navigate('/')}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={sending}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={sending || !selectedUserId || !message.trim()}
               >
                 {sending ? 'Sending...' : 'Send Message'}
