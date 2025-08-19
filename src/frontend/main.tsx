@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import Home from './Home.tsx'
 import Topic from './Topic.tsx'
+import TopicCreation from './TopicCreation.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<App />}>
           <Route index element={<Home />} />
           <Route path="topic/:topicId" element={<Topic />} />
+          <Route path="create-topic" element={<TopicCreation />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

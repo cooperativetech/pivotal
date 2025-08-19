@@ -6,7 +6,7 @@ import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { topicTable, Topic, slackChannelTable } from './db/schema/main'
+import { topicTable, Topic, slackChannelTable, slackUserTable } from './db/schema/main'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from './flack-helpers.ts'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
@@ -52,6 +52,22 @@ const honoApp = new Hono()
       return c.json({ topics })
     } catch (error) {
       console.error('Error fetching topics:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  .get('/api/users', async (c) => {
+    try {
+      // Get all non-bot users
+      const users = await db
+        .select()
+        .from(slackUserTable)
+        .where(eq(slackUserTable.isBot, false))
+        .orderBy(slackUserTable.updated)
+
+      return c.json({ users })
+    } catch (error) {
+      console.error('Error fetching users:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })

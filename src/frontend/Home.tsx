@@ -55,7 +55,15 @@ function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-8">
       <div className="w-full max-w-6xl">
-        <h1 className="text-3xl font-bold mb-6 text-center">Topics</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-center flex-1">Topics</h1>
+          <Link
+            to="/create-topic"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+          >
+            Create Topic
+          </Link>
+        </div>
 
         {topics.length === 0 ? (
           <div className="text-gray-500 text-center py-8">
