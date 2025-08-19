@@ -8,6 +8,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import type { UserContext } from '@shared/api-types'
 
 export type WorkflowType = 'scheduling' | 'other'
 
@@ -56,23 +57,6 @@ export const slackChannelTable = pgTable('slack_channel', {
 })
 export type SlackChannelInsert = InferInsertModel<typeof slackChannelTable>
 export type SlackChannel = InferSelectModel<typeof slackChannelTable>
-
-export interface CalendarEvent {
-  start: string // Date ISO string
-  end: string // Date ISO string
-  summary: string
-}
-
-export interface UserContext {
-  googleAccessToken?: string
-  googleRefreshToken?: string
-  googleTokenExpiryDate?: number
-  calendar?: CalendarEvent[]
-  calendarLastFetched?: string
-  slackTeamId?: string
-  slackUserName?: string
-  slackDisplayName?: string
-}
 
 export const userDataTable = pgTable('user_data', {
   id: uuid().primaryKey().defaultRandom(),

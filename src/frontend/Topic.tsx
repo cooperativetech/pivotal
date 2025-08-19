@@ -1,78 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { api } from '@shared/api-client'
-
-interface SlackMessage {
-  id: string
-  topicId: string
-  userId: string
-  channelId: string
-  text: string
-  timestamp: string
-  rawTs: string
-  threadTs: string | null
-  raw: unknown
-}
-
-interface SlackUser {
-  id: string
-  teamId: string
-  realName: string | null
-  tz: string | null
-  isBot: boolean
-  deleted: boolean
-  updated: string
-  raw: unknown
-}
-
-interface CalendarEvent {
-  start: string
-  end: string
-  summary?: string
-  type?: 'free' | 'busy' | 'meeting' | 'personal' | 'critical'
-}
-
-interface UserContext {
-  googleAccessToken?: string
-  googleRefreshToken?: string
-  googleTokenExpiryDate?: number
-  calendar?: string | CalendarEvent[]
-  calendarLastFetched?: string
-  slackTeamId?: string
-  slackUserName?: string
-  slackDisplayName?: string
-}
-
-interface UserData {
-  id: string
-  slackUserId: string
-  context: UserContext
-  createdAt: string
-  updatedAt: string
-}
-
-interface SlackChannel {
-  id: string
-  userIds: string[]
-}
-
-interface Topic {
-  id: string
-  userIds: string[]
-  summary: string
-  workflowType: 'scheduling' | 'other'
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-interface TopicData {
-  topic: Topic
-  messages: SlackMessage[]
-  users: SlackUser[]
-  userData?: UserData[]
-  channels?: SlackChannel[]
-}
+import { api, unserializeTopicTimestamps } from '@shared/api-client'
+import type { TopicData, SlackMessage } from '@shared/api-types'
 
 interface ChannelGroup {
   channelId: string
@@ -111,7 +40,7 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(data)
+        setTopicData(unserializeTopicTimestamps(data))
 
         // Only read query params on initial load
         if (initialLoadRef.current) {
@@ -377,7 +306,10 @@ function Topic() {
 
       // Add new messages to the topic data
       if ('savedReqMessage' in data && 'resMessages' in data) {
-        const newMessages = [data.savedReqMessage, ...data.resMessages]
+        const newMessages = [data.savedReqMessage, ...data.resMessages].map((msg) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
         setTopicData((prev) => {
           if (!prev) return prev
           const updatedMessages = [...prev.messages, ...newMessages]

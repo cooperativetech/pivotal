@@ -10,31 +10,21 @@ import {
   SlackMessage,
   SlackMessageInsert,
   topicTable,
-  Topic,
   TopicInsert,
   slackUserTable,
-  SlackUser,
   SlackUserInsert,
   slackChannelTable,
-  SlackChannel,
   SlackChannelInsert,
   userDataTable,
-  UserData,
   UserDataInsert,
 } from './db/schema/main'
 import { TopicRes, unserializeTopicTimestamps } from './shared/api-client'
+import type { TopicData } from '@shared/api-types'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
 }
 
-export interface TopicData {
-  topic: Topic
-  messages: SlackMessage[]
-  users: SlackUser[]
-  userData?: UserData[]
-  channels?: SlackChannel[]
-}
 
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),

@@ -4,7 +4,8 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, UserContext, CalendarEvent } from './db/schema/main'
+import { userDataTable } from './db/schema/main'
+import type { UserContext, CalendarEvent } from '@shared/api-types'
 
 export interface GoogleAuthTokenResponse {
   access_token: string

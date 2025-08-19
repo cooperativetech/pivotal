@@ -1,7 +1,8 @@
 import { CalendarEvent as BenchmarkCalendarEvent, PersonProfile } from './core-benchmark/generate-benchmark-data'
 import { updateUserContext } from '../calendar-service'
 import db from '../db/engine'
-import { slackUserTable, CalendarEvent } from '../db/schema/main'
+import { slackUserTable } from '../db/schema/main'
+import type { CalendarEvent } from '@shared/api-types'
 import { eq, like } from 'drizzle-orm'
 
 /**

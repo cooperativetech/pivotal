@@ -5,7 +5,7 @@ import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-ag
 import { scoreAlgorithm, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
 import { api, unserializeTopicTimestamps } from '../shared/api-client'
-import { TopicData } from '../utils'
+import type { TopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
 
 interface BenchmarkTestCase {

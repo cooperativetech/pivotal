@@ -6,7 +6,7 @@ import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { topicTable, Topic, slackChannelTable, slackUserTable } from './db/schema/main'
+import { topicTable, Topic, slackChannelTable, slackUserTable, userDataTable } from './db/schema/main'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from './flack-helpers.ts'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
@@ -58,10 +58,17 @@ const honoApp = new Hono()
 
   .get('/api/users', async (c) => {
     try {
-      // Get all non-bot users
+      // Get all non-bot users with their context
       const users = await db
-        .select()
+        .select({
+          id: slackUserTable.id,
+          realName: slackUserTable.realName,
+          tz: slackUserTable.tz,
+          isBot: slackUserTable.isBot,
+          context: userDataTable.context,
+        })
         .from(slackUserTable)
+        .leftJoin(userDataTable, eq(slackUserTable.id, userDataTable.slackUserId))
         .where(eq(slackUserTable.isBot, false))
         .orderBy(slackUserTable.updated)
 
