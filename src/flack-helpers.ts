@@ -24,26 +24,33 @@ export async function getOrCreateChannelForUsers(userIds: string[]): Promise<str
   // Sort userIds for consistent comparison
   const sortedUserIds = [...userIds].sort()
 
-  // Check if we already have a channel for these users in the database
-  const existingChannels = await db.select().from(slackChannelTable)
+  // Use transaction with a simple advisory lock for channel creation
+  return await db.transaction(async (tx) => {
+    // Acquire a single advisory lock for all channel creation operations
+    // This prevents any race conditions during channel creation
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('getOrCreateChannelForUsers'))`)
 
-  for (const channel of existingChannels) {
-    const channelUsersSorted = [...channel.userIds].sort()
-    if (channelUsersSorted.length === sortedUserIds.length &&
-        channelUsersSorted.every((id, index) => id === sortedUserIds[index])) {
-      return channel.id
+    // Now we can safely check for existing channels
+    const existingChannels = await tx.select().from(slackChannelTable)
+
+    for (const channel of existingChannels) {
+      const channelUsersSorted = [...channel.userIds].sort()
+      if (channelUsersSorted.length === sortedUserIds.length &&
+          channelUsersSorted.every((id, index) => id === sortedUserIds[index])) {
+        return channel.id
+      }
     }
-  }
 
-  // Otherwise, create new channel
-  const newChannelId = userIds.length === 1 ? `D${Date.now()}` : `G${Date.now()}`
-  const channelToInsert: SlackChannelInsert = {
-    id: newChannelId,
-    userIds: sortedUserIds,
-  }
+    // Otherwise, create new channel
+    const newChannelId = userIds.length === 2 ? `D${Date.now()}` : `G${Date.now()}`
+    const channelToInsert: SlackChannelInsert = {
+      id: newChannelId,
+      userIds: sortedUserIds,
+    }
 
-  await db.insert(slackChannelTable).values(channelToInsert)
-  return newChannelId
+    await tx.insert(slackChannelTable).values(channelToInsert)
+    return newChannelId
+  })
 }
 
 export async function upsertFakeUser(params: {

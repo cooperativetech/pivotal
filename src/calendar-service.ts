@@ -238,10 +238,9 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       // Skip all-day events for now
       if (event.start.dateTime && event.end.dateTime) {
         calendarEvents.push({
-          start: new Date(startTime).toISOString(), // Normalize to UTC
-          end: new Date(endTime).toISOString(),     // Normalize to UTC
+          start: new Date(startTime).toISOString(),
+          end: new Date(endTime).toISOString(),
           summary: event.summary || 'Busy',
-          type: 'busy',     // Default type, could be enhanced later
         })
       }
     }
@@ -291,25 +290,7 @@ export async function getUserCalendarStructured(slackUserId: string): Promise<Ca
     }
 
     if (context.calendar) {
-      // Return structured format if available
-      if (Array.isArray(context.calendar)) {
-        return context.calendar
-      } else if (typeof context.calendar === 'string') {
-        // Parse old text format back to structured
-        const events: CalendarEvent[] = []
-        const lines = context.calendar.split('\n')
-        for (const line of lines) {
-          const match = line.match(/(\d{2}:\d{2})-(\d{2}:\d{2}):\s*(.*)/)
-          if (match) {
-            events.push({
-              start: match[1],
-              end: match[2],
-              summary: match[3] || 'Busy',
-            })
-          }
-        }
-        return events
-      }
+      return context.calendar
     }
   } catch (error) {
     console.error(`Error getting structured calendar for user ${slackUserId}:`, error)

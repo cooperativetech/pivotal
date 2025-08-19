@@ -58,17 +58,16 @@ export type SlackChannelInsert = InferInsertModel<typeof slackChannelTable>
 export type SlackChannel = InferSelectModel<typeof slackChannelTable>
 
 export interface CalendarEvent {
-  start: string  // ISO datetime or HH:MM format
-  end: string    // ISO datetime or HH:MM format
-  summary?: string
-  type?: 'free' | 'busy' | 'meeting' | 'personal' | 'critical'
+  start: string // Date ISO string
+  end: string // Date ISO string
+  summary: string
 }
 
 export interface UserContext {
   googleAccessToken?: string
   googleRefreshToken?: string
   googleTokenExpiryDate?: number
-  calendar?: string | CalendarEvent[]  // Support both old text format and new structured format
+  calendar?: CalendarEvent[]
   calendarLastFetched?: string
   slackTeamId?: string
   slackUserName?: string

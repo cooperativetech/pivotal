@@ -7,7 +7,7 @@ import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { generateGoogleAuthUrl, getUserCalendarText, getUserCalendarStructured } from './calendar-service'
-import { findCommonFreeTime, UserProfile } from './tools/time_intersection'
+import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
 
@@ -389,7 +389,7 @@ Based on the conversation history and current message, determine the next step i
           if (calendar && calendar.length > 0) {
             profiles.push({
               name: userName,
-              calendar: calendar,
+              calendar: convertCalendarEventsToUserProfile(calendar),
             })
           } else {
             // User has no calendar data, treat as fully available
@@ -446,13 +446,13 @@ Based on the conversation history and current message, determine the next step i
       if (!res.text) {
         // Build a new prompt that includes the tool results
         interface ToolResultWithSlots {
-          freeSlots?: Array<{ start: string, end: string }>
+          freeSlots?: Array<{ start: Date, end: Date }>
         }
         const toolResult = res.toolResults?.[0]?.result as ToolResultWithSlots
         const freeSlots = toolResult?.freeSlots || []
 
         const updatedPrompt = userPrompt + `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
-${freeSlots.map((slot) => `- ${slot.start} to ${slot.end}`).join('\n')}
+${freeSlots.map((slot) => `- ${slot.start.toISOString()} to ${slot.end.toISOString()}`).join('\n')}
 
 Based on these available times, determine the next step in the scheduling workflow.`
 
@@ -513,7 +513,7 @@ Based on these available times, determine the next step in the scheduling workfl
         // Create a default response based on tool results
         if (res.toolResults && res.toolResults.length > 0) {
           interface ToolResultWithSlots {
-            freeSlots?: Array<{ start: string; end: string }>
+            freeSlots?: Array<{ start: Date; end: Date }>
             message?: string
           }
           const toolResult = res.toolResults[0]?.result as ToolResultWithSlots
@@ -521,8 +521,8 @@ Based on these available times, determine the next step in the scheduling workfl
             // We have free slots, create a finalize response
             const slots = toolResult.freeSlots
             const slotDescriptions = slots.map((s) => {
-              const startHour = parseInt(s.start.split(':')[0])
-              const endHour = parseInt(s.end.split(':')[0])
+              const startHour = s.start.getHours()
+              const endHour = s.end.getHours()
               const startPeriod = startHour >= 12 ? 'PM' : 'AM'
               const endPeriod = endHour >= 12 ? 'PM' : 'AM'
               const displayStart = startHour > 12 ? startHour - 12 : startHour

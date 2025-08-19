@@ -1,14 +1,15 @@
-import { CalendarEvent, PersonProfile } from './core-benchmark/generate-benchmark-data'
+import { CalendarEvent as BenchmarkCalendarEvent, PersonProfile } from './core-benchmark/generate-benchmark-data'
 import { updateUserContext } from '../calendar-service'
 import db from '../db/engine'
-import { slackUserTable } from '../db/schema/main'
+import { slackUserTable, CalendarEvent } from '../db/schema/main'
+import { eq, like } from 'drizzle-orm'
 
 /**
- * Convert benchmark calendar events to the text format used by the bot
+ * Convert benchmark calendar events to the structured format used by the bot
  * Matches the format from fetchAndStoreUserCalendar in calendar-service.ts
  */
-function convertCalendarToText(calendar: CalendarEvent[]): string {
-  const busySlots: string[] = []
+function convertCalendarToStructured(calendar: BenchmarkCalendarEvent[]): CalendarEvent[] {
+  const structuredEvents: CalendarEvent[] = []
 
   for (const event of calendar) {
     if (event.status === 'cancelled') continue
@@ -17,18 +18,19 @@ function convertCalendarToText(calendar: CalendarEvent[]): string {
     const start = new Date(event.start.dateTime)
     const end = new Date(event.end.dateTime)
 
-    const startTime = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
-    const endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`
-
     // Include event type info for critical events
     const summary = event.type === 'critical'
       ? `${event.summary} [UNMOVABLE]`
       : event.summary
 
-    busySlots.push(`${startTime}-${endTime}: ${summary}`)
+    structuredEvents.push({
+      start: start.toISOString(),
+      end: end.toISOString(),
+      summary,
+    })
   }
 
-  return busySlots.join('\n')
+  return structuredEvents
 }
 
 /**
@@ -75,11 +77,11 @@ export async function setupCalendarDataForEval(
         },
       })
 
-    // Convert calendar to text format and store in user context
-    const calendarText = convertCalendarToText(profile.calendar)
+    // Convert calendar to structured format and store in user context
+    const calendarEvents = convertCalendarToStructured(profile.calendar)
 
     await updateUserContext(userId, {
-      calendar: calendarText,
+      calendar: calendarEvents,
       // Always set calendar as fetched 1 minute ago so it never triggers refresh
       calendarLastFetched: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
       // Simulate having Google auth (so bot thinks calendar is connected)
@@ -88,7 +90,7 @@ export async function setupCalendarDataForEval(
       googleTokenExpiryDate: Date.now() + 3600000, // 1 hour from now
     })
 
-    console.log(`Stored calendar for ${profile.name} (${userId}): ${calendarText.split('\n').length} events`)
+    console.log(`Stored calendar for ${profile.name} (${userId}): ${calendarEvents.length} events`)
   }
 }
 
@@ -107,6 +109,3 @@ export async function clearTestCalendarData(): Promise<void> {
 
   console.log(`Cleared ${testUsers.length} test users`)
 }
-
-// Helper to import missing functions
-import { eq, like } from 'drizzle-orm'
