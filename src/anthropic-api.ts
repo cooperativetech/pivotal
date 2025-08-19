@@ -6,7 +6,7 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage } from './db/schema/main'
 import { eq, and, desc } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { generateGoogleAuthUrl, getUserCalendarText, getUserCalendarStructured } from './calendar-service'
+import { generateGoogleAuthUrl, getUserCalendarStructured } from './calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -345,15 +345,14 @@ Calendar Information:
 ${await Promise.all(topic.userIds.map(async (userId) => {
   const userName = userMap.get(userId) || 'Unknown User'
   try {
-    const calendarText = await getUserCalendarText(userId)
-    if (calendarText) {
-      return `${userName}'s calendar:\n${calendarText.split('\n').map((line) => `  - ${line}`).join('\n')}`
+    const calendarStructured = await getUserCalendarStructured(userId)
+    if (calendarStructured) {
+      return `${userName}: Calendar is connected`
     }
-    return `${userName}: No calendar connected or no events found`
   } catch (error) {
     console.error(`Error getting calendar for ${userName}:`, error)
-    return `${userName}: Calendar unavailable`
   }
+  return `${userName}: No calendar connected`
 })).then((results) => results.join('\n\n'))}
 
 Message To Reply To:
