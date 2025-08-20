@@ -272,12 +272,10 @@ export async function organizeMessagesByChannelAndThread(
   const channelMap = new Map(channels.map((ch) => [ch.id, ch]))
 
   // Get user information including names and timezones
-  const users = userIds.length > 0
-    ? await db
-        .select()
-        .from(slackUserTable)
-        .where(inArray(slackUserTable.id, userIds))
-    : []
+  const users = await db
+    .select()
+    .from(slackUserTable)
+    .where(inArray(slackUserTable.id, [...userIds, botUserId]))
   const userMap = new Map(users.map((u) => [u.id, u.realName || 'Unknown User']))
   const userTimezones = new Map(users.map((u) => [u.id, u.tz]))
 
