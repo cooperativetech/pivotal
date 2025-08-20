@@ -19,6 +19,7 @@ import {
   UserDataInsert,
 } from './db/schema/main'
 import { unserializeTopicTimestamps, type TopicData, type TopicRes } from '@shared/api-types'
+import { getShortTimezoneFromIANA } from '@shared/utils'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
@@ -233,7 +234,12 @@ export function replaceUserMentions(text: string, userMap: Map<string, string>):
   })
 }
 
-export function organizeMessagesByChannelAndThread(messages: SlackMessage[], userMap: Map<string, string>, showMessageIds = false): string {
+export async function organizeMessagesByChannelAndThread(
+  messages: SlackMessage[],
+  userIds: string[],
+  botUserId: string,
+  timezone: string,
+): Promise<string> {
   if (messages.length === 0) {
     return 'No previous messages'
   }
@@ -255,10 +261,56 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
     return acc
   }, {} as Record<string, Record<string, SlackMessage[]>>)
 
+  // Get channel information for all channels
+  const channelIds = Object.keys(messageGroups)
+  const channels = channelIds.length > 0
+    ? await db
+        .select()
+        .from(slackChannelTable)
+        .where(inArray(slackChannelTable.id, channelIds))
+    : []
+  const channelMap = new Map(channels.map((ch) => [ch.id, ch]))
+
+  // Get user information including names and timezones
+  const users = userIds.length > 0
+    ? await db
+        .select()
+        .from(slackUserTable)
+        .where(inArray(slackUserTable.id, userIds))
+    : []
+  const userMap = new Map(users.map((u) => [u.id, u.realName || 'Unknown User']))
+  const userTimezones = new Map(users.map((u) => [u.id, u.tz]))
+
   // Sort messages within each group by timestamp and format output
   let output = ''
-  Object.entries(messageGroups).forEach(([channelId, threads]) => {
-    output += `Channel ${channelId}:\n`
+  for (const [channelId, threads] of Object.entries(messageGroups)) {
+    // Get channel users and format channel name
+    const channel = channelMap.get(channelId)
+    let channelName = `Channel ${channelId}`
+    let channelTimezone = timezone // Default to caller's timezone
+
+    if (channel && channel.userIds) {
+      const channelUserIds = channel.userIds.filter((id: string) => id !== botUserId)
+      const channelUserNames = channelUserIds.map((id: string) => {
+        const name = userMap.get(id) || 'Unknown User'
+        const tz = userTimezones.get(id)
+        return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
+      })
+
+      if (channelUserIds.length === 1) {
+        channelName = `DM with ${channelUserNames[0]}`
+        // For DMs, use the recipient's timezone
+        const dmRecipientTimezone = userTimezones.get(channelUserIds[0])
+        if (dmRecipientTimezone) {
+          channelTimezone = dmRecipientTimezone
+        }
+      } else if (channelUserIds.length > 1) {
+        channelName = `Group channel with ${channelUserNames.join(', ')}`
+        // For group channels, keep using the caller's timezone
+      }
+    }
+
+    output += `${channelName}:\n`
 
     // Sort threads by threadId converted to number
     const sortedThreads = Object.entries(threads).sort(([aId], [bId]) => {
@@ -269,7 +321,18 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
       // Only show thread header if there's more than one message in the thread
       if (messages.length > 1) {
         // Convert threadId (timestamp string) to formatted date
-        output += `  Thread [${tsToDate(threadId).toLocaleString()}]:\n`
+        const threadDate = tsToDate(threadId)
+        const threadTimestamp = channelTimezone ?
+          threadDate.toLocaleString('en-US', {
+            timeZone: channelTimezone,
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }) : threadDate.toLocaleString()
+        const threadTzAbbr = channelTimezone ? getShortTimezoneFromIANA(channelTimezone) : ''
+        output += `  Thread [${threadTimestamp}${threadTzAbbr ? ` (${threadTzAbbr})` : ''}]:\n`
       }
 
       // Sort messages by timestamp
@@ -282,42 +345,24 @@ export function organizeMessagesByChannelAndThread(messages: SlackMessage[], use
         const indent = messages.length > 1 ? '    ' : '  '
         const userName = userMap?.get(msg.userId) || 'Unknown User'
         const processedText = replaceUserMentions(msg.text, userMap)
-        const messageIdPrefix = showMessageIds ? `(${msg.id}) ` : ''
-        output += `${indent}${messageIdPrefix}[${new Date(msg.timestamp).toLocaleString()}] ${userName}: "${processedText}"\n`
+        const msgDate = new Date(msg.timestamp)
+        const timestampFormatted = channelTimezone ?
+          msgDate.toLocaleString('en-US', {
+            timeZone: channelTimezone,
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }) : msgDate.toLocaleString()
+        const tzAbbr = channelTimezone ? getShortTimezoneFromIANA(channelTimezone) : ''
+        output += `${indent}[${timestampFormatted}${tzAbbr ? ` (${tzAbbr})` : ''}] ${userName}: "${processedText}"\n`
       })
     })
     output += '\n'
-  })
-
-  return output.trim()
-}
-
-export async function showTopic(topicId: string, options: GetTopicReq = {}): Promise<void> {
-  // Use dumpTopic to get all the data
-  const topicData = await dumpTopic(topicId, options)
-
-  // Build user map from all users in the database for message formatting
-  const allUsers = await db.select().from(slackUserTable)
-  const userMap = new Map<string, string>()
-  for (const user of allUsers) {
-    const name = user.realName || user.id
-    userMap.set(user.id, name)
   }
 
-  const output = `Topic:
-ID: ${topicData.topic.id}
-Summary: ${topicData.topic.summary}
-Users involved: ${topicData.topic.userIds.map((id) => {
-  const name = userMap.get(id)
-  return name || 'Unknown User'
-}).join(', ')}
-Created: ${new Date(topicData.topic.createdAt).toLocaleString()}
-Last updated: ${new Date(topicData.topic.updatedAt).toLocaleString()}
-
-Messages in this Topic:
-${organizeMessagesByChannelAndThread(topicData.messages, userMap, true)}`
-
-  console.log(output)
+  return output.trim()
 }
 
 // Script execution when run directly
@@ -342,7 +387,6 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
 
   if (values.help || !command) {
     console.log('Usage:')
-    console.log('  tsx src/utils.ts show <topicId> [messageId]')
     console.log('  tsx src/utils.ts dump <topicId> [messageId] [-o outputFile]')
     console.log('  tsx src/utils.ts load <jsonFile>')
     console.log('\nOptions:')
@@ -351,17 +395,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exit(0)
   }
 
-  if (command === 'show') {
-    const topicId = positionals[1]
-    if (!topicId) {
-      console.error('Error: topicId is required for show command')
-      console.error('Usage: tsx src/utils.ts show <topicId> [messageId]')
-      process.exit(1)
-    }
-
-    const messageId = positionals[2]
-    await showTopic(topicId, { lastMessageId: messageId })
-  } else if (command === 'dump') {
+  if (command === 'dump') {
     const topicId = positionals[1]
     if (!topicId) {
       console.error('Error: topicId is required for dump command')
@@ -398,7 +432,6 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
   } else {
     console.error(`Error: Unknown command '${command}'`)
     console.log('Usage:')
-    console.log('  tsx src/utils.ts show <topicId> [messageId]')
     console.log('  tsx src/utils.ts dump <topicId> [messageId] [-o outputFile]')
     console.log('  tsx src/utils.ts load <jsonFile>')
     process.exit(1)

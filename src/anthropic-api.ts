@@ -3,9 +3,10 @@ import { generateText, tool } from 'ai'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { Topic, slackMessageTable, SlackMessage, topicTable } from './db/schema/main'
-import { eq, and, desc } from 'drizzle-orm'
+import { Topic, slackMessageTable, SlackMessage, topicTable, slackUserTable, slackChannelTable } from './db/schema/main'
+import { eq, and, desc, inArray } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
+import { getShortTimezoneFromIANA } from '@shared/utils'
 import { generateGoogleAuthUrl, getUserCalendarStructured } from './calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
@@ -19,7 +20,63 @@ interface AnalyzeTopicRes {
   reasoning: string
 }
 
+async function getChannelDescription(
+  channelId: string,
+  userMap: Map<string, string>,
+  botUserId: string,
+): Promise<string> {
+  const [channel] = await db
+    .select()
+    .from(slackChannelTable)
+    .where(eq(slackChannelTable.id, channelId))
+    .limit(1)
+
+  // Get timezone information for channel users
+  const channelUserIds = channel?.userIds || []
+  const userTimezones = new Map<string, string>()
+  if (channelUserIds.length > 0) {
+    const users = await db
+      .select()
+      .from(slackUserTable)
+      .where(inArray(slackUserTable.id, channelUserIds))
+    for (const user of users) {
+      if (user.tz) {
+        userTimezones.set(user.id, user.tz)
+      }
+    }
+  }
+
+  let channelDescription = `Channel ${channelId}`
+  if (channel && channel.userIds) {
+    const filteredUserIds = channel.userIds.filter((id: string) => id !== botUserId)
+    const channelUserNames = filteredUserIds.map((id: string) => {
+      const name = userMap.get(id) || 'Unknown User'
+      const tz = userTimezones.get(id)
+      return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
+    })
+
+    if (filteredUserIds.length === 1) {
+      channelDescription = `DM with ${channelUserNames[0]}`
+    } else if (filteredUserIds.length > 1) {
+      channelDescription = `Group channel with ${channelUserNames.join(', ')}`
+    }
+  }
+
+  return channelDescription
+}
+
 export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId: string): Promise<AnalyzeTopicRes> {
+  // Get calling user's timezone
+  const callingUser = await db
+    .select()
+    .from(slackUserTable)
+    .where(eq(slackUserTable.id, message.userId))
+    .limit(1)
+  const callingUserTimezone = callingUser[0]?.tz || 'UTC'
+
+  // Get channel information for descriptive display
+  const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
+
   // Fetch recent messages for each topic in the same channel
   const topicMessagesMap = new Map<string, SlackMessage[]>()
 
@@ -114,7 +171,7 @@ ${userMap && userMap.size > 0 ? `User Directory:
 ${Array.from(userMap.values()).sort().join(', ')}
 
 ` : ''}Existing topics:
-${topics.map((topic, i) => {
+${(await Promise.all(topics.map(async (topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
   const userNames = topic.userIds.map((id) => {
     const name = userMap.get(id)
@@ -124,18 +181,18 @@ ${topics.map((topic, i) => {
   // Get recent messages for this topic
   const recentMessages = topicMessagesMap.get(topic.id) || []
   const messagesFormatted = recentMessages.length > 0
-    ? `\n   Recent messages in this channel:\n${organizeMessagesByChannelAndThread(recentMessages, userMap).split('\n').map((line) => '   ' + line).join('\n')}`
+    ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, topic.userIds, botUserId, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
    Users involved: [${userNames}]
    Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}${messagesFormatted}`
-}).join('\n\n')}
+}))).join('\n\n')}
 
 Message to analyze:
-From: ${userMap.get(message.userId) || 'Unknown User'}
-Channel: ${message.channelId}${message.threadTs ? `\nIn thread: [${tsToDate(message.threadTs).toLocaleString()}]` : ''}
-Timestamp: ${new Date(message.timestamp).toLocaleString()}
+From: ${userMap.get(message.userId) || 'Unknown User'} (Timezone: ${callingUser[0]?.tz ? getShortTimezoneFromIANA(callingUser[0].tz) : 'UTC'})
+Channel: ${channelDescription}${message.threadTs ? `\nIn thread: [${formatTimestampWithTimezone(tsToDate(message.threadTs), callingUserTimezone)}]` : ''}
+Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
 Text: "${replaceUserMentions(message.text, userMap)}"
 
 Analyze whether this message is relevant to any of the existing topics or if it could form the basis for a new topic.`
@@ -172,6 +229,44 @@ Analyze whether this message is relevant to any of the existing topics or if it 
       reasoning: '',
     }
   }
+}
+
+// Helper function to get user timezones
+async function getUserTimezones(userIds: string[]): Promise<Map<string, string>> {
+  const timezoneMap = new Map<string, string>()
+
+  if (userIds.length === 0) return timezoneMap
+
+  const users = await db
+    .select()
+    .from(slackUserTable)
+    .where(inArray(slackUserTable.id, userIds))
+
+  for (const user of users) {
+    if (user.tz) {
+      timezoneMap.set(user.id, user.tz)
+    }
+  }
+
+  return timezoneMap
+}
+
+// Helper function to format timestamp with timezone
+function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
+  const formatted = date.toLocaleString('en-US', {
+    timeZone: timezone || 'UTC',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+
+  // Get abbreviated timezone
+  const tzAbbr = timezone ? getShortTimezoneFromIANA(timezone) : 'UTC'
+
+  return `${formatted} (${tzAbbr})`
 }
 
 export async function scheduleNextStep(
@@ -218,7 +313,20 @@ This will allow me to check your availability automatically when scheduling. If 
   }
 
 
+  // Get timezone information for all users
+  const allUserIds = Array.from(new Set([...topic.userIds, message.userId]))
+  const userTimezones = await getUserTimezones(allUserIds)
+  const callingUserTimezone = userTimezones.get(message.userId) || 'UTC'
+
+  // Get channel information for descriptive display
+  const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
   const systemPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
+
+## Important Timezone Instructions
+- ALWAYS include timezone abbreviations in parentheses next to ALL times you mention (e.g., "2pm (PST)" or "3:30pm (EST)")
+- When responding to a user, ALWAYS use their timezone for suggested times
+- Be explicit about timezone differences when they exist between participants
+- When proposing times to multiple users with different timezones, show the time in each user's timezone
 
 ## Scheduling Workflow
 The scheduling process follows these steps:
@@ -288,7 +396,8 @@ Based on the current state, determine:
 - Skip pleasantries and acknowledgments - get straight to business
 - Respect privacy - don't share individual constraints publicly
 - Only move to finalize when you've found a time that works for all participants
-- Consider timezone differences if mentioned
+- ALWAYS include timezone abbreviations when mentioning times (e.g., "2pm (PST)")
+- When users are in different timezones, show times in each user's local timezone
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Update the topic summary (updateSummary) whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
@@ -307,8 +416,25 @@ Based on the current state, determine:
   - Keep trying different Tuesday times and flexibility options
   - Remember: Your job is to make Tuesday work, not to give up and switch days
 
+## CRITICAL TOOL USAGE
+You have access to TWO tools, but you can ONLY USE ONE per response:
+
+1. **findFreeSlots**: Finds mathematically accurate free time slots
+   - USE THIS before proposing any meeting times when you have calendar data
+   - Pass the exact user names from the User Directory (e.g., "John Smith", "Jane Doe")
+   - Returns guaranteed-free slots that work for everyone
+   - Never propose times without using this tool first
+
+2. **updateUserNames**: Updates the list of users involved in the scheduling
+   - USE THIS when you need to add/remove users from the topic (action: "identify_users")
+   - Provide the COMPLETE list of user names (this replaces the existing list)
+   - Use exact names from the User Directory
+
+IMPORTANT: You can only call ONE tool per response. Choose the most appropriate one for your current action.
+${prevToolResults ? `\n## PREVIOUS TOOL CALLS\nThe following tools have already been called: ${prevToolResults.toolsCalled.join(', ')}. The results are included in the user prompt. Do not call these tools again.` : ''}
+
 ## Response Format
-Return ONLY a JSON object with the appropriate fields based on the action:
+If not calling tools, return ONLY a JSON object with the appropriate fields based on the action:
 {
   "action": "identify_users|gather_constraints|finalize|complete|other",
   "replyMessage": "Message text",  // REQUIRED field but can be empty string ("") when no response is needed
@@ -328,41 +454,28 @@ Return ONLY a JSON object with the appropriate fields based on the action:
   "reasoning": "Brief explanation of the decision"
 }
 
-IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.
-
-## CRITICAL TOOL USAGE
-You have access to TWO tools, but you can ONLY USE ONE per response:
-
-1. **findFreeSlots**: Finds mathematically accurate free time slots
-   - USE THIS before proposing any meeting times when you have calendar data
-   - Pass the exact user names from the User Directory (e.g., "John Smith", "Jane Doe")
-   - Returns guaranteed-free slots that work for everyone
-   - Never propose times without using this tool first
-
-2. **updateUserNames**: Updates the list of users involved in the scheduling
-   - USE THIS when you need to add/remove users from the topic (action: "identify_users")
-   - Provide the COMPLETE list of user names (this replaces the existing list)
-   - Use exact names from the User Directory
-
-IMPORTANT: You can only call ONE tool per response. Choose the most appropriate one for your current action.
-${prevToolResults ? `\n## PREVIOUS TOOL CALLS\nThe following tools have already been called: ${prevToolResults.toolsCalled.join(', ')}. The results are included in the user prompt. Do not call these tools again.` : ''}`
+IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
 
   const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
 
 ${userMap && userMap.size > 0 ? `User Directory:
-${Array.from(userMap.values()).sort().join(', ')}
+${Array.from(userMap.entries())
+  .sort((a, b) => a[1].localeCompare(b[1]))
+  .map(([_userId, userName]) => userName)
+  .join(', ')}
 
 ` : ''}Current Topic:
 Summary: ${topic.summary}
-Users involved: ${topic.userIds.map((id) => {
+Users involved (with timezones): ${topic.userIds.map((id) => {
   const name = userMap.get(id)
-  return name || 'Unknown User'
+  const tz = userTimezones.get(id)
+  return tz ? `${name || 'Unknown User'} (${getShortTimezoneFromIANA(tz)})` : (name || 'Unknown User')
 }).join(', ')}
-Created: ${new Date(topic.createdAt).toLocaleString()}
-Last updated: ${new Date(topic.updatedAt).toLocaleString()}
+Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
+Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone)}
 
 Previous Messages in this Topic:
-${organizeMessagesByChannelAndThread(previousMessages, userMap)}
+${await organizeMessagesByChannelAndThread(previousMessages, topic.userIds, botUserId, callingUserTimezone)}
 
 Calendar Information:
 ${await Promise.all(topic.userIds.map(async (userId) => {
@@ -379,14 +492,14 @@ ${await Promise.all(topic.userIds.map(async (userId) => {
 })).then((results) => results.join('\n\n'))}
 
 Message To Reply To:
-From: ${userMap.get(message.userId) || 'Unknown User'}
+From: ${userMap.get(message.userId) || 'Unknown User'} (Timezone: ${userTimezones.get(message.userId) ? getShortTimezoneFromIANA(userTimezones.get(message.userId)!) : 'Unknown'})
 Text: "${replaceUserMentions(message.text, userMap)}"
-Channel: ${message.channelId}${
+Channel: ${channelDescription}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
-    ? `\nThread: [${tsToDate(message.raw.thread_ts).toLocaleString()}]`
+    ? `\nThread: [${formatTimestampWithTimezone(tsToDate(message.raw.thread_ts), callingUserTimezone)}]`
     : ''
 }
-Timestamp: ${new Date(message.timestamp).toLocaleString()}
+Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
 
 Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.${prevToolResults ? prevToolResults.userPromptSuffix : ''}`
 
@@ -566,7 +679,19 @@ Based on the conversation history and current message, determine the next step i
           const result = toolResult as FreeSlotsResult
           const freeSlots = result.result?.freeSlots || []
           userPromptSuffix = `\n\nThe findFreeSlots tool was called and returned these available time slots for all participants:
-${freeSlots.map((slot) => `- ${slot.start.toISOString()} to ${slot.end.toISOString()}`).join('\n')}
+${freeSlots.map((slot) => {
+  // Format for calling user's timezone
+  const startFormatted = formatTimestampWithTimezone(slot.start, callingUserTimezone)
+  const endTime = new Date(slot.end).toLocaleString('en-US', {
+    timeZone: callingUserTimezone || 'UTC',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+  return `- ${startFormatted} to ${endTime}`
+}).join('\n')}
+
+Remember to always include timezone abbreviations when suggesting these times to users, and convert to each user's timezone when sending individual messages.
 
 Based on these available times, determine the next step in the scheduling workflow.`
         } else if (toolName === 'updateUserNames' && toolResult) {

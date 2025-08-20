@@ -9,7 +9,6 @@
     "flack": "tsx ./src/flack-client.ts",
     "dkgen": "drizzle-kit generate",
     "dkmig": "drizzle-kit migrate",
-    "showtopic": "tsx ./src/utils.ts show",
     "dumptopic": "tsx ./src/utils.ts dump",
     "loadtopic": "tsx ./src/utils.ts load",
     "loadtopics": "tsx ./src/utils.ts load",

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { UserContext, CalendarEvent } from '@shared/api-types'
-import { getShortTimezone, getShortTimezoneFromIANA } from './utils'
+import { getShortTimezone, getShortTimezoneFromIANA } from '@shared/utils'
 
 interface CalendarViewProps {
   events: CalendarEvent[]

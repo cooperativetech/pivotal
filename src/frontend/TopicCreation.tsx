@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { api } from '@shared/api-client'
 import type { UserContext } from '@shared/api-types'
-import { getShortTimezoneFromIANA } from './utils'
+import { getShortTimezoneFromIANA } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 
 interface User {
