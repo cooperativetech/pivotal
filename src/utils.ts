@@ -323,6 +323,7 @@ export async function organizeMessagesByChannelAndThread(
         const threadTimestamp = channelTimezone ?
           threadDate.toLocaleString('en-US', {
             timeZone: channelTimezone,
+            year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
@@ -347,6 +348,7 @@ export async function organizeMessagesByChannelAndThread(
         const timestampFormatted = channelTimezone ?
           msgDate.toLocaleString('en-US', {
             timeZone: channelTimezone,
+            year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: 'numeric',

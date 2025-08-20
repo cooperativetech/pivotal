@@ -105,7 +105,7 @@ function Home() {
 
               <div className="text-sm text-gray-600">
                 <div>Users: {topic.userIds.length}</div>
-                <div>Created: {new Date(topic.createdAt).toLocaleDateString()}</div>
+                <div>Created: {new Date(topic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
               </div>
             </Link>
           ))}

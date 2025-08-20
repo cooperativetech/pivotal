@@ -443,7 +443,7 @@ function Topic() {
             {topicData.topic.isActive ? 'Active' : 'Inactive'}
           </span>
           <span className="text-sm text-gray-600">
-            Updated: {new Date(topicData.topic.updatedAt).toLocaleString()}
+            Updated: {new Date(topicData.topic.updatedAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
           </span>
           {sortedMessages.length > 0 && timelinePosition !== null && (
             <span className="text-sm text-gray-600">
@@ -709,7 +709,7 @@ function Topic() {
                           ? 'bg-blue-500'
                           : 'bg-gray-400'
                       }`}
-                      title={`${new Date(msg.timestamp).toLocaleTimeString()} - ${msg.text.substring(0, 50)}...`}
+                      title={`${new Date(msg.timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} - ${msg.text.substring(0, 50)}...`}
                     />
                   </div>
                 )

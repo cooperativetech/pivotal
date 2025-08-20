@@ -266,6 +266,7 @@ function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
   const formatted = date.toLocaleString('en-US', {
     timeZone: timezone || 'UTC',
+    year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -693,12 +694,19 @@ Based on the conversation history and current message, determine the next step i
 ${freeSlots.map((slot) => {
   // Format for calling user's timezone
   const startFormatted = formatTimestampWithTimezone(slot.start, callingUserTimezone)
-  const endTime = new Date(slot.end).toLocaleString('en-US', {
-    timeZone: callingUserTimezone || 'UTC',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
+  const startDate = new Date(slot.start)
+  const endDate = new Date(slot.end)
+  const isSameDay = startDate.toDateString() === endDate.toDateString()
+
+  const endTime = isSameDay
+    ? endDate.toLocaleString('en-US', {
+        timeZone: callingUserTimezone || 'UTC',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+    : formatTimestampWithTimezone(slot.end, callingUserTimezone)
+
   return `- ${startFormatted} to ${endTime}`
 }).join('\n')}
 

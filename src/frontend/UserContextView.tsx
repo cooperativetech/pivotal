@@ -22,8 +22,8 @@ function CalendarView({ events, userTimezone }: CalendarViewProps) {
     sortedEvents.forEach((event) => {
       const date = new Date(event.start)
       const dateOptions: Intl.DateTimeFormatOptions = displayTimezone
-        ? { weekday: 'short', month: 'short', day: 'numeric', timeZone: displayTimezone }
-        : { weekday: 'short', month: 'short', day: 'numeric' }
+        ? { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: displayTimezone }
+        : { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }
       const dateKey = date.toLocaleDateString('en-US', dateOptions)
       if (!groups[dateKey]) {
         groups[dateKey] = []
