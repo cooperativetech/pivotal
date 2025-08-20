@@ -5,8 +5,7 @@
  * This module is self-contained and uses native JavaScript Date objects for all calculations.
  *
  * 1) normalizeCalendars: Parses user calendars into merged busy intervals.
- * 2) findCommonFree: Inverts and intersects busy times to get common free intervals.
- * 3) getAcceptableTimes: Filters the free intervals based on configurable start/end times.
+ * 2) findCommonFreeTime: Inverts and intersects busy times to get common free intervals within a specified time range.
  */
 
 // --- Type Definitions ---
@@ -26,12 +25,6 @@ export interface UserProfile {
     summary: string
   }[]
 }
-
-// --- Global Configuration ---
-
-// Define acceptable hours for scheduling.
-const ACCEPTABLE_START_HOUR = 6 // 6:00 AM
-const ACCEPTABLE_END_HOUR = 22 // 10:00 PM
 
 // --- Core Interval Primitives ---
 
@@ -138,44 +131,25 @@ function normalizeCalendars(profiles: UserProfile[]): Record<string, DateTimeInt
   return busyMap
 }
 
-/**
- * Filters a list of free intervals to only include those within acceptable hours.
- * @param commonFree - A list of common free time intervals.
- * @param targetDate - The date to use for defining acceptable hours.
- * @returns A list of intervals that fall within the acceptable time window.
- */
-function getAcceptableTimes(commonFree: DateTimeInterval[], targetDate: Date): DateTimeInterval[] {
-  const startTime = new Date(targetDate)
-  startTime.setHours(ACCEPTABLE_START_HOUR, 0, 0, 0)
-  const endTime = new Date(targetDate)
-  endTime.setHours(ACCEPTABLE_END_HOUR, 0, 0, 0)
-  const acceptableWindow: DateTimeInterval = { start: startTime, end: endTime }
-  return intersect(commonFree, [acceptableWindow])
-}
-
 // --- Main Exported Function ---
 
 /**
- * The main function for the tool. It takes user profiles, calculates the
- * common free time within acceptable hours, and returns it in a simple format.
+ * The main function for the tool. It takes user profiles and calculates
+ * common free time within the specified time range.
  * @param profiles - An array of user profiles with their calendar data.
- * @param targetDate - Optional target date to search for free slots. Defaults to today.
+ * @param startTime - The start of the time range to search for free slots.
+ * @param endTime - The end of the time range to search for free slots.
  * @returns An array of common free time slots.
  */
-export function findCommonFreeTime(profiles: UserProfile[], targetDate?: Date): DateTimeInterval[] {
+export function findCommonFreeTime(profiles: UserProfile[], startTime: Date, endTime: Date): DateTimeInterval[] {
   if (!profiles || profiles.length === 0) {
     return []
   }
 
   const busyMap = normalizeCalendars(profiles)
 
-  // Define the full day window for the target date (defaults to today)
-  const searchDate = targetDate || new Date()
-  const startOfDay = new Date(searchDate)
-  startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date(searchDate)
-  endOfDay.setHours(23, 59, 59, 999)
-  const window: DateTimeInterval = { start: startOfDay, end: endOfDay }
+  // Use the provided start and end times as the search window
+  const window: DateTimeInterval = { start: startTime, end: endTime }
 
   // Invert each user's busy schedule to get their free time
   const freeLists = Object.values(busyMap).map((busyIntervals) => invert(busyIntervals, window))
@@ -185,11 +159,7 @@ export function findCommonFreeTime(profiles: UserProfile[], targetDate?: Date): 
     ? freeLists.reduce((acc, freeList) => intersect(acc, freeList), [window])
     : []
 
-  // Filter for acceptable times
-  const acceptableSlots = getAcceptableTimes(commonFree, searchDate)
-
-  // Format for the final output
-  return acceptableSlots
+  return commonFree
 }
 
 // --- Conversion Functions ---

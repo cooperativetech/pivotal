@@ -123,20 +123,6 @@ export function UserContextView({ context, userTimezone }: UserContextViewProps)
       {!context.googleAccessToken && (
         <div className="text-amber-600">⚠ Google Calendar not connected</div>
       )}
-      {context.calendarLastFetched && (
-        <div className="text-xs text-gray-600">
-          Calendar last synced: {(() => {
-            const dateOptions: Intl.DateTimeFormatOptions = userTimezone
-              ? { dateStyle: 'short', timeStyle: 'medium', timeZone: userTimezone }
-              : { dateStyle: 'short', timeStyle: 'medium' }
-            const dateString = new Date(context.calendarLastFetched).toLocaleString('en-US', dateOptions)
-            const timezoneString = userTimezone
-              ? getShortTimezoneFromIANA(userTimezone)
-              : getShortTimezone()
-            return `${dateString} (${timezoneString})`
-          })()}
-        </div>
-      )}
       {context.calendar && context.calendar.length > 0 && (
         <div>
           <CalendarView events={context.calendar} userTimezone={userTimezone} />

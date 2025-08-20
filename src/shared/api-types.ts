@@ -11,12 +11,21 @@ export interface CalendarEvent {
   summary: string
 }
 
+/**
+ * CalendarRangeLastFetched tracks the last fetched time range from the calendar
+ */
+export interface CalendarRangeLastFetched {
+  startTime: string // ISO timestamp for start of fetched range
+  endTime: string   // ISO timestamp for end of fetched range
+  fetchedAt: string // ISO timestamp for when this range was fetched
+}
+
 export interface UserContext {
   googleAccessToken?: string
   googleRefreshToken?: string
   googleTokenExpiryDate?: number
   calendar?: CalendarEvent[]
-  calendarLastFetched?: string
+  calendarRangeLastFetched?: CalendarRangeLastFetched
   slackTeamId?: string
   slackUserName?: string
   slackDisplayName?: string

@@ -4,8 +4,9 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable } from './db/schema/main'
-import type { UserContext, CalendarEvent } from '@shared/api-types'
+import { userDataTable, slackUserTable } from './db/schema/main'
+import type { UserContext, CalendarEvent, CalendarRangeLastFetched } from '@shared/api-types'
+import { generateFakeCalendarEvents } from './anthropic-api'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -28,6 +29,14 @@ export async function getUserContext(slackUserId: string): Promise<UserContext> 
     .where(eq(userDataTable.slackUserId, slackUserId))
     .limit(1)
   return userData?.context || {}
+}
+
+/**
+ * Check if a user has their calendar connected
+ */
+export async function isCalendarConnected(slackUserId: string): Promise<boolean> {
+  const context = await getUserContext(slackUserId)
+  return !!context.googleAccessToken
 }
 
 /**
@@ -108,8 +117,7 @@ export async function handleGoogleAuthCallback(
     }
 
     try {
-      const slackUserId = await fetchAndStoreGoogleAuthTokens(code, state)
-      await fetchAndStoreUserCalendar(slackUserId)
+      await fetchAndStoreGoogleAuthTokens(code, state)
 
       return c.html(`
         <html>
@@ -137,7 +145,7 @@ export async function handleGoogleAuthCallback(
 /**
  * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
-export async function fetchAndStoreGoogleAuthTokens(code: string, state: string): Promise<string> {
+export async function fetchAndStoreGoogleAuthTokens(code: string, state: string) {
     // Parse state to get Slack user info: "slack:U123ABC"
     const [prefix, slackUserId] = state.split(':')
 
@@ -173,20 +181,22 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string)
     googleRefreshToken: tokens.refresh_token,
     googleTokenExpiryDate: expiryDate,
   })
-  return slackUserId
 }
 
 /**
  * Fetch calendar events for a user and store in user context
  * This caches calendar data for the LLM to use during scheduling
  */
-export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead = 7): Promise<UserContext> {
+export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: Date, endTime: Date): Promise<UserContext> {
   try {
     const userContext = await getUserContext(slackUserId)
 
     if (!userContext.googleAccessToken) {
       console.error(`No google auth token found for user ${slackUserId}`)
       return {}
+    // Generate fake calendars if we're testing / evaluating
+    } else if (userContext.googleAccessToken === 'fake-token-for-eval') {
+      return genAndStoreFakeUserCalendar(slackUserId, startTime, endTime)
     }
 
     // Create OAuth2 client
@@ -205,16 +215,11 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
     // Create calendar client
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
-    // Define date range
-    const startDate = new Date()
-    const endDate = new Date()
-    endDate.setDate(startDate.getDate() + daysAhead)
-
     // Fetch events
     const response = await calendar.events.list({
       calendarId: 'primary',
-      timeMin: startDate.toISOString(),
-      timeMax: endDate.toISOString(),
+      timeMin: startTime.toISOString(),
+      timeMax: endTime.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     })
@@ -246,10 +251,17 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
       }
     }
 
+    // Update the fetch range tracking
+    const updatedRangeLastFetched: CalendarRangeLastFetched = {
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      fetchedAt: new Date().toISOString(),
+    }
+
     // Store structured calendar data
     const calendarData = {
       calendar: calendarEvents,  // Store as structured array
-      calendarLastFetched: new Date().toISOString(),
+      calendarRangeLastFetched: updatedRangeLastFetched,
     }
 
     // Update google auth credentials in case they were refreshed
@@ -276,26 +288,126 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, daysAhead =
  * Get structured calendar data from userContext
  * Returns calendar events in structured format
  */
-export async function getUserCalendarStructured(slackUserId: string): Promise<CalendarEvent[] | null> {
+export async function getUserCalendarStructured(slackUserId: string, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
   try {
     let context = await getUserContext(slackUserId)
 
-    // Fetch calendar again if more than 15 minutes have passed since last fetch
+    // Check if the requested range is within the last fetched range, and was fetched within the last 15 minutes
     const bufferTime = 15 * 60 * 1000
-    if (
-      context.calendarLastFetched &&
-      new Date(context.calendarLastFetched).getTime() + bufferTime < Date.now() &&
-      !slackUserId.startsWith('U_USER_') // Don't fetch for test users
-    ) {
-      context = await fetchAndStoreUserCalendar(slackUserId)
+    const needsFetch = !context.calendarRangeLastFetched ||
+      new Date(context.calendarRangeLastFetched.startTime) > startTime ||
+      new Date(context.calendarRangeLastFetched.endTime) < endTime ||
+      (Date.now() - new Date(context.calendarRangeLastFetched.fetchedAt).getTime()) > bufferTime
+
+    if (needsFetch) {
+      context = await fetchAndStoreUserCalendar(slackUserId, startTime, endTime)
     }
 
     if (context.calendar) {
-      return context.calendar
+      // Filter events to only include those that overlap with the requested time range
+      const filteredEvents = context.calendar.filter((event) => {
+        const eventStart = new Date(event.start)
+        const eventEnd = new Date(event.end)
+        return eventStart < endTime && eventEnd > startTime
+      })
+      return filteredEvents
     }
   } catch (error) {
     console.error(`Error getting structured calendar for user ${slackUserId}:`, error)
   }
 
   return null
+}
+
+/**
+ * Generate and store fake calendar events for a user
+ * Used for testing and development when real calendar data isn't available
+ */
+export async function genAndStoreFakeUserCalendar(
+  slackUserId: string,
+  startTime: Date,
+  endTime: Date,
+): Promise<UserContext> {
+  try {
+    const currentContext = await getUserContext(slackUserId)
+
+    // Get all existing calendar events
+    const existingEvents = currentContext.calendar || []
+
+    // Check if this range has already been fetched
+    if (currentContext.calendarRangeLastFetched &&
+        new Date(currentContext.calendarRangeLastFetched.startTime) <= startTime &&
+        new Date(currentContext.calendarRangeLastFetched.endTime) >= endTime) {
+      // Range already fetched, just update the fetch timestamp
+      const updatedRangeLastFetched: CalendarRangeLastFetched = {
+        startTime: currentContext.calendarRangeLastFetched.startTime,
+        endTime: currentContext.calendarRangeLastFetched.endTime,
+        fetchedAt: new Date().toISOString(),
+      }
+
+      const calendarData = {
+        calendarRangeLastFetched: updatedRangeLastFetched,
+      }
+
+      const newContext = await updateUserContext(slackUserId, calendarData)
+      console.log(`Range already fetched for user ${slackUserId}, updated timestamp only`)
+      return newContext
+    }
+
+    // Range not fetched, generate fake events
+    // Get user's timezone from Slack
+    const [slackUser] = await db
+      .select()
+      .from(slackUserTable)
+      .where(eq(slackUserTable.id, slackUserId))
+      .limit(1)
+
+    const generatedEvents = await generateFakeCalendarEvents(
+      slackUserId,
+      slackUser?.tz || 'UTC',
+      startTime,
+      endTime,
+    )
+
+    // Helper function to check if two events overlap
+    const eventsOverlap = (event1: CalendarEvent, event2: CalendarEvent): boolean => {
+      const start1 = new Date(event1.start)
+      const end1 = new Date(event1.end)
+      const start2 = new Date(event2.start)
+      const end2 = new Date(event2.end)
+      return start1 < end2 && end1 > start2
+    }
+
+    // Filter generated events to exclude any that overlap with existing events
+    const nonConflictingEvents = generatedEvents.filter((genEvent) => {
+      return !existingEvents.some((existingEvent) => eventsOverlap(genEvent, existingEvent))
+    })
+
+    // Combine existing events with new non-conflicting events
+    const allEvents = [...existingEvents, ...nonConflictingEvents]
+
+    // Sort events by start time
+    allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+
+    // Update the fetch range tracking for fake data
+    const updatedRangeLastFetched: CalendarRangeLastFetched = {
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      fetchedAt: new Date().toISOString(),
+    }
+
+    // Store the combined calendar data
+    const calendarData = {
+      calendar: allEvents,
+      calendarRangeLastFetched: updatedRangeLastFetched,
+    }
+
+    const newContext = await updateUserContext(slackUserId, calendarData)
+    console.log(`Stored ${allEvents.length} total calendar events for user ${slackUserId} (${existingEvents.length} existing, ${nonConflictingEvents.length} new non-conflicting)`)
+
+    return newContext
+  } catch (error) {
+    console.error(`Error generating fake calendar for user ${slackUserId}:`, error)
+    return {}
+  }
 }

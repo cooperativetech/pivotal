@@ -7,7 +7,7 @@ import { Topic, slackMessageTable, SlackMessage, topicTable, slackUserTable, sla
 import { eq, and, desc, inArray } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
-import { generateGoogleAuthUrl, getUserCalendarStructured } from './calendar-service'
+import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected } from './calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -18,6 +18,16 @@ interface AnalyzeTopicRes {
   workflowType?: 'scheduling' | 'other'
   confidence: number
   reasoning: string
+}
+
+/**
+ * Parse JSON from response text, handling code block wrappers
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseResponseJSON(responseText: string): any {
+  // Strip JSON code block wrapper if it exists
+  const cleanedText = responseText.replace(/^```(?:json)?\n?|\n?```$/g, '')
+  return JSON.parse(cleanedText)
 }
 
 async function getChannelDescription(
@@ -212,7 +222,7 @@ Analyze whether this message is relevant to any of the existing topics or if it 
     })
 
     // Parse the JSON response
-    const analysis = JSON.parse(res.text) as {
+    const analysis = parseResponseJSON(res.text) as {
       relevantTopicId?: string
       suggestedNewTopic?: string
       workflowType?: 'scheduling' | 'other'
@@ -471,12 +481,12 @@ Calendar Information:
 ${await Promise.all(topic.userIds.map(async (userId) => {
   const userName = userMap.get(userId) || 'Unknown User'
   try {
-    const calendarStructured = await getUserCalendarStructured(userId)
-    if (calendarStructured) {
+    const isConnected = await isCalendarConnected(userId)
+    if (isConnected) {
       return `${userName}: Calendar is connected`
     }
   } catch (error) {
-    console.error(`Error getting calendar for ${userName}:`, error)
+    console.error(`Error checking calendar connection for ${userName}:`, error)
   }
   return `${userName}: No calendar connected`
 })).then((results) => results.join('\n\n'))}
@@ -498,13 +508,14 @@ Based on the conversation history and current message, determine the next step i
   // Define the tools - only one can be used at a time
   const availableTools = {
     findFreeSlots: tool({
-      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the exact user names from the User Directory and optionally specify a target date.',
+      description: 'Find common free time slots for all users in the topic between specified start time and end time. Returns mathematically accurate free slots. Pass the exact user names from the User Directory.',
       parameters: z.object({
         userNames: z.array(z.string()).describe('Array of user names (exact names from User Directory) to find free slots for'),
-        targetDate: z.string().optional().describe('Target date in YYYY-MM-DD format to find free slots for (defaults to today)'),
+        startTime: z.string().describe('ISO timestamp for the start of the time range to search for free slots'),
+        endTime: z.string().describe('ISO timestamp for the end of the time range to search for free slots'),
       }),
-      execute: async ({ userNames, targetDate }) => {
-        console.log('Tool called: findFreeSlots for users:', userNames, 'targetDate:', targetDate)
+      execute: async ({ userNames, startTime, endTime }) => {
+        console.log('Tool called: findFreeSlots for users:', userNames, 'from', startTime, 'to', endTime)
 
         // Map names to user IDs for calendar lookup
         const nameToIdMap = new Map<string, string>()
@@ -513,41 +524,37 @@ Based on the conversation history and current message, determine the next step i
         })
 
         // Build profiles for the time intersection tool
-        const profiles: UserProfile[] = []
-        for (const userName of userNames) {
-          const userId = nameToIdMap.get(userName)
-          if (!userId) {
-            console.warn(`Could not find user ID for name: ${userName}`)
-            continue
-          }
-          const calendar = await getUserCalendarStructured(userId)
+        const profiles: UserProfile[] = await Promise.all(
+          userNames.map(async (userName) => {
+            const userId = nameToIdMap.get(userName)
+            if (!userId) {
+              console.warn(`Could not find user ID for name: ${userName}`)
+              // Return user as fully available if ID not found
+              return {
+                name: userName,
+                calendar: [],
+              }
+            }
 
-          if (calendar && calendar.length > 0) {
-            profiles.push({
-              name: userName,
-              calendar: convertCalendarEventsToUserProfile(calendar),
-            })
-          } else {
-            // User has no calendar data, treat as fully available
-            profiles.push({
-              name: userName,
-              calendar: [],
-            })
-          }
-        }
+            const calendar = await getUserCalendarStructured(userId, new Date(startTime), new Date(endTime))
 
-        // Parse target date if provided
-        let searchDate: Date | undefined
-        if (targetDate) {
-          try {
-            searchDate = new Date(targetDate + 'T00:00:00.000Z') // Parse as UTC to avoid timezone issues
-          } catch (error) {
-            console.warn('Invalid targetDate format:', targetDate, error)
-          }
-        }
+            if (calendar && calendar.length > 0) {
+              return {
+                name: userName,
+                calendar: convertCalendarEventsToUserProfile(calendar),
+              }
+            } else {
+              // User has no calendar data, treat as fully available
+              return {
+                name: userName,
+                calendar: [],
+              }
+            }
+          }),
+        )
 
         // Use the time intersection tool to find common free slots
-        const freeSlots = findCommonFreeTime(profiles, searchDate)
+        const freeSlots = findCommonFreeTime(profiles, new Date(startTime), new Date(endTime))
         console.log('Found free slots:', freeSlots)
 
         return {
@@ -735,7 +742,7 @@ Based on this update, determine the next step in the scheduling workflow.`
     }
 
     // If there are no tool calls, parse the response
-    const nextStep = JSON.parse(res.text) as {
+    const nextStep = parseResponseJSON(res.text) as {
       replyMessage: string
       updateSummary?: string
       markTopicInactive?: boolean
@@ -763,5 +770,77 @@ Based on this update, determine the next step in the scheduling workflow.`
       reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
       toolUsed: false,
     }
+  }
+}
+
+/**
+ * Generate realistic fake calendar events for a user
+ * Used for testing and development when real calendar data isn't available
+ */
+export async function generateFakeCalendarEvents(
+  slackUserId: string,
+  timezone: string,
+  startTime: Date,
+  endTime: Date,
+): Promise<Array<{ start: string, end: string, summary: string }>> {
+  const systemPrompt = `You are a calendar event generator that creates realistic calendar events for a professional's schedule.
+
+Generate calendar events for a person's work schedule in JSON format. The events should be realistic and varied, representing a typical professional's calendar.
+
+Guidelines:
+- Generate events only within work hours (typically 9 AM - 6 PM in the user's timezone)
+- Include a mix of: regular meetings, 1-on-1s, focus time blocks, lunch breaks, team standups
+- Avoid scheduling events on weekends unless explicitly in the date range and then only occasionally
+- Events should have realistic durations (15 min, 30 min, 45 min, 1 hour, 1.5 hours, 2 hours)
+- Leave some gaps between meetings for realistic schedule breathing room
+- Common meeting types: "Team Standup", "1:1 with [Name]", "Project Review", "Design Review", "Sprint Planning", "Customer Call", "Lunch", "Focus Time", "Code Review", "All Hands", "Interview", "Training Session"
+- Don't over-schedule - aim for 60-70% calendar density during work hours
+- Recurring meetings should appear at consistent times if the date range spans multiple days/weeks
+
+Return ONLY a JSON array of objects with this structure:
+[
+  {
+    "start": "2024-01-15T09:00:00-08:00",
+    "end": "2024-01-15T09:30:00-08:00",
+    "summary": "Team Standup"
+  }
+]
+
+Make sure all timestamps are in ISO 8601 format with the correct timezone offset.`
+
+  const userPrompt = `Generate realistic calendar events for user ${slackUserId} in timezone ${timezone}.
+
+Date range: ${startTime.toISOString()} to ${endTime.toISOString()}
+
+The person should have a typical professional schedule with a variety of meetings and work blocks.`
+
+  try {
+    const { text } = await generateText({
+      model: openrouter('anthropic/claude-sonnet-4'),
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.7,
+    })
+
+    // Parse the JSON response
+    const events = parseResponseJSON(text) as Array<{ start: string, end: string, summary: string }>
+
+    // Validate the structure
+    if (!Array.isArray(events)) {
+      throw new Error('Response is not an array')
+    }
+
+    // Validate each event has required fields
+    return events.filter((event) =>
+      event.start &&
+      event.end &&
+      event.summary &&
+      typeof event.start === 'string' &&
+      typeof event.end === 'string' &&
+      typeof event.summary === 'string',
+    )
+  } catch (error) {
+    console.error('Error generating fake calendar events:', error)
+    return []
   }
 }

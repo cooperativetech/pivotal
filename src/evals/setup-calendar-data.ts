@@ -2,7 +2,7 @@ import { CalendarEvent as BenchmarkCalendarEvent, PersonProfile } from './core-b
 import { updateUserContext } from '../calendar-service'
 import db from '../db/engine'
 import { slackUserTable } from '../db/schema/main'
-import type { CalendarEvent } from '@shared/api-types'
+import type { CalendarEvent, CalendarRangeLastFetched } from '@shared/api-types'
 import { eq, like } from 'drizzle-orm'
 
 /**
@@ -81,10 +81,29 @@ export async function setupCalendarDataForEval(
     // Convert calendar to structured format and store in user context
     const calendarEvents = convertCalendarToStructured(profile.calendar)
 
+    // Find min and max times from events
+    const eventTimes = calendarEvents.flatMap((event) => [
+      new Date(event.start).getTime(),
+      new Date(event.end).getTime(),
+    ])
+    const minTime = Math.min(...eventTimes)
+    const maxTime = Math.max(...eventTimes)
+
+      // Add 1-day buffer on each side
+    const startTime = new Date(minTime - 24 * 60 * 60 * 1000) // minus 1 day
+    const endTime = new Date(maxTime + 24 * 60 * 60 * 1000) // plus 1 day
+
+    // Create calendar range tracking - mark the entire range as fetched 1 minute ago
+    const oneMinuteAgo = new Date(Date.now() - 60000)
+    const calendarRangeLastFetched: CalendarRangeLastFetched = {
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      fetchedAt: oneMinuteAgo.toISOString(),
+    }
+
     await updateUserContext(userId, {
       calendar: calendarEvents,
-      // Always set calendar as fetched 1 minute ago so it never triggers refresh
-      calendarLastFetched: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
+      calendarRangeLastFetched,
       // Simulate having Google auth (so bot thinks calendar is connected)
       googleAccessToken: 'fake-token-for-eval',
       googleRefreshToken: 'fake-refresh-for-eval',
