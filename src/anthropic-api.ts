@@ -698,6 +698,19 @@ ${freeSlots.map((slot) => {
   const endDate = new Date(slot.end)
   const isSameDay = startDate.toDateString() === endDate.toDateString()
 
+  // Calculate duration
+  const durationMs = endDate.getTime() - startDate.getTime()
+  const hours = Math.floor(durationMs / (1000 * 60 * 60))
+  const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60))
+  let durationStr = ''
+  if (hours > 0 && minutes > 0) {
+    durationStr = `${hours}h ${minutes}m`
+  } else if (hours > 0) {
+    durationStr = `${hours}h`
+  } else {
+    durationStr = `${minutes}m`
+  }
+
   const endTime = isSameDay
     ? endDate.toLocaleString('en-US', {
         timeZone: callingUserTimezone || 'UTC',
@@ -707,7 +720,7 @@ ${freeSlots.map((slot) => {
       })
     : formatTimestampWithTimezone(slot.end, callingUserTimezone)
 
-  return `- ${startFormatted} to ${endTime}`
+  return `- [${durationStr}] ${startFormatted} to ${endTime}`
 }).join('\n')}
 
 Remember to always include timezone abbreviations when suggesting these times to users, and convert to each user's timezone when sending individual messages.

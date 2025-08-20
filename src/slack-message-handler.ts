@@ -159,7 +159,7 @@ async function processSchedulingActions(
   const createdMessages: SlackMessage[] = []
   try {
     // Get the topic details
-    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+    let [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
     if (!topic) {
       console.error('Topic not found:', topicId)
       return createdMessages
@@ -223,6 +223,14 @@ async function processSchedulingActions(
         })
         .where(eq(topicTable.id, topicId))
     }
+
+    // Get the updated topic details, which may have changed userIds for example
+    const updatedTopics = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+    if (updatedTopics.length < 1) {
+      console.error('Updated topic not found:', topicId)
+      return createdMessages
+    }
+    topic = updatedTopics[0]
 
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
