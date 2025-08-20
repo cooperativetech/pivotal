@@ -1,0 +1,1 @@
+ALTER TABLE "slack_message" ADD COLUMN "tool_used" boolean;

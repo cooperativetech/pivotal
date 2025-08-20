@@ -207,6 +207,7 @@ async function processSchedulingActions(
           rawTs: response.ts,
           threadTs: message.rawTs,
           raw: response.message,
+          toolUsed: nextStep.toolUsed || false,
         }).returning()
         createdMessages.push(createdMessage)
       }
@@ -283,6 +284,7 @@ async function processSchedulingActions(
                   rawTs: dmResponse.ts,
                   threadTs: null,
                   raw: dmResponse.message,
+                  toolUsed: nextStep.toolUsed || false,
                 }).returning()
                 createdMessages.push(createdMessage)
               }
@@ -329,6 +331,7 @@ async function processSchedulingActions(
                 rawTs: groupResponse.ts,
                 threadTs: null,
                 raw: groupResponse.message,
+                toolUsed: nextStep.toolUsed || false,
               }).returning()
               createdMessages.push(createdMessage)
             }
@@ -350,6 +353,7 @@ async function processSchedulingActions(
                 rawTs: groupResponse.ts,
                 threadTs: message.rawTs,
                 raw: groupResponse.message,
+                toolUsed: nextStep.toolUsed || false,
               }).returning()
               createdMessages.push(createdMessage)
             }
@@ -372,6 +376,7 @@ async function processSchedulingActions(
               rawTs: groupResponse.ts,
               threadTs: message.rawTs,
               raw: groupResponse.message,
+              toolUsed: nextStep.toolUsed || false,
             }).returning()
             createdMessages.push(createdMessage)
           }
@@ -394,6 +399,7 @@ async function processSchedulingActions(
             rawTs: groupResponse.ts,
             threadTs: message.rawTs,
             raw: groupResponse.message,
+            toolUsed: nextStep.toolUsed || false,
           }).returning()
           createdMessages.push(createdMessage)
         }
@@ -452,6 +458,7 @@ async function getOrCreateTopic(
     rawTs: message.ts,
     threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
     raw: message,
+    toolUsed: null, // Analysis messages don't use tools
   }
 
   // Step 2: Call analyzeTopicRelevance for non-bot messages

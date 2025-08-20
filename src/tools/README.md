@@ -1,7 +1,16 @@
 # Overview
-This repository contains a TypeScript-based scheduling tool designed to be called by an LLM assistant. Its purpose is to find common free time intervals between multiple user calendars.
+This directory contains TypeScript-based tools designed to be called by an LLM assistant for scheduling tasks.
 
-The core logic is a classic scheduling algorithm:  
+## Tools Available
+
+### `time_intersection.ts`
+A scheduling algorithm to find common free time intervals between multiple user calendars.
+
+### `json_extractor.ts`
+Converts LLM reasoning/analysis text into structured JSON format for API responses. Used when the LLM provides good analysis but in the wrong format.
+
+## Time Intersection Logic
+The core scheduling algorithm logic:  
 1) For each user, determine their busy times. 
 2) Invert the busy times to find free times. 
 3) Find intersection of all user free times. 

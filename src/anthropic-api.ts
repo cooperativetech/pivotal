@@ -291,6 +291,7 @@ export async function scheduleNextStep(
   }[]
   groupMessage?: string
   reasoning: string
+  toolUsed?: boolean // true if findFreeSlots tool was called
 }> {
   // If user is explicitly asking for calendar connection, send link immediately
   const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
@@ -309,6 +310,7 @@ ${authUrl}
 
 This will allow me to check your availability automatically when scheduling. If you'd rather not connect your calendar, just let me know and I'll ask for your availability manually instead.`,
       reasoning: 'User explicitly requested calendar connection link',
+      toolUsed: false,
     }
   }
 
@@ -360,6 +362,9 @@ Based on the current state, determine:
   - You should proceed with other actions as normal
 
 - "gather_constraints": Need to collect availability from users
+  - CRITICAL: Before asking anyone for availability, check the conversation history to see who has already provided their availability/constraints
+  - NEVER ask users for their availability again if they have already shared their schedule/constraints in previous messages
+  - ONLY send availability requests to users who have NOT yet shared their availability
   - IMPORTANT: Start by asking the initial requesting user (the person who created the topic) about their scheduling constraints first
   - Only after getting the requester's constraints should you move on to asking other participants
   - Return messagesToUsers array with personalized availability requests (sent as 1-1 DMs)
@@ -643,6 +648,9 @@ Based on the conversation history and current message, determine the next step i
     console.log('Tool calls:', res.toolCalls)
     console.log('Tool results:', res.toolResults)
 
+    // Track if tools were used
+    const toolUsed = res.toolCalls && res.toolCalls.length > 0
+
     // If tools were called, we need to recursively call scheduleNextStep with the tool results
     if (res.toolCalls && res.toolCalls.length > 0) {
       const toolCall = res.toolCalls[0]
@@ -725,12 +733,12 @@ Based on this update, determine the next step in the scheduling workflow.`
           },
         )
 
-        return result
+        // Preserve tool usage tracking from original call
+        return { ...result, toolUsed: result.toolUsed || toolUsed }
       }
     }
 
     // If there are no tool calls, parse the response
-    // If res.text starts with explanation text instead of JSON, we need to extract the JSON
     const nextStep = JSON.parse(res.text) as {
       action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
@@ -745,7 +753,7 @@ Based on this update, determine the next step in the scheduling workflow.`
       reasoning: string
     }
 
-    return nextStep
+    return { ...nextStep, toolUsed }
   } catch (error) {
     console.error('=== ERROR IN scheduleNextStep ===')
     console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
@@ -759,6 +767,7 @@ Based on this update, determine the next step in the scheduling workflow.`
       action: 'other',
       replyMessage: 'I encountered an error processing the scheduling request.',
       reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      toolUsed: false,
     }
   }
 }

@@ -85,6 +85,13 @@
       "when": 1754952858209,
       "tag": "0011_add_slack_channel_table",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1755610189355,
+      "tag": "0012_add_tool_used_to_slack_message",
+      "breakpoints": true
     }
   ]
 }
