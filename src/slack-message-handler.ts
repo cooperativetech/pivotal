@@ -406,16 +406,12 @@ async function processSchedulingActions(
       }
     }
 
-    // Handle completion and mark topic as inactive if requested
-    if (nextStep.action === 'complete') {
-      console.log('Scheduling workflow completed for topic:', topicId)
-
-      if (nextStep.markTopicInactive) {
-        await db.update(topicTable)
-          .set({ isActive: false, updatedAt: new Date() })
-          .where(eq(topicTable.id, topicId))
-        console.log('Topic marked as inactive:', topicId)
-      }
+    // Mark topic as inactive if requested
+    if (nextStep.markTopicInactive) {
+      await db.update(topicTable)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(topicTable.id, topicId))
+      console.log('Scheduling workflow topic marked as inactive:', topicId)
     }
   } catch (error) {
     console.error('Error processing scheduling actions:', error)

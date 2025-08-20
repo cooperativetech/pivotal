@@ -280,7 +280,6 @@ export async function scheduleNextStep(
     userPromptSuffix: string
   },
 ): Promise<{
-  action: 'identify_users' | 'request_calendar_access' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
   replyMessage: string
   updateSummary?: string
   markTopicInactive?: boolean
@@ -303,7 +302,6 @@ export async function scheduleNextStep(
     const authUrl = generateGoogleAuthUrl(message.userId)
 
     return {
-      action: 'request_calendar_access',
       replyMessage: `Here's your Google Calendar connection link:
 
 ${authUrl}
@@ -330,13 +328,6 @@ This will allow me to check your availability automatically when scheduling. If 
 - Be explicit about timezone differences when they exist between participants
 - When proposing times to multiple users with different timezones, show the time in each user's timezone
 
-## Scheduling Workflow
-The scheduling process follows these steps:
-1. **Identify Users**: Determine who needs to be included in the scheduling
-2. **Request Calendar Access**: For new scheduling topics, offer users calendar connections to make scheduling easier
-3. **Gather Constraints**: Collect availability and preferences from each user individually
-4. **Finalize**: Once consensus is found, get confirmation from all participants on the chosen time
-
 ## Current Context
 You will receive:
 - The current message from a user
@@ -344,49 +335,43 @@ You will receive:
 - The topic summary describing what needs to be scheduled
 
 ## Your Task
-Based on the current state, determine:
-1. Which step of the workflow we're in
-2. What action to take next
-3. Generate the appropriate message(s)
+Based on the current state, determine what tools to call (if any). If no more tools need to be called to gather additional context, generate the appropriate update to the topic summary and message(s) to users, if they are necessary to move the scheduling task along
 
-## Action Types
-- "identify_users": Need to determine who should be involved
+## Subtasks that need be handled
+1. Need to determine who should be involved
   - Use the updateUserNames tool to specify the COMPLETE list of user names who should be involved
   - IMPORTANT: Use the exact full names from the User Directory (e.g., "John Smith", not "John" or "Smith")
   - The tool will replace the existing user list, not append to it
   - Return replyMessage asking about missing participants or confirming who will be included
 
-- "request_calendar_access": (Handled automatically - you should not use this action)
-  - This action is handled automatically by the system before your response
-  - If users need calendar access, they will be prompted automatically
-  - You should proceed with other actions as normal
+2. Need to collect initial time constraints from the initial message sender
+  - This may often be specified in the initial message, e.g. schedule a meeting for _tomorrow_, or for _next week_
+  - If this is unspecified by the initial message sender, ask them to specify
+  - Once you determine the general time constraint for the meeting or event, add it to the topic summary. Ideally, this can be recorded very concretely with specific days and time ranges, including time zone information
 
-- "gather_constraints": Need to collect availability from users
+3. Need to gather constraints from users
+  - CRITICAL: If a user's calendar is connected (see Calendar Information: below), you do NOT need to ask them for availability. Instead, use the findFreeSlots tool to find the intersection of their availability with other users
   - CRITICAL: Before asking anyone for availability, check the conversation history to see who has already provided their availability/constraints
   - NEVER ask users for their availability again if they have already shared their schedule/constraints in previous messages
-  - ONLY send availability requests to users who have NOT yet shared their availability
-  - IMPORTANT: Start by asking the initial requesting user (the person who created the topic) about their scheduling constraints first
-  - Only after getting the requester's constraints should you move on to asking other participants
+  - ONLY send availability requests to users who have NOT yet shared their availability, and who do not have a calendar connected
   - Return messagesToUsers array with personalized availability requests (sent as 1-1 DMs)
   - Each message can be sent to one or multiple users (via userIds array) - same message as individual DMs
   - Return replyMessage acknowledging the constraint gathering process
   - CRITICAL: If your replyMessage says you will reach out to others, you MUST include the corresponding messagesToUsers in the same response
   - Never promise to contact users without actually including those messages in messagesToUsers array
-  - Can gather from multiple users simultaneously or focus on one at a time (but always start with the requester)
+  - Can gather from multiple users simultaneously or focus on one at a time
   - Continue gathering until a consensus time emerges from the constraints
 
-- "finalize": Ready to confirm the consensus time
+4. Ready to confirm the consensus time
   - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
   - Only use when you have identified a time that works for all participants
   - Return replyMessage with confirmation
 
-- "complete": Scheduling is done
-  - Return groupMessage with final details
-  - Return replyMessage confirming completion
-  - Set markTopicInactive: true to indicate this topic should be marked inactive
+5. Scheduling is done
+  - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
 
-- "other": Miscellaneous actions needed
-  - Use for: asking clarification, providing updates, handling edge cases
+- Miscellaneous actions needed
+  - Sometimes you need to ask for clarification, provide updates, or handle edge cases
   - Return replyMessage with the appropriate response
   - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
   - Optionally return groupMessage for updates to all users in shared channel
@@ -439,12 +424,11 @@ IMPORTANT: You can only call ONE tool per response. Choose the most appropriate 
 ${prevToolResults ? `\n## PREVIOUS TOOL CALLS\nThe following tools have already been called: ${prevToolResults.toolsCalled.join(', ')}. The results are included in the user prompt. Do not call these tools again.` : ''}
 
 ## Response Format
-If not calling tools, return ONLY a JSON object with the appropriate fields based on the action:
+If not calling tools, return ONLY a JSON object with the appropriate fields:
 {
-  "action": "identify_users|gather_constraints|finalize|complete|other",
   "replyMessage": "Message text",  // REQUIRED field but can be empty string ("") when no response is needed
-  "updateSummary": "Updated topic summary",  // Optional for ANY action - updates topic when details change
-  "markTopicInactive": true,      // Optional: Include when action is "complete" to mark topic as inactive
+  "updateSummary": "Updated topic summary",  // Optional - updates topic when details change
+  "markTopicInactive": true,      // Optional: Include to mark topic as inactive
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
     {
       "userNames": ["John Smith"],     // Send this message as individual DM to each user in list (MUST use exact names from User Directory)
@@ -740,7 +724,6 @@ Based on this update, determine the next step in the scheduling workflow.`
 
     // If there are no tool calls, parse the response
     const nextStep = JSON.parse(res.text) as {
-      action: 'identify_users' | 'gather_constraints' | 'finalize' | 'complete' | 'other'
       replyMessage: string
       updateSummary?: string
       markTopicInactive?: boolean
@@ -764,7 +747,6 @@ Based on this update, determine the next step in the scheduling workflow.`
 
     // Return a safe default response
     return {
-      action: 'other',
       replyMessage: 'I encountered an error processing the scheduling request.',
       reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
       toolUsed: false,
