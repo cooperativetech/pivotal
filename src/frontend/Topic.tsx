@@ -575,7 +575,40 @@ function Topic() {
                                 isBot ? 'text-blue-100' : 'text-gray-500'
                               }`}
                             >
-                              {new Date(msg.timestamp).toLocaleTimeString()} ({getShortTimezone()}) ({msg.id})
+                              {isLatestOverall ? (
+                                <div className="break-words">
+                                  {(() => {
+                                    const timeOptions: Intl.DateTimeFormatOptions =
+                                      isDM && user?.tz
+                                        ? { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: user.tz }
+                                        : { hour: 'numeric', minute: '2-digit', second: '2-digit' }
+                                    const timeString = new Date(msg.timestamp).toLocaleTimeString('en-US', timeOptions)
+                                    const timezoneString = isDM && user?.tz
+                                      ? getShortTimezoneFromIANA(user.tz)
+                                      : getShortTimezone()
+                                    return `${timeString} (${timezoneString}) (${msg.id})`
+                                  })()}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <span className="flex-shrink-0">
+                                    {(() => {
+                                      const timeOptions: Intl.DateTimeFormatOptions =
+                                        isDM && user?.tz
+                                          ? { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: user.tz }
+                                          : { hour: 'numeric', minute: '2-digit', second: '2-digit' }
+                                      const timeString = new Date(msg.timestamp).toLocaleTimeString('en-US', timeOptions)
+                                      const timezoneString = isDM && user?.tz
+                                        ? getShortTimezoneFromIANA(user.tz)
+                                        : getShortTimezone()
+                                      return `${timeString} (${timezoneString})`
+                                    })()}
+                                  </span>
+                                  <span className="truncate">
+                                    ({msg.id})
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
