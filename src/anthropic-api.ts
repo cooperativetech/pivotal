@@ -412,6 +412,7 @@ You have access to TWO tools, but you can ONLY USE ONE per response:
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
    - Pass the exact user names from the User Directory (e.g., "John Smith", "Jane Doe")
+   - Optionally pass targetDate in YYYY-MM-DD format for the specific day to search (e.g., "2024-08-27" for next Tuesday)
    - Returns guaranteed-free slots that work for everyone
    - Never propose times without using this tool first
 
@@ -497,12 +498,13 @@ Based on the conversation history and current message, determine the next step i
   // Define the tools - only one can be used at a time
   const availableTools = {
     findFreeSlots: tool({
-      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the exact user names from the User Directory.',
+      description: 'Find common free time slots for all users in the topic. Returns mathematically accurate free slots. Pass the exact user names from the User Directory and optionally specify a target date.',
       parameters: z.object({
         userNames: z.array(z.string()).describe('Array of user names (exact names from User Directory) to find free slots for'),
+        targetDate: z.string().optional().describe('Target date in YYYY-MM-DD format to find free slots for (defaults to today)'),
       }),
-      execute: async ({ userNames }) => {
-        console.log('Tool called: findFreeSlots for users:', userNames)
+      execute: async ({ userNames, targetDate }) => {
+        console.log('Tool called: findFreeSlots for users:', userNames, 'targetDate:', targetDate)
 
         // Map names to user IDs for calendar lookup
         const nameToIdMap = new Map<string, string>()
@@ -534,8 +536,18 @@ Based on the conversation history and current message, determine the next step i
           }
         }
 
+        // Parse target date if provided
+        let searchDate: Date | undefined
+        if (targetDate) {
+          try {
+            searchDate = new Date(targetDate + 'T00:00:00.000Z') // Parse as UTC to avoid timezone issues
+          } catch (error) {
+            console.warn('Invalid targetDate format:', targetDate, error)
+          }
+        }
+
         // Use the time intersection tool to find common free slots
-        const freeSlots = findCommonFreeTime(profiles)
+        const freeSlots = findCommonFreeTime(profiles, searchDate)
         console.log('Found free slots:', freeSlots)
 
         return {

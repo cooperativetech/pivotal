@@ -141,13 +141,13 @@ function normalizeCalendars(profiles: UserProfile[]): Record<string, DateTimeInt
 /**
  * Filters a list of free intervals to only include those within acceptable hours.
  * @param commonFree - A list of common free time intervals.
+ * @param targetDate - The date to use for defining acceptable hours.
  * @returns A list of intervals that fall within the acceptable time window.
  */
-function getAcceptableTimes(commonFree: DateTimeInterval[]): DateTimeInterval[] {
-  const today = new Date()
-  const startTime = new Date(today)
+function getAcceptableTimes(commonFree: DateTimeInterval[], targetDate: Date): DateTimeInterval[] {
+  const startTime = new Date(targetDate)
   startTime.setHours(ACCEPTABLE_START_HOUR, 0, 0, 0)
-  const endTime = new Date(today)
+  const endTime = new Date(targetDate)
   endTime.setHours(ACCEPTABLE_END_HOUR, 0, 0, 0)
   const acceptableWindow: DateTimeInterval = { start: startTime, end: endTime }
   return intersect(commonFree, [acceptableWindow])
@@ -159,20 +159,21 @@ function getAcceptableTimes(commonFree: DateTimeInterval[]): DateTimeInterval[] 
  * The main function for the tool. It takes user profiles, calculates the
  * common free time within acceptable hours, and returns it in a simple format.
  * @param profiles - An array of user profiles with their calendar data.
+ * @param targetDate - Optional target date to search for free slots. Defaults to today.
  * @returns An array of common free time slots.
  */
-export function findCommonFreeTime(profiles: UserProfile[]): DateTimeInterval[] {
+export function findCommonFreeTime(profiles: UserProfile[], targetDate?: Date): DateTimeInterval[] {
   if (!profiles || profiles.length === 0) {
     return []
   }
 
   const busyMap = normalizeCalendars(profiles)
 
-  // Define the full day window for today
-  const today = new Date()
-  const startOfDay = new Date(today)
+  // Define the full day window for the target date (defaults to today)
+  const searchDate = targetDate || new Date()
+  const startOfDay = new Date(searchDate)
   startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date(today)
+  const endOfDay = new Date(searchDate)
   endOfDay.setHours(23, 59, 59, 999)
   const window: DateTimeInterval = { start: startOfDay, end: endOfDay }
 
@@ -185,7 +186,7 @@ export function findCommonFreeTime(profiles: UserProfile[]): DateTimeInterval[] 
     : []
 
   // Filter for acceptable times
-  const acceptableSlots = getAcceptableTimes(commonFree)
+  const acceptableSlots = getAcceptableTimes(commonFree, searchDate)
 
   // Format for the final output
   return acceptableSlots
