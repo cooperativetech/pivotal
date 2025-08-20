@@ -363,7 +363,6 @@ export async function genAndStoreFakeUserCalendar(
       .limit(1)
 
     const generatedEvents = await generateFakeCalendarEvents(
-      slackUserId,
       slackUser?.tz || 'UTC',
       startTime,
       endTime,

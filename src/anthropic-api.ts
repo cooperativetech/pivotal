@@ -778,24 +778,42 @@ Based on this update, determine the next step in the scheduling workflow.`
  * Used for testing and development when real calendar data isn't available
  */
 export async function generateFakeCalendarEvents(
-  slackUserId: string,
   timezone: string,
   startTime: Date,
   endTime: Date,
 ): Promise<Array<{ start: string, end: string, summary: string }>> {
-  const systemPrompt = `You are a calendar event generator that creates realistic calendar events for a professional's schedule.
+  // Random persona attributes for more diverse schedules
+  const adjectives = [
+    'experienced', 'innovative', 'strategic', 'creative', 'meticulous',
+    'quirky', 'maverick', 'pragmatic', 'visionary', 'fearless',
+  ]
 
-Generate calendar events for a person's work schedule in JSON format. The events should be realistic and varied, representing a typical professional's calendar.
+  const professions = [
+    'software engineer', 'product manager', 'chef', 'electrician', 'nurse',
+    'teacher', 'artist', 'farmer', 'pilot', 'barista',
+    'firefighter', 'veterinarian', 'podcast host', 'mechanic', 'therapist',
+    'musician', 'real estate agent', 'park ranger', 'tattoo artist', 'marine biologist',
+    'truck driver', 'yoga instructor', 'locksmith', 'mortician', 'puppeteer',
+    'wind turbine technician', 'cheese maker', 'escape room designer', 'snake milker',
+  ]
+
+  const industries = [
+    'technology', 'healthcare', 'construction', 'agriculture', 'education',
+    'restaurants', 'renewable energy', 'entertainment', 'transportation', 'emergency services',
+    'manufacturing', 'non-profits', 'fitness & wellness', 'funeral services', 'space exploration',
+    'gaming', 'pet care', 'theme parks', 'paranormal investigation', 'artisanal crafts',
+  ]
+
+  // Randomly select one from each category
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)]
+  const randomProfession = professions[Math.floor(Math.random() * professions.length)]
+  const randomIndustry = industries[Math.floor(Math.random() * industries.length)]
+
+  const systemPrompt = `Generate calendar events for a person's work schedule in JSON format.
 
 Guidelines:
-- Generate events only within work hours (typically 9 AM - 6 PM in the user's timezone)
-- Include a mix of: regular meetings, 1-on-1s, focus time blocks, lunch breaks, team standups
-- Avoid scheduling events on weekends unless explicitly in the date range and then only occasionally
-- Events should have realistic durations (15 min, 30 min, 45 min, 1 hour, 1.5 hours, 2 hours)
-- Leave some gaps between meetings for realistic schedule breathing room
-- Common meeting types: "Team Standup", "1:1 with [Name]", "Project Review", "Design Review", "Sprint Planning", "Customer Call", "Lunch", "Focus Time", "Code Review", "All Hands", "Interview", "Training Session"
-- Don't over-schedule - aim for 60-70% calendar density during work hours
-- Recurring meetings should appear at consistent times if the date range spans multiple days/weeks
+- Generate events mostly on weekdays, during work hours in the user's timezone (work hours depend on role / industry)
+- Don't over-schedule - aim for maximum 60-70% calendar density during work hours, and much less calendar density on weekends, or depending on role / industry
 
 Return ONLY a JSON array of objects with this structure:
 [
@@ -808,18 +826,18 @@ Return ONLY a JSON array of objects with this structure:
 
 Make sure all timestamps are in ISO 8601 format with the correct timezone offset.`
 
-  const userPrompt = `Generate realistic calendar events for user ${slackUserId} in timezone ${timezone}.
+  const userPrompt = `Generate realistic calendar events in timezone ${timezone}.
 
 Date range: ${startTime.toISOString()} to ${endTime.toISOString()}
 
-The person should have a typical professional schedule with a variety of meetings and work blocks.`
+The person is an ${randomAdjective} ${randomProfession} working in ${randomIndustry}. They should have a professional schedule with a variety of meetings and work blocks relevant to their role and industry.`
 
   try {
     const { text } = await generateText({
       model: openrouter('anthropic/claude-sonnet-4'),
       system: systemPrompt,
       prompt: userPrompt,
-      temperature: 0.7,
+      temperature: 1,
     })
 
     // Parse the JSON response
