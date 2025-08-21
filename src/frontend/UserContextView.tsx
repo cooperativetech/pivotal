@@ -1,24 +1,38 @@
 import { useMemo, useState } from 'react'
 import type { UserContext, CalendarEvent } from '@shared/api-types'
-import { getShortTimezone, getShortTimezoneFromIANA } from '@shared/utils'
+import { getShortTimezone, getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
+
+interface ExtendedCalendarEvent extends CalendarEvent {
+  isManualOverride?: boolean
+}
 
 interface CalendarViewProps {
   events: CalendarEvent[]
+  manualOverrides?: CalendarEvent[]
   userTimezone: string | null
 }
 
-function CalendarView({ events, userTimezone }: CalendarViewProps) {
+function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewProps) {
   const [useLocalTime, setUseLocalTime] = useState(!userTimezone)
   const displayTimezone = useLocalTime ? undefined : userTimezone || undefined
   const timezoneLabel = useLocalTime ? getShortTimezone() : (userTimezone ? getShortTimezoneFromIANA(userTimezone) : getShortTimezone())
+
   const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) =>
-      new Date(a.start).getTime() - new Date(b.start).getTime(),
-    )
-  }, [events])
+    // Use mergeCalendarWithOverrides which handles overlap removal
+    const mergedCalendar = mergeCalendarWithOverrides(events, manualOverrides || [])
+
+    // Mark which events are manual overrides
+    const overrideSet = new Set((manualOverrides || []).map((e) => `${e.start}-${e.end}-${e.summary}`))
+    const eventsWithOverrideFlag: ExtendedCalendarEvent[] = mergedCalendar.map((event) => ({
+      ...event,
+      isManualOverride: overrideSet.has(`${event.start}-${event.end}-${event.summary}`),
+    }))
+
+    return eventsWithOverrideFlag
+  }, [events, manualOverrides])
 
   const groupedEvents = useMemo(() => {
-    const groups: { [key: string]: CalendarEvent[] } = {}
+    const groups: { [key: string]: ExtendedCalendarEvent[] } = {}
     sortedEvents.forEach((event) => {
       const date = new Date(event.start)
       const dateOptions: Intl.DateTimeFormatOptions = displayTimezone
@@ -53,7 +67,7 @@ function CalendarView({ events, userTimezone }: CalendarViewProps) {
     return `${minutes}m`
   }
 
-  if (events.length === 0) {
+  if (events.length === 0 && (!manualOverrides || manualOverrides.length === 0)) {
     return (
       <div className="text-gray-500 text-sm italic">
         No upcoming events
@@ -78,11 +92,22 @@ function CalendarView({ events, userTimezone }: CalendarViewProps) {
           <div className="text-xs font-medium text-gray-600 mb-1">{dateKey}</div>
           <div className="space-y-1">
             {dateEvents.map((event, idx) => (
-              <div key={idx} className="bg-gray-50 rounded px-2 py-1">
-                <div className="text-sm font-medium text-gray-900 truncate">
-                  {event.summary || '(No title)'}
+              <div
+                key={idx}
+                className={`rounded px-2 py-1 ${
+                  event.isManualOverride
+                    ? 'bg-blue-100 border border-blue-300'
+                    : 'bg-gray-50'
+                }`}
+              >
+                <div className={`text-sm font-medium truncate ${
+                  event.isManualOverride ? 'text-blue-900' : 'text-gray-900'
+                }`}>
+                  {event.summary || '(No title)'} {event.isManualOverride && '(Override)'}
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className={`text-xs ${
+                  event.isManualOverride ? 'text-blue-700' : 'text-gray-600'
+                }`}>
                   {formatTime(event.start)} - {formatTime(event.end)} ({formatDuration(event.start, event.end)})
                 </div>
               </div>
@@ -103,8 +128,8 @@ interface UserContextViewProps {
 export function UserContextView({ context, userTimezone }: UserContextViewProps) {
   if (!context) {
     return (
-      <div className="p-2 bg-gray-50 rounded-lg">
-        <div className="text-sm text-gray-500">No user context available</div>
+      <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
+        <div className="text-amber-600">⚠ Google Calendar not connected</div>
       </div>
     )
   }
@@ -123,11 +148,15 @@ export function UserContextView({ context, userTimezone }: UserContextViewProps)
       {!context.googleAccessToken && (
         <div className="text-amber-600">⚠ Google Calendar not connected</div>
       )}
-      {context.calendar && context.calendar.length > 0 && (
+      {(context.calendar && context.calendar.length > 0) || (context.calendarManualOverrides && context.calendarManualOverrides.length > 0) ? (
         <div>
-          <CalendarView events={context.calendar} userTimezone={userTimezone} />
+          <CalendarView
+            events={context.calendar || []}
+            manualOverrides={context.calendarManualOverrides}
+            userTimezone={userTimezone}
+          />
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -6,9 +6,9 @@ import db from './db/engine'
 import { Topic, slackMessageTable, SlackMessage, topicTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { eq, and, desc, inArray } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
-import { getShortTimezoneFromIANA } from '@shared/utils'
+import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { type CalendarEvent } from '@shared/api-types'
-import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, getUserContext, updateUserContext, mergeCalendarWithOverrides } from './calendar-service'
+import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, getUserContext, updateUserContext } from './calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
