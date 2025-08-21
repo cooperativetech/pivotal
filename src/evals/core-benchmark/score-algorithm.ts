@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import type { PersonProfile, TimeSlot } from './generate-benchmark-data'
+import type { PersonProfile, TimeSlot, BenchmarkTestCase } from './generate-benchmark-data'
 
 // What algorithms actually see - calendar + separate raw text input
 export interface PersonInput {
@@ -13,17 +13,6 @@ export interface PersonInput {
   }>
 }
 
-interface BenchmarkTestCase {
-  id: number
-  profiles: PersonProfile[]
-  aggregateRawText?: string  // Conversation history from all participants
-  utilityDistribution: {
-    timeSlot: TimeSlot
-    totalUtility: number
-  }[]
-  optimalSlots: TimeSlot[]
-  optimalUtility: number
-}
 
 interface AlgorithmResult {
   testCaseId: number
@@ -87,30 +76,13 @@ export interface DataAvailabilityConfig {
   calendarProbability: number  // 0-1, probability of including calendar
 }
 
-export async function scoreAlgorithm(
+export async function scoreAlgorithmWithCases(
   algorithmName: string,
   algorithm: (inputs: PersonInput[], aggregateRawText?: string) => TimeSlot | Promise<TimeSlot>,
-  benchmarkDataFile: string,
+  testCases: BenchmarkTestCase[],
   dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0 },
 ): Promise<ScoringResults> {
-  // Check if file exists in data directory first, then current directory
-  const dataDir = join(import.meta.dirname, '..', 'data')
-  let filepath = join(dataDir, benchmarkDataFile)
-
-  if (!existsSync(filepath)) {
-    // Try without data directory
-    filepath = benchmarkDataFile
-    if (!existsSync(filepath)) {
-      throw new Error(`Benchmark data file not found: ${benchmarkDataFile} (looked in data/ and current directory)`)
-    }
-  }
-
-  // Load benchmark data
-  console.log(`Loading benchmark data from ${filepath}...`)
-  const testCases: BenchmarkTestCase[] = JSON.parse(readFileSync(filepath, 'utf-8')) as BenchmarkTestCase[]
-  console.log(`Loaded ${testCases.length} test cases`)
-
-  console.log(`\nScoring algorithm: ${algorithmName}`)
+  console.log(`Scoring algorithm: ${algorithmName} with ${testCases.length} test cases`)
 
   const results: AlgorithmResult[] = []
 
@@ -198,6 +170,32 @@ export async function scoreAlgorithm(
     results,
     summary,
   }
+}
+
+export async function scoreAlgorithm(
+  algorithmName: string,
+  algorithm: (inputs: PersonInput[], aggregateRawText?: string) => TimeSlot | Promise<TimeSlot>,
+  benchmarkDataFile: string,
+  dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0 },
+): Promise<ScoringResults> {
+  // Check if file exists in data directory first, then current directory
+  const dataDir = join(import.meta.dirname, '..', 'data')
+  let filepath = join(dataDir, benchmarkDataFile)
+
+  if (!existsSync(filepath)) {
+    // Try without data directory
+    filepath = benchmarkDataFile
+    if (!existsSync(filepath)) {
+      throw new Error(`Benchmark data file not found: ${benchmarkDataFile} (looked in data/ and current directory)`)
+    }
+  }
+
+  // Load benchmark data
+  console.log(`Loading benchmark data from ${filepath}...`)
+  const testCases: BenchmarkTestCase[] = JSON.parse(readFileSync(filepath, 'utf-8')) as BenchmarkTestCase[]
+  console.log(`Loaded ${testCases.length} test cases`)
+
+  return scoreAlgorithmWithCases(algorithmName, algorithm, testCases, dataAvailability)
 }
 
 export function printScoringResults(results: ScoringResults): void {

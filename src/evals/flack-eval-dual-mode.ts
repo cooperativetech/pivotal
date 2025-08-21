@@ -1,24 +1,14 @@
 #!/usr/bin/env node
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
-import { scoreAlgorithm, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
-import type { PersonProfile, TimeSlot } from './core-benchmark/generate-benchmark-data'
+import { scoreAlgorithmWithCases, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
+import type { PersonProfile, TimeSlot, BenchmarkTestCase } from './core-benchmark/generate-benchmark-data'
+import { generateBenchmarkTestCases } from './core-benchmark/generate-benchmark-data'
 import { api } from '../shared/api-client'
 import { unserializeTopicTimestamps, type TopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
 
-interface BenchmarkTestCase {
-  id: number
-  profiles: PersonProfile[]
-  aggregateRawText?: string
-  utilityDistribution: {
-    timeSlot: TimeSlot
-    totalUtility: number
-  }[]
-  optimalSlots: TimeSlot[]
-  optimalUtility: number
-}
 
 const BOT_USER_ID = 'UTESTBOT'
 
@@ -166,7 +156,7 @@ async function simulateSchedulingConversation(
 
 // Evaluate using flack infrastructure
 export async function evaluateWithFlack(
-  benchmarkFile: string,
+  numCases: number,
   mode: EvalMode = 'persona',
   dataAvailability: DataAvailabilityConfig = { calendarProbability: 1.0 },
   model = 'google/gemini-2.5-flash',
@@ -176,20 +166,10 @@ export async function evaluateWithFlack(
   console.log(`Persona Model: ${model}`)
   console.log(`Data availability: ${dataAvailability.calendarProbability * 100}% calendar\n`)
 
-  // Load benchmark data
-  const dataDir = join(import.meta.dirname, 'data')
-  let filepath = join(dataDir, benchmarkFile)
-
-  if (!existsSync(filepath)) {
-    filepath = benchmarkFile
-    if (!existsSync(filepath)) {
-      throw new Error(`Benchmark data file not found: ${benchmarkFile}`)
-    }
-  }
-
-  console.log(`Loading benchmark data from ${filepath}...`)
-  const testCases: BenchmarkTestCase[] = JSON.parse(readFileSync(filepath, 'utf-8')) as BenchmarkTestCase[]
-  console.log(`Loaded ${testCases.length} test cases\n`)
+  // Generate benchmark data dynamically with current "next Tuesday" dates
+  console.log(`Generating ${numCases} test cases with current dates...`)
+  const testCases: BenchmarkTestCase[] = generateBenchmarkTestCases(numCases)
+  console.log(`Generated ${testCases.length} test cases\n`)
 
   let testCaseIndex = 0
   const allConversationLogs: TopicData[] = []
@@ -215,11 +195,11 @@ export async function evaluateWithFlack(
     return scheduledTime
   }
 
-  // Run scoring
-  const scoringResults = await scoreAlgorithm(
+  // Run scoring with test cases array instead of file
+  const scoringResults = await scoreAlgorithmWithCases(
     `Production Bot (Claude Sonnet 4) - ${mode.toUpperCase()} MODE`,
     flackAlgorithm,
-    benchmarkFile,
+    testCases,
     dataAvailability,
   )
 
@@ -293,7 +273,7 @@ ${scoringResults.results.map((r, idx) => {
 // Run the evaluation
 if (import.meta.url === `file://${process.argv[1]}`) {
   const mode = (process.argv[2] || 'persona') as EvalMode
-  const benchmarkFile = process.argv[3] || 'benchmark-data-2-cases.json'
+  const numCases = parseInt(process.argv[3] || '2')
   const calendarProb = parseFloat(process.argv[4] || '1.0')
   const model = process.argv[5] || 'google/gemini-2.5-flash'
 
@@ -302,5 +282,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1)
   }
 
-  evaluateWithFlack(benchmarkFile, mode, { calendarProbability: calendarProb }, model).catch(console.error)
+  if (isNaN(numCases) || numCases < 1) {
+    console.error('Invalid number of cases. Must be a positive integer')
+    process.exit(1)
+  }
+
+  evaluateWithFlack(numCases, mode, { calendarProbability: calendarProb }, model).catch(console.error)
 }

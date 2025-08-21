@@ -254,6 +254,40 @@ export function evaluateMeetingTime(
   }
 }
 
+// Helper function to get next Tuesday with error handling
+function getNextTuesday(): Date {
+  const today = new Date()
+  const currentDay = today.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+  // Calculate days until next Tuesday (Tuesday = 2)
+  let daysUntilTuesday: number
+  if (currentDay === 2) {
+    // If today is Tuesday, get next Tuesday (7 days from now)
+    daysUntilTuesday = 7
+  } else if (currentDay < 2) {
+    // If today is Sunday (0) or Monday (1), Tuesday is this week
+    daysUntilTuesday = 2 - currentDay
+  } else {
+    // If today is Wednesday (3) through Saturday (6), Tuesday is next week
+    daysUntilTuesday = 7 - currentDay + 2
+  }
+
+  const nextTuesday = new Date(today)
+  nextTuesday.setDate(today.getDate() + daysUntilTuesday)
+  nextTuesday.setHours(0, 0, 0, 0)
+
+  // Validate the result
+  if (nextTuesday.getDay() !== 2) {
+    throw new Error(`Date calculation error: Expected Tuesday (2), got ${nextTuesday.getDay()}`)
+  }
+
+  if (nextTuesday <= today) {
+    throw new Error('Date calculation error: Next Tuesday should be in the future')
+  }
+
+  return nextTuesday
+}
+
 // Configuration for random calendar generation
 interface CalendarGenerationConfig {
   minEvents: number
@@ -278,10 +312,7 @@ function generateRandomCalendar(config: CalendarGenerationConfig, personName: st
   const occupiedSlots = new Set<string>()
 
   // Use next Tuesday as the base date for all events
-  const baseDate = new Date()
-  const daysUntilTuesday = (2 - baseDate.getDay() + 7) % 7 || 7
-  baseDate.setDate(baseDate.getDate() + daysUntilTuesday)
-  baseDate.setHours(0, 0, 0, 0)
+  const baseDate = getNextTuesday()
 
   for (let i = 0; i < numEvents; i++) {
     let attempts = 0
@@ -457,7 +488,7 @@ export function generateRandomProfiles(
   return profiles
 }
 
-interface BenchmarkTestCase {
+export interface BenchmarkTestCase {
   id: number
   profiles: PersonProfile[]
   aggregateRawText?: string  // Conversation history from all participants
@@ -496,6 +527,20 @@ function generateTestCase(id: number): BenchmarkTestCase {
     optimalSlots,
     optimalUtility: maxUtility,
   }
+}
+
+/**
+ * Generate multiple test cases with current "next Tuesday" dates
+ * This replaces loading static JSON files with hardcoded dates
+ */
+export function generateBenchmarkTestCases(numCases: number): BenchmarkTestCase[] {
+  const testCases: BenchmarkTestCase[] = []
+
+  for (let i = 0; i < numCases; i++) {
+    testCases.push(generateTestCase(i))
+  }
+
+  return testCases
 }
 
 export function generateBenchmarkData(numCases: number = 100): void {
