@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"tsx watch ./src/flack-server.ts\" \"vite\"",
     "prod": "tsx ./src/slack-bot.ts",
-    "flack": "tsx ./src/flack-client.ts",
+    "eval": "tsx ./src/evals/flack-eval-dual-mode.ts",
     "dkgen": "drizzle-kit generate",
     "dkmig": "drizzle-kit migrate",
     "dumptopic": "tsx ./src/utils.ts dump",
