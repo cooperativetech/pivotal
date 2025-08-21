@@ -9,6 +9,7 @@ export interface CalendarEvent {
   start: string // Date ISO string
   end: string // Date ISO string
   summary: string
+  free?: boolean
 }
 
 /**
@@ -26,6 +27,7 @@ export interface UserContext {
   googleTokenExpiryDate?: number
   calendar?: CalendarEvent[]
   calendarRangeLastFetched?: CalendarRangeLastFetched
+  calendarManualOverrides?: CalendarEvent[]
   slackTeamId?: string
   slackUserName?: string
   slackDisplayName?: string

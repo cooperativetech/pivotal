@@ -285,6 +285,99 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: 
 }
 
 /**
+ * Helper function to check if two calendar events overlap
+ */
+export function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
+  const start1 = new Date(event1.start)
+  const end1 = new Date(event1.end)
+  const start2 = new Date(event2.start)
+  const end2 = new Date(event2.end)
+  return start1 < end2 && end1 > start2
+}
+
+/**
+ * Helper function to subtract multiple time ranges from a given range
+ * Returns an array of remaining time ranges after removing all overlaps
+ */
+function subtractTimeRanges(
+  event: CalendarEvent,
+  rangesToSubtract: CalendarEvent[],
+): CalendarEvent[] {
+  // Start with the original event as a single range
+  let remainingRanges: CalendarEvent[] = [event]
+
+  // Iteratively subtract each range
+  for (const subtractRange of rangesToSubtract) {
+    const newRemainingRanges: CalendarEvent[] = []
+
+    for (const range of remainingRanges) {
+      const rangeStart = new Date(range.start)
+      const rangeEnd = new Date(range.end)
+      const subtractStart = new Date(subtractRange.start)
+      const subtractEnd = new Date(subtractRange.end)
+
+      // Check if there's an overlap
+      if (rangeStart >= subtractEnd || rangeEnd <= subtractStart) {
+        // No overlap, keep the entire range
+        newRemainingRanges.push(range)
+      } else {
+        // There's an overlap, split the range
+
+        // Keep the part before the overlap
+        if (rangeStart < subtractStart) {
+          newRemainingRanges.push({
+            ...range,
+            start: range.start,
+            end: subtractRange.start,
+          })
+        }
+
+        // Keep the part after the overlap
+        if (rangeEnd > subtractEnd) {
+          newRemainingRanges.push({
+            ...range,
+            start: subtractRange.end,
+            end: range.end,
+          })
+        }
+      }
+    }
+
+    remainingRanges = newRemainingRanges
+  }
+
+  return remainingRanges
+}
+
+/**
+ * Merge calendar events with manual overrides
+ * Overrides take precedence and split overlapping events to keep non-overlapping portions
+ */
+export function mergeCalendarWithOverrides(
+  calendarEvents: CalendarEvent[],
+  overrides: CalendarEvent[],
+): CalendarEvent[] {
+  // Process each calendar event to remove overlapping portions with overrides
+  const processedEvents: CalendarEvent[] = []
+
+  for (const event of calendarEvents) {
+    // Subtract all override ranges from this event
+    const remainingPortions = subtractTimeRanges(event, overrides)
+    processedEvents.push(...remainingPortions)
+  }
+
+  // Combine processed events with overrides
+  const mergedEvents = [...processedEvents, ...overrides]
+
+  // Sort by start time
+  mergedEvents.sort((a, b) =>
+    new Date(a.start).getTime() - new Date(b.start).getTime(),
+  )
+
+  return mergedEvents
+}
+
+/**
  * Get structured calendar data from userContext
  * Returns calendar events in structured format
  */
@@ -310,6 +403,19 @@ export async function getUserCalendarStructured(slackUserId: string, startTime: 
         const eventEnd = new Date(event.end)
         return eventStart < endTime && eventEnd > startTime
       })
+
+      // Merge with manual overrides if they exist
+      if (context.calendarManualOverrides && context.calendarManualOverrides.length > 0) {
+        // Filter overrides to only include those that overlap with the requested time range
+        const filteredOverrides = context.calendarManualOverrides.filter((override) => {
+          const overrideStart = new Date(override.start)
+          const overrideEnd = new Date(override.end)
+          return overrideStart < endTime && overrideEnd > startTime
+        })
+
+        return mergeCalendarWithOverrides(filteredEvents, filteredOverrides)
+      }
+
       return filteredEvents
     }
   } catch (error) {

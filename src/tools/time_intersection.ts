@@ -167,16 +167,19 @@ export function findCommonFreeTime(profiles: UserProfile[], startTime: Date, end
 /**
  * Converts CalendarEvent array from the database schema (with ISO string dates)
  * to the format expected by UserProfile (with Date objects).
+ * Filters out events where free=true (only keeps busy events).
  * @param events - Array of CalendarEvent objects from the database
- * @returns Array of calendar events with Date objects
+ * @returns Array of calendar events with Date objects (only busy events)
  */
 export function convertCalendarEventsToUserProfile(
-  events: Array<{ start: string; end: string; summary: string }>,
+  events: Array<{ start: string; end: string; summary: string; free?: boolean }>,
 ): Array<{ start: Date; end: Date; summary: string }> {
-  return events.map((event) => ({
-    start: new Date(event.start),
-    end: new Date(event.end),
-    summary: event.summary,
-  }))
+  return events
+    .filter((event) => !event.free) // Only keep busy events (free !== true)
+    .map((event) => ({
+      start: new Date(event.start),
+      end: new Date(event.end),
+      summary: event.summary,
+    }))
 }
 

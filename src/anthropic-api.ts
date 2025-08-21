@@ -7,7 +7,8 @@ import { Topic, slackMessageTable, SlackMessage, topicTable, slackUserTable, sla
 import { eq, and, desc, inArray } from 'drizzle-orm'
 import { tsToDate, organizeMessagesByChannelAndThread, replaceUserMentions } from './utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
-import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected } from './calendar-service'
+import { type CalendarEvent } from '@shared/api-types'
+import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, getUserContext, updateUserContext, mergeCalendarWithOverrides } from './calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from './tools/time_intersection'
 
 const openrouter = createOpenRouter({ apiKey: process.env.PV_OPENROUTER_API_KEY })
@@ -416,9 +417,22 @@ Based on the current state, determine what tools to call (if any). If no more to
   - Propose shorter meetings (30-45 minutes) if a full hour doesn't work
   - Keep trying different Tuesday times and flexibility options
   - Remember: Your job is to make Tuesday work, not to give up and switch days
+- CRITICAL - HANDLING FREE TIME SPECIFICATIONS:
+  - When a user says they are "free" at specific times (e.g., "I'm free 2-4pm"), assume they are BUSY for the rest of that ENTIRE day
+  - Always create busy blocks for the ENTIRE day (12:00am-11:59pm in their timezone) EXCEPT for the times they said they're free
+  - When calling updateUserCalendar, explicitly add both: 
+    * Busy events for the blocked times (with free: false or omitted)
+    * Free events for the available times (with free: true)
+  - Example: If user says "I'm free Tuesday 2-4pm", create events for:
+    * 12:00am-2:00pm (busy/blocked)
+    * 2:00pm-4:00pm (free/available) 
+    * 4:00pm-11:59pm (busy/blocked)
+  - IMPORTANT: The opposite is NOT true - if a user says they are "busy" at specific times, DO NOT mark them as free elsewhere
+    * Only add the busy events they specified, don't add any free events
+    * Example: "I'm busy 2-3pm" → ONLY create: 2pm-3pm (busy). Do NOT add any free events.
 
 ## CRITICAL TOOL USAGE
-You have access to TWO tools, but you can ONLY USE ONE per response:
+You have access to THREE tools, but you can ONLY USE ONE per response:
 
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
@@ -431,6 +445,17 @@ You have access to TWO tools, but you can ONLY USE ONE per response:
    - USE THIS when you need to add/remove users from the topic (action: "identify_users")
    - Provide the COMPLETE list of user names (this replaces the existing list)
    - Use exact names from the User Directory
+
+3. **updateUserCalendar**: Updates a user's calendar with manual availability overrides
+   - USE THIS when a user explicitly tells you their availability or when they're busy/free
+   - Pass the exact user name from the User Directory and a list of CalendarEvent objects
+   - Events specify times when the user is busy (default) or free (if free: true is set)
+   - IMPORTANT: When user says they're "free" at specific times, create busy blocks for the rest of the ENTIRE day
+   - Example: "I'm free 2-4pm Tuesday" → Create: 12am-2pm (busy), 2pm-4pm (free: true), 4pm-11:59pm (busy)
+   - BUT: When user says they're "busy" at specific times, ONLY add those busy blocks, don't add any free events
+   - Example: "I'm busy 2-3pm Tuesday" → Create ONLY: 2pm-3pm (busy)
+   - These overrides will be merged with their existing calendar, replacing any overlapping time periods
+   - Useful when users don't have calendar connected or need to override their calendar
 
 IMPORTANT: You can only call ONE tool per response. Choose the most appropriate one for your current action.
 ${prevToolResults ? `\n## PREVIOUS TOOL CALLS\nThe following tools have already been called: ${prevToolResults.toolsCalled.join(', ')}. The results are included in the user prompt. Do not call these tools again.` : ''}
@@ -616,6 +641,68 @@ Based on the conversation history and current message, determine the next step i
         }
       },
     }),
+    updateUserCalendar: tool({
+      description: 'Update a user\'s calendar with manual availability overrides. These will be merged with their existing calendar, overwriting any overlapping time periods.',
+      parameters: z.object({
+        userName: z.string().describe('User name (exact name from User Directory) whose calendar to update'),
+        events: z.array(z.object({
+          start: z.string().describe('ISO timestamp for the start of the event'),
+          end: z.string().describe('ISO timestamp for the end of the event'),
+          summary: z.string().describe('Description of the event (e.g., "Available", "Busy", "Meeting")'),
+          free: z.boolean().optional().describe('Whether the user is free during this time (default: false, meaning busy)'),
+        })).describe('List of calendar events to add/update for the user'),
+      }),
+      execute: async ({ userName, events }) => {
+        console.log('Tool called: updateUserCalendar for user:', userName, 'with events:', events)
+
+        // Map name to user ID
+        let userId: string | undefined
+        for (const [id, mappedName] of userMap.entries()) {
+          if (mappedName === userName) {
+            userId = id
+            break
+          }
+        }
+
+        if (!userId) {
+          console.warn(`Could not find user ID for name: ${userName}`)
+          return {
+            success: false,
+            message: `User "${userName}" not found in the User Directory`,
+          }
+        }
+
+        // Get current user context
+        const currentContext = await getUserContext(userId)
+        const existingOverrides = currentContext.calendarManualOverrides || []
+
+        // Convert events to CalendarEvent type
+        const newOverrides: CalendarEvent[] = events.map((event) => ({
+          start: event.start,
+          end: event.end,
+          summary: event.summary,
+          free: event.free,
+        }))
+
+        // Merge existing overrides with new ones (new ones take precedence)
+        const mergedOverrides = mergeCalendarWithOverrides(existingOverrides, newOverrides)
+
+        // Update user context with merged overrides
+        await updateUserContext(userId, {
+          calendarManualOverrides: mergedOverrides,
+        })
+
+        console.log(`Updated calendar overrides for user ${userName} (${userId}): ${mergedOverrides.length} total overrides`)
+
+        return {
+          success: true,
+          userName,
+          updatedEvents: newOverrides.length,
+          totalOverrides: mergedOverrides.length,
+          message: `Updated ${userName}'s calendar with ${newOverrides.length} event(s)`,
+        }
+      },
+    }),
   }
 
   try {
@@ -735,6 +822,28 @@ Based on these available times, determine the next step in the scheduling workfl
 Updated users: ${updatedUserNames.join(', ')}
 
 Based on this update, determine the next step in the scheduling workflow.`
+        } else if (toolName === 'updateUserCalendar' && toolResult) {
+          interface UpdateUserCalendarResult {
+            result: {
+              success: boolean
+              userName?: string
+              updatedEvents?: number
+              totalOverrides?: number
+              message: string
+            }
+          }
+          const result = toolResult as UpdateUserCalendarResult
+          const success = result.result?.success
+          const userName = result.result?.userName || 'Unknown'
+          const updatedEvents = result.result?.updatedEvents || 0
+          userPromptSuffix = success
+            ? `\n\nThe updateUserCalendar tool was called and successfully updated ${userName}'s calendar with ${updatedEvents} event(s).
+The user's availability has been recorded and will be considered when finding free slots.
+
+Based on this update, determine the next step in the scheduling workflow.`
+            : `\n\nThe updateUserCalendar tool was called but failed: ${result.result?.message}
+
+Please try again or proceed without updating the calendar.`
         }
 
         // Recursively call scheduleNextStep with the tool results
