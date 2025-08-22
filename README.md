@@ -8,10 +8,10 @@ pnpm install
 
 Ensure you have `PV_DB_URL`, `PV_OPENROUTER_API_KEY`, `PV_GOOGLE_CLIENT_ID`, and `PV_GOOGLE_CLIENT_SECRET` env vars set (e.g. in your ~/.bashrc). Then, run the flack server:
 ```
-pnpm run dev
+pnpm run local
 ```
 
-You can then visit the dev-only website in your browser at http://localhost:5173. While the flack server is running, you can also run evals with:
+You can then visit the flack website in your browser at http://localhost:5173. While the flack server is running, you can also run evals with:
 ```
 pnpm run eval
 ```
@@ -19,6 +19,11 @@ pnpm run eval
 To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid starting the dev-only website:
 ```
 pnpm run prod
+```
+
+If you want to run the bot in production mode with live-reload (for example, when testing a local version of the code with the live "Pivotal Dev" slack bot), you can run:
+```
+pnpm run dev
 ```
 
 ## Setting Up Local DB
