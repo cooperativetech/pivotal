@@ -305,11 +305,13 @@ export async function scheduleNextStep(
   reasoning: string
   toolUsed?: boolean // true if findFreeSlots tool was called
 }> {
+  const text = message.text.toLowerCase()
+
   // If user is explicitly asking for calendar connection, send link immediately
-  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
-    (message.text.toLowerCase().includes('link') ||
-     message.text.toLowerCase().includes('connect') ||
-     message.text.toLowerCase().includes('send me'))
+  const userRequestingCalendar = message.channelId !== 'synthetic' && text.includes('calendar') &&
+    (text.includes('link') ||
+    /\bconnect\b/.test(text) ||
+    text.includes('send me'))
 
   if (userRequestingCalendar) {
     const authUrl = generateGoogleAuthUrl(message.userId)
