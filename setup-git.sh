@@ -2,7 +2,7 @@
 
 # Setup script to install git hooks
 
-echo "Setting up git hooks..."
+echo "Setting up git hooks and commit template..."
 
 # Create hooks directory if it doesn't exist
 mkdir -p .git/hooks
@@ -20,4 +20,6 @@ for hook in .githooks/*; do
     fi
 done
 
-echo "Git hooks setup complete!"
+git config commit.template .git-commit-template
+
+echo "Git hooks and commit template setup complete!"

@@ -14,7 +14,7 @@
     "loadtopic": "tsx ./src/utils.ts load",
     "loadtopics": "tsx ./src/utils.ts load",
     "lint": "tsc --noEmit && eslint .",
-    "postinstall": "./setup-hooks.sh"
+    "postinstall": "./setup-git.sh"
   },
   "dependencies": {
     "@hono/node-server": "1.18.1",
