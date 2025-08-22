@@ -1,0 +1,1 @@
+ALTER TABLE "topic" ADD COLUMN "calendar_prompted_user_ids" json DEFAULT '[]'::json NOT NULL;

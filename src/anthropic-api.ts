@@ -299,6 +299,7 @@ export async function scheduleNextStep(
     userIds: string[] // List of users to send this identical message to
     userNames?: string[] // Names that will be mapped back to userIds
     text: string
+    includeCalendarButtons?: boolean // Whether to include calendar connection buttons
   }[]
   groupMessage?: string
   reasoning: string
@@ -469,11 +470,13 @@ If not calling tools, return ONLY a JSON object with the appropriate fields:
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
     {
       "userNames": ["John Smith"],     // Send this message as individual DM to each user in list (MUST use exact names from User Directory)
-      "text": "Hi! What times work for you this week?"
+      "text": "Hi! What times work for you this week?",
+      "includeCalendarButtons": true   // Optional: Include calendar connection buttons for availability requests
     },
     {
       "userNames": ["Jane Doe", "Bob Wilson"],  // Each user gets the same message as a private DM (MUST use exact names from User Directory)
-      "text": "Quick check - are you available Tuesday afternoon?"
+      "text": "Quick check - are you available Tuesday afternoon?",
+      "includeCalendarButtons": true   // Set to true when asking for availability/scheduling info
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
@@ -880,6 +883,7 @@ Please try again or proceed without updating the calendar.`
         userIds: string[]
         userNames?: string[]
         text: string
+        includeCalendarButtons?: boolean
       }[]
       groupMessage?: string
       reasoning: string
