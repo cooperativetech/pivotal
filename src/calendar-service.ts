@@ -1,10 +1,10 @@
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and } from 'drizzle-orm'
 import { google } from 'googleapis'
 import type { Context } from 'hono'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable } from './db/schema/main'
+import { userDataTable, slackUserTable, topicTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { generateFakeCalendarEvents } from './anthropic-api'
@@ -38,6 +38,65 @@ export async function getUserContext(slackUserId: string): Promise<UserContext> 
 export async function isCalendarConnected(slackUserId: string): Promise<boolean> {
   const context = await getUserContext(slackUserId)
   return !!context.googleAccessToken
+}
+
+/**
+ * Check if a user has opted out of calendar prompts
+ */
+export async function shouldSuppressCalendarPrompt(slackUserId: string): Promise<boolean> {
+  const context = await getUserContext(slackUserId)
+  return !!context.suppressCalendarPrompt
+}
+
+/**
+ * Set the calendar prompt suppression flag for a user
+ */
+export async function setSuppressCalendarPrompt(slackUserId: string, suppress: boolean = true): Promise<void> {
+  await updateUserContext(slackUserId, { suppressCalendarPrompt: suppress })
+}
+
+/**
+ * Check if a user has been prompted for calendar connection in a specific topic
+ */
+export async function hasUserBeenPrompted(topicId: string, userId: string): Promise<boolean> {
+  const [topic] = await db
+    .select({ calendarPromptedUserIds: topicTable.calendarPromptedUserIds })
+    .from(topicTable)
+    .where(eq(topicTable.id, topicId))
+    .limit(1)
+
+  if (!topic) return false
+
+  const promptedUsers = topic.calendarPromptedUserIds || []
+  return promptedUsers.includes(userId)
+}
+
+/**
+ * Add a user to the list of users who have been prompted for calendar connection in a topic
+ */
+export async function addPromptedUser(topicId: string, userId: string): Promise<void> {
+  // First, get the current prompted users
+  const [topic] = await db
+    .select({ calendarPromptedUserIds: topicTable.calendarPromptedUserIds })
+    .from(topicTable)
+    .where(eq(topicTable.id, topicId))
+    .limit(1)
+
+  if (!topic) {
+    throw new Error(`Topic with id ${topicId} not found`)
+  }
+
+  const currentPromptedUsers = topic.calendarPromptedUserIds || []
+
+  // Only add if not already present
+  if (!currentPromptedUsers.includes(userId)) {
+    const updatedPromptedUsers = [...currentPromptedUsers, userId]
+
+    await db
+      .update(topicTable)
+      .set({ calendarPromptedUserIds: updatedPromptedUsers })
+      .where(eq(topicTable.id, topicId))
+  }
 }
 
 /**
@@ -144,6 +203,81 @@ export async function handleGoogleAuthCallback(
 }
 
 /**
+ * Find active scheduling topics that include a specific user
+ */
+export async function findActiveTopicsForUser(slackUserId: string) {
+  const activeTopics = await db
+    .select()
+    .from(topicTable)
+    .where(and(
+      eq(topicTable.isActive, true),
+      eq(topicTable.workflowType, 'scheduling'),
+    ))
+
+  // Filter topics that include this user in their userIds array
+  return activeTopics.filter((topic) =>
+    topic.userIds && topic.userIds.includes(slackUserId),
+  )
+}
+
+/**
+ * Continue scheduling workflow after calendar connection
+ */
+export async function continueSchedulingWorkflow(slackUserId: string) {
+  try {
+    // Import here to avoid circular dependency
+    const { processSchedulingActions } = await import('./slack-message-handler')
+    const { slackApp } = await import('./slack-bot')
+
+    // Find active topics that include this user
+    const activeTopics = await findActiveTopicsForUser(slackUserId)
+
+    if (activeTopics.length === 0) {
+      console.log(`No active scheduling topics found for user ${slackUserId}`)
+      return
+    }
+
+    // Get the user's name for the synthetic message
+    const [slackUser] = await db
+      .select({ realName: slackUserTable.realName })
+      .from(slackUserTable)
+      .where(eq(slackUserTable.id, slackUserId))
+      .limit(1)
+
+    const userName = slackUser?.realName || 'User'
+
+    // For each active topic, create a synthetic calendar connection message and process it
+    for (const topic of activeTopics) {
+      console.log(`Continuing scheduling workflow for topic ${topic.id} after calendar connection`)
+
+      // Create a synthetic SlackMessage record to trigger scheduling
+      const syntheticSlackMessage = {
+        id: `synthetic-${Date.now()}`,
+        topicId: topic.id,
+        channelId: 'synthetic',
+        userId: slackUserId,
+        text: `${userName} connected their Google Calendar`,
+        timestamp: new Date(),
+        rawTs: (Date.now() / 1000).toString(),
+        threadTs: null,
+        raw: {},
+        toolUsed: null,
+      }
+
+      // Process scheduling actions directly without going through the full message handler
+      await processSchedulingActions(
+        topic.id,
+        syntheticSlackMessage,
+        slackApp.client,
+        process.env.PV_SLACK_BOT_USER_ID!,
+      )
+    }
+  } catch (error) {
+    console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
+  }
+}
+
+/**
  * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
 export async function fetchAndStoreGoogleAuthTokens(code: string, state: string) {
@@ -182,6 +316,9 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string)
     googleRefreshToken: tokens.refresh_token,
     googleTokenExpiryDate: expiryDate,
   })
+
+  // Continue scheduling workflow after successful connection
+  await continueSchedulingWorkflow(slackUserId)
 }
 
 /**

@@ -18,6 +18,7 @@ export const topicTable = pgTable('topic', {
   summary: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
   isActive: boolean().notNull().default(true),
+  calendarPromptedUserIds: json().$type<string[]>().notNull().default([]),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
