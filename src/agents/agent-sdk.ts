@@ -7,6 +7,7 @@ import {
   setDefaultOpenAIClient,
   setOpenAIAPI,
   setTracingDisabled,
+  ModelBehaviorError,
 } from '@openai/agents'
 
 // Set up global agent configuration
@@ -19,4 +20,4 @@ setOpenAIAPI('chat_completions')
 setTracingDisabled(true)
 
 // Re-export openai agent sdk types
-export { Agent, RunContext, run, tool }
+export { Agent, RunContext, run, tool, ModelBehaviorError }

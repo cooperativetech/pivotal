@@ -312,32 +312,34 @@ export async function getUserCalendarStructured(slackUserId: string, startTime: 
       new Date(context.calendarRangeLastFetched.endTime) < endTime ||
       (Date.now() - new Date(context.calendarRangeLastFetched.fetchedAt).getTime()) > bufferTime
 
-    if (needsFetch) {
+    if (needsFetch && context.googleAccessToken) {
       context = await fetchAndStoreUserCalendar(slackUserId, startTime, endTime)
     }
 
+    let calEvents: CalendarEvent[] =  []
+
+    // Filter events to only include those that overlap with the requested time range
     if (context.calendar) {
-      // Filter events to only include those that overlap with the requested time range
-      const filteredEvents = context.calendar.filter((event) => {
+      calEvents = context.calendar.filter((event) => {
         const eventStart = new Date(event.start)
         const eventEnd = new Date(event.end)
         return eventStart < endTime && eventEnd > startTime
       })
-
-      // Merge with manual overrides if they exist
-      if (context.calendarManualOverrides && context.calendarManualOverrides.length > 0) {
-        // Filter overrides to only include those that overlap with the requested time range
-        const filteredOverrides = context.calendarManualOverrides.filter((override) => {
-          const overrideStart = new Date(override.start)
-          const overrideEnd = new Date(override.end)
-          return overrideStart < endTime && overrideEnd > startTime
-        })
-
-        return mergeCalendarWithOverrides(filteredEvents, filteredOverrides)
-      }
-
-      return filteredEvents
     }
+
+    // Merge with manual overrides if they exist
+    if (context.calendarManualOverrides) {
+      // Filter overrides to only include those that overlap with the requested time range
+      const filteredOverrides = context.calendarManualOverrides.filter((override) => {
+        const overrideStart = new Date(override.start)
+        const overrideEnd = new Date(override.end)
+        return overrideStart < endTime && overrideEnd > startTime
+      })
+
+       calEvents = mergeCalendarWithOverrides(calEvents, filteredOverrides)
+    }
+
+    return calEvents
   } catch (error) {
     console.error(`Error getting structured calendar for user ${slackUserId}:`, error)
   }

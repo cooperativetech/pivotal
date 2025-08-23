@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { Agent, RunContext, run, tool } from './agent-sdk'
+import { Agent, RunContext, run, tool, ModelBehaviorError } from './agent-sdk'
 import db from '../db/engine'
 import { Topic, SlackMessage, topicTable, slackUserTable } from '../db/schema/main'
 import {
@@ -515,6 +515,9 @@ Based on the conversation history and current message, determine the next step i
     console.error('Error message:', error instanceof Error ? error.message : String(error))
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
     console.error('Full error object:', JSON.stringify(error, null, 2))
+    if (error instanceof ModelBehaviorError) {
+      console.error('Run state', error.state)
+    }
     console.error('=================================')
 
     // Return a safe default response
