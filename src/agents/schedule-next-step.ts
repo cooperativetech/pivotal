@@ -518,7 +518,7 @@ This will allow me to check your availability automatically when scheduling. If 
   const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
 
 Previous Messages in this Topic:
-${await organizeMessagesByChannelAndThread(previousMessages, topic.userIds, botUserId, callingUserTimezone)}
+${await organizeMessagesByChannelAndThread(previousMessages, botUserId, callingUserTimezone)}
 
 Message To Reply To:
 From: ${userMap.get(message.userId) || 'Unknown User'} (Timezone: ${messageTimezone.get(message.userId) ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})

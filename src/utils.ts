@@ -236,7 +236,6 @@ export function replaceUserMentions(text: string, userMap: Map<string, string>):
 
 export async function organizeMessagesByChannelAndThread(
   messages: SlackMessage[],
-  userIds: string[],
   botUserId: string,
   timezone: string,
 ): Promise<string> {
@@ -271,11 +270,23 @@ export async function organizeMessagesByChannelAndThread(
     : []
   const channelMap = new Map(channels.map((ch) => [ch.id, ch]))
 
+  // Collect all unique userIds from all channels
+  const allUserIds = new Set<string>()
+  allUserIds.add(botUserId) // Always include bot user
+  for (const channel of channels) {
+    for (const userId of channel.userIds) {
+      allUserIds.add(userId)
+    }
+  }
+
   // Get user information including names and timezones
-  const users = await db
-    .select()
-    .from(slackUserTable)
-    .where(inArray(slackUserTable.id, [...userIds, botUserId]))
+  const userIdsArray = Array.from(allUserIds)
+  const users = userIdsArray.length > 0
+    ? await db
+        .select()
+        .from(slackUserTable)
+        .where(inArray(slackUserTable.id, userIdsArray))
+    : []
   const userMap = new Map(users.map((u) => [u.id, u.realName || 'Unknown User']))
   const userTimezones = new Map(users.map((u) => [u.id, u.tz]))
 

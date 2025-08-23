@@ -147,7 +147,7 @@ ${(await Promise.all(topics.map(async (topic, i) => {
   // Get recent messages for this topic
   const recentMessages = topicMessagesMap.get(topic.id) || []
   const messagesFormatted = recentMessages.length > 0
-    ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, topic.userIds, botUserId, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
+    ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, botUserId, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}
