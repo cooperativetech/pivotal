@@ -212,17 +212,6 @@ async function processSchedulingActions(
       }
     }
 
-    // Process other actions based on the response
-    // Update topic summary if needed (userIds are now updated directly in the tool)
-    if (nextStep.updateSummary) {
-      await db.update(topicTable)
-        .set({
-          summary: nextStep.updateSummary,
-          updatedAt: new Date(),
-        })
-        .where(eq(topicTable.id, topicId))
-    }
-
     // Get the updated topic details, which may have changed userIds for example
     const updatedTopics = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
     if (updatedTopics.length < 1) {

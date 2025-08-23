@@ -213,9 +213,37 @@ const updateUserCalendar = tool({
   },
 })
 
+const updateSummary = tool({
+  name: 'updateSummary',
+  description: 'Update the topic summary when new information clarifies or changes the meeting details.',
+  parameters: z.strictObject({
+    summary: z.string().describe('The updated topic summary describing what needs to be scheduled'),
+  }),
+  execute: async ({ summary }, runContext?: RunContext<ScheduleNextStepContext>) => {
+    console.log('Tool called: updateSummary with summary:', summary)
+
+    if (!runContext) throw new Error('runContext not provided')
+    const { topic } = runContext.context
+
+    // Update the topic in the database with the new summary
+    const [updatedTopic] = await db
+      .update(topicTable)
+      .set({
+        summary,
+        updatedAt: new Date(),
+      })
+      .where(eq(topicTable.id, topic.id))
+      .returning()
+
+    // Update runContext with the updated topic
+    runContext.context.topic = updatedTopic
+
+    return `Updated topic summary to: ${summary}`
+  },
+})
+
 const ScheduleNextStepRes = z.strictObject({
-  replyMessage: z.string(),
-  updateSummary: z.string().optional().nullable(),
+  replyMessage: z.string().optional().nullable(),
   markTopicInactive: z.boolean().optional().nullable(),
   messagesToUsers: z.array(z.strictObject({
     userNames: z.array(z.string()),
@@ -242,7 +270,7 @@ You will receive:
 - The topic summary describing what needs to be scheduled
 
 ## Your Task
-Based on the current state, determine what tools to call (if any). If no more tools need to be called to gather additional context, generate the appropriate update to the topic summary and message(s) to users, if they are necessary to move the scheduling task along
+Based on the current state, determine what tools to call (if any) and generate the appropriate message(s) to users, if they are necessary to move the scheduling task along
 
 ## Subtasks that need be handled
 1. Need to determine who should be involved
@@ -296,7 +324,7 @@ Based on the current state, determine what tools to call (if any). If no more to
 - ALWAYS include timezone abbreviations when mentioning times (e.g., "2pm (PST)")
 - When users are in different timezones, show times in each user's local timezone
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
-- Update the topic summary (updateSummary) whenever new information clarifies or changes the meeting details
+- Use the updateSummary tool whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
@@ -327,7 +355,7 @@ Based on the current state, determine what tools to call (if any). If no more to
     * Example: "I'm busy 2-3pm" → ONLY create: 2pm-3pm (busy). Do NOT add any free events.
 
 ## CRITICAL TOOL USAGE
-You have access to THREE tools, but you can ONLY USE ONE per response:
+You have access to FOUR tools, but you can ONLY USE ONE per response:
 
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
@@ -352,11 +380,20 @@ You have access to THREE tools, but you can ONLY USE ONE per response:
    - These overrides will be merged with their existing calendar, replacing any overlapping time periods
    - Useful when users don't have calendar connected or need to override their calendar
 
+4. **updateSummary**: Updates the topic summary
+   - USE THIS whenever new information clarifies or changes the meeting details
+   - Pass the updated summary describing what needs to be scheduled
+   - Helps maintain context for the scheduling process
+
 ## Response Format
-If not calling tools, return ONLY a JSON object with the appropriate fields:
+When calling a tool:
+- Do NOT return any JSON or text content
+- Simply call the tool and let it execute
+- The tool response will be handled automatically
+
+When NOT calling a tool, return ONLY a JSON object with these fields:
 {
-  "replyMessage": "Message text",  // REQUIRED field but can be empty string ("") when no response is needed
-  "updateSummary": "Updated topic summary",  // Optional - updates topic when details change
+  "replyMessage": "Message text",  // Optional: Include to reply to the sent message
   "markTopicInactive": true,      // Optional: Include to mark topic as inactive
   "messagesToUsers": [             // Array of INDIVIDUAL 1-1 DM messages to send privately
     {
@@ -369,10 +406,13 @@ If not calling tools, return ONLY a JSON object with the appropriate fields:
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
-  "reasoning": "Brief explanation of the decision"
+  "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
-IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`
+IMPORTANT:
+- When calling tools: Output NOTHING - just call the tool
+- When not calling tools: Return ONLY the JSON object above
+- Do not include any text before or after the JSON`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
   const userTimezones = await getUserTimezones(topic.userIds)
@@ -417,7 +457,7 @@ const scheduleNextStepAgent = new Agent<ScheduleNextStepContext, typeof Schedule
     temperature: 0.7,
     parallelToolCalls: false, // Only allow one tool call at a time
   },
-  tools: [findFreeSlots, updateUserNames, updateUserCalendar],
+  tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
   outputType: ScheduleNextStepRes,
   instructions: scheduleNextStepInstructions,
 })
@@ -516,7 +556,7 @@ Based on the conversation history and current message, determine the next step i
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
     console.error('Full error object:', JSON.stringify(error, null, 2))
     if (error instanceof ModelBehaviorError) {
-      console.error('Run state', error.state)
+      console.error('Run state', error.state ? error.state.toJSON() : 'No run state')
     }
     console.error('=================================')
 
