@@ -6,7 +6,7 @@ brew install pnpm
 pnpm install
 ```
 
-First, set the following env vars to their proper values (e.g. in your ~/.bashrc):
+Set the following env vars to their proper values (e.g. in your ~/.bashrc):
 ```
 PV_DB_URL=...
 PV_OPENROUTER_API_KEY=...
@@ -16,7 +16,7 @@ PV_LANGFUSE_PUBLIC_KEY=...
 PV_LANGFUSE_SECRET_KEY=...
 ```
 
-Then, run the flack server:
+Run the flack server:
 ```
 pnpm run local
 ```

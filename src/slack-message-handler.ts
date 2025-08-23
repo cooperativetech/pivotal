@@ -187,6 +187,22 @@ async function processSchedulingActions(
     const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap, botUserId)
     console.log('Next scheduling step:', nextStep)
 
+    // Check if the current message sender will receive any DMs
+    let senderWillReceiveDM = false
+    if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
+      // Get the sender's name from userMap
+      const senderName = userMap.get(message.userId)
+      if (senderName) {
+        // Check if sender is in any of the DM recipient lists
+        for (const messageGroup of nextStep.messagesToUsers) {
+          if (messageGroup.userNames && messageGroup.userNames.includes(senderName)) {
+            senderWillReceiveDM = true
+            break
+          }
+        }
+      }
+    }
+
     // Only send the reply message if it's not empty
     let response: ChatPostMessageResponse | null = null
     if (nextStep.replyMessage && nextStep.replyMessage.trim()) {
@@ -209,6 +225,17 @@ async function processSchedulingActions(
           raw: response.message,
         }).returning()
         createdMessages.push(createdMessage)
+      }
+    } else if (!nextStep.groupMessage && !senderWillReceiveDM) {
+      // Only add thumbs up if there's no reply, no group message, and sender won't get a DM
+      try {
+        await client.reactions.add({
+          channel: message.channelId,
+          name: 'thumbsup',
+          timestamp: message.rawTs,
+        })
+      } catch (reactionError) {
+        console.error('Error adding thumbs up reaction:', reactionError)
       }
     }
 
