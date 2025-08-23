@@ -365,6 +365,70 @@ export async function organizeMessagesByChannelAndThread(
   return output.trim()
 }
 
+export async function getChannelDescription(
+  channelId: string,
+  userMap: Map<string, string>,
+  botUserId: string,
+): Promise<string> {
+  const [channel] = await db
+    .select()
+    .from(slackChannelTable)
+    .where(eq(slackChannelTable.id, channelId))
+    .limit(1)
+
+  // Get timezone information for channel users
+  const channelUserIds = channel?.userIds || []
+  const userTimezones = new Map<string, string>()
+  if (channelUserIds.length > 0) {
+    const users = await db
+      .select()
+      .from(slackUserTable)
+      .where(inArray(slackUserTable.id, channelUserIds))
+    for (const user of users) {
+      if (user.tz) {
+        userTimezones.set(user.id, user.tz)
+      }
+    }
+  }
+
+  let channelDescription = `Channel ${channelId}`
+  if (channel && channel.userIds) {
+    const filteredUserIds = channel.userIds.filter((id: string) => id !== botUserId)
+    const channelUserNames = filteredUserIds.map((id: string) => {
+      const name = userMap.get(id) || 'Unknown User'
+      const tz = userTimezones.get(id)
+      return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
+    })
+
+    if (filteredUserIds.length === 1) {
+      channelDescription = `DM with ${channelUserNames[0]}`
+    } else if (filteredUserIds.length > 1) {
+      channelDescription = `Group channel with ${channelUserNames.join(', ')}`
+    }
+  }
+
+  return channelDescription
+}
+
+// Helper function to format timestamp with timezone
+export function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
+  const formatted = date.toLocaleString('en-US', {
+    timeZone: timezone || 'UTC',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+
+  // Get abbreviated timezone
+  const tzAbbr = timezone ? getShortTimezoneFromIANA(timezone) : 'UTC'
+
+  return `${formatted} (${tzAbbr})`
+}
+
 // Script execution when run directly
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   const { values, positionals } = parseArgs({

@@ -34,7 +34,6 @@ export const slackMessageTable = pgTable('slack_message', {
   rawTs: text('raw_ts').notNull(),
   threadTs: text('thread_ts'),
   raw: json().notNull(),
-  toolUsed: boolean(),
 })
 export type SlackMessageInsert = InferInsertModel<typeof slackMessageTable>
 export type SlackMessage = InferSelectModel<typeof slackMessageTable>

@@ -1,16 +1,19 @@
 import type { InferResponseType } from 'hono/client'
+import { z } from 'zod'
+
 import type { Topic, SlackMessage, SlackUser, SlackChannel, UserData } from '../db/schema/main'
 import type { api } from './api-client'
 
 // Re-export database types for convenience
 export type { Topic, SlackMessage, SlackUser, SlackChannel, UserData }
 
-export interface CalendarEvent {
-  start: string // Date ISO string
-  end: string // Date ISO string
-  summary: string
-  free?: boolean
-}
+export const CalendarEvent = z.strictObject({
+  start: z.string().describe('ISO timestamp for the start of the event'),
+  end: z.string().describe('ISO timestamp for the end of the event'),
+  summary: z.string().describe('Description of the event (e.g., "Available", "Busy", "Meeting")'),
+  free: z.boolean().optional().nullable().describe('Whether the user is free during this time (default: false, meaning busy)'),
+})
+export type CalendarEvent = z.infer<typeof CalendarEvent>
 
 /**
  * CalendarRangeLastFetched tracks the last fetched time range from the calendar

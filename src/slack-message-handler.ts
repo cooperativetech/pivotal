@@ -2,7 +2,7 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, ChatPostMessageResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import { topicTable, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
-import { analyzeTopicRelevance, scheduleNextStep } from './anthropic-api'
+import { analyzeTopicRelevance, scheduleNextStep } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
 
@@ -207,7 +207,6 @@ async function processSchedulingActions(
           rawTs: response.ts,
           threadTs: message.rawTs,
           raw: response.message,
-          toolUsed: nextStep.toolUsed || false,
         }).returning()
         createdMessages.push(createdMessage)
       }
@@ -242,7 +241,7 @@ async function processSchedulingActions(
 
       for (const messageGroup of nextStep.messagesToUsers) {
         // Determine which userIds to use
-        let userIdsToMessage: string[] = []
+        const userIdsToMessage: string[] = []
 
         if (messageGroup.userNames) {
           // Map names back to userIds
@@ -254,9 +253,6 @@ async function processSchedulingActions(
               console.warn(`Could not find userId for name: ${name}`)
             }
           }
-        } else if (messageGroup.userIds) {
-          // Fallback to direct userIds if provided
-          userIdsToMessage = messageGroup.userIds
         }
 
         for (const userId of userIdsToMessage) {
@@ -292,7 +288,6 @@ async function processSchedulingActions(
                   rawTs: dmResponse.ts,
                   threadTs: null,
                   raw: dmResponse.message,
-                  toolUsed: nextStep.toolUsed || false,
                 }).returning()
                 createdMessages.push(createdMessage)
               }
@@ -339,7 +334,6 @@ async function processSchedulingActions(
                 rawTs: groupResponse.ts,
                 threadTs: null,
                 raw: groupResponse.message,
-                toolUsed: nextStep.toolUsed || false,
               }).returning()
               createdMessages.push(createdMessage)
             }
@@ -361,7 +355,6 @@ async function processSchedulingActions(
                 rawTs: groupResponse.ts,
                 threadTs: message.rawTs,
                 raw: groupResponse.message,
-                toolUsed: nextStep.toolUsed || false,
               }).returning()
               createdMessages.push(createdMessage)
             }
@@ -384,7 +377,6 @@ async function processSchedulingActions(
               rawTs: groupResponse.ts,
               threadTs: message.rawTs,
               raw: groupResponse.message,
-              toolUsed: nextStep.toolUsed || false,
             }).returning()
             createdMessages.push(createdMessage)
           }
@@ -407,7 +399,6 @@ async function processSchedulingActions(
             rawTs: groupResponse.ts,
             threadTs: message.rawTs,
             raw: groupResponse.message,
-            toolUsed: nextStep.toolUsed || false,
           }).returning()
           createdMessages.push(createdMessage)
         }
@@ -462,7 +453,6 @@ async function getOrCreateTopic(
     rawTs: message.ts,
     threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
     raw: message,
-    toolUsed: null, // Analysis messages don't use tools
   }
 
   // Step 2: Call analyzeTopicRelevance for non-bot messages

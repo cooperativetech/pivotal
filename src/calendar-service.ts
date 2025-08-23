@@ -7,7 +7,7 @@ import db from './db/engine'
 import { userDataTable, slackUserTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
-import { generateFakeCalendarEvents } from './anthropic-api'
+import { genFakeCalendar } from './agents'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -388,7 +388,7 @@ export async function genAndStoreFakeUserCalendar(
       .where(eq(slackUserTable.id, slackUserId))
       .limit(1)
 
-    const generatedEvents = await generateFakeCalendarEvents(
+    const generatedEvents = await genFakeCalendar(
       slackUser?.tz || 'UTC',
       startTime,
       endTime,

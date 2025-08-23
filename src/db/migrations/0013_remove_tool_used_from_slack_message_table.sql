@@ -1,0 +1,1 @@
+ALTER TABLE "slack_message" DROP COLUMN "tool_used";

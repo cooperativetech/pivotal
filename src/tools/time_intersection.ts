@@ -1,3 +1,5 @@
+import { CalendarEvent } from '@shared/api-types'
+
 /**
  * @file time-intersection-tool.ts
  *
@@ -172,7 +174,7 @@ export function findCommonFreeTime(profiles: UserProfile[], startTime: Date, end
  * @returns Array of calendar events with Date objects (only busy events)
  */
 export function convertCalendarEventsToUserProfile(
-  events: Array<{ start: string; end: string; summary: string; free?: boolean }>,
+  events: Array<CalendarEvent>,
 ): Array<{ start: Date; end: Date; summary: string }> {
   return events
     .filter((event) => !event.free) // Only keep busy events (free !== true)

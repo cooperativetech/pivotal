@@ -11,7 +11,7 @@ import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackC
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
 import { GetTopicReq, dumpTopic } from './utils'
-import { scheduleNextStep } from './anthropic-api'
+import { scheduleNextStep } from './agents'
 
 const PORT = 3001
 const honoApp = new Hono()
