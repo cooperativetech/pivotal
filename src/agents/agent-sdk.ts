@@ -4,31 +4,34 @@ import {
   RunContext,
   run,
   tool,
+  ModelBehaviorError,
+  BatchTraceProcessor,
   setDefaultOpenAIClient,
   setOpenAIAPI,
-  setTracingDisabled,
-  ModelBehaviorError,
+  setTraceProcessors,
 } from '@openai/agents'
-import { observeOpenAI } from 'langfuse'
+import { Langfuse } from 'langfuse'
+
+import { LangfuseTracingExporter } from './langfuse-tracing-exporter'
 
 // Set up global agent configuration
-const client = observeOpenAI(
-  new OpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.PV_OPENROUTER_API_KEY,
-  }),
-  {
-    clientInitParams: {
-      publicKey: process.env.PV_LANGFUSE_PUBLIC_KEY,
-      secretKey: process.env.PV_LANGFUSE_SECRET_KEY,
-      baseUrl: 'https://us.cloud.langfuse.com',
-    },
-  },
-)
+const client = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.PV_OPENROUTER_API_KEY,
+})
+
+// Set up langfuse for tracing
+const langfuse = new Langfuse({
+  publicKey: process.env.PV_LANGFUSE_PUBLIC_KEY,
+  secretKey: process.env.PV_LANGFUSE_SECRET_KEY,
+  baseUrl: 'https://us.cloud.langfuse.com',
+})
+const tracingExporter = new LangfuseTracingExporter(langfuse)
+const traceProcessor = new BatchTraceProcessor(tracingExporter, { maxBatchSize: 1 })
+
 setDefaultOpenAIClient(client)
 setOpenAIAPI('chat_completions')
-setTracingDisabled(true)
-
+setTraceProcessors([traceProcessor])
 
 // Re-export openai agent sdk types
 export { Agent, RunContext, run, tool, ModelBehaviorError }

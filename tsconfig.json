@@ -2,7 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@openai/agents-core/tracing/*": ["node_modules/@openai/agents-core/dist/tracing/*"]
     },
 
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",

@@ -20,6 +20,7 @@
     "@hono/node-server": "1.18.1",
     "@hono/zod-validator": "0.7.2",
     "@openai/agents": "0.0.17",
+    "@openai/agents-core": "0.0.17",
     "@openrouter/ai-sdk-provider": "0.7.2",
     "@slack/bolt": "4.4.0",
     "@slack/web-api": "7.9.3",
