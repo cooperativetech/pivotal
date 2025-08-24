@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { Agent, run } from './agent-sdk'
 import db from '../db/engine'
-import { Topic, slackMessageTable, SlackMessage, slackUserTable } from '../db/schema/main'
+import { Topic, slackMessageTable, SlackMessage, slackUserTable, SlackUser } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
@@ -76,7 +76,7 @@ The JSON structure must be:
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`,
 })
 
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, string>, botUserId: string): Promise<AnalyzeTopicRes> {
+export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, SlackUser>, botUserId: string): Promise<AnalyzeTopicRes> {
   // Get calling user's timezone
   const callingUser = await db
     .select()
@@ -131,16 +131,20 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
     topicMessagesMap.set(topic.id, combinedMessages)
   }
 
-  const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
+  const userPrompt = `Your name in conversations: ${userMap.get(botUserId)?.realName || 'Assistant'}
 
 ${userMap && userMap.size > 0 ? `User Directory:
-${Array.from(userMap.values()).sort().join(', ')}
+${Array.from(userMap.values())
+  .map((u) => u.realName)
+  .filter(Boolean)
+  .sort()
+  .join(', ')}
 
 ` : ''}Existing topics:
 ${(await Promise.all(topics.map(async (topic, i) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
   const userNames = topic.userIds.map((id) => {
-    const name = userMap.get(id)
+    const name = userMap.get(id)?.realName
     return name || 'Unknown User'
   }).join(', ')
 
@@ -156,7 +160,7 @@ ${(await Promise.all(topics.map(async (topic, i) => {
 }))).join('\n\n')}
 
 Message to analyze:
-From: ${userMap.get(message.userId) || 'Unknown User'} (Timezone: ${callingUser[0]?.tz ? getShortTimezoneFromIANA(callingUser[0].tz) : 'UTC'})
+From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser[0]?.tz ? getShortTimezoneFromIANA(callingUser[0].tz) : 'UTC'})
 Channel: ${channelDescription}${message.threadTs ? `\nIn thread: [${formatTimestampWithTimezone(tsToDate(message.threadTs), callingUserTimezone)}]` : ''}
 Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
 Text: "${replaceUserMentions(message.text, userMap)}"

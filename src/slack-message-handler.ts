@@ -1,7 +1,7 @@
 import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, ChatPostMessageResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
-import { topicTable, slackMessageTable, SlackMessage, slackUserTable, SlackUserInsert, slackChannelTable } from './db/schema/main'
+import { topicTable, slackMessageTable, SlackMessage, slackUserTable, SlackUser, SlackUserInsert, slackChannelTable } from './db/schema/main'
 import { analyzeTopicRelevance, scheduleNextStep } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
@@ -29,8 +29,8 @@ async function upsertSlackChannel(channelId: string, userIds: string[]): Promise
 }
 
 // Helper function to get all Slack users
-export async function getSlackUsers(client: WebClient, includeBots = true): Promise<Map<string, string>> {
-  const userMap = new Map<string, string>()
+export async function getSlackUsers(client: WebClient, includeBots = true): Promise<Map<string, SlackUser>> {
+  const userMap = new Map<string, SlackUser>()
   const usersToUpsert: SlackUserInsert[] = []
 
   try {
@@ -65,7 +65,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
         continue
       }
       const isBot = member.is_bot || member.id === 'USLACKBOT'
-      usersToUpsert.push({
+      const slackUser: SlackUserInsert = {
         id: member.id,
         teamId: member.team_id,
         realName: member.real_name,
@@ -74,9 +74,15 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
         deleted: member.deleted,
         updated: new Date(member.updated * 1000),
         raw: member,
-      })
+      }
+      usersToUpsert.push(slackUser)
       if (!member.deleted && member.real_name && (!isBot || includeBots)) {
-        userMap.set(member.id, member.real_name)
+        const userMapUser: SlackUser = {
+          ...slackUser,
+          realName: slackUser.realName || null,
+          tz: slackUser.tz || null,
+        }
+        userMap.set(member.id, userMapUser)
       }
     }
 
@@ -191,7 +197,7 @@ async function processSchedulingActions(
     let senderWillReceiveDM = false
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
       // Get the sender's name from userMap
-      const senderName = userMap.get(message.userId)
+      const senderName = userMap.get(message.userId)?.realName
       if (senderName) {
         // Check if sender is in any of the DM recipient lists
         for (const messageGroup of nextStep.messagesToUsers) {
@@ -251,8 +257,10 @@ async function processSchedulingActions(
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
       // Create name to ID mapping
       const nameToIdMap = new Map<string, string>()
-      userMap.forEach((name, id) => {
-        nameToIdMap.set(name, id)
+      userMap.forEach((user, id) => {
+        if (user.realName) {
+          nameToIdMap.set(user.realName, id)
+        }
       })
 
       for (const messageGroup of nextStep.messagesToUsers) {
@@ -500,9 +508,9 @@ async function getOrCreateTopic(
       // Also look for mentioned names if we have the user map
       if (userMap.size > 0) {
         const messageText = message.text
-        userMap.forEach((name, id) => {
+        userMap.forEach((user, id) => {
           // Check if this user's name appears in the message
-          if (messageText.includes(name) && id !== botUserId) {
+          if (user.realName && messageText.includes(user.realName) && id !== botUserId) {
             mentionedUserIds.add(id)
           }
         })

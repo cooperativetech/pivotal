@@ -8,6 +8,7 @@ import db from './db/engine'
 import {
   slackMessageTable,
   SlackMessage,
+  SlackUser,
   SlackMessageInsert,
   topicTable,
   TopicInsert,
@@ -223,13 +224,13 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
   return { topicIds }
 }
 
-export function replaceUserMentions(text: string, userMap: Map<string, string>): string {
+export function replaceUserMentions(text: string, userMap: Map<string, SlackUser>): string {
   if (!userMap || userMap.size === 0) {
     return text
   }
   // Replace all <@USERID> patterns with the user's name
   return text.replace(/<@([A-Z0-9]+)>/g, (match, userId: string) => {
-    const userName = userMap.get(userId)
+    const userName = userMap.get(userId)?.realName
     return userName ? `<@${userName}>` : match
   })
 }
@@ -287,7 +288,7 @@ export async function organizeMessagesByChannelAndThread(
         .from(slackUserTable)
         .where(inArray(slackUserTable.id, userIdsArray))
     : []
-  const userMap = new Map(users.map((u) => [u.id, u.realName || 'Unknown User']))
+  const userMap = new Map(users.map((u) => [u.id, u as SlackUser]))
   const userTimezones = new Map(users.map((u) => [u.id, u.tz]))
 
   // Sort messages within each group by timestamp and format output
@@ -301,7 +302,7 @@ export async function organizeMessagesByChannelAndThread(
     if (channel && channel.userIds) {
       const channelUserIds = channel.userIds.filter((id: string) => id !== botUserId)
       const channelUserNames = channelUserIds.map((id: string) => {
-        const name = userMap.get(id) || 'Unknown User'
+        const name = userMap.get(id)?.realName || 'Unknown User'
         const tz = userTimezones.get(id)
         return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
       })
@@ -353,7 +354,7 @@ export async function organizeMessagesByChannelAndThread(
       sortedMessages.forEach((msg) => {
         // Adjust indent based on whether we're showing thread header
         const indent = messages.length > 1 ? '    ' : '  '
-        const userName = userMap?.get(msg.userId) || 'Unknown User'
+        const userName = userMap?.get(msg.userId)?.realName || 'Unknown User'
         const processedText = replaceUserMentions(msg.text, userMap)
         const msgDate = new Date(msg.timestamp)
         const timestampFormatted = channelTimezone ?
@@ -378,7 +379,7 @@ export async function organizeMessagesByChannelAndThread(
 
 export async function getChannelDescription(
   channelId: string,
-  userMap: Map<string, string>,
+  userMap: Map<string, SlackUser>,
   botUserId: string,
 ): Promise<string> {
   const [channel] = await db
@@ -406,7 +407,7 @@ export async function getChannelDescription(
   if (channel && channel.userIds) {
     const filteredUserIds = channel.userIds.filter((id: string) => id !== botUserId)
     const channelUserNames = filteredUserIds.map((id: string) => {
-      const name = userMap.get(id) || 'Unknown User'
+      const name = userMap.get(id)?.realName || 'Unknown User'
       const tz = userTimezones.get(id)
       return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
     })

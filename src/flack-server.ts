@@ -6,7 +6,7 @@ import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { topicTable, Topic, slackChannelTable, slackUserTable, userDataTable } from './db/schema/main'
+import { topicTable, Topic, slackChannelTable, slackUserTable, userDataTable, SlackUser } from './db/schema/main'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from './flack-helpers.ts'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
@@ -163,13 +163,17 @@ const honoApp = new Hono()
       const botUserId = Array.from(botUserIds)[0] || 'UNKNOWN'
 
       // Create user map
-      const userMap = new Map<string, string>()
+      const userMap = new Map<string, SlackUser>()
       topicData.users.forEach((user) => {
-        userMap.set(user.id, user.realName || user.id)
+        userMap.set(user.id, user)
       })
 
-      // Set the bot userId to "Pivotal" in the userMap
-      userMap.set(botUserId, 'Pivotal')
+      // Set the bot userId in the userMap
+      const [botUser] = await db
+        .select()
+        .from(slackUserTable)
+        .where(eq(slackUserTable.id, botUserId))
+      userMap.set(botUserId, botUser)
 
       // Call scheduleNextStep
       const result = await scheduleNextStep(

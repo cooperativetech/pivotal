@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { Agent, RunContext, run, tool, ModelBehaviorError } from './agent-sdk'
 import db from '../db/engine'
-import { Topic, SlackMessage, topicTable, slackUserTable } from '../db/schema/main'
+import { Topic, SlackMessage, topicTable, slackUserTable, SlackUser } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
@@ -18,7 +18,7 @@ import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } f
 
 interface ScheduleNextStepContext {
   topic: Topic,
-  userMap: Map<string, string>,
+  userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
 
@@ -38,8 +38,10 @@ const findFreeSlots = tool({
 
     // Map names to user IDs for calendar lookup
     const nameToIdMap = new Map<string, string>()
-    userMap.forEach((name, id) => {
-      nameToIdMap.set(name, id)
+    userMap.forEach((user, id) => {
+      if (user.realName) {
+        nameToIdMap.set(user.realName, id)
+      }
     })
 
     // Build profiles for the time intersection tool
@@ -129,8 +131,8 @@ const updateUserNames = tool({
 
     for (const name of userNames) {
       let foundId: string | undefined
-      for (const [id, mappedName] of userMap.entries()) {
-        if (mappedName === name) {
+      for (const [id, user] of userMap.entries()) {
+        if (user.realName === name) {
           foundId = id
           break
         }
@@ -157,7 +159,7 @@ const updateUserNames = tool({
     runContext.context.topic = updatedTopic
 
     // Map IDs back to names for the response
-    const updatedUserNames = updatedUserIds.map((id) => userMap.get(id) || id)
+    const updatedUserNames = updatedUserIds.map((id) => userMap.get(id)?.realName || id)
     return `Updated user list to: ${updatedUserNames.join(', ')}`
   },
 })
@@ -177,8 +179,8 @@ const updateUserCalendar = tool({
 
     // Map name to user ID
     let userId: string | undefined
-    for (const [id, mappedName] of userMap.entries()) {
-      if (mappedName === userName) {
+    for (const [id, user] of userMap.entries()) {
+      if (user.realName === userName) {
         userId = id
         break
       }
@@ -420,15 +422,16 @@ IMPORTANT:
   const userMapAndTopicInfo = `
 ${userMap && userMap.size > 0 ? `User Directory:
 ${Array.from(userMap.entries())
-  .sort((a, b) => a[1].localeCompare(b[1]))
-  .map(([_userId, userName]) => userName)
+  .filter(([_userId, user]) => !user.isBot && user.realName)
+  .sort((a, b) => (a[1].realName!).localeCompare(b[1].realName!))
+  .map(([_userId, user]) => user.realName)
   .join(', ')}
 
 ` : ''}Current Topic:
 Summary: ${topic.summary}
 Users involved (with timezones and calendar connection status):
 ${await Promise.all(topic.userIds.map(async (userId) => {
-  const userName = userMap.get(userId) || 'Unknown User'
+  const userName = userMap.get(userId)?.realName || 'Unknown User'
   const tz = userTimezones.get(userId)
   const userTzStr = tz ? `${userName} (${getShortTimezoneFromIANA(tz)})` : userName
   try {
@@ -486,7 +489,7 @@ export async function scheduleNextStep(
   message: SlackMessage,
   topic: Topic,
   previousMessages: SlackMessage[],
-  userMap: Map<string, string>,
+  userMap: Map<string, SlackUser>,
   botUserId: string,
 ): Promise<ScheduleNextStepRes> {
   // If user is explicitly asking for calendar connection, send link immediately
@@ -515,13 +518,13 @@ This will allow me to check your availability automatically when scheduling. If 
   // Get channel information for descriptive display
   const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
 
-  const userPrompt = `Your name in conversations: ${userMap.get(botUserId) || 'Assistant'}
+  const userPrompt = `Your name in conversations: ${userMap.get(botUserId)?.realName || 'Assistant'}
 
 Previous Messages in this Topic:
 ${await organizeMessagesByChannelAndThread(previousMessages, botUserId, callingUserTimezone)}
 
 Message To Reply To:
-From: ${userMap.get(message.userId) || 'Unknown User'} (Timezone: ${messageTimezone.get(message.userId) ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
+From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${messageTimezone.get(message.userId) ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
 Text: "${replaceUserMentions(message.text, userMap)}"
 Channel: ${channelDescription}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
