@@ -4,8 +4,8 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable } from './db/schema/main'
-import type { UserContext, CalendarEvent, CalendarRangeLastFetched } from '@shared/api-types'
+import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
+import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 
@@ -63,6 +63,43 @@ export async function updateUserContext(slackUserId: string, newContext: UserCon
     .returning()
 
   return userData.context
+}
+
+/**
+ * Update topic-specific user context
+ * Merges new context with existing topic-specific context
+ * Returns the updated topic
+ */
+export async function updateTopicUserContext(topicId: string, slackUserId: string, newContext: TopicUserContext): Promise<Topic> {
+  const [topic] = await db
+    .select()
+    .from(topicTable)
+    .where(eq(topicTable.id, topicId))
+    .limit(1)
+
+  if (!topic) {
+    throw new Error(`Topic ${topicId} not found`)
+  }
+
+  const existingContext = topic.perUserContext[slackUserId] || {}
+  const mergedContext = { ...existingContext, ...newContext }
+
+  // Update the record
+  const updatedPerUserContext = {
+    ...topic.perUserContext,
+    [slackUserId]: mergedContext,
+  }
+
+  const [updatedTopic] = await db
+    .update(topicTable)
+    .set({
+      perUserContext: updatedPerUserContext,
+      updatedAt: new Date(),
+    })
+    .where(eq(topicTable.id, topicId))
+    .returning()
+
+  return updatedTopic
 }
 
 /**
@@ -298,10 +335,10 @@ export function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boo
 
 
 /**
- * Get structured calendar data from userContext
+ * Get structured calendar data from userContext and topic.perUserContext
  * Returns calendar events in structured format
  */
-export async function getUserCalendarStructured(slackUserId: string, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
+export async function getUserCalendarStructured(slackUserId: string, topic: Topic, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
   try {
     let context = await getUserContext(slackUserId)
 
@@ -327,16 +364,17 @@ export async function getUserCalendarStructured(slackUserId: string, startTime: 
       })
     }
 
-    // Merge with manual overrides if they exist
-    if (context.calendarManualOverrides) {
+    // Merge with topic-specific manual overrides if they exist
+    const topicContext = topic.perUserContext[slackUserId]
+    if (topicContext?.calendarManualOverrides) {
       // Filter overrides to only include those that overlap with the requested time range
-      const filteredOverrides = context.calendarManualOverrides.filter((override) => {
+      const filteredOverrides = topicContext.calendarManualOverrides.filter((override) => {
         const overrideStart = new Date(override.start)
         const overrideEnd = new Date(override.end)
         return overrideStart < endTime && overrideEnd > startTime
       })
 
-       calEvents = mergeCalendarWithOverrides(calEvents, filteredOverrides)
+      calEvents = mergeCalendarWithOverrides(calEvents, filteredOverrides)
     }
 
     return calEvents

@@ -2,7 +2,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { PersonProfile, TimeSlot } from '../core-benchmark/generate-benchmark-data'
 import { api } from '../../shared/api-client'
-import { unserializeTopicTimestamps } from '../../shared/api-types'
+import { unserializeTopicData } from '../../shared/api-types'
 
 // Initialize OpenRouter with API key from environment
 const apiKey = process.env.PV_OPENROUTER_API_KEY
@@ -33,7 +33,7 @@ export async function llmPersonaRespond(
     throw new Error(`Failed to get topic data: ${topicResponse.statusText}`)
   }
 
-  const topicData = unserializeTopicTimestamps(await topicResponse.json())
+  const topicData = unserializeTopicData(await topicResponse.json())
 
   // Filter messages to only show what this persona has said before and bot messages
   console.log(`Total messages in topic: ${topicData.messages.length}`)
@@ -96,7 +96,7 @@ ${calendarContext}
 
 Calendar priorities:
 - "critical" (medical, flights, childcare): Absolutely cannot move
-- "meeting": Prefer not to move but could if really needed 
+- "meeting": Prefer not to move but could if really needed
 - "personal" (gym, lunch, errands): Can move if necessary
 - "blocked-work" (focus time): Can interrupt if needed
 

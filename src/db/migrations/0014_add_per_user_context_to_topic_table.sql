@@ -1,0 +1,1 @@
+ALTER TABLE "topic" ADD COLUMN "per_user_context" jsonb DEFAULT '{}'::jsonb NOT NULL;

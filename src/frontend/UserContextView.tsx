@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { UserContext, CalendarEvent } from '@shared/api-types'
+import type { UserContext, CalendarEvent, TopicUserContext } from '@shared/api-types'
 import { getShortTimezone, getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 
 interface ExtendedCalendarEvent extends CalendarEvent {
@@ -122,37 +122,31 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
 
 interface UserContextViewProps {
   context: UserContext | null | undefined
+  topicContext?: TopicUserContext | null | undefined
   userTimezone: string | null
 }
 
-export function UserContextView({ context, userTimezone }: UserContextViewProps) {
-  if (!context) {
-    return (
-      <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
-        <div className="text-amber-600">⚠ Google Calendar not connected</div>
-      </div>
-    )
-  }
-
+export function UserContextView({ context, topicContext, userTimezone }: UserContextViewProps) {
+  const manualOverrides = topicContext?.calendarManualOverrides
   return (
     <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
-      {context.slackUserName && (
+      {context?.slackUserName && (
         <div>Username: {context.slackUserName}</div>
       )}
-      {context.slackDisplayName && (
+      {context?.slackDisplayName && (
         <div>Display Name: {context.slackDisplayName}</div>
       )}
-      {context.slackTeamId && (
+      {context?.slackTeamId && (
         <div>Team ID: {context.slackTeamId}</div>
       )}
-      {!context.googleAccessToken && (
+      {!context?.googleAccessToken && (
         <div className="text-amber-600">⚠ Google Calendar not connected</div>
       )}
-      {(context.calendar && context.calendar.length > 0) || (context.calendarManualOverrides && context.calendarManualOverrides.length > 0) ? (
+      {(context?.calendar && context?.calendar.length > 0) || (manualOverrides && manualOverrides.length > 0) ? (
         <div>
           <CalendarView
-            events={context.calendar || []}
-            manualOverrides={context.calendarManualOverrides}
+            events={context?.calendar || []}
+            manualOverrides={manualOverrides}
             userTimezone={userTimezone}
           />
         </div>

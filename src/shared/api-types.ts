@@ -30,10 +30,14 @@ export interface UserContext {
   googleTokenExpiryDate?: number
   calendar?: CalendarEvent[]
   calendarRangeLastFetched?: CalendarRangeLastFetched
-  calendarManualOverrides?: CalendarEvent[]
   slackTeamId?: string
   slackUserName?: string
   slackDisplayName?: string
+}
+
+export interface TopicUserContext {
+  calendarPrompted?: boolean
+  calendarManualOverrides?: CalendarEvent[]
 }
 
 export interface TopicData {
@@ -46,7 +50,7 @@ export interface TopicData {
 
 export type TopicRes = InferResponseType<typeof api.topics[':topicId']['$get'], 200>
 
-export function unserializeTopicTimestamps(topicRes: TopicRes): TopicData {
+export function unserializeTopicData(topicRes: TopicRes): TopicData {
   return {
     topic: {
       ...topicRes.topic,

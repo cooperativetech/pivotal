@@ -13,7 +13,7 @@ import {
 } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
-import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, getUserContext, updateUserContext } from '../calendar-service'
+import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 
 interface ScheduleNextStepContext {
@@ -34,7 +34,7 @@ const findFreeSlots = tool({
     console.log('Tool called: findFreeSlots for users:', userNames, 'from', startTime, 'to', endTime)
 
     if (!runContext) throw new Error('runContext not provided')
-    const { userMap, callingUserTimezone } = runContext.context
+    const { userMap, callingUserTimezone, topic } = runContext.context
 
     // Map names to user IDs for calendar lookup
     const nameToIdMap = new Map<string, string>()
@@ -57,7 +57,7 @@ const findFreeSlots = tool({
           }
         }
 
-        const calendar = await getUserCalendarStructured(userId, new Date(startTime), new Date(endTime))
+        const calendar = await getUserCalendarStructured(userId, topic, new Date(startTime), new Date(endTime))
 
         if (calendar && calendar.length > 0) {
           return {
@@ -175,7 +175,7 @@ const updateUserCalendar = tool({
     console.log('Tool called: updateUserCalendar for user:', userName, 'with events:', events)
 
     if (!runContext) throw new Error('runContext not provided')
-    const { userMap } = runContext.context
+    const { userMap, topic } = runContext.context
 
     // Map name to user ID
     let userId: string | undefined
@@ -189,9 +189,9 @@ const updateUserCalendar = tool({
       throw new Error(`Could not find user ID for name: ${userName}`)
     }
 
-    // Get current user context
-    const currentContext = await getUserContext(userId)
-    const existingOverrides = currentContext.calendarManualOverrides || []
+    // Get current topic-specific user context
+    const currentTopicContext = topic.perUserContext[userId]
+    const existingOverrides = currentTopicContext?.calendarManualOverrides || []
 
     // Convert events to CalendarEvent type
     const newOverrides: CalendarEvent[] = events.map((event) => ({
@@ -204,12 +204,15 @@ const updateUserCalendar = tool({
     // Merge existing overrides with new ones (new ones take precedence)
     const mergedOverrides = mergeCalendarWithOverrides(existingOverrides, newOverrides)
 
-    // Update user context with merged overrides
-    await updateUserContext(userId, {
+    // Update topic-specific user context with merged overrides and update runContext
+    const updatedTopic = await updateTopicUserContext(topic.id, userId, {
       calendarManualOverrides: mergedOverrides,
     })
 
-    console.log(`Updated calendar overrides for user ${userName} (${userId}): ${mergedOverrides.length} total overrides`)
+    // Update the topic in runContext with the updated version
+    runContext.context.topic = updatedTopic
+
+    console.log(`Updated calendar overrides for user ${userName} (${userId}) in topic ${topic.id}: ${mergedOverrides.length} total overrides`)
 
     return `Updated ${userName}'s calendar with ${newOverrides.length} event(s). The user's availability has been recorded and will be considered when finding free slots.`
   },

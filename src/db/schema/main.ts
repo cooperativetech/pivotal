@@ -3,12 +3,13 @@ import {
   text,
   timestamp,
   json,
+  jsonb,
   uuid,
   boolean,
   unique,
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import type { UserContext } from '@shared/api-types'
+import type { TopicUserContext, UserContext } from '@shared/api-types'
 
 export type WorkflowType = 'scheduling' | 'other'
 
@@ -18,6 +19,7 @@ export const topicTable = pgTable('topic', {
   summary: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
   isActive: boolean().notNull().default(true),
+  perUserContext: jsonb().$type<Record<string, TopicUserContext>>().notNull().default({}),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })

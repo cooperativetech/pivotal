@@ -19,7 +19,7 @@ import {
   userDataTable,
   UserDataInsert,
 } from './db/schema/main'
-import { unserializeTopicTimestamps, type TopicData, type TopicRes } from '@shared/api-types'
+import { unserializeTopicData, TopicData, TopicRes } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
 export function tsToDate(ts: string): Date {
@@ -135,7 +135,7 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
 
   // Normalize to array with Date objects
   const topicReqsArray: TopicRes[] = Array.isArray(parsedData) ? parsedData : [parsedData]
-  const topicsArray: TopicData[] = topicReqsArray.map((topicRes) => unserializeTopicTimestamps(topicRes))
+  const topicsArray: TopicData[] = topicReqsArray.map((topicRes) => unserializeTopicData(topicRes))
 
   const topicIds: string[] = []
 

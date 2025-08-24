@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { api } from '@shared/api-client'
-import { unserializeTopicTimestamps, type TopicData, type SlackMessage } from '@shared/api-types'
+import { unserializeTopicData, TopicData, SlackMessage } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 
@@ -43,7 +43,7 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(unserializeTopicTimestamps(data))
+        setTopicData(unserializeTopicData(data))
 
         // Only read query params on initial load
         if (initialLoadRef.current) {
@@ -465,6 +465,7 @@ function Topic() {
               const userId = isDM ? getCurrentUserId(channel.channelId) : null
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
+              const topicUserContext = userId ? topicData.topic.perUserContext[userId] : null
 
               return (
                 <div
@@ -518,6 +519,7 @@ function Topic() {
                     <div className="mb-2 -mx-2 px-2">
                       <UserContextView
                         context={userData?.context}
+                        topicContext={topicUserContext}
                         userTimezone={user?.tz || null}
                       />
                     </div>

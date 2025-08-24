@@ -6,7 +6,7 @@ import { scoreAlgorithmWithCases, PersonInput, DataAvailabilityConfig } from './
 import type { PersonProfile, TimeSlot, BenchmarkTestCase } from './core-benchmark/generate-benchmark-data'
 import { generateBenchmarkTestCases } from './core-benchmark/generate-benchmark-data'
 import { api } from '../shared/api-client'
-import { unserializeTopicTimestamps, type TopicData } from '@shared/api-types'
+import { unserializeTopicData, TopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
 
 
@@ -145,7 +145,7 @@ async function simulateSchedulingConversation(
   if (!topicResponse.ok) {
     throw new Error(`Failed to get topic data: ${topicResponse.statusText}`)
   }
-  const topicData = unserializeTopicTimestamps(await topicResponse.json())
+  const topicData = unserializeTopicData(await topicResponse.json())
 
   console.log(`\n${'='.repeat(60)}`)
   console.log('Conversation ended')
