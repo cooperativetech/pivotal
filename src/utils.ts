@@ -288,8 +288,7 @@ export async function organizeMessagesByChannelAndThread(
         .from(slackUserTable)
         .where(inArray(slackUserTable.id, userIdsArray))
     : []
-  const userMap = new Map(users.map((u) => [u.id, u as SlackUser]))
-  const userTimezones = new Map(users.map((u) => [u.id, u.tz]))
+  const userMap = new Map(users.map((u) => [u.id, u]))
 
   // Sort messages within each group by timestamp and format output
   let output = ''
@@ -302,17 +301,18 @@ export async function organizeMessagesByChannelAndThread(
     if (channel && channel.userIds) {
       const channelUserIds = channel.userIds.filter((id: string) => id !== botUserId)
       const channelUserNames = channelUserIds.map((id: string) => {
-        const name = userMap.get(id)?.realName || 'Unknown User'
-        const tz = userTimezones.get(id)
+        const user = userMap.get(id)
+        const name = user?.realName || 'Unknown User'
+        const tz = user?.tz
         return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
       })
 
       if (channelUserIds.length === 1) {
         channelName = `DM with ${channelUserNames[0]}`
         // For DMs, use the recipient's timezone
-        const dmRecipientTimezone = userTimezones.get(channelUserIds[0])
-        if (dmRecipientTimezone) {
-          channelTimezone = dmRecipientTimezone
+        const dmRecipient = userMap.get(channelUserIds[0])
+        if (dmRecipient?.tz) {
+          channelTimezone = dmRecipient.tz
         }
       } else if (channelUserIds.length > 1) {
         channelName = `Group channel with ${channelUserNames.join(', ')}`
@@ -388,27 +388,13 @@ export async function getChannelDescription(
     .where(eq(slackChannelTable.id, channelId))
     .limit(1)
 
-  // Get timezone information for channel users
-  const channelUserIds = channel?.userIds || []
-  const userTimezones = new Map<string, string>()
-  if (channelUserIds.length > 0) {
-    const users = await db
-      .select()
-      .from(slackUserTable)
-      .where(inArray(slackUserTable.id, channelUserIds))
-    for (const user of users) {
-      if (user.tz) {
-        userTimezones.set(user.id, user.tz)
-      }
-    }
-  }
-
   let channelDescription = `Channel ${channelId}`
   if (channel && channel.userIds) {
     const filteredUserIds = channel.userIds.filter((id: string) => id !== botUserId)
     const channelUserNames = filteredUserIds.map((id: string) => {
-      const name = userMap.get(id)?.realName || 'Unknown User'
-      const tz = userTimezones.get(id)
+      const user = userMap.get(id)
+      const name = user?.realName || 'Unknown User'
+      const tz = user?.tz
       return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
     })
 

@@ -1,9 +1,9 @@
-import { eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { Agent, RunContext, run, tool, ModelBehaviorError } from './agent-sdk'
 import db from '../db/engine'
-import { Topic, SlackMessage, topicTable, slackUserTable, SlackUser } from '../db/schema/main'
+import { Topic, SlackMessage, topicTable, SlackUser } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
@@ -290,7 +290,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Once you determine the general time constraint for the meeting or event, add it to the topic summary. Ideally, this can be recorded very concretely with specific days and time ranges, including time zone information
 
 3. Need to gather constraints from users
-  - CRITICAL: If a user's calendar is connected (see Calendar Information: below), you do NOT need to ask them for availability. Instead, use the findFreeSlots tool to find the intersection of their availability with other users
+  - CRITICAL: If a user's calendar is connected or has been created from conversation (see Calendar Information: below), you do NOT need to ask them for availability. Instead, use the findFreeSlots tool to find the intersection of their availability with other users
   - CRITICAL: Before asking anyone for availability, check the conversation history to see who has already provided their availability/constraints
   - NEVER ask users for their availability again if they have already shared their schedule/constraints in previous messages
   - ONLY send availability requests to users who have NOT yet shared their availability, and who do not have a calendar connected
@@ -320,7 +320,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 ## Important Guidelines
 - BE EXTREMELY CONCISE - keep all messages brief and to the point (1-2 sentences max unless proposing times)
 - NEVER send messages that just confirm or acknowledge information - if someone tells you their availability, DON'T say "Thanks for sharing" or "I've noted that"
-- CRITICAL: When you have calendar data for all users, ALWAYS use the findFreeSlots tool to find accurate available times before proposing any meeting slots
+- CRITICAL: When you have calendar data for all users (i.e. under "Calendar Information:" it says either calendar is connected or calendar created from conversation), ALWAYS use the findFreeSlots tool to find accurate available times before proposing any meeting slots
 - NEVER propose times without first calling findFreeSlots - this ensures you only suggest times that actually work for everyone
 - After calling findFreeSlots, propose 2-3 specific time slots from the results in your very next message
 - Skip pleasantries and acknowledgments - get straight to business
@@ -420,7 +420,6 @@ IMPORTANT:
 - Do not include any text before or after the JSON`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
-  const userTimezones = await getUserTimezones(topic.userIds)
 
   const userMapAndTopicInfo = `
 ${userMap && userMap.size > 0 ? `User Directory:
@@ -432,18 +431,28 @@ ${Array.from(userMap.entries())
 
 ` : ''}Current Topic:
 Summary: ${topic.summary}
-Users involved (with timezones and calendar connection status):
+Users involved (with timezones and calendar status):
 ${await Promise.all(topic.userIds.map(async (userId) => {
-  const userName = userMap.get(userId)?.realName || 'Unknown User'
-  const tz = userTimezones.get(userId)
+  const user = userMap.get(userId)
+  const userName = user?.realName || 'Unknown User'
+  const tz = user?.tz
   const userTzStr = tz ? `${userName} (${getShortTimezoneFromIANA(tz)})` : userName
+
+  // Check for manual overrides for this user in the current topic
+  const topicContext = topic.perUserContext[userId]
+  const hasManualOverrides = topicContext?.calendarManualOverrides && topicContext.calendarManualOverrides.length > 0
+
   try {
     const isConnected = await isCalendarConnected(userId)
     if (isConnected) {
-      return `  ${userTzStr}: Calendar is connected`
+      return `  ${userTzStr}: Calendar is connected${hasManualOverrides ? ', and refined from conversation' : ''}`
     }
   } catch (error) {
     console.error(`Error checking calendar connection for ${userName}:`, error)
+  }
+
+  if (hasManualOverrides) {
+    return `  ${userTzStr}: Calendar created from conversation`
   }
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
@@ -468,25 +477,6 @@ const scheduleNextStepAgent = new Agent<ScheduleNextStepContext, typeof Schedule
   instructions: scheduleNextStepInstructions,
 })
 
-// Helper function to get user timezones
-async function getUserTimezones(userIds: string[]): Promise<Map<string, string>> {
-  const timezoneMap = new Map<string, string>()
-
-  if (userIds.length === 0) return timezoneMap
-
-  const users = await db
-    .select()
-    .from(slackUserTable)
-    .where(inArray(slackUserTable.id, userIds))
-
-  for (const user of users) {
-    if (user.tz) {
-      timezoneMap.set(user.id, user.tz)
-    }
-  }
-
-  return timezoneMap
-}
 
 export async function scheduleNextStep(
   message: SlackMessage,
@@ -514,9 +504,9 @@ This will allow me to check your availability automatically when scheduling. If 
     }
   }
 
-  // Get timezone information for all users
-  const messageTimezone = await getUserTimezones([message.userId])
-  const callingUserTimezone = messageTimezone.get(message.userId) || 'UTC'
+  // Get timezone information for the calling user
+  const callingUser = userMap.get(message.userId)
+  const callingUserTimezone = callingUser?.tz || 'UTC'
 
   // Get channel information for descriptive display
   const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
@@ -527,7 +517,7 @@ Previous Messages in this Topic:
 ${await organizeMessagesByChannelAndThread(previousMessages, botUserId, callingUserTimezone)}
 
 Message To Reply To:
-From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${messageTimezone.get(message.userId) ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
+From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser?.tz ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
 Text: "${replaceUserMentions(message.text, userMap)}"
 Channel: ${channelDescription}${
   message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
