@@ -20,6 +20,8 @@ import type {
   GenerationSpanData,
 } from '@openai/agents-core/tracing/spans'
 
+const PLACEHOLDER_NAME = 'trace'
+
 /**
  * TracingExporter implementation that sends OpenAI agent traces to Langfuse
  */
@@ -29,6 +31,7 @@ export class LangfuseTracingExporter implements TracingExporter {
 
   // Maps to track relationships between OpenAI and Langfuse objects
   private traceMap: Map<string, LangfuseTraceClient> = new Map()
+  private traceNameMap: Map<string, string> = new Map()
   private spanMap: Map<string, LangfuseSpanClient | LangfuseGenerationClient> = new Map()
 
   constructor(langfuse: Langfuse, enableDebugLogging: boolean = false) {
@@ -73,13 +76,14 @@ export class LangfuseTracingExporter implements TracingExporter {
     // Create Langfuse trace
     const langfuseTrace = this.langfuse.trace({
       id: trace.traceId,
-      name: trace.name,
+      name: PLACEHOLDER_NAME,
       sessionId: trace.groupId,
       metadata: trace.metadata,
     })
 
     // Store mapping
     this.traceMap.set(trace.traceId, langfuseTrace)
+    this.traceNameMap.set(trace.traceId, PLACEHOLDER_NAME)
 
     if (this.enableDebugLogging) {
       console.log(`[Langfuse] Created trace: ${trace.traceId}`)
@@ -94,13 +98,26 @@ export class LangfuseTracingExporter implements TracingExporter {
     const parentTrace = this.traceMap.get(span.traceId)
     const parentSpan = span.parentId ? this.spanMap.get(span.parentId) : undefined
 
+    // Create a default trace if none exists
     if (!parentTrace && !parentSpan) {
-      // Create a default trace if none exists
+      const defaultTraceName = 'auto-created-trace'
       const defaultTrace = this.langfuse.trace({
         id: span.traceId,
-        name: 'auto-created-trace',
+        name: defaultTraceName,
       })
       this.traceMap.set(span.traceId, defaultTrace)
+      this.traceNameMap.set(span.traceId, defaultTraceName)
+    }
+
+    // Update placeholder trace name with name of first agent span
+    if (
+      parentTrace &&
+      this.traceNameMap.get(span.traceId) === PLACEHOLDER_NAME &&
+      span.spanData.type === 'agent'
+    ) {
+      const newName = `trace-${span.spanData.name}`
+      parentTrace.update({ name: newName })
+      this.traceNameMap.set(span.traceId, newName)
     }
 
     // Determine if this should be a generation or regular span

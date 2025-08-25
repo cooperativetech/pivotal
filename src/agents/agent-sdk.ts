@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import {
   Agent,
   RunContext,
+  Runner,
   run,
   tool,
   ModelBehaviorError,
@@ -34,4 +35,4 @@ setOpenAIAPI('chat_completions')
 setTraceProcessors([traceProcessor])
 
 // Re-export openai agent sdk types
-export { Agent, RunContext, run, tool, ModelBehaviorError }
+export { Agent, RunContext, Runner, run, tool, ModelBehaviorError }

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { Agent, RunContext, run, tool, ModelBehaviorError } from './agent-sdk'
+import { Agent, RunContext, Runner, tool, ModelBehaviorError } from './agent-sdk'
 import db from '../db/engine'
 import { Topic, SlackMessage, topicTable, SlackUser } from '../db/schema/main'
 import {
@@ -536,7 +536,8 @@ Based on the conversation history and current message, determine the next step i
     console.log('Topic user IDs:', topic.userIds)
     console.log('Message user ID:', message.userId)
 
-    const result = await run(
+    const runner = new Runner({ groupId: `topic-${topic.id}` })
+    const result = await runner.run(
       scheduleNextStepAgent,
       userPrompt,
       { context: { topic, userMap, callingUserTimezone } },
