@@ -86,7 +86,7 @@ export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessa
   const callingUserTimezone = callingUser[0]?.tz || 'UTC'
 
   // Get channel information for descriptive display
-  const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
+  const channelDescription = await getChannelDescription(message.channelId, userMap)
 
   // Fetch recent messages for each topic in the same channel
   const topicMessagesMap = new Map<string, SlackMessage[]>()
@@ -151,7 +151,7 @@ ${(await Promise.all(topics.map(async (topic, i) => {
   // Get recent messages for this topic
   const recentMessages = topicMessagesMap.get(topic.id) || []
   const messagesFormatted = recentMessages.length > 0
-    ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, botUserId, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
+    ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
   return `${i + 1}. Topic ID: ${topic.id}
    Summary: ${topic.summary}

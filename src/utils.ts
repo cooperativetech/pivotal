@@ -237,7 +237,6 @@ export function replaceUserMentions(text: string, userMap: Map<string, SlackUser
 
 export async function organizeMessagesByChannelAndThread(
   messages: SlackMessage[],
-  botUserId: string,
   timezone: string,
 ): Promise<string> {
   if (messages.length === 0) {
@@ -271,13 +270,18 @@ export async function organizeMessagesByChannelAndThread(
     : []
   const channelMap = new Map(channels.map((ch) => [ch.id, ch]))
 
-  // Collect all unique userIds from all channels
+  // Collect all unique userIds from channels and messages
   const allUserIds = new Set<string>()
-  allUserIds.add(botUserId) // Always include bot user
+  // Add userIds from channels (bot is not included in channel userIds)
+  // This is needed for users where the bot has sent a message but that user has not yet replied
   for (const channel of channels) {
     for (const userId of channel.userIds) {
       allUserIds.add(userId)
     }
+  }
+  // Add userIds from messages (this will include the bot when it sends messages)
+  for (const msg of messages) {
+    allUserIds.add(msg.userId)
   }
 
   // Get user information including names and timezones
@@ -299,22 +303,21 @@ export async function organizeMessagesByChannelAndThread(
     let channelTimezone = timezone // Default to caller's timezone
 
     if (channel && channel.userIds) {
-      const channelUserIds = channel.userIds.filter((id: string) => id !== botUserId)
-      const channelUserNames = channelUserIds.map((id: string) => {
+      const channelUserNames = channel.userIds.map((id: string) => {
         const user = userMap.get(id)
         const name = user?.realName || 'Unknown User'
         const tz = user?.tz
         return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
       })
 
-      if (channelUserIds.length === 1) {
+      if (channel.userIds.length === 1) {
         channelName = `DM with ${channelUserNames[0]}`
         // For DMs, use the recipient's timezone
-        const dmRecipient = userMap.get(channelUserIds[0])
+        const dmRecipient = userMap.get(channel.userIds[0])
         if (dmRecipient?.tz) {
           channelTimezone = dmRecipient.tz
         }
-      } else if (channelUserIds.length > 1) {
+      } else if (channel.userIds.length > 1) {
         channelName = `Group channel with ${channelUserNames.join(', ')}`
         // For group channels, keep using the caller's timezone
       }
@@ -380,7 +383,6 @@ export async function organizeMessagesByChannelAndThread(
 export async function getChannelDescription(
   channelId: string,
   userMap: Map<string, SlackUser>,
-  botUserId: string,
 ): Promise<string> {
   const [channel] = await db
     .select()
@@ -390,17 +392,16 @@ export async function getChannelDescription(
 
   let channelDescription = `Channel ${channelId}`
   if (channel && channel.userIds) {
-    const filteredUserIds = channel.userIds.filter((id: string) => id !== botUserId)
-    const channelUserNames = filteredUserIds.map((id: string) => {
+    const channelUserNames = channel.userIds.map((id: string) => {
       const user = userMap.get(id)
       const name = user?.realName || 'Unknown User'
       const tz = user?.tz
       return tz ? `${name} (${getShortTimezoneFromIANA(tz)})` : name
     })
 
-    if (filteredUserIds.length === 1) {
+    if (channel.userIds.length === 1) {
       channelDescription = `DM with ${channelUserNames[0]}`
-    } else if (filteredUserIds.length > 1) {
+    } else if (channel.userIds.length > 1) {
       channelDescription = `Group channel with ${channelUserNames.join(', ')}`
     }
   }

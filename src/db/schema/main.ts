@@ -15,6 +15,7 @@ export type WorkflowType = 'scheduling' | 'other'
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
   userIds: jsonb().$type<string[]>().notNull().default([]),
+  botUserId: text().notNull(),
   summary: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
   isActive: boolean().notNull().default(true),

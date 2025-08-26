@@ -122,29 +122,22 @@ const honoApp = new Hono()
       }
       const previousMessages = topicData.messages.slice(0, -1)
 
-      // Find bot userId by looking for userIds in previousMessages that are not in topic.userIds
       const topicUserIds = new Set(topicData.topic.userIds)
-      const botUserIds = new Set<string>()
       const slackUserIds = new Set<string>()
       const slackChannelIds = new Set<string>()
 
       previousMessages.forEach((msg) => {
         slackChannelIds.add(msg.channelId)
-        if (!topicUserIds.has(msg.userId)) {
-          botUserIds.add(msg.userId)
-        } else {
-          slackUserIds.add(msg.userId)
-        }
       })
 
-      // If we have channels, add all users in currently open channels as well
+      // Add all users in topicUserIds that are also in currently open channels
       if (topicData.channels) {
         for (const channel of topicData.channels) {
           if (!slackChannelIds.has(channel.id)) {
             continue
           }
           for (const userId of channel.userIds) {
-            if (!botUserIds.has(userId)) {
+            if (topicUserIds.has(userId)) {
               slackUserIds.add(userId)
             }
           }
@@ -157,11 +150,6 @@ const honoApp = new Hono()
         userIds: Array.from(slackUserIds),
       }
 
-      if (botUserIds.size > 1) {
-        throw new Error(`Expected zero or one bot userId, found ${botUserIds.size}: ${Array.from(botUserIds).join(', ')}`)
-      }
-      const botUserId = Array.from(botUserIds)[0] || 'UNKNOWN'
-
       // Create user map
       const userMap = new Map<string, SlackUser>()
       topicData.users.forEach((user) => {
@@ -172,8 +160,8 @@ const honoApp = new Hono()
       const [botUser] = await db
         .select()
         .from(slackUserTable)
-        .where(eq(slackUserTable.id, botUserId))
-      userMap.set(botUserId, botUser)
+        .where(eq(slackUserTable.id, topicData.topic.botUserId))
+      userMap.set(topicData.topic.botUserId, botUser)
 
       // Call scheduleNextStep
       const result = await scheduleNextStep(
@@ -181,7 +169,6 @@ const honoApp = new Hono()
         topicWithCurrentUsers,
         previousMessages,
         userMap,
-        botUserId,
       )
 
       return c.json(result)
@@ -199,6 +186,16 @@ const honoApp = new Hono()
     const { userId, text, topicId } = c.req.valid('json')
 
     try {
+      // Get botUserId from the topic if topicId is provided, otherwise use default
+      let botUserId = BOT_USER_ID
+      if (topicId) {
+        const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+        if (!topic) {
+          throw new Error(`No topic found with id: ${topicId}`)
+        }
+        botUserId = topic.botUserId
+      }
+
       const channelId = await getOrCreateChannelForUsers([userId])
 
       // Create a SlackAPIMessage
@@ -216,7 +213,7 @@ const honoApp = new Hono()
 
       const result = await handleSlackMessage(
         message,
-        BOT_USER_ID,
+        botUserId,
         mockSlackClient,
         topicId || null,
         true, // if topicId is null, create a new topic rather than routing to existing ones

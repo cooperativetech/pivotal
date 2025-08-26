@@ -160,7 +160,6 @@ async function processSchedulingActions(
   topicId: string,
   message: SlackMessage,
   client: WebClient,
-  botUserId: string,
 ): Promise<SlackMessage[]> {
   const createdMessages: SlackMessage[] = []
   try {
@@ -190,7 +189,7 @@ async function processSchedulingActions(
     const userMap = await getSlackUsers(client)
 
     // Call scheduleNextStep to determine actions
-    const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap, botUserId)
+    const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap)
     console.log('Next scheduling step:', nextStep)
 
     // Check if the current message sender will receive any DMs
@@ -223,7 +222,7 @@ async function processSchedulingActions(
         const [createdMessage] = await db.insert(slackMessageTable).values({
           topicId: topicId,
           channelId: message.channelId,
-          userId: botUserId,
+          userId: topic.botUserId,
           text: nextStep.replyMessage,
           timestamp: tsToDate(response.ts),
           rawTs: response.ts,
@@ -288,12 +287,8 @@ async function processSchedulingActions(
 
             if (dmChannel.ok && dmChannel.channel?.id) {
               // Create or update slackChannel record for DM in the DB
-              // Include both the user and the bot in the channel's userIds
-              const channelUserIds = [userId]
-              if (!channelUserIds.includes(botUserId)) {
-                channelUserIds.push(botUserId)
-              }
-              await upsertSlackChannel(dmChannel.channel.id, channelUserIds)
+              // Only include the actual user, not the bot
+              await upsertSlackChannel(dmChannel.channel.id, [userId])
 
               // Send the message
               const dmResponse = await client.chat.postMessage({
@@ -306,7 +301,7 @@ async function processSchedulingActions(
                 const [createdMessage] = await db.insert(slackMessageTable).values({
                   topicId: topicId,
                   channelId: dmChannel.channel.id,
-                  userId: botUserId,
+                  userId: topic.botUserId,
                   text: messageGroup.text,
                   timestamp: tsToDate(dmResponse.ts),
                   rawTs: dmResponse.ts,
@@ -335,11 +330,8 @@ async function processSchedulingActions(
 
           if (mpimResult.ok && mpimResult.channel?.id) {
             // Create or update slackChannel record for MPIM in the DB
-            const channelUserIds = [...topic.userIds]
-            if (!channelUserIds.includes(botUserId)) {
-              channelUserIds.push(botUserId)
-            }
-            await upsertSlackChannel(mpimResult.channel.id, channelUserIds)
+            // Only include actual users, not the bot
+            await upsertSlackChannel(mpimResult.channel.id, [...topic.userIds])
 
             // Send the group message to the MPIM
             const groupResponse = await client.chat.postMessage({
@@ -352,7 +344,7 @@ async function processSchedulingActions(
               const [createdMessage] = await db.insert(slackMessageTable).values({
                 topicId: topicId,
                 channelId: mpimResult.channel.id,
-                userId: botUserId,
+                userId: topic.botUserId,
                 text: nextStep.groupMessage,
                 timestamp: tsToDate(groupResponse.ts),
                 rawTs: groupResponse.ts,
@@ -373,7 +365,7 @@ async function processSchedulingActions(
               const [createdMessage] = await db.insert(slackMessageTable).values({
                 topicId: topicId,
                 channelId: message.channelId,
-                userId: botUserId,
+                userId: topic.botUserId,
                 text: nextStep.groupMessage,
                 timestamp: tsToDate(groupResponse.ts),
                 rawTs: groupResponse.ts,
@@ -395,7 +387,7 @@ async function processSchedulingActions(
             const [createdMessage] = await db.insert(slackMessageTable).values({
               topicId: topicId,
               channelId: message.channelId,
-              userId: botUserId,
+              userId: topic.botUserId,
               text: nextStep.groupMessage,
               timestamp: tsToDate(groupResponse.ts),
               rawTs: groupResponse.ts,
@@ -417,7 +409,7 @@ async function processSchedulingActions(
           const [createdMessage] = await db.insert(slackMessageTable).values({
             topicId: topicId,
             channelId: message.channelId,
-            userId: botUserId,
+            userId: topic.botUserId,
             text: nextStep.groupMessage,
             timestamp: tsToDate(groupResponse.ts),
             rawTs: groupResponse.ts,
@@ -521,6 +513,7 @@ async function getOrCreateTopic(
       // Create new topic with all mentioned users
       const [newTopic] = await db.insert(topicTable).values({
         userIds: Array.from(mentionedUserIds),
+        botUserId: botUserId,
         summary: analysis.suggestedNewTopic,
         workflowType: analysis.workflowType,
       }).returning()
@@ -543,7 +536,6 @@ async function getOrCreateTopic(
 async function saveMessageToTopic(
   topicId: string,
   message: SlackAPIMessage,
-  botUserId: string,
 ): Promise<SlackMessage> {
   const userId = ('bot_id' in message && message.bot_id) ? message.bot_id : message.user!
   const isDirectMessage = message.channel_type === 'im'
@@ -553,12 +545,8 @@ async function saveMessageToTopic(
     // Get the topic to find the other participant (the bot)
     const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
     if (topic) {
-      // For DMs, ensure both the user and bot are in the channel's userIds
-      const channelUserIds = [userId]
-      if (!channelUserIds.includes(botUserId)) {
-        channelUserIds.push(botUserId)
-      }
-      await upsertSlackChannel(message.channel, channelUserIds)
+      // For DMs, only include the actual user, not the bot
+      await upsertSlackChannel(message.channel, [userId])
     }
   }
 
@@ -616,12 +604,11 @@ export async function handleSlackMessage(
       return null
     }
 
-    const savedReqMessage = await saveMessageToTopic(topicId, message, botUserId)
+    const savedReqMessage = await saveMessageToTopic(topicId, message)
     const resMessages = await processSchedulingActions(
       topicId,
       savedReqMessage,
       client,
-      botUserId,
     )
 
     return { topicId, savedReqMessage, resMessages }

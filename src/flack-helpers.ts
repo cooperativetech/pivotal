@@ -16,12 +16,7 @@ import {
 export const BOT_USER_ID = 'UTESTBOT'
 
 export async function getOrCreateChannelForUsers(userIds: string[]): Promise<string> {
-  // Ensure bot is included in list of users
-  if (!userIds.includes(BOT_USER_ID)) {
-    userIds.push(BOT_USER_ID)
-  }
-
-  // Sort userIds for consistent comparison
+  // Sort userIds for consistent comparison (bot is NOT included)
   const sortedUserIds = [...userIds].sort()
 
   // Use transaction with a simple advisory lock for channel creation
@@ -176,7 +171,7 @@ export const mockSlackClient = {
         text: params.text,
         ts: timestamp,
         thread_ts: params.thread_ts,
-        user: BOT_USER_ID,
+        user: '', // This field is not used by the caller downstream
         channel_type: params.channel.startsWith('D') ? 'im' : 'channel',
         event_ts: timestamp,
       }

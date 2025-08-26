@@ -273,29 +273,25 @@ function Topic() {
   // Check if we're viewing the latest message
   const isViewingLatest = timelinePosition === sortedMessages.length - 1
 
-  // Helper to check if a channel is a DM (2 users)
+  // Helper to check if a channel is a DM (1 user since bot is not included)
   const isDMChannel = (channelId: string) => {
     const channel = topicData.channels?.find((ch) => ch.id === channelId)
-    return channel?.userIds.length === 2
+    return channel?.userIds.length === 1
   }
 
   // Helper to get the current user ID for a channel
   const getCurrentUserId = (channelId: string) => {
     const channel = topicData.channels?.find((ch) => ch.id === channelId)
-    return channel?.userIds.find((uid) => userMap.has(uid))
+    return channel?.userIds[0]
   }
 
   // Helper to get DM user info (for channel title)
   const getDMUserInfo = (channelId: string) => {
     const channel = topicData.channels?.find((ch) => ch.id === channelId)
-    if (!channel || channel.userIds.length !== 2) return null
-
-    // Find the non-bot user ID (the one in userMap)
-    const userId = channel.userIds.find((uid) => userMap.has(uid))
-    if (!userId) return null
+    if (!channel || channel.userIds.length !== 1) return null
 
     // Get the user details
-    const user = topicData.users.find((u) => u.id === userId)
+    const user = topicData.users.find((u) => u.id === channel.userIds[0])
     if (!user) return null
 
     return {
