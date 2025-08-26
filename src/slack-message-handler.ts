@@ -300,7 +300,7 @@ export async function processSchedulingActions(
 
                 if (shouldShow) {
                   // Generate OAuth URL for direct linking
-                  const authUrl = generateGoogleAuthUrl(userId)
+                  const authUrl = generateGoogleAuthUrl(topicId, userId)
 
                   // Add calendar connection buttons using Block Kit format
                   blocks = [

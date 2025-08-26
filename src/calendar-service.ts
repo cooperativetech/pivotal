@@ -162,38 +162,37 @@ export async function shouldShowCalendarButtons(
   return !hasBeenPrompted && !hasCalendar && !suppressPrompt
 }
 
-/**
- * Find active scheduling topics that include a specific user
- */
-async function findActiveTopicsForUser(slackUserId: string) {
-  const activeTopics = await db
-    .select()
-    .from(topicTable)
-    .where(and(
-      eq(topicTable.isActive, true),
-      eq(topicTable.workflowType, 'scheduling'),
-    ))
-
-  // Filter topics that include this user in their userIds array
-  return activeTopics.filter((topic) =>
-    topic.userIds && topic.userIds.includes(slackUserId),
-  )
-}
 
 /**
- * Continue scheduling workflow after calendar connection
+ * Continue scheduling workflow after calendar connection for specific topic
  */
-export async function continueSchedulingWorkflow(slackUserId: string) {
+export async function continueSchedulingWorkflow(topicId: string, slackUserId: string) {
   try {
     // Import here to avoid circular dependency
     const { processSchedulingActions } = await import('./slack-message-handler')
     const { slackApp } = await import('./slack-bot')
 
-    // Find active topics that include this user
-    const activeTopics = await findActiveTopicsForUser(slackUserId)
+    // Load the specific topic
+    const [topic] = await db
+      .select()
+      .from(topicTable)
+      .where(eq(topicTable.id, topicId))
+      .limit(1)
 
-    if (activeTopics.length === 0) {
-      console.log(`No active scheduling topics found for user ${slackUserId}`)
+    if (!topic) {
+      console.log(`Topic ${topicId} not found`)
+      return
+    }
+
+    // Verify topic is active and is scheduling workflow
+    if (!topic.isActive || topic.workflowType !== 'scheduling') {
+      console.log(`Topic ${topicId} is not an active scheduling topic`)
+      return
+    }
+
+    // Verify user belongs to this topic
+    if (!topic.userIds || !topic.userIds.includes(slackUserId)) {
+      console.log(`User ${slackUserId} is not part of topic ${topicId}`)
       return
     }
 
@@ -209,41 +208,37 @@ export async function continueSchedulingWorkflow(slackUserId: string) {
       throw new Error(`User ${slackUserId} has no realName in database`)
     }
 
-    // For each active topic, create a synthetic calendar connection message and process it
-    for (const topic of activeTopics) {
-      console.log(`Continuing scheduling workflow for topic ${topic.id} after calendar connection`)
+    console.log(`Continuing scheduling workflow for topic ${topicId} after calendar connection`)
 
-      // Create a synthetic SlackMessage record to trigger scheduling
-      const syntheticSlackMessage = {
-        id: `synthetic-${Date.now()}`,
-        topicId: topic.id,
-        channelId: 'synthetic',
-        userId: slackUserId,
-        text: `${userName} connected their Google Calendar`,
-        timestamp: new Date(),
-        rawTs: (Date.now() / 1000).toString(),
-        threadTs: null,
-        raw: {},
-      }
-
-      // Process scheduling actions directly without going through the full message handler
-      await processSchedulingActions(
-        topic.id,
-        syntheticSlackMessage,
-        slackApp.client,
-        process.env.PV_SLACK_BOT_USER_ID!,
-      )
+    // Create a synthetic SlackMessage record to trigger scheduling
+    const syntheticSlackMessage = {
+      id: `synthetic-${Date.now()}`,
+      topicId: topic.id,
+      channelId: 'synthetic',
+      userId: slackUserId,
+      text: `${userName} connected their Google Calendar`,
+      timestamp: new Date(),
+      rawTs: (Date.now() / 1000).toString(),
+      threadTs: null,
+      raw: {},
     }
+
+    // Process scheduling actions for this specific topic only
+    await processSchedulingActions(
+      topic.id,
+      syntheticSlackMessage,
+      slackApp.client,
+    )
   } catch (error) {
     console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
   }
 }
 
 /**
- * Generate Google OAuth URL for a specific Slack user
- * Includes state parameter to link back to the Slack user after auth
+ * Generate Google OAuth URL for a specific Slack user and topic
+ * Includes state parameter to link back to the Slack user and topic after auth
  */
-export function generateGoogleAuthUrl(slackUserId: string): string {
+export function generateGoogleAuthUrl(topicId: string, slackUserId: string): string {
   const scope = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events.readonly',
@@ -254,7 +249,7 @@ export function generateGoogleAuthUrl(slackUserId: string): string {
     redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
     response_type: 'code',
     scope,
-    state: `slack:${slackUserId}`,
+    state: `slack:${slackUserId}:topic:${topicId}`,
     access_type: 'offline',
     prompt: 'consent', // Force consent to ensure we get refresh token
   })
@@ -321,10 +316,10 @@ export async function handleGoogleAuthCallback(
  * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
 export async function fetchAndStoreGoogleAuthTokens(code: string, state: string) {
-    // Parse state to get Slack user info: "slack:U123ABC"
-    const [prefix, slackUserId] = state.split(':')
+    // Parse state to get Slack user and topic info: "slack:U123ABC:topic:uuid"
+    const [prefix, slackUserId, topicPrefix, topicId] = state.split(':')
 
-    if (prefix !== 'slack' || !slackUserId) {
+    if (prefix !== 'slack' || !slackUserId || topicPrefix !== 'topic' || !topicId) {
       throw new Error(`Invalid state parameter: ${state}`)
     }
 
@@ -358,7 +353,7 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string)
   })
 
   // Continue scheduling workflow after successful connection
-  await continueSchedulingWorkflow(slackUserId)
+  await continueSchedulingWorkflow(topicId, slackUserId)
 }
 
 /**
