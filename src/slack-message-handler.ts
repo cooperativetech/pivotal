@@ -302,7 +302,6 @@ export async function processSchedulingActions(
               // Only include the actual user, not the bot
               await upsertSlackChannel(dmChannel.channel.id, [userId])
 
-              const messageToSend = messageGroup.text
               let blocks = undefined
 
               // Check if AI requested calendar buttons for this message
@@ -363,7 +362,7 @@ export async function processSchedulingActions(
               // Send the message with optional blocks
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
-                text: messageToSend,
+                text: messageGroup.text,
                 ...(blocks && { blocks }),
               })
 
@@ -373,7 +372,7 @@ export async function processSchedulingActions(
                   topicId: topicId,
                   channelId: dmChannel.channel.id,
                   userId: topic.botUserId,
-                  text: messageToSend,
+                  text: messageGroup.text,
                   timestamp: tsToDate(dmResponse.ts),
                   rawTs: dmResponse.ts,
                   threadTs: null,
