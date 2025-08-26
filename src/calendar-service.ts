@@ -105,7 +105,7 @@ export async function updateTopicUserContext(topicId: string, slackUserId: strin
 /**
  * Check if a user has opted out of calendar prompts
  */
-export async function shouldSuppressCalendarPrompt(slackUserId: string): Promise<boolean> {
+async function shouldSuppressCalendarPrompt(slackUserId: string): Promise<boolean> {
   const context = await getUserContext(slackUserId)
   return !!context.suppressCalendarPrompt
 }
@@ -120,7 +120,7 @@ export async function setSuppressCalendarPrompt(slackUserId: string, suppress: b
 /**
  * Check if a user has been prompted for calendar connection in a specific topic
  */
-export async function hasUserBeenPrompted(topicId: string, userId: string): Promise<boolean> {
+async function hasUserBeenPrompted(topicId: string, userId: string): Promise<boolean> {
   const [topic] = await db
     .select()
     .from(topicTable)
@@ -165,7 +165,7 @@ export async function shouldShowCalendarButtons(
 /**
  * Find active scheduling topics that include a specific user
  */
-export async function findActiveTopicsForUser(slackUserId: string) {
+async function findActiveTopicsForUser(slackUserId: string) {
   const activeTopics = await db
     .select()
     .from(topicTable)
@@ -204,7 +204,10 @@ export async function continueSchedulingWorkflow(slackUserId: string) {
       .where(eq(slackUserTable.id, slackUserId))
       .limit(1)
 
-    const userName = slackUser?.realName || 'User'
+    const userName = slackUser?.realName
+    if (!userName) {
+      throw new Error(`User ${slackUserId} has no realName in database`)
+    }
 
     // For each active topic, create a synthetic calendar connection message and process it
     for (const topic of activeTopics) {

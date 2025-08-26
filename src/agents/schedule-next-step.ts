@@ -492,11 +492,16 @@ export async function scheduleNextStep(
      message.text.toLowerCase().includes('send me'))
 
   if (userRequestingCalendar) {
+    const userName = userMap.get(message.userId)?.realName
+    if (!userName) {
+      throw new Error(`User ${message.userId} has no realName in userMap`)
+    }
+    
     return {
       replyMessage: '',
       messagesToUsers: [
         {
-          userNames: [userMap.get(message.userId)?.realName || 'User'],
+          userNames: [userName],
           text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
           includeCalendarButtons: true,
         },
