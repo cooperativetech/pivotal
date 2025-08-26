@@ -5,6 +5,7 @@ import { topicTable, slackMessageTable, SlackMessage, slackUserTable, SlackUser,
 import { analyzeTopicRelevance, scheduleNextStep } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -156,7 +157,7 @@ export const messageProcessingLock = {
   },
 }
 
-async function processSchedulingActions(
+export async function processSchedulingActions(
   topicId: string,
   message: SlackMessage,
   client: WebClient,
@@ -295,10 +296,69 @@ async function processSchedulingActions(
               }
               await upsertSlackChannel(dmChannel.channel.id, channelUserIds)
 
-              // Send the message
+              const messageToSend = messageGroup.text
+              let blocks = undefined
+
+              // Check if AI requested calendar buttons for this message
+              if (messageGroup.includeCalendarButtons) {
+                // Check if this user should get calendar connection buttons
+                const shouldShow = await shouldShowCalendarButtons(topicId, userId)
+
+                if (shouldShow) {
+                  // Generate OAuth URL for direct linking
+                  const authUrl = generateGoogleAuthUrl(userId)
+
+                  // Add calendar connection buttons using Block Kit format
+                  blocks = [
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: 'To help with scheduling, you can connect your Google Calendar:',
+                      },
+                    },
+                    {
+                      type: 'actions',
+                      elements: [
+                        {
+                          type: 'button',
+                          text: {
+                            type: 'plain_text',
+                            text: 'Connect Google Calendar',
+                          },
+                          style: 'primary',
+                          url: authUrl, // Direct URL link for seamless UX
+                        },
+                        {
+                          type: 'button',
+                          text: {
+                            type: 'plain_text',
+                            text: 'Not now',
+                          },
+                          action_id: 'calendar_not_now',
+                        },
+                        {
+                          type: 'button',
+                          text: {
+                            type: 'plain_text',
+                            text: "Don't ask this again",
+                          },
+                          action_id: 'dont_ask_calendar_again',
+                        },
+                      ],
+                    },
+                  ]
+
+                  // Record that we've prompted this user for calendar connection
+                  await addPromptedUser(topicId, userId)
+                }
+              }
+
+              // Send the message with optional blocks
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
-                text: messageGroup.text,
+                text: messageToSend,
+                ...(blocks && { blocks }),
               })
 
               // Save the bot's DM to the database immediately
@@ -307,7 +367,7 @@ async function processSchedulingActions(
                   topicId: topicId,
                   channelId: dmChannel.channel.id,
                   userId: botUserId,
-                  text: messageGroup.text,
+                  text: messageToSend,
                   timestamp: tsToDate(dmResponse.ts),
                   rawTs: dmResponse.ts,
                   threadTs: null,
