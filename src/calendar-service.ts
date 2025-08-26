@@ -230,10 +230,11 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: 
     const userContext = await getUserContext(slackUserId)
 
     if (!userContext.googleAccessToken) {
-      console.error(`No google auth token found for user ${slackUserId}`)
-      return {}
+      throw new Error(`No google auth token found for user ${slackUserId}`)
+    }
+
     // Generate fake calendars if we're testing / evaluating
-    } else if (userContext.googleAccessToken === 'fake-token-for-eval') {
+    if (userContext.googleAccessToken === 'fake-token-for-eval') {
       return genAndStoreFakeUserCalendar(slackUserId, startTime, endTime)
     }
 
@@ -318,6 +319,20 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: 
 
   } catch (error) {
     console.error(`Error fetching calendar for user ${slackUserId}:`, error)
+
+    // Check for invalid_grant error (expired or revoked tokens)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('invalid_grant')) {
+      console.warn(`Invalid grant detected for user ${slackUserId}, clearing Google auth tokens`)
+
+      // Clear the invalid tokens
+      await updateUserContext(slackUserId, {
+        googleAccessToken: undefined,
+        googleRefreshToken: undefined,
+        googleTokenExpiryDate: undefined,
+      })
+    }
+
     return {}
   }
 }
@@ -353,6 +368,13 @@ export async function getUserCalendarStructured(slackUserId: string, topic: Topi
       context = await fetchAndStoreUserCalendar(slackUserId, startTime, endTime)
     }
 
+    const topicContext = topic.perUserContext[slackUserId]
+
+    // If there's no calendar info for the user, return null to indicate this
+    if (!context.calendar && !topicContext?.calendarManualOverrides) {
+      return null
+    }
+
     let calEvents: CalendarEvent[] =  []
 
     // Filter events to only include those that overlap with the requested time range
@@ -365,7 +387,6 @@ export async function getUserCalendarStructured(slackUserId: string, topic: Topi
     }
 
     // Merge with topic-specific manual overrides if they exist
-    const topicContext = topic.perUserContext[slackUserId]
     if (topicContext?.calendarManualOverrides) {
       // Filter overrides to only include those that overlap with the requested time range
       const filteredOverrides = topicContext.calendarManualOverrides.filter((override) => {

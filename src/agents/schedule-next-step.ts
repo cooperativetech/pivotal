@@ -45,7 +45,7 @@ const findFreeSlots = tool({
     })
 
     // Build profiles for the time intersection tool
-    const profiles: UserProfile[] = await Promise.all(
+    const profiles: (UserProfile | null)[] = await Promise.all(
       userNames.map(async (userName) => {
         const userId = nameToIdMap.get(userName)
         if (!userId) {
@@ -59,25 +59,25 @@ const findFreeSlots = tool({
 
         const calendar = await getUserCalendarStructured(userId, topic, new Date(startTime), new Date(endTime))
 
-        if (calendar && calendar.length > 0) {
-          return {
-            name: userName,
-            calendar: convertCalendarEventsToUserProfile(calendar),
-          }
-        } else {
-          // User has no calendar data, treat as fully available
-          return {
-            name: userName,
-            calendar: [],
-          }
+        // If the user has no calendar info, return null
+        if (calendar === null) {
+          return null
+        }
+
+        return {
+          name: userName,
+          calendar: convertCalendarEventsToUserProfile(calendar),
         }
       }),
     )
 
-    // Use the time intersection tool to find common free slots
-    const freeSlots = findCommonFreeTime(profiles, new Date(startTime), new Date(endTime))
-    console.log('Found free slots:', freeSlots)
+    const profilesWithCal = profiles.filter((p) => p !== null)
+    const usersWithCal = profilesWithCal.map((p) => p.name)
+    const usersNoCal = userNames.filter((name) => !usersWithCal.includes(name))
+    const usersNoCalStr = usersNoCal.length > 0 ? `These users had no calendar info: ${usersNoCal.join(', ')}\n` : ''
 
+    // Use the time intersection tool to find common free slots
+    const freeSlots = findCommonFreeTime(profilesWithCal, new Date(startTime), new Date(endTime))
     const freeSlotsStr = freeSlots.map((slot) => {
       // Format for calling user's timezone
       const startFormatted = formatTimestampWithTimezone(slot.start, callingUserTimezone)
@@ -110,7 +110,9 @@ const findFreeSlots = tool({
       return `- [${durationStr}] ${startFormatted} to ${endTime}`
     }).join('\n')
 
-    return `These time slots are available for all participants:\n${freeSlotsStr}`
+    const res = `${usersNoCalStr}These time slots are available for users ${usersWithCal.join(', ')}:\n${freeSlotsStr}`
+    console.log(res)
+    return res
   },
 })
 
