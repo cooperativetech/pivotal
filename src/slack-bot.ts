@@ -5,7 +5,7 @@ import { serve } from '@hono/node-server'
 import { zValidator } from '@hono/zod-validator'
 
 import { handleSlackMessage } from './slack-message-handler'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
+import { GoogleAuthCallbackReq, handleGoogleAuthCallback, setSuppressCalendarPrompt } from './calendar-service'
 
 const slackApp = new App({
   token: process.env.PV_SLACK_BOT_TOKEN,
@@ -22,6 +22,42 @@ slackApp.message(async ({ message, context, client }) => {
     await handleSlackMessage(message, context.botUserId, client)
   }
 })
+
+// Handle interactive components (buttons)
+slackApp.action('dont_ask_calendar_again', async ({ ack, body, client }) => {
+  await ack()
+
+  try {
+    // Extract user ID from the action
+    const userId = body.user.id
+
+    // Set the suppression flag
+    await setSuppressCalendarPrompt(userId, true)
+
+    // Send confirmation message in the same channel
+    if (body.channel?.id) {
+      await client.chat.postMessage({
+        channel: body.channel.id,
+        text: '✅ Got it! I won\'t ask you to connect your calendar again unless you explicitly ask me to.',
+      })
+    }
+
+    console.log(`User ${userId} opted out of calendar prompts`)
+  } catch (error) {
+    console.error('Error handling dont_ask_calendar_again action:', error)
+  }
+})
+
+// Handle "Not now" button - simple dismiss action
+slackApp.action('calendar_not_now', async ({ ack }) => {
+  await ack()
+  // Just acknowledge the action - message will be dismissed automatically
+  // User won't see buttons again in this topic (already tracked by addPromptedUser)
+})
+
+// Note: "Connect Google Calendar" button is now a direct URL link, no action handler needed
+
+export { slackApp }
 
 await slackApp.start()
 slackApp.logger.info('Slack bot is running')

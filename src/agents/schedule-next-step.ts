@@ -13,7 +13,7 @@ import {
 } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
-import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
+import { getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
 import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 
 interface ScheduleNextStepContext {
@@ -253,6 +253,7 @@ const ScheduleNextStepRes = z.strictObject({
   messagesToUsers: z.array(z.strictObject({
     userNames: z.array(z.string()),
     text: z.string(),
+    includeCalendarButtons: z.boolean().optional(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
   reasoning: z.string(),
@@ -491,15 +492,16 @@ export async function scheduleNextStep(
      message.text.toLowerCase().includes('send me'))
 
   if (userRequestingCalendar) {
-    const authUrl = generateGoogleAuthUrl(message.userId)
-
     return {
-      replyMessage: `Here's your Google Calendar connection link:
-
-${authUrl}
-
-This will allow me to check your availability automatically when scheduling. If you'd rather not connect your calendar, just let me know and I'll ask for your availability manually instead.`,
-      reasoning: 'User explicitly requested calendar connection link',
+      replyMessage: '',
+      messagesToUsers: [
+        {
+          userNames: [userMap.get(message.userId)?.realName || 'User'],
+          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
+          includeCalendarButtons: true,
+        },
+      ],
+      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
     }
   }
 
