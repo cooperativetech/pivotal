@@ -362,7 +362,7 @@ export async function processSchedulingActions(
                   topicId: topicId,
                   channelId: dmChannel.channel.id,
                   userId: topic.botUserId,
-                  text: messageGroup.text,
+                  text: messageToSend,
                   timestamp: tsToDate(dmResponse.ts),
                   rawTs: dmResponse.ts,
                   threadTs: null,
