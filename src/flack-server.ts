@@ -12,6 +12,8 @@ import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-serv
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
 import { GetTopicReq, dumpTopic } from './utils'
 import { scheduleNextStep } from './agents'
+import { toHonoHandler } from 'better-auth/hono'
+import { auth } from './auth'
 
 const PORT = 3001
 const honoApp = new Hono()
@@ -19,6 +21,9 @@ const honoApp = new Hono()
     const logEntry = `[${new Date().toISOString()}] ${message}`
     console.log(logEntry)
   }))
+
+  // Better-Auth routes
+  .route('/api/auth', toHonoHandler(auth))
 
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     return handleGoogleAuthCallback(c, c.req.valid('query'))
