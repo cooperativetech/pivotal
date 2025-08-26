@@ -1,5 +1,11 @@
 ## Getting Started
 
+Ensure you're using the correct version of node (from .nvmrc):
+```
+brew install nvm
+nvm use
+```
+
 Install dependencies with pnpm:
 ```
 brew install pnpm
