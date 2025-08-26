@@ -484,7 +484,6 @@ export async function scheduleNextStep(
   topic: Topic,
   previousMessages: SlackMessage[],
   userMap: Map<string, SlackUser>,
-  botUserId: string,
 ): Promise<ScheduleNextStepRes> {
   // If user is explicitly asking for calendar connection, send link immediately
   const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
@@ -511,12 +510,12 @@ export async function scheduleNextStep(
   const callingUserTimezone = callingUser?.tz || 'UTC'
 
   // Get channel information for descriptive display
-  const channelDescription = await getChannelDescription(message.channelId, userMap, botUserId)
+  const channelDescription = await getChannelDescription(message.channelId, userMap)
 
-  const userPrompt = `Your name in conversations: ${userMap.get(botUserId)?.realName || 'Assistant'}
+  const userPrompt = `Your name in conversations: ${userMap.get(topic.botUserId)?.realName || 'Assistant'}
 
 Previous Messages in this Topic:
-${await organizeMessagesByChannelAndThread(previousMessages, botUserId, callingUserTimezone)}
+${await organizeMessagesByChannelAndThread(previousMessages, callingUserTimezone)}
 
 Message To Reply To:
 From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser?.tz ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})

@@ -10,8 +10,6 @@ import { unserializeTopicData, TopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
 
 
-const BOT_USER_ID = 'UTESTBOT'
-
 type EvalMode = 'persona' | 'calendar'
 
 // Simulate a scheduling conversation using personas or calendar mode
@@ -62,7 +60,7 @@ async function simulateSchedulingConversation(
     throw new Error('Eval requires at least 1 test user')
   }
 
-  const initMessage = `<@${BOT_USER_ID}> Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
+  const initMessage = `Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
   console.log(`Sending initial message from ${userIds[0]}: ${initMessage}`)
 
   const initMessageRes = await api.message.$post({
@@ -105,8 +103,7 @@ async function simulateSchedulingConversation(
 
         // Generate response from all non-bot users in channel
         const { userIds } = await channelRes.json()
-        const usersToReply = userIds.filter((userId) => userId !== BOT_USER_ID)
-        return Promise.all(usersToReply.map(async (userId) => {
+        return Promise.all(userIds.map(async (userId) => {
           const profile = userIdProfileMap.get(userId)
           if (!profile) {
             throw new Error(`Profile not found for userId: ${userId}`)
