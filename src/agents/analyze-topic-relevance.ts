@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 import { Agent, run } from './agent-sdk'
 import db from '../db/engine'
-import { Topic, slackMessageTable, SlackMessage, slackUserTable, SlackUser } from '../db/schema/main'
+import type { Topic, SlackMessage, SlackUser } from '../db/schema/main'
+import { slackMessageTable, slackUserTable } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,

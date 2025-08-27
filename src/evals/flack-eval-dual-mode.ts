@@ -2,11 +2,13 @@
 import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { llmPersonaRespond, extractScheduledTime } from './agents/llm-persona-agent'
-import { scoreAlgorithmWithCases, PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
+import type { PersonInput, DataAvailabilityConfig } from './core-benchmark/score-algorithm'
+import { scoreAlgorithmWithCases } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot, BenchmarkTestCase } from './core-benchmark/generate-benchmark-data'
 import { generateBenchmarkTestCases } from './core-benchmark/generate-benchmark-data'
 import { api } from '../shared/api-client'
-import { unserializeTopicData, TopicData } from '@shared/api-types'
+import type { TopicData } from '@shared/api-types'
+import { unserializeTopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
 
 

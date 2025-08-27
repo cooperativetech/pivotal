@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { api } from '@shared/api-client'
-import { unserializeTopicData, TopicData, SlackMessage } from '@shared/api-types'
+import type { TopicData, SlackMessage } from '@shared/api-types'
+import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 

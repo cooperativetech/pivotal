@@ -45,6 +45,7 @@ export default tseslint.config(
       '@stylistic/no-trailing-spaces': ['error'],
       '@stylistic/arrow-parens': ['error', 'always'],
       '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+      '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
 )

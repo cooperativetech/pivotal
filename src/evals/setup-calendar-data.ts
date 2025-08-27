@@ -1,4 +1,4 @@
-import { CalendarEvent as BenchmarkCalendarEvent, PersonProfile } from './core-benchmark/generate-benchmark-data'
+import type { CalendarEvent as BenchmarkCalendarEvent, PersonProfile } from './core-benchmark/generate-benchmark-data'
 import { updateUserContext } from '../calendar-service'
 import db from '../db/engine'
 import { slackUserTable } from '../db/schema/main'

@@ -5,21 +5,23 @@ import { eq, inArray, and, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import db from './db/engine'
-import {
-  slackMessageTable,
+import type {
   SlackMessage,
   SlackUser,
   SlackMessageInsert,
-  topicTable,
   TopicInsert,
-  slackUserTable,
   SlackUserInsert,
-  slackChannelTable,
   SlackChannelInsert,
+  UserDataInsert } from './db/schema/main'
+import {
+  slackMessageTable,
+  topicTable,
+  slackUserTable,
+  slackChannelTable,
   userDataTable,
-  UserDataInsert,
 } from './db/schema/main'
-import { unserializeTopicData, TopicData, TopicRes } from '@shared/api-types'
+import type { TopicData, TopicRes } from '@shared/api-types'
+import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
 export function tsToDate(ts: string): Date {

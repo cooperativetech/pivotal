@@ -13,7 +13,7 @@
     "dumptopic": "tsx ./src/utils.ts dump",
     "loadtopic": "tsx ./src/utils.ts load",
     "loadtopics": "tsx ./src/utils.ts load",
-    "lint": "tsc --noEmit && eslint .",
+    "lint": "tsc --noEmit && eslint . --cache",
     "postinstall": "./setup-git.sh"
   },
   "dependencies": {

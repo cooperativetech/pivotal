@@ -73,7 +73,8 @@ This is a Slack bot for AI-assisted scheduling with evaluation framework.
   '@stylistic/array-bracket-spacing': ['error', 'never'],
   '@stylistic/no-trailing-spaces': ['error'],
   '@stylistic/arrow-parens': ['error', 'always'],
-  '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }]
+  '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+  '@typescript-eslint/consistent-type-imports': 'error',
 }
 ```
 

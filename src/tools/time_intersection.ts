@@ -1,4 +1,4 @@
-import { CalendarEvent } from '@shared/api-types'
+import type { CalendarEvent } from '@shared/api-types'
 
 /**
  * @file time-intersection-tool.ts
