@@ -44,6 +44,7 @@ export const slackUserTable = pgTable('slack_user', {
   id: text().primaryKey(),
   teamId: text().notNull(),
   realName: text(),
+  email: text(),
   tz: text(),
   isBot: boolean().notNull(),
   deleted: boolean().notNull(),

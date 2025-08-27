@@ -70,6 +70,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
         id: member.id,
         teamId: member.team_id,
         realName: member.real_name,
+        email: member.profile?.email?.toLowerCase(),
         tz: member.tz,
         isBot: isBot,
         deleted: member.deleted,
@@ -81,6 +82,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
         const userMapUser: SlackUser = {
           ...slackUser,
           realName: slackUser.realName || null,
+          email: slackUser.email || null,
           tz: slackUser.tz || null,
         }
         userMap.set(member.id, userMapUser)
@@ -96,6 +98,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
           set: {
             teamId: sql.raw('excluded.team_id'),
             realName: sql.raw('excluded.real_name'),
+            email: sql.raw('excluded.email'),
             tz: sql.raw('excluded.tz'),
             isBot: sql.raw('excluded.is_bot'),
             deleted: sql.raw('excluded.deleted'),
