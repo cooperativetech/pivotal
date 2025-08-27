@@ -12,8 +12,8 @@ import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-serv
 import { messageProcessingLock, handleSlackMessage, SlackAPIMessage } from './slack-message-handler'
 import { GetTopicReq, dumpTopic } from './utils'
 import { scheduleNextStep } from './agents'
-import { toHonoHandler } from 'better-auth/hono'
-import { auth } from './auth'
+// import { toHono } from 'better-auth/hono'
+// import { auth } from './auth'
 
 const PORT = 3001
 const honoApp = new Hono()
@@ -22,8 +22,8 @@ const honoApp = new Hono()
     console.log(logEntry)
   }))
 
-  // Better-Auth routes
-  .route('/api/auth', toHonoHandler(auth))
+  // TODO: Better-Auth routes - will add after fixing import issues
+  // .route('/api/auth', toHono(auth))
 
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     return handleGoogleAuthCallback(c, c.req.valid('query'))
@@ -57,6 +57,35 @@ const honoApp = new Hono()
       return c.json({ topics })
     } catch (error) {
       console.error('Error fetching topics:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  .get('/api/profile', (c) => {
+    try {
+      // TODO: Add auth middleware to get current user
+      // For now, return placeholder response
+      return c.json({
+        user: null,
+        slackAccounts: [],
+        message: 'Authentication not yet implemented',
+      })
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  .get('/api/profile/topics', (c) => {
+    try {
+      // TODO: Add auth middleware and filter by user's linked Slack accounts
+      // For now, return empty array
+      return c.json({
+        topics: [],
+        message: 'Authentication not yet implemented',
+      })
+    } catch (error) {
+      console.error('Error fetching user topics:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })

@@ -82,6 +82,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
           ...slackUser,
           realName: slackUser.realName || null,
           tz: slackUser.tz || null,
+          authUserId: null, // New users don't have auth linkage yet
         }
         userMap.set(member.id, userMapUser)
       }

@@ -228,7 +228,6 @@ export async function continueSchedulingWorkflow(slackUserId: string) {
         topic.id,
         syntheticSlackMessage,
         slackApp.client,
-        process.env.PV_SLACK_BOT_USER_ID!,
       )
     }
   } catch (error) {

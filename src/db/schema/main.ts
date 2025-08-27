@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import type { TopicUserContext, UserContext } from '@shared/api-types'
+import { user } from './auth'
 
 export type WorkflowType = 'scheduling' | 'other'
 
@@ -49,6 +50,7 @@ export const slackUserTable = pgTable('slack_user', {
   deleted: boolean().notNull(),
   updated: timestamp({ withTimezone: true }).notNull(),
   raw: jsonb().notNull(),
+  authUserId: text().references(() => user.id, { onDelete: 'set null' }),
 })
 export type SlackUserInsert = InferInsertModel<typeof slackUserTable>
 export type SlackUser = InferSelectModel<typeof slackUserTable>

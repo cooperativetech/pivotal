@@ -1,0 +1,2 @@
+ALTER TABLE "slack_user" ADD COLUMN "auth_user_id" text;--> statement-breakpoint
+ALTER TABLE "slack_user" ADD CONSTRAINT "slack_user_auth_user_id_user_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;
