@@ -23,7 +23,7 @@ const honoApp = new Hono()
   }))
 
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'))
+    return handleGoogleAuthCallback(c, c.req.valid('query'), mockSlackClient)
   })
 
   .get('/api/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {

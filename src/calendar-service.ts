@@ -1,4 +1,4 @@
-import { eq, sql, and } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 import type { Context } from 'hono'
 import { z } from 'zod'
@@ -8,6 +8,7 @@ import { userDataTable, slackUserTable, topicTable, type Topic } from './db/sche
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
+import { processSchedulingActions } from './slack-message-handler'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -103,14 +104,6 @@ export async function updateTopicUserContext(topicId: string, slackUserId: strin
 }
 
 /**
- * Check if a user has opted out of calendar prompts
- */
-async function shouldSuppressCalendarPrompt(slackUserId: string): Promise<boolean> {
-  const context = await getUserContext(slackUserId)
-  return !!context.suppressCalendarPrompt
-}
-
-/**
  * Set the calendar prompt suppression flag for a user
  */
 export async function setSuppressCalendarPrompt(slackUserId: string, suppress: boolean = true): Promise<void> {
@@ -154,23 +147,18 @@ export async function shouldShowCalendarButtons(
     hasUserBeenPrompted(topicId, userId),
   ])
 
-  // Check all conditions for showing calendar buttons
-  const hasCalendar = !!userContext.googleAccessToken
-  const suppressPrompt = !!userContext.suppressCalendarPrompt
-
   // Only show buttons if: not already prompted, no calendar, and hasn't suppressed prompts
-  return !hasBeenPrompted && !hasCalendar && !suppressPrompt
+  return !hasBeenPrompted &&
+         !userContext.googleAccessToken &&
+         !userContext.suppressCalendarPrompt
 }
 
 
 /**
  * Continue scheduling workflow after calendar connection for specific topic
  */
-export async function continueSchedulingWorkflow(topicId: string, slackUserId: string) {
+export async function continueSchedulingWorkflow(topicId: string, slackUserId: string, slackClient: any) {
   try {
-    // Import here to avoid circular dependency
-    const { processSchedulingActions } = await import('./slack-message-handler')
-    const { slackApp } = await import('./slack-bot')
 
     // Load the specific topic
     const [topic] = await db
@@ -180,21 +168,13 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
       .limit(1)
 
     if (!topic) {
-      console.log(`Topic ${topicId} not found`)
-      return
+      throw new Error(`Topic ${topicId} not found`)
     }
 
-    // Verify topic is active and is scheduling workflow
-    if (!topic.isActive || topic.workflowType !== 'scheduling') {
-      console.log(`Topic ${topicId} is not an active scheduling topic`)
-      return
+    if (!topic.isActive) {
+      throw new Error(`Topic ${topicId} is not active`)
     }
 
-    // Verify user belongs to this topic
-    if (!topic.userIds || !topic.userIds.includes(slackUserId)) {
-      console.log(`User ${slackUserId} is not part of topic ${topicId}`)
-      return
-    }
 
     // Get the user's name for the synthetic message
     const [slackUser] = await db
@@ -227,7 +207,7 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
     await processSchedulingActions(
       topic.id,
       syntheticSlackMessage,
-      slackApp.client,
+      slackClient,
     )
   } catch (error) {
     console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
@@ -270,6 +250,7 @@ export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 export async function handleGoogleAuthCallback(
   c: Context,
   queryParams: GoogleAuthCallbackReq,
+  slackClient: any,
 ): Promise<Response> {
     const { code, state, error, error_description } = queryParams
 
@@ -287,7 +268,7 @@ export async function handleGoogleAuthCallback(
     }
 
     try {
-      await fetchAndStoreGoogleAuthTokens(code, state)
+      await fetchAndStoreGoogleAuthTokens(code, state, slackClient)
 
       return c.html(`
         <html>
@@ -315,7 +296,7 @@ export async function handleGoogleAuthCallback(
 /**
  * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
-export async function fetchAndStoreGoogleAuthTokens(code: string, state: string) {
+export async function fetchAndStoreGoogleAuthTokens(code: string, state: string, slackClient: any): Promise<void> {
     // Parse state to get Slack user and topic info: "slack:U123ABC:topic:uuid"
     const [prefix, slackUserId, topicPrefix, topicId] = state.split(':')
 
@@ -352,8 +333,8 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string)
     googleTokenExpiryDate: expiryDate,
   })
 
-  // Continue scheduling workflow after successful connection
-  await continueSchedulingWorkflow(topicId, slackUserId)
+  // Continue scheduling workflow after successful token storage
+  await continueSchedulingWorkflow(topicId, slackUserId, slackClient)
 }
 
 /**
@@ -606,15 +587,6 @@ export async function genAndStoreFakeUserCalendar(
       startTime,
       endTime,
     )
-
-    // Helper function to check if two events overlap
-    const eventsOverlap = (event1: CalendarEvent, event2: CalendarEvent): boolean => {
-      const start1 = new Date(event1.start)
-      const end1 = new Date(event1.end)
-      const start2 = new Date(event2.start)
-      const end2 = new Date(event2.end)
-      return start1 < end2 && end1 > start2
-    }
 
     // Filter generated events to exclude any that overlap with existing events
     const nonConflictingEvents = generatedEvents.filter((genEvent) => {

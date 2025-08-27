@@ -65,7 +65,7 @@ const honoApp = new Hono()
   })
 
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'))
+    return handleGoogleAuthCallback(c, c.req.valid('query'), slackApp.client)
   })
 
 serve({ fetch: honoApp.fetch, port: PORT })
