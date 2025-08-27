@@ -576,6 +576,25 @@ interface MessageProcessingRes {
   resMessages: SlackMessage[],
 }
 
+async function getOrCreateDummyTopic(botUserId: string): Promise<string> {
+  const DUMMY_SUMMARY = 'dummy topic for uncategorized messages'
+  const [dummyTopic] = await db.select()
+    .from(topicTable)
+    .where(and(
+      eq(topicTable.summary, DUMMY_SUMMARY),
+      eq(topicTable.workflowType, 'other'),
+    ))
+  if (dummyTopic) {
+    return dummyTopic.id
+  }
+  const [newDummyTopic] = await db.insert(topicTable).values({
+    botUserId: botUserId,
+    summary: DUMMY_SUMMARY,
+    workflowType: 'other',
+  }).returning()
+  return newDummyTopic.id
+}
+
 export async function handleSlackMessage(
   message: SlackAPIMessage,
   botUserId: string,
@@ -600,7 +619,11 @@ export async function handleSlackMessage(
   try {
     // Route message to topic (creates topic if necessary)
     const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(message, botUserId, client, ignoreExistingTopics)
-    if (!topicId) {
+
+    // If getOrCreateTopic returns null or the dummy topic, save the message to the dummy topic and return
+    const dummyTopicId = await getOrCreateDummyTopic(botUserId)
+    if (!topicId || topicId === dummyTopicId) {
+      await saveMessageToTopic(dummyTopicId, message)
       return null
     }
 
