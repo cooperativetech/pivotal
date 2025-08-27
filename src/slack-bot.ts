@@ -24,17 +24,21 @@ slackApp.message(async ({ message, context, client }) => {
 })
 
 // Handle interactive components (buttons)
-slackApp.action('dont_ask_calendar_again', async ({ ack, body }) => {
+slackApp.action('dont_ask_calendar_again', async ({ ack, body, respond }) => {
   try {
+    // Acknowledge the button action (must be within 3s)
+    await ack()
+
     // Extract user ID from the action
     const userId = body.user.id
 
     // Set the suppression flag
     await setSuppressCalendarPrompt(userId, true)
 
-    // Acknowledge with confirmation message (replaces empty ack + postMessage)
-    await ack({ 
-      text: '✅ Got it! I won\'t ask you to connect your calendar again unless you explicitly ask me to.' 
+    // Send ephemeral confirmation message to the user who clicked
+    await respond({
+      text: '✅ Got it! I won\'t ask you to connect your calendar again unless you explicitly ask me to.',
+      response_type: 'ephemeral',
     })
 
     console.log(`User ${userId} opted out of calendar prompts`)

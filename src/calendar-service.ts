@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 import type { Context } from 'hono'
+import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
@@ -157,7 +158,7 @@ export async function shouldShowCalendarButtons(
 /**
  * Continue scheduling workflow after calendar connection for specific topic
  */
-export async function continueSchedulingWorkflow(topicId: string, slackUserId: string, slackClient: any) {
+export async function continueSchedulingWorkflow(topicId: string, slackUserId: string, slackClient: WebClient) {
   try {
 
     // Load the specific topic
@@ -250,7 +251,7 @@ export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 export async function handleGoogleAuthCallback(
   c: Context,
   queryParams: GoogleAuthCallbackReq,
-  slackClient: any,
+  slackClient: WebClient,
 ): Promise<Response> {
     const { code, state, error, error_description } = queryParams
 
@@ -296,7 +297,7 @@ export async function handleGoogleAuthCallback(
 /**
  * Exchange OAuth authorization code for access and refresh tokens, and store in user context
  */
-export async function fetchAndStoreGoogleAuthTokens(code: string, state: string, slackClient: any): Promise<void> {
+export async function fetchAndStoreGoogleAuthTokens(code: string, state: string, slackClient: WebClient): Promise<void> {
     // Parse state to get Slack user and topic info: "slack:U123ABC:topic:uuid"
     const [prefix, slackUserId, topicPrefix, topicId] = state.split(':')
 
