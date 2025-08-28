@@ -1,7 +1,5 @@
 import { Hono, type Context } from 'hono'
-import { zValidator } from '@hono/zod-validator'
 import { desc, eq, sql } from 'drizzle-orm'
-import { z } from 'zod'
 import db from '../db/engine'
 import { topicTable, slackUserTable } from '../db/schema/main'
 import { session, user } from '../db/schema/auth'
