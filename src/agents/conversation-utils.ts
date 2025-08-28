@@ -14,7 +14,6 @@ import {
   formatTimestampWithTimezone,
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
-import { generateGoogleAuthUrl } from '../calendar-service'
 
 export interface ConversationContext {
   topic: Topic,
@@ -28,6 +27,7 @@ export const ConversationRes = z.strictObject({
   messagesToUsers: z.array(z.strictObject({
     userNames: z.array(z.string()),
     text: z.string(),
+    includeCalendarButtons: z.boolean().optional().nullable(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
   reasoning: z.string(),
@@ -130,15 +130,21 @@ export async function runConversationAgent(
      message.text.toLowerCase().includes('send me'))
 
   if (userRequestingCalendar) {
-    const authUrl = generateGoogleAuthUrl(message.userId)
+    const userName = userMap.get(message.userId)?.realName
+    if (!userName) {
+      throw new Error(`User ${message.userId} has no realName in userMap`)
+    }
 
     return {
-      replyMessage: `Here's your Google Calendar connection link:
-
-${authUrl}
-
-This will allow me to check your availability automatically when scheduling. If you'd rather not connect your calendar, just let me know and I'll ask for your availability manually instead.`,
-      reasoning: 'User explicitly requested calendar connection link',
+      replyMessage: '',
+      messagesToUsers: [
+        {
+          userNames: [userName],
+          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
+          includeCalendarButtons: true,
+        },
+      ],
+      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
     }
   }
 

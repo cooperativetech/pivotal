@@ -6,3 +6,4 @@ pv.log
 .DS_Store
 .env
 .eslintcache
+.claude-mistakes.md

@@ -37,6 +37,7 @@ export interface UserContext {
   slackTeamId?: string
   slackUserName?: string
   slackDisplayName?: string
+  suppressCalendarPrompt?: boolean
 }
 
 export interface TopicUserContext {
