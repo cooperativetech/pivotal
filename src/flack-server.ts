@@ -81,6 +81,23 @@ const honoApp = new Hono()
     }
   })
 
+  .get('/api/profile', (c) => {
+    // TODO: Add auth middleware to get current user
+    return c.json({
+      user: null,
+      slackAccounts: [],
+      message: 'Authentication not yet implemented',
+    })
+  })
+
+  .get('/api/profile/topics', (c) => {
+    // TODO: Add auth middleware and filter by user's linked Slack accounts
+    return c.json({
+      topics: [],
+      message: 'Authentication not yet implemented',
+    })
+  })
+
   .post('/api/clear_test_data', async (c) => {
     await messageProcessingLock.clear()
     const result = await cleanupTestData()
