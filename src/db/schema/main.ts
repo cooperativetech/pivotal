@@ -8,9 +8,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core'
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import type { TopicUserContext, UserContext } from '@shared/api-types'
-
-export type WorkflowType = 'scheduling' | 'other'
+import type { WorkflowType, TopicUserContext, UserContext } from '@shared/api-types'
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),

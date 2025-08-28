@@ -421,13 +421,7 @@ function Topic() {
           <h1 className="text-xl font-bold">{topicData.topic.summary}</h1>
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicData.topic.workflowType === 'scheduling'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
+          <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
             {topicData.topic.workflowType}
           </span>
           <span

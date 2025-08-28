@@ -1,29 +1,15 @@
-import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { RunContext } from './agent-sdk'
-import { Agent, Runner, tool, ModelBehaviorError } from './agent-sdk'
-import db from '../db/engine'
-import type { Topic, SlackMessage, SlackUser } from '../db/schema/main'
-import { topicTable } from '../db/schema/main'
-import {
-  tsToDate,
-  organizeMessagesByChannelAndThread,
-  replaceUserMentions,
-  getChannelDescription,
-  formatTimestampWithTimezone,
-} from '../utils'
+import { tool } from './agent-sdk'
+import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
-import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
+import type { ConversationContext } from './conversation-utils'
+import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
+import { getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
 import type { UserProfile } from '../tools/time_intersection'
 import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
-
-interface ScheduleNextStepContext {
-  topic: Topic,
-  userMap: Map<string, SlackUser>,
-  callingUserTimezone: string,
-}
 
 const findFreeSlots = tool({
   name: 'findFreeSlots',
@@ -33,7 +19,7 @@ const findFreeSlots = tool({
     startTime: z.string().describe('ISO timestamp for the start of the time range to search for free slots'),
     endTime: z.string().describe('ISO timestamp for the end of the time range to search for free slots'),
   }),
-  execute: async ({ userNames, startTime, endTime }, runContext?: RunContext<ScheduleNextStepContext>) => {
+  execute: async ({ userNames, startTime, endTime }, runContext?: RunContext<ConversationContext>) => {
     console.log('Tool called: findFreeSlots for users:', userNames, 'from', startTime, 'to', endTime)
 
     if (!runContext) throw new Error('runContext not provided')
@@ -119,56 +105,6 @@ const findFreeSlots = tool({
   },
 })
 
-const updateUserNames = tool({
-  name: 'updateUserNames',
-  description: 'Update the list of users involved in the scheduling topic. Provide the COMPLETE list of user names who should be involved going forward (this replaces the existing list).',
-  parameters: z.strictObject({
-    userNames: z.array(z.string()).describe('Complete list of user names who should be involved (use exact names from User Directory)'),
-  }),
-  execute: async ({ userNames }, runContext?: RunContext<ScheduleNextStepContext>) => {
-    console.log('Tool called: updateUserNames with names:', userNames)
-
-    if (!runContext) throw new Error('runContext not provided')
-    const { topic, userMap } = runContext.context
-
-    // Map names to user IDs
-    const updatedUserIds: string[] = []
-
-    for (const name of userNames) {
-      let foundId: string | undefined
-      for (const [id, user] of userMap.entries()) {
-        if (user.realName === name) {
-          foundId = id
-          break
-        }
-      }
-
-      if (foundId) {
-        updatedUserIds.push(foundId)
-      } else {
-        throw new Error(`Could not find user ID for name: ${name}`)
-      }
-    }
-
-    // Update the topic in the database with the new user IDs
-    const [updatedTopic] = await db
-      .update(topicTable)
-      .set({
-        userIds: updatedUserIds,
-        updatedAt: new Date(),
-      })
-      .where(eq(topicTable.id, topic.id))
-      .returning()
-
-    // Update runContext with the updated topic
-    runContext.context.topic = updatedTopic
-
-    // Map IDs back to names for the response
-    const updatedUserNames = updatedUserIds.map((id) => userMap.get(id)?.realName || id)
-    return `Updated user list to: ${updatedUserNames.join(', ')}`
-  },
-})
-
 const updateUserCalendar = tool({
   name: 'updateUserCalendar',
   description: 'Update a user\'s calendar with manual availability overrides. These will be merged with their existing calendar, overwriting any overlapping time periods.',
@@ -176,7 +112,7 @@ const updateUserCalendar = tool({
     userName: z.string().describe('User name (exact name from User Directory) whose calendar to update'),
     events: z.array(CalendarEvent).describe('List of calendar events to add/update for the user'),
   }),
-  execute: async ({ userName, events }, runContext?: RunContext<ScheduleNextStepContext>) => {
+  execute: async ({ userName, events }, runContext?: RunContext<ConversationContext>) => {
     console.log('Tool called: updateUserCalendar for user:', userName, 'with events:', events)
 
     if (!runContext) throw new Error('runContext not provided')
@@ -223,48 +159,7 @@ const updateUserCalendar = tool({
   },
 })
 
-const updateSummary = tool({
-  name: 'updateSummary',
-  description: 'Update the topic summary when new information clarifies or changes the meeting details.',
-  parameters: z.strictObject({
-    summary: z.string().describe('The updated topic summary describing what needs to be scheduled'),
-  }),
-  execute: async ({ summary }, runContext?: RunContext<ScheduleNextStepContext>) => {
-    console.log('Tool called: updateSummary with summary:', summary)
-
-    if (!runContext) throw new Error('runContext not provided')
-    const { topic } = runContext.context
-
-    // Update the topic in the database with the new summary
-    const [updatedTopic] = await db
-      .update(topicTable)
-      .set({
-        summary,
-        updatedAt: new Date(),
-      })
-      .where(eq(topicTable.id, topic.id))
-      .returning()
-
-    // Update runContext with the updated topic
-    runContext.context.topic = updatedTopic
-
-    return `Updated topic summary to: ${summary}`
-  },
-})
-
-const ScheduleNextStepRes = z.strictObject({
-  replyMessage: z.string().optional().nullable(),
-  markTopicInactive: z.boolean().optional().nullable(),
-  messagesToUsers: z.array(z.strictObject({
-    userNames: z.array(z.string()),
-    text: z.string(),
-  })).optional().nullable(),
-  groupMessage: z.string().optional().nullable(),
-  reasoning: z.string(),
-})
-type ScheduleNextStepRes = z.infer<typeof ScheduleNextStepRes>
-
-async function scheduleNextStepInstructions(runContext: RunContext<ScheduleNextStepContext>) {
+async function schedulingInstructions(runContext: RunContext<ConversationContext>) {
   const mainPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
 
 ## Important Timezone Instructions
@@ -469,8 +364,8 @@ Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone
   return mainPrompt + userMapAndTopicInfo
 }
 
-const scheduleNextStepAgent = new Agent<ScheduleNextStepContext, typeof ScheduleNextStepRes>({
-  name: 'scheduleNextStepAgent',
+export const schedulingAgent = new ConversationAgent({
+  name: 'schedulingAgent',
   model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
@@ -478,93 +373,6 @@ const scheduleNextStepAgent = new Agent<ScheduleNextStepContext, typeof Schedule
     parallelToolCalls: false, // Only allow one tool call at a time
   },
   tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
-  outputType: ScheduleNextStepRes,
-  instructions: scheduleNextStepInstructions,
+  outputType: ConversationRes,
+  instructions: schedulingInstructions,
 })
-
-
-export async function scheduleNextStep(
-  message: SlackMessage,
-  topic: Topic,
-  previousMessages: SlackMessage[],
-  userMap: Map<string, SlackUser>,
-): Promise<ScheduleNextStepRes> {
-  // If user is explicitly asking for calendar connection, send link immediately
-  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
-    (message.text.toLowerCase().includes('link') ||
-     message.text.toLowerCase().includes('connect') ||
-     message.text.toLowerCase().includes('send me'))
-
-  if (userRequestingCalendar) {
-    const authUrl = generateGoogleAuthUrl(message.userId)
-
-    return {
-      replyMessage: `Here's your Google Calendar connection link:
-
-${authUrl}
-
-This will allow me to check your availability automatically when scheduling. If you'd rather not connect your calendar, just let me know and I'll ask for your availability manually instead.`,
-      reasoning: 'User explicitly requested calendar connection link',
-    }
-  }
-
-  // Get timezone information for the calling user
-  const callingUser = userMap.get(message.userId)
-  const callingUserTimezone = callingUser?.tz || 'UTC'
-
-  // Get channel information for descriptive display
-  const channelDescription = await getChannelDescription(message.channelId, userMap)
-
-  const userPrompt = `Your name in conversations: ${userMap.get(topic.botUserId)?.realName || 'Assistant'}
-
-Previous Messages in this Topic:
-${await organizeMessagesByChannelAndThread(previousMessages, callingUserTimezone)}
-
-Message To Reply To:
-From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser?.tz ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
-Text: "${replaceUserMentions(message.text, userMap)}"
-Channel: ${channelDescription}${
-  message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
-    ? `\nThread: [${formatTimestampWithTimezone(tsToDate(message.raw.thread_ts), callingUserTimezone)}]`
-    : ''
-}
-Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
-
-Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
-
-  console.log(`User prompt: ${userPrompt}`)
-
-  try {
-    console.log('=== CALLING LLM IN scheduleNextStep ===')
-    console.log('User prompt length:', userPrompt.length)
-    console.log('Topic user IDs:', topic.userIds)
-    console.log('Message user ID:', message.userId)
-
-    const runner = new Runner({ groupId: `topic-${topic.id}` })
-    const result = await runner.run(
-      scheduleNextStepAgent,
-      userPrompt,
-      { context: { topic, userMap, callingUserTimezone } },
-    )
-    if (!result.finalOutput) {
-      throw new Error('No finalOutput generated')
-    }
-    return result.finalOutput
-  } catch (error) {
-    console.error('=== ERROR IN scheduleNextStep ===')
-    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Full error object:', JSON.stringify(error, null, 2))
-    if (error instanceof ModelBehaviorError) {
-      console.error('Run state', error.state ? error.state.toJSON() : 'No run state')
-    }
-    console.error('=================================')
-
-    // Return a safe default response
-    return {
-      replyMessage: 'I encountered an error processing the scheduling request.',
-      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    }
-  }
-}

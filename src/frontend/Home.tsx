@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '@shared/api-client'
+import type { WorkflowType } from '@shared/api-types'
 
 interface Topic {
   id: string
   summary: string
-  workflowType: 'scheduling' | 'other'
+  workflowType: WorkflowType
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -82,13 +83,7 @@ function Home() {
               </h2>
 
               <div className="flex items-center gap-2 mb-3">
-                <span
-                  className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                    topic.workflowType === 'scheduling'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
+                <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
                   {topic.workflowType}
                 </span>
 

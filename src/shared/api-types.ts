@@ -7,6 +7,9 @@ import type { api } from './api-client'
 // Re-export database types for convenience
 export type { Topic, SlackMessage, SlackUser, SlackChannel, UserData }
 
+export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
+export type WorkflowType = z.infer<typeof WorkflowType>
+
 export const CalendarEvent = z.strictObject({
   start: z.string().describe('ISO timestamp for the start of the event'),
   end: z.string().describe('ISO timestamp for the end of the event'),
