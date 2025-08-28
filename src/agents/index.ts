@@ -1,6 +1,6 @@
 import type { WorkflowType } from '@shared/api-types'
 import type { ConversationAgent } from './conversation-utils'
-import { schedulingAgent } from './schedule-next-step'
+import { schedulingAgent } from './scheduling'
 import { meetingPrepAgent } from './meeting-prep'
 
 export const workflowAgentMap = new Map<WorkflowType, ConversationAgent>([
