@@ -7,7 +7,7 @@ import {
   boolean,
   unique,
 } from 'drizzle-orm/pg-core'
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import type { TopicUserContext, UserContext } from '@shared/api-types'
 
 export type WorkflowType = 'scheduling' | 'other'

@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { Agent, RunContext, Runner, tool, ModelBehaviorError } from './agent-sdk'
+import type { RunContext } from './agent-sdk'
+import { Agent, Runner, tool, ModelBehaviorError } from './agent-sdk'
 import db from '../db/engine'
-import { Topic, SlackMessage, topicTable, SlackUser } from '../db/schema/main'
+import type { Topic, SlackMessage, SlackUser } from '../db/schema/main'
+import { topicTable } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
@@ -14,7 +16,8 @@ import {
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
 import { generateGoogleAuthUrl, getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
-import { findCommonFreeTime, UserProfile, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
+import type { UserProfile } from '../tools/time_intersection'
+import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 
 interface ScheduleNextStepContext {
   topic: Topic,

@@ -1,14 +1,15 @@
 import type { WebClient } from '@slack/web-api'
 import { sql } from 'drizzle-orm'
 
-import { SlackAPIUser, SlackAPIMessage } from './slack-message-handler'
+import type { SlackAPIUser, SlackAPIMessage } from './slack-message-handler'
 import db from './db/engine'
-import {
-  slackUserTable,
+import type {
   SlackUser,
   SlackUserInsert,
+  SlackChannelInsert } from './db/schema/main'
+import {
+  slackUserTable,
   slackChannelTable,
-  SlackChannelInsert,
   slackMessageTable,
   topicTable,
 } from './db/schema/main'

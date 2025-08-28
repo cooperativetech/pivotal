@@ -3,14 +3,14 @@
  * Converts OpenAI agent traces and spans to Langfuse observability format
  */
 
-import { Langfuse } from 'langfuse'
+import type { Langfuse } from 'langfuse'
 import type {
   LangfuseTraceClient,
   LangfuseSpanClient,
   LangfuseGenerationClient,
 } from 'langfuse'
 
-import {
+import type {
   TracingExporter,
   Trace,
   Span,

@@ -5,3 +5,4 @@ eval-results
 pv.log
 .DS_Store
 .env
+.eslintcache
