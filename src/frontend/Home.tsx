@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '@shared/api-client'
 import type { WorkflowType } from '@shared/api-types'
 import { useAuth } from './AuthContext'
 
@@ -25,7 +24,7 @@ function Home() {
       if (!session) return
 
       try {
-        const response = await api.profile.topics.$get({}, {
+        const response = await fetch('/api/profile/topics', {
           headers: {
             Authorization: `Bearer ${session.token}`,
           },
@@ -33,7 +32,7 @@ function Home() {
         if (!response.ok) {
           throw new Error('Failed to fetch topics')
         }
-        const data = await response.json()
+        const data = await response.json() as { topics: Topic[] }
         setTopics(data.topics)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
