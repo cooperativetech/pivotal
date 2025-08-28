@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { local_api } from '@shared/api-client'
+import { api } from '@shared/api-client'
 import type { WorkflowType } from '@shared/api-types'
+import { useAuth } from './AuthContext'
 
 interface Topic {
   id: string
@@ -17,11 +18,18 @@ function Home() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { session } = useAuth()
 
   useEffect(() => {
     const fetchTopics = async () => {
+      if (!session) return
+
       try {
-        const response = await local_api.topics.$get()
+        const response = await api.profile.topics.$get({}, {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        })
         if (!response.ok) {
           throw new Error('Failed to fetch topics')
         }
@@ -35,7 +43,7 @@ function Home() {
     }
 
     void fetchTopics()
-  }, [])
+  }, [session])
 
   if (loading) {
     return (
