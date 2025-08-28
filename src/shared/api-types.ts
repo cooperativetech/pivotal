@@ -12,6 +12,7 @@ export const CalendarEvent = z.strictObject({
   end: z.string().describe('ISO timestamp for the end of the event'),
   summary: z.string().describe('Description of the event (e.g., "Available", "Busy", "Meeting")'),
   free: z.boolean().optional().nullable().describe('Whether the user is free during this time (default: false, meaning busy)'),
+  participantEmails: z.array(z.string()).optional().nullable().describe('List of participant email addresses'),
 })
 export type CalendarEvent = z.infer<typeof CalendarEvent>
 

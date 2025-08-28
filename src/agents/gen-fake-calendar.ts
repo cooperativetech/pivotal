@@ -38,7 +38,7 @@ export async function genFakeCalendar(
   timezone: string,
   startTime: Date,
   endTime: Date,
-): Promise<Array<{ start: string, end: string, summary: string }>> {
+): Promise<CalendarEvent[]> {
   const adjectives = [
     'experienced', 'innovative', 'strategic', 'creative', 'meticulous',
     'quirky', 'maverick', 'pragmatic', 'visionary', 'fearless',

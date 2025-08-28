@@ -282,11 +282,28 @@ export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: 
 
       // Skip all-day events for now
       if (event.start.dateTime && event.end.dateTime) {
-        calendarEvents.push({
+        // Extract participant emails from attendees
+        const participantEmails: string[] = []
+        if (event.attendees) {
+          for (const attendee of event.attendees) {
+            if (attendee.email) {
+              participantEmails.push(attendee.email)
+            }
+          }
+        }
+
+        const calendarEvent: CalendarEvent = {
           start: new Date(startTime).toISOString(),
           end: new Date(endTime).toISOString(),
           summary: event.summary || 'Busy',
-        })
+        }
+
+        // Only add participants if there are any
+        if (participantEmails.length > 0) {
+          calendarEvent.participantEmails = participantEmails
+        }
+
+        calendarEvents.push(calendarEvent)
       }
     }
 
