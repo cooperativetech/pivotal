@@ -13,7 +13,7 @@ import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-serv
 import type { SlackAPIMessage } from './slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from './slack-message-handler'
 import { GetTopicReq, dumpTopic } from './utils'
-import { scheduleNextStep } from './agents'
+import { workflowAgentMap, runConversationAgent } from './agents'
 
 const PORT = 3001
 const honoApp = new Hono()
@@ -165,8 +165,14 @@ const honoApp = new Hono()
         .where(eq(slackUserTable.id, topicData.topic.botUserId))
       userMap.set(topicData.topic.botUserId, botUser)
 
-      // Call scheduleNextStep
-      const result = await scheduleNextStep(
+      const workflowAgent = workflowAgentMap.get(topicData.topic.workflowType)
+      if (!workflowAgent) {
+        throw new Error(`No agent found for workflow type: ${topicData.topic.workflowType}`)
+      }
+
+      // Call workflow agent
+      const result = await runConversationAgent(
+        workflowAgent,
         message,
         topicWithCurrentUsers,
         previousMessages,

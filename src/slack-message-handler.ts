@@ -3,7 +3,7 @@ import type { UsersListResponse, ChatPostMessageResponse, WebClient } from '@sla
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
-import { analyzeTopicRelevance, scheduleNextStep } from './agents'
+import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
 
@@ -174,8 +174,9 @@ async function processSchedulingActions(
       return createdMessages
     }
 
-    // Only process scheduling topics
-    if (topic.workflowType !== 'scheduling') {
+    // Check if it's a valid workflow type, i.e. not 'other'
+    const workflowAgent = workflowAgentMap.get(topic.workflowType)
+    if (!workflowAgent) {
       return createdMessages
     }
 
@@ -192,9 +193,15 @@ async function processSchedulingActions(
     // Get Slack users for name mapping (including bots to get bot's name)
     const userMap = await getSlackUsers(client)
 
-    // Call scheduleNextStep to determine actions
-    const nextStep = await scheduleNextStep(message, topic, previousMessages, userMap)
-    console.log('Next scheduling step:', nextStep)
+    // Use conversation agent to determine actions
+    const nextStep = await runConversationAgent(
+      workflowAgent,
+      message,
+      topic,
+      previousMessages,
+      userMap,
+    )
+    console.log('Next workflow step:', nextStep)
 
     // Check if the current message sender will receive any DMs
     let senderWillReceiveDM = false
@@ -430,10 +437,10 @@ async function processSchedulingActions(
       await db.update(topicTable)
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(topicTable.id, topicId))
-      console.log('Scheduling workflow topic marked as inactive:', topicId)
+      console.log('Workflow topic marked as inactive:', topicId)
     }
   } catch (error) {
-    console.error('Error processing scheduling actions:', error)
+    console.error('Error processing topic actions:', error)
   }
   return createdMessages
 }
@@ -486,8 +493,8 @@ async function getOrCreateTopic(
 
   // Step 4: If DM or bot mentioned and could form new topic
   if ((isDirectMessage || isBotMentioned) && analysis.suggestedNewTopic) {
-    // Check if it's a scheduling workflow
-    if (analysis.workflowType === 'scheduling') {
+    // Check if it's a valid workflow type, i.e. not 'other'
+    if (analysis.workflowType && workflowAgentMap.has(analysis.workflowType)) {
       // Extract mentioned users from the message text
       const mentionedUserIds = new Set<string>([userId]) // Start with the sender
 
@@ -524,11 +531,11 @@ async function getOrCreateTopic(
 
       return newTopic.id
     } else {
-      // Non-scheduling workflow - send canned response in thread
+      // Invalid workflow - send canned response in thread
       await client.chat.postMessage({
         channel: message.channel,
         thread_ts: message.ts,
-        text: 'Sorry, but I\'m only set up for scheduling requests at the moment. Try something like "plan lunch with the team" or "schedule a meeting for next week".',
+        text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
       })
       return null
     }

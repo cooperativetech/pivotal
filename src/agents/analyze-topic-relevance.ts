@@ -13,11 +13,12 @@ import {
   formatTimestampWithTimezone,
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
+import { WorkflowType } from '@shared/api-types'
 
 const AnalyzeTopicRes = z.strictObject({
   relevantTopicId: z.string().optional().nullable(),
   suggestedNewTopic: z.string().optional().nullable(),
-  workflowType: z.enum(['scheduling', 'other']).optional().nullable(),
+  workflowType: WorkflowType.optional().nullable(),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
 })
@@ -60,7 +61,8 @@ Given a list of existing topics and a new message, determine:
 ## Workflow Type Classification
 When suggesting a new topic, also classify its workflow type:
 - "scheduling": The topic involves planning, organizing, or scheduling meetings, events, or activities (e.g., "plan lunch", "schedule meeting", "organize team event")
-- "other": All other topics that don't involve scheduling or planning activities
+- "meeting-prep": The topic involves preparing for an upcoming meeting by gathering updates, creating agendas, or collecting input from participants (e.g., "prepare agenda for tomorrow's standup", "gather updates for the quarterly review", "compile discussion topics for the team meeting")
+- "other": All other topics that don't involve scheduling or meeting preparation
 
 ## Response Format
 You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
@@ -69,7 +71,7 @@ The JSON structure must be:
 {
   "relevantTopicId": "topic-id-2",           // Include only if message is relevant to existing topic
   "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated
-  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling" or "other"
+  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", or "other"
   "confidence": 0.85,                        // Confidence level between 0 and 1
   "reasoning": "Brief explanation"           // One sentence explaining the decision
 }
