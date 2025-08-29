@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type { WorkflowType } from '@shared/api-types'
 import { useAuth } from './AuthContext'
+import { authClient } from '@shared/auth-client'
 
 interface Topic {
   id: string
@@ -13,27 +14,57 @@ interface Topic {
   userIds: string[]
 }
 
+interface Profile {
+  user: {
+    id: string
+    email: string
+    name: string
+  }
+  slackAccounts: Array<{
+    id: string
+    realName: string | null
+    teamId: string
+  }>
+}
+
 function Home() {
   const [topics, setTopics] = useState<Topic[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { session } = useAuth()
 
   useEffect(() => {
-    const fetchTopics = async () => {
+    const fetchData = async () => {
       if (!session) return
 
       try {
-        const response = await fetch('/api/profile/topics', {
-          headers: {
-            Authorization: `Bearer ${session.token}`,
-          },
-        })
-        if (!response.ok) {
+        // Fetch both profile and topics in parallel
+        const [profileResponse, topicsResponse] = await Promise.all([
+          fetch('/api/profile', {
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          }),
+          fetch('/api/profile/topics', {
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          })
+        ])
+
+        if (!profileResponse.ok) {
+          throw new Error('Failed to fetch profile')
+        }
+        if (!topicsResponse.ok) {
           throw new Error('Failed to fetch topics')
         }
-        const data = await response.json() as { topics: Topic[] }
-        setTopics(data.topics)
+
+        const profileData = await profileResponse.json() as Profile
+        const topicsData = await topicsResponse.json() as { topics: Topic[] }
+        
+        setProfile(profileData)
+        setTopics(topicsData.topics)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -41,9 +72,9 @@ function Home() {
       }
     }
 
-    fetchTopics().catch((err) => {
-      console.error('Failed to fetch topics:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch topics')
+    fetchData().catch((err) => {
+      console.error('Failed to fetch data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch data')
     })
   }, [session])
 
