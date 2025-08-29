@@ -25,13 +25,13 @@ export default function Register() {
       if (result.error) {
         setError(result.error.message || 'Registration failed')
       } else {
-        void (async () => {
+        (async () => {
           try {
             await navigate('/')
           } catch (err) {
             console.error('Navigation failed:', err)
           }
-        })()
+        })().catch(console.error)
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -90,7 +90,7 @@ export default function Register() {
           </button>
         </form>
         <p>
-          Already have an account? <Link to="/login">Login here</Link>
+          Already have an account? <Link to="/login">Login.</Link>
         </p>
       </div>
     </div>

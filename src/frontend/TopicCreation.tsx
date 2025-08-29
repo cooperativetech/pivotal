@@ -50,7 +50,7 @@ function TopicCreation() {
       }
     }
 
-    void fetchUsers()
+    fetchUsers().catch(console.error)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,7 +121,7 @@ function TopicCreation() {
             </div>
           )}
 
-          <form onSubmit={(e) => { void handleSubmit(e) }} className="space-y-4">
+          <form onSubmit={(e) => { handleSubmit(e).catch(console.error) }} className="space-y-4">
             <div>
               <label htmlFor="user" className="block text-sm font-medium text-gray-700 mb-2">
                 Select User

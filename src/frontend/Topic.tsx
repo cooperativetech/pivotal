@@ -73,7 +73,7 @@ function Topic() {
       }
     }
 
-    void fetchTopicData()
+    fetchTopicData().catch(console.error)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topicId]) // Intentionally exclude searchParams to prevent re-fetching on URL changes
 
@@ -608,7 +608,7 @@ function Topic() {
                         {!isBot && isLatestOverall && (
                           <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
                             <button
-                              onClick={() => { void handleTestLlmResponse(msg.id) }}
+                              onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
                               disabled={testingMessageId === msg.id}
                               className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hover:cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
@@ -638,7 +638,7 @@ function Topic() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
-                            void handleSendMessage(channel.channelId)
+                            handleSendMessage(channel.channelId).catch(console.error)
                           }
                         }}
                         placeholder="Type a message..."
@@ -646,7 +646,7 @@ function Topic() {
                         className="flex-1 px-3 py-1.5 text-sm border-t border-l border-b border-gray-200 rounded-bl-lg focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <button
-                        onClick={() => { void handleSendMessage(channel.channelId) }}
+                        onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
                         className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                       >
