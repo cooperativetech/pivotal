@@ -12,7 +12,7 @@ import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackC
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from './slack-message-handler'
-import { GetTopicReq, dumpTopic } from './utils'
+import { GetTopicReq, dumpTopic, startAutoMessageCron } from './utils'
 import { workflowAgentMap, runConversationAgent } from './agents'
 
 const PORT = 3001
@@ -266,4 +266,5 @@ export type AppType = typeof honoApp
 await upsertFakeUser({ id: BOT_USER_ID, realName: 'Pivotal', isBot: true })
 
 serve({ fetch: honoApp.fetch, port: PORT })
+startAutoMessageCron()
 console.log(`Flack webserver running on port ${PORT}...`)

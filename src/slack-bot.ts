@@ -6,6 +6,7 @@ import { zValidator } from '@hono/zod-validator'
 
 import { handleSlackMessage } from './slack-message-handler'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback, setSuppressCalendarPrompt } from './calendar-service'
+import { startAutoMessageCron } from './utils'
 
 const slackApp = new App({
   token: process.env.PV_SLACK_BOT_TOKEN,
@@ -73,4 +74,5 @@ const honoApp = new Hono()
   })
 
 serve({ fetch: honoApp.fetch, port: PORT })
+startAutoMessageCron()
 console.log(`Prod webserver running on port ${PORT}...`)

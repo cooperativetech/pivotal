@@ -45,6 +45,12 @@ export interface TopicUserContext {
   calendarManualOverrides?: CalendarEvent[]
 }
 
+export interface AutoMessageDeactivation {
+  deactivatedReason: 'message' | 'expired'
+  deactivatedAt: string // ISO timestamp for time message was deactivated
+  deactivatedByMessageId?: string // SlackMessage id of message that caused deactivation
+}
+
 export interface TopicData {
   topic: Topic
   messages: SlackMessage[]

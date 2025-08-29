@@ -1,11 +1,14 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { RRuleTemporal } from 'rrule-temporal'
+import { toText } from 'rrule-temporal/totext'
+import { Temporal } from '@js-temporal/polyfill'
 
 import type { RunContext } from './agent-sdk'
 import { Agent, Runner, tool } from './agent-sdk'
 import db from '../db/engine'
-import type { Topic, SlackMessage, SlackUser } from '../db/schema/main'
-import { topicTable } from '../db/schema/main'
+import type { Topic, SlackMessage, SlackUser, AutoMessageInsert } from '../db/schema/main'
+import { topicTable, autoMessageTable } from '../db/schema/main'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
@@ -14,8 +17,11 @@ import {
   formatTimestampWithTimezone,
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
+import { getUserCalendarStructured } from '../calendar-service'
+import type { CalendarEvent } from '@shared/api-types'
 
 export interface ConversationContext {
+  message: SlackMessage,
   topic: Topic,
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
@@ -36,6 +42,91 @@ export type ConversationRes = z.infer<typeof ConversationRes>
 
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
+
+export async function runConversationAgent(
+  agent: ConversationAgent,
+  message: SlackMessage,
+  topic: Topic,
+  previousMessages: SlackMessage[],
+  userMap: Map<string, SlackUser>,
+): Promise<ConversationRes> {
+  // If user is explicitly asking for calendar connection, send link immediately
+  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
+    (message.text.toLowerCase().includes('link') ||
+     message.text.toLowerCase().includes('connect') ||
+     message.text.toLowerCase().includes('send me'))
+
+  if (userRequestingCalendar) {
+    const userName = userMap.get(message.userId)?.realName
+    if (!userName) {
+      throw new Error(`User ${message.userId} has no realName in userMap`)
+    }
+
+    return {
+      replyMessage: '',
+      messagesToUsers: [
+        {
+          userNames: [userName],
+          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
+          includeCalendarButtons: true,
+        },
+      ],
+      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
+    }
+  }
+
+  // Get timezone information for the calling user
+  const callingUser = userMap.get(message.userId)
+  const callingUserTimezone = callingUser?.tz || 'UTC'
+
+  // Get channel information for descriptive display
+  const channelDescription = await getChannelDescription(message.channelId, userMap)
+
+  const userPrompt = `Your name in conversations: ${userMap.get(topic.botUserId)?.realName || 'Assistant'}
+
+Previous Messages in this Topic:
+${await organizeMessagesByChannelAndThread(previousMessages, callingUserTimezone)}
+
+Message To Reply To:
+From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser?.tz ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
+Text: "${replaceUserMentions(message.text, userMap)}"
+Channel: ${channelDescription}${
+  message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
+    ? `\nThread: [${formatTimestampWithTimezone(tsToDate(message.raw.thread_ts), callingUserTimezone)}]`
+    : ''
+}
+Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
+
+Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
+
+  console.log(`User prompt: ${userPrompt}`)
+
+  try {
+    const runner = new Runner({ groupId: `topic-${topic.id}` })
+    const result = await runner.run(
+      agent,
+      userPrompt,
+      { context: { message, topic, userMap, callingUserTimezone } },
+    )
+    if (!result.finalOutput) {
+      throw new Error('No finalOutput generated')
+    }
+    return result.finalOutput
+  } catch (error) {
+    console.error('=== ERROR IN runConversationAgent ===')
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+    console.error('Error message:', error instanceof Error ? error.message : String(error))
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Full error object:', JSON.stringify(error, null, 2))
+    console.error('=================================')
+
+    // Return a safe default response
+    return {
+      replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    }
+  }
+}
 
 export const updateUserNames = tool({
   name: 'updateUserNames',
@@ -116,87 +207,138 @@ export const updateSummary = tool({
   },
 })
 
-export async function runConversationAgent(
-  agent: ConversationAgent,
-  message: SlackMessage,
-  topic: Topic,
-  previousMessages: SlackMessage[],
-  userMap: Map<string, SlackUser>,
-): Promise<ConversationRes> {
-  // If user is explicitly asking for calendar connection, send link immediately
-  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
-    (message.text.toLowerCase().includes('link') ||
-     message.text.toLowerCase().includes('connect') ||
-     message.text.toLowerCase().includes('send me'))
+export const showUserCalendar = tool({
+  name: 'showUserCalendar',
+  description: 'Show a user\'s calendar events for a specified time range',
+  parameters: z.strictObject({
+    slackUserName: z.string().describe('The Slack user\'s real name (use exact name from User Directory)'),
+    startTime: z.string().describe('ISO 8601 datetime string for the start of the time range'),
+    endTime: z.string().describe('ISO 8601 datetime string for the end of the time range'),
+  }),
+  execute: async ({ slackUserName, startTime, endTime }, runContext?: RunContext<ConversationContext>) => {
+    console.log('Tool called: showUserCalendar with:', { slackUserName, startTime, endTime })
 
-  if (userRequestingCalendar) {
-    const userName = userMap.get(message.userId)?.realName
-    if (!userName) {
-      throw new Error(`User ${message.userId} has no realName in userMap`)
+    if (!runContext) throw new Error('runContext not provided')
+    const { topic, userMap } = runContext.context
+
+    // Map name to user ID
+    let slackUserId: string | undefined
+    for (const [id, user] of userMap.entries()) {
+      if (user.realName === slackUserName) {
+        slackUserId = id
+        break
+      }
+    }
+    if (!slackUserId) {
+      throw new Error(`Could not find user ID for name: ${slackUserName}`)
     }
 
-    return {
-      replyMessage: '',
-      messagesToUsers: [
-        {
-          userNames: [userName],
-          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
-          includeCalendarButtons: true,
-        },
-      ],
-      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
+    // Parse the ISO strings to Dates
+    const startTimeDate = new Date(startTime)
+    const endTimeDate = new Date(endTime)
+
+    if (isNaN(startTimeDate.getTime())) {
+      throw new Error(`Invalid start datetime string: ${startTime}`)
     }
-  }
-
-  // Get timezone information for the calling user
-  const callingUser = userMap.get(message.userId)
-  const callingUserTimezone = callingUser?.tz || 'UTC'
-
-  // Get channel information for descriptive display
-  const channelDescription = await getChannelDescription(message.channelId, userMap)
-
-  const userPrompt = `Your name in conversations: ${userMap.get(topic.botUserId)?.realName || 'Assistant'}
-
-Previous Messages in this Topic:
-${await organizeMessagesByChannelAndThread(previousMessages, callingUserTimezone)}
-
-Message To Reply To:
-From: ${userMap.get(message.userId)?.realName || 'Unknown User'} (Timezone: ${callingUser?.tz ? getShortTimezoneFromIANA(callingUserTimezone) : 'Unknown'})
-Text: "${replaceUserMentions(message.text, userMap)}"
-Channel: ${channelDescription}${
-  message.raw && typeof message.raw === 'object' && 'thread_ts' in message.raw && typeof message.raw.thread_ts === 'string'
-    ? `\nThread: [${formatTimestampWithTimezone(tsToDate(message.raw.thread_ts), callingUserTimezone)}]`
-    : ''
-}
-Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
-
-Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
-
-  console.log(`User prompt: ${userPrompt}`)
-
-  try {
-    const runner = new Runner({ groupId: `topic-${topic.id}` })
-    const result = await runner.run(
-      agent,
-      userPrompt,
-      { context: { topic, userMap, callingUserTimezone } },
-    )
-    if (!result.finalOutput) {
-      throw new Error('No finalOutput generated')
+    if (isNaN(endTimeDate.getTime())) {
+      throw new Error(`Invalid end datetime string: ${endTime}`)
     }
-    return result.finalOutput
-  } catch (error) {
-    console.error('=== ERROR IN runConversationAgent ===')
-    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Full error object:', JSON.stringify(error, null, 2))
-    console.error('=================================')
 
-    // Return a safe default response
-    return {
-      replyMessage: 'I encountered an error processing the scheduling request.',
-      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    // Get the user's calendar
+    const calendarEvents = await getUserCalendarStructured(slackUserId, topic, startTimeDate, endTimeDate)
+
+    // Get user information for display
+    const user = userMap.get(slackUserId)
+    const userName = user?.realName || slackUserId
+    const userTz = user?.tz || 'UTC'
+
+    // Create email to name mapping from userMap
+    const emailToName = new Map<string, string>()
+    for (const slackUser of userMap.values()) {
+      if (slackUser.email && slackUser.realName) {
+        emailToName.set(slackUser.email.toLowerCase(), slackUser.realName)
+      }
     }
-  }
-}
+
+    if (!calendarEvents || calendarEvents.length === 0) {
+      return `No calendar events found for ${userName} between ${formatTimestampWithTimezone(startTimeDate, userTz)} and ${formatTimestampWithTimezone(endTimeDate, userTz)}`
+    }
+
+    // Format calendar events as plain text
+    const formattedEvents = calendarEvents.map((event: CalendarEvent) => {
+      const eventStart = new Date(event.start)
+      const eventEnd = new Date(event.end)
+      const freeStatus = event.free ? ' [Free]' : ''
+
+      // Replace emails with names where possible
+      const participants = event.participantEmails?.length
+        ? ` (with: ${event.participantEmails.map((email) =>
+            emailToName.get(email.toLowerCase()) || email,
+          ).join(', ')})`
+        : ''
+
+      return `• ${formatTimestampWithTimezone(eventStart, userTz)} - ${formatTimestampWithTimezone(eventEnd, userTz)}: ${event.summary}${freeStatus}${participants}`
+    }).join('\n')
+
+    return `Calendar for ${userName} (${getShortTimezoneFromIANA(userTz)}):\n${formattedEvents}`
+  },
+})
+
+export const scheduleAutoMessage = tool({
+  name: 'scheduleAutoMessage',
+  description: 'Schedule an automatic message to send to myself at a specific time',
+  parameters: z.strictObject({
+    autoMessageText: z.string().describe('The text of the message to schedule'),
+    sendTime: z.string().describe('ISO 8601 datetime string for when to send the message (e.g., "2024-12-25T10:30:00Z")'),
+    startNewTopic: z.boolean().describe('Whether to start a new topic when sending this message'),
+  }),
+  execute: async ({ autoMessageText, sendTime, startNewTopic }, runContext?: RunContext<ConversationContext>) => {
+    console.log('Tool called: scheduleAutoMessage with:', { autoMessageText, sendTime, startNewTopic })
+
+    if (!runContext) throw new Error('runContext not provided')
+    const { message } = runContext.context
+
+    // Parse the ISO string to a Date
+    const sendTimeDate = new Date(sendTime)
+    if (isNaN(sendTimeDate.getTime())) {
+      throw new Error(`Invalid datetime string: ${sendTime}`)
+    }
+
+    // Check if the date is in the past
+    if (sendTimeDate < new Date()) {
+      throw new Error(`Cannot schedule message in the past: ${sendTime}`)
+    }
+
+    // Convert the sendTime Date to a Temporal ZonedDateTime (using UTC)
+    const zonedDateTime = Temporal.Instant
+      .fromEpochMilliseconds(sendTimeDate.getTime())
+      .toZonedDateTimeISO('UTC')
+
+    // Create a single-occurrence RRule
+    const rrule = new RRuleTemporal({
+      freq: 'DAILY',
+      count: 1,
+      dtstart: zonedDateTime,
+    })
+
+    // Create the AutoMessage object
+    const autoMessage: AutoMessageInsert = {
+      text: autoMessageText,
+      nextSendTime: sendTimeDate,
+      recurrenceSchedule: {
+        rrule: rrule.toString(),
+        description: toText(rrule),
+      },
+      startNewTopic,
+      createdByMessageId: message.id,
+    }
+
+    // Insert into database
+    await db
+      .insert(autoMessageTable)
+      .values(autoMessage)
+      .returning()
+
+    return `Scheduled auto-message for ${sendTimeDate.toISOString()}: "${autoMessageText}" (start new topic: ${startNewTopic})`
+  },
+})

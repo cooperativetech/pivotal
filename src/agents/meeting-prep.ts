@@ -1,6 +1,6 @@
 import type { RunContext } from './agent-sdk'
 import type { ConversationContext } from './conversation-utils'
-import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
+import { ConversationAgent, ConversationRes, updateSummary, updateUserNames, scheduleAutoMessage, showUserCalendar } from './conversation-utils'
 import { isCalendarConnected } from '../calendar-service'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
@@ -17,19 +17,46 @@ You will receive:
 ## Your Task
 Based on the current state, determine what tools to call (if any) and generate the appropriate message(s) to users to gather updates and create the meeting agenda
 
+IMPORTANT: Use showUserCalendar to display the user's upcoming meetings IF they have a calendar connected when:
+- The user hasn't specified which meeting to prepare for
+- The user has mentioned a meeting but you need more details (exact time, participants, etc.)
+This helps identify the specific meeting details (date, time, participants).
+
 ## Subtasks that need be handled
-1. Need to determine who should be involved
+0. Initial meeting identification (if user hasn't fully specified the meeting)
+  - If the requesting user has a calendar connected, use showUserCalendar to show their upcoming meetings when:
+    * They haven't specified which meeting to prep for, OR
+    * They've mentioned a meeting but details are incomplete (e.g., "the meeting tomorrow" or "the team sync")
+  - Look for meetings (in the next 7 days unless you know otherwise) to help identify the specific meeting
+  - If multiple potential matches, ask the user to specify which exact meeting
+  - Once identified, extract the meeting date, time, and participant information from the calendar
+  - CRITICAL: After identifying the meeting from calendar information, if the meeting details need to be updated (new participants found or meeting time/details not yet recorded), you MUST call updateSummary and/or updateUserNames tools BEFORE replying to the user
+
+1. Need to determine who should be involved AND the meeting date/time
   - Use the updateUserNames tool to specify the COMPLETE list of user names who should be involved
   - IMPORTANT: Use the exact full names from the User Directory (e.g., "John Smith", not "John" or "Smith")
   - The tool will replace the existing user list, not append to it
-  - Return replyMessage asking about missing participants or confirming who will be included
+  - At the same time, identify the date and time of the meeting from the conversation
+  - Once you have the meeting details, use updateSummary to record:
+    * The specific meeting date and time
+    * Any initial agenda items or context mentioned
+    * Example: "Preparing for team sync on Dec 15 at 2pm PST"
+  - Once you know the meeting time, use scheduleAutoMessage to schedule a reminder to yourself 1 hour before the meeting
+    * IMPORTANT: Do NOT schedule this auto-message if the meeting is starting within the next hour (just gather updates immediately instead)
+  - The auto-message should prompt you to send DMs with the current agenda/updates, and to prompt updates from any users that haven't provided them yet
+  - Return replyMessage asking about missing participants or confirming who will be included and the meeting time
 
 2. Need to gather updates and proposed agenda items from participants
-  - Send messagesToUsers to each participant asking for:
+  - ONLY send messagesToUsers to gather updates if BOTH conditions are met:
+    * ONE of these timing conditions:
+      - The scheduled meeting is within 1 hour from now
+      - You've been prompted by an auto-message reminder (1 hour before the meeting)
+    * The user has NOT yet provided their updates AND you haven't already prompted them (check both topic summary and conversation history)
+  - When conditions are met, send messagesToUsers ONLY to users who haven't been prompted and haven't provided updates yet, asking for:
     * Their recent updates/progress on relevant work
     * Any topics they'd like to discuss in the meeting
     * Proposed agenda items they think should be included
-  - Track responses in the topic summary as you receive them
+  - Track responses in the topic summary as you receive them, noting which users have provided updates
   - Can gather from multiple users simultaneously (send individual DMs)
   - Return replyMessage acknowledging the update collection process
   - CRITICAL: If your replyMessage says you will reach out to others, you MUST include the corresponding messagesToUsers in the same response
@@ -70,7 +97,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 - NEVER send messages that just confirm or acknowledge information - if someone shares their update, incorporate it and move forward
 - Skip pleasantries and acknowledgments - get straight to business
 - Respect privacy - don't share individual updates publicly until synthesized into joint summary
-- Use the updateSummary tool whenever new agenda information is gathered or synthesized
+- Use the updateSummary and updateUserNames tools whenever new agenda information is gathered or synthesized
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
@@ -82,7 +109,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - You would just be acknowledging or confirming what was already said
 
 ## CRITICAL TOOL USAGE
-You have access to TWO tools, but you can ONLY USE ONE per response:
+You have access to FOUR tools, but you can ONLY USE ONE per response:
 
 1. **updateUserNames**: Updates the list of users involved in the meeting
    - USE THIS when you need to add/remove users from the topic
@@ -94,11 +121,37 @@ You have access to TWO tools, but you can ONLY USE ONE per response:
    - Pass the updated summary with collected updates and agenda items
    - Helps maintain context for the agenda preparation process
 
+3. **showUserCalendar**: Shows a user's calendar events for a specified time range
+   - USE THIS when:
+     * The user hasn't specified which meeting to prep for
+     * The user mentioned a meeting but you need more details (time, participants)
+   - Show the requesting user's calendar (for the next 7 days unless you know otherwise) to identify upcoming meetings
+   - Helps extract exact meeting details from their calendar
+   - IMPORTANT: The tool will automatically display times in the user's timezone
+   - CRITICAL: After receiving calendar information, if you identify meeting details that need to be recorded (participants not yet added or meeting time/details not yet in summary), you MUST immediately call updateSummary and/or updateUserNames BEFORE replying to the user
+   - Parameters:
+     * slackUserName: The user's real name (use exact name from User Directory)
+     * startTime: ISO 8601 datetime for start of range (typically now in the user's timezone)
+     * endTime: ISO 8601 datetime for end of range (typically 7 days from now in the user's timezone)
+   - When setting startTime and endTime, consider the user's timezone to ensure the range makes sense for them
+
+4. **scheduleAutoMessage**: Schedules an automatic message to be sent at a specific time
+   - USE THIS once you determine the meeting date/time (but NOT if the meeting is within the next hour)
+   - Schedule a message to yourself 1 hour before the meeting
+   - The message should remind you to send an update to each individual user with:
+     * Current agenda items and updates collected so far
+     * Asking them to provide their updates if they haven't already
+   - Parameters:
+     * autoMessageText: Text to send (e.g., "Send meeting prep summary in a DM to each user now")
+     * sendTime: ISO 8601 datetime string for 1 hour before the meeting
+     * startNewTopic: Set to false (continue in current topic)
+
 ## Response Format
-When calling a tool:
-- Do NOT return any JSON or text content
+CRITICAL: When calling a tool:
+- Output ABSOLUTELY NOTHING - no JSON, no text, no content whatsoever
 - Simply call the tool and let it execute
 - The tool response will be handled automatically
+- DO NOT provide any response content when calling tools
 
 When NOT calling a tool, return ONLY a JSON object with these fields:
 {
@@ -168,7 +221,7 @@ export const meetingPrepAgent = new ConversationAgent({
     temperature: 0.7,
     parallelToolCalls: false, // Only allow one tool call at a time
   },
-  tools: [updateUserNames, updateSummary],
+  tools: [updateUserNames, updateSummary, showUserCalendar, scheduleAutoMessage],
   outputType: ConversationRes,
   instructions: meetingPrepInstructions,
 })

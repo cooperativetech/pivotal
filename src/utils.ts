@@ -1,8 +1,11 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-import { eq, inArray, and, sql } from 'drizzle-orm'
+import { eq, inArray, and, sql, lt, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
+import { CronJob } from 'cron'
+import { RRuleTemporal } from 'rrule-temporal'
+import { Temporal } from '@js-temporal/polyfill'
 
 import db from './db/engine'
 import type {
@@ -12,17 +15,23 @@ import type {
   TopicInsert,
   SlackUserInsert,
   SlackChannelInsert,
-  UserDataInsert } from './db/schema/main'
+  UserDataInsert,
+  AutoMessage } from './db/schema/main'
 import {
   slackMessageTable,
   topicTable,
   slackUserTable,
   slackChannelTable,
   userDataTable,
+  autoMessageTable,
 } from './db/schema/main'
 import type { TopicData, TopicRes } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
+import type { SlackAPIMessage } from './slack-message-handler'
+import { handleSlackMessage } from './slack-message-handler'
+import { mockSlackClient, getOrCreateChannelForUsers } from './flack-helpers'
+import type { AutoMessageDeactivation } from '@shared/api-types'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
@@ -428,6 +437,136 @@ export function formatTimestampWithTimezone(timestamp: Date | string, timezone?:
   const tzAbbr = timezone ? getShortTimezoneFromIANA(timezone) : 'UTC'
 
   return `${formatted} (${tzAbbr})`
+}
+
+async function checkAutoMessages(): Promise<void> {
+  try {
+    // Query for auto messages where nextSendTime is before now and not null
+    const now = new Date()
+    const dueMessages = await db
+      .select()
+      .from(autoMessageTable)
+      .where(
+        and(
+          isNotNull(autoMessageTable.nextSendTime),
+          lt(autoMessageTable.nextSendTime, now),
+        ),
+      )
+
+    // Process each due message
+    await Promise.all(dueMessages.map(sendAutoMessage))
+  } catch (error) {
+    console.error('Error checking auto messages:', error)
+  }
+}
+
+async function sendAutoMessage(autoMessage: AutoMessage) {
+  try {
+    // First, update the autoMessage with next scheduled time or deactivate it.
+    // Do this before processing the message to avoid error loops where we try
+    // to send the message every minute and fail, and also to avoid the cron
+    // firing again before the message finishes processing.
+    await updateAutoMessageTime(autoMessage)
+
+    // Get the original message that created this auto message
+    const [originalMessage] = await db
+      .select()
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.id, autoMessage.createdByMessageId))
+      .limit(1)
+
+    if (!originalMessage) {
+      throw new Error(`Original message not found for auto message ${autoMessage.id}`)
+    }
+
+    // Get the topic to find the bot user ID
+    const [topic] = await db
+      .select()
+      .from(topicTable)
+      .where(eq(topicTable.id, originalMessage.topicId))
+      .limit(1)
+
+    if (!topic) {
+      throw new Error(`Topic not found for auto message ${autoMessage.id}`)
+    }
+
+    const botUserId = topic.botUserId
+    const channelId = await getOrCreateChannelForUsers([botUserId])
+
+    // Create a SlackAPIMessage from the bot to itself
+    const ts = (Date.now() / 1000).toString()
+    const message: SlackAPIMessage = {
+      type: 'message',
+      subtype: undefined,
+      text: autoMessage.text,
+      ts: ts,
+      user: botUserId,
+      channel: channelId,
+      channel_type: 'im',
+      event_ts: ts,
+    }
+
+    // Determine if we should start a new topic or continue existing one
+    const topicId = autoMessage.startNewTopic ? null : originalMessage.topicId
+
+    await handleSlackMessage(
+      message,
+      botUserId,
+      mockSlackClient,
+      topicId,
+      true, // if topicId is null, create a new topic rather than routing to existing ones
+      autoMessage.id,
+    )
+
+
+    console.log(`Auto message ${autoMessage.id} sent successfully`)
+  } catch (error) {
+    console.error(`Error sending auto message ${autoMessage.id}:`, error)
+  }
+}
+
+async function updateAutoMessageTime(autoMessage: AutoMessage) {
+  // Parse the RRULE and get the next occurrence after the current nextSendTime
+  const rrule = new RRuleTemporal({
+    rruleString: autoMessage.recurrenceSchedule.rrule,
+  })
+  // Use the current nextSendTime as the reference point for finding the next occurrence
+  const referenceTime = autoMessage.nextSendTime
+    ? Temporal.Instant.fromEpochMilliseconds(autoMessage.nextSendTime.getTime()).toZonedDateTimeISO('UTC')
+    : Temporal.Now.zonedDateTimeISO('UTC')
+  const nextOccurrence = rrule.next(referenceTime)
+
+  if (nextOccurrence) {
+    // Update with next scheduled time
+    await db
+      .update(autoMessageTable)
+      .set({
+        nextSendTime: new Date(nextOccurrence.epochMilliseconds),
+      })
+      .where(eq(autoMessageTable.id, autoMessage.id))
+  } else {
+    // No more occurrences, deactivate the message
+    const deactivationMetadata: AutoMessageDeactivation = {
+      deactivatedReason: 'expired',
+      deactivatedAt: new Date().toISOString(),
+    }
+
+    await db
+      .update(autoMessageTable)
+      .set({
+        nextSendTime: null,
+        deactivationMetadata,
+      })
+      .where(eq(autoMessageTable.id, autoMessage.id))
+  }
+}
+
+export function startAutoMessageCron(): void {
+  const job = new CronJob(
+    '5 * * * * *', // Run at 5 seconds past every minute
+    checkAutoMessages,
+  )
+  job.start()
 }
 
 // Script execution when run directly

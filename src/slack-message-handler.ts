@@ -539,6 +539,7 @@ async function getOrCreateTopic(
     rawTs: message.ts,
     threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
     raw: message,
+    autoMessageId: null,
   }
 
   // Step 2: Call analyzeTopicRelevance for non-bot messages
@@ -606,6 +607,7 @@ async function getOrCreateTopic(
 async function saveMessageToTopic(
   topicId: string,
   message: SlackAPIMessage,
+  autoMessageId: string | null,
 ): Promise<SlackMessage> {
   const userId = ('bot_id' in message && message.bot_id) ? message.bot_id : message.user!
   const isDirectMessage = message.channel_type === 'im'
@@ -630,6 +632,7 @@ async function saveMessageToTopic(
     rawTs: message.ts,
     threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
     raw: message,
+    autoMessageId: autoMessageId,
   }).returning()
 
   // Update the topic's updatedAt timestamp
@@ -671,6 +674,7 @@ export async function handleSlackMessage(
   client: WebClient,
   presetTopicId: string | null = null,
   ignoreExistingTopics: boolean = false,
+  autoMessageId: string | null = null,
 ): Promise<MessageProcessingRes | null> {
   // Check if message has required fields
   if (!('text' in message && message.text && message.ts && message.channel)) {
@@ -693,11 +697,11 @@ export async function handleSlackMessage(
     // If getOrCreateTopic returns null or the dummy topic, save the message to the dummy topic and return
     const dummyTopicId = await getOrCreateDummyTopic(botUserId)
     if (!topicId || topicId === dummyTopicId) {
-      await saveMessageToTopic(dummyTopicId, message)
+      await saveMessageToTopic(dummyTopicId, message, autoMessageId)
       return null
     }
 
-    const savedReqMessage = await saveMessageToTopic(topicId, message)
+    const savedReqMessage = await saveMessageToTopic(topicId, message, autoMessageId)
     const resMessages = await processSchedulingActions(
       topicId,
       savedReqMessage,

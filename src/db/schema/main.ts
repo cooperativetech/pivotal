@@ -1,3 +1,4 @@
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
   pgTable,
   text,
@@ -8,7 +9,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core'
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import type { WorkflowType, TopicUserContext, UserContext } from '@shared/api-types'
+import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivation } from '@shared/api-types'
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
@@ -34,6 +35,7 @@ export const slackMessageTable = pgTable('slack_message', {
   rawTs: text('raw_ts').notNull(),
   threadTs: text('thread_ts'),
   raw: jsonb().notNull(),
+  autoMessageId: uuid().references((): AnyPgColumn => autoMessageTable.id),
 })
 export type SlackMessageInsert = InferInsertModel<typeof slackMessageTable>
 export type SlackMessage = InferSelectModel<typeof slackMessageTable>
@@ -70,3 +72,21 @@ export const userDataTable = pgTable('user_data', {
 }))
 export type UserDataInsert = InferInsertModel<typeof userDataTable>
 export type UserData = InferSelectModel<typeof userDataTable>
+
+interface RecurrenceSchedule {
+  rrule: string // RRULE (RFC 5545) string representing a recurring event
+  description: string // human-readable description of the recurrence rule
+}
+
+export const autoMessageTable = pgTable('auto_message', {
+  id: uuid().primaryKey().defaultRandom(),
+  text: text().notNull(),
+  nextSendTime: timestamp({ withTimezone: true }),
+  recurrenceSchedule: jsonb().$type<RecurrenceSchedule>().notNull(),
+  startNewTopic: boolean().notNull().default(false),
+  createdByMessageId: uuid().notNull().references((): AnyPgColumn => slackMessageTable.id),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  deactivationMetadata: jsonb().$type<AutoMessageDeactivation>(),
+})
+export type AutoMessageInsert = InferInsertModel<typeof autoMessageTable>
+export type AutoMessage = InferSelectModel<typeof autoMessageTable>
