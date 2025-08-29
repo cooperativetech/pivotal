@@ -202,6 +202,7 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
       rawTs: (Date.now() / 1000).toString(),
       threadTs: null,
       raw: {},
+      autoMessageId: null,
     }
 
     // Process scheduling actions for this specific topic only

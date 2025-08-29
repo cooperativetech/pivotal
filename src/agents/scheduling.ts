@@ -265,7 +265,6 @@ You have access to FOUR tools, but you can ONLY USE ONE per response:
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
    - Pass the exact user names from the User Directory (e.g., "John Smith", "Jane Doe")
-   - Optionally pass targetDate in YYYY-MM-DD format for the specific day to search (e.g., "2024-08-27" for next Tuesday)
    - Returns guaranteed-free slots that work for everyone
    - Never propose times without using this tool first
 
