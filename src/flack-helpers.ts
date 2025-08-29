@@ -38,7 +38,7 @@ export async function getOrCreateChannelForUsers(userIds: string[]): Promise<str
     }
 
     // Otherwise, create new channel
-    const newChannelId = userIds.length === 2 ? `D${Date.now()}` : `G${Date.now()}`
+    const newChannelId = userIds.length === 1 ? `D${Date.now()}` : `C${Date.now()}`
     const channelToInsert: SlackChannelInsert = {
       id: newChannelId,
       userIds: sortedUserIds,

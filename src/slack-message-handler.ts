@@ -1,5 +1,5 @@
 import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
-import type { UsersListResponse, ChatPostMessageResponse, WebClient } from '@slack/web-api'
+import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
@@ -220,10 +220,12 @@ export async function processSchedulingActions(
       }
     }
 
-    // Only send the reply message if it's not empty
-    let response: ChatPostMessageResponse | null = null
-    if (nextStep.replyMessage && nextStep.replyMessage.trim()) {
-      response = await client.chat.postMessage({
+
+    if (message.autoMessageId) {
+      console.log('Skipping sending reply to AutoMessage')
+    } else if (nextStep.replyMessage && nextStep.replyMessage.trim()) {
+      // Only send the reply message if it's not empty
+      const response = await client.chat.postMessage({
         channel: message.channelId,
         thread_ts: message.rawTs,
         text: nextStep.replyMessage,

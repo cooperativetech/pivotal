@@ -492,6 +492,9 @@ async function sendAutoMessage(autoMessage: AutoMessage, slackClient: WebClient)
     }
 
     const botUserId = topic.botUserId
+
+    // Cannot use slackClient.conversations.open here because the real slack client
+    // throws an error if we try to open a conversation for the bot with itself
     const channelId = await getOrCreateChannelForUsers([botUserId])
 
     // Create a SlackAPIMessage from the bot to itself
