@@ -25,13 +25,7 @@ export default function Register() {
       if (result.error) {
         setError(result.error.message || 'Registration failed')
       } else {
-        (async () => {
-          try {
-            await navigate('/')
-          } catch (err) {
-            console.error('Navigation failed:', err)
-          }
-        })().catch(console.error)
+        void navigate('/')
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -41,18 +35,12 @@ export default function Register() {
     }
   }
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    handleSubmit(e).catch((err) => {
-      console.error('Form submission failed:', err)
-      setError('Form submission failed')
-    })
-  }
 
   return (
     <div className="auth-container">
       <div className="auth-card">
         <h1>Register</h1>
-        <form onSubmit={handleFormSubmit}>
+        <form onSubmit={(e) => { handleSubmit(e).catch(console.error) }}>
           <div className="form-group">
             <label htmlFor="name">Name</label>
             <input
