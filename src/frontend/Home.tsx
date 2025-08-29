@@ -50,7 +50,7 @@ function Home() {
             headers: {
               Authorization: `Bearer ${session.token}`,
             },
-          })
+          }),
         ])
 
         if (!profileResponse.ok) {
@@ -62,7 +62,6 @@ function Home() {
 
         const profileData = await profileResponse.json() as Profile
         const topicsData = await topicsResponse.json() as { topics: Topic[] }
-        
         setProfile(profileData)
         setTopics(topicsData.topics)
       } catch (err) {
@@ -78,10 +77,30 @@ function Home() {
     })
   }, [session])
 
+  const handleSlackLink = async () => {
+    try {
+      await authClient.linkSocial({
+        provider: 'slack',
+      })
+      // Reload data after successful link (await the OAuth completion)
+      window.location.reload()
+    } catch (err) {
+      setError('Failed to link Slack account')
+      console.error(err)
+    }
+  }
+
+  const handleSlackLinkClick = () => {
+    handleSlackLink().catch((err) => {
+      console.error('Slack link failed:', err)
+      setError('Failed to link Slack account')
+    })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading topics...</div>
+        <div className="text-gray-500">Loading...</div>
       </div>
     )
   }
@@ -108,8 +127,24 @@ function Home() {
         </div>
 
         {topics.length === 0 ? (
-          <div className="text-gray-500 text-center py-8">
-            No topics found
+          <div className="text-center py-8">
+            {profile && profile.slackAccounts.length === 0 ? (
+              <div>
+                <div className="text-gray-500 mb-4">
+                  Connect your Slack account to see your topics
+                </div>
+                <button
+                  onClick={handleSlackLinkClick}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Link Slack Account
+                </button>
+              </div>
+            ) : (
+              <div className="text-gray-500">
+                No topics found
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
