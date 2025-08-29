@@ -124,3 +124,8 @@ Restart PostgreSQL:
 
 `sudo systemctl restart postgresql`
 
+Install additional dependencies
+
+```
+pnpm add cron
+```
