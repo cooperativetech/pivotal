@@ -25,7 +25,7 @@ export default function Register() {
       if (result.error) {
         setError(result.error.message || 'Registration failed')
       } else {
-        void navigate('/')
+        await navigate('/', { replace: true })
       }
     } catch (err) {
       setError('An unexpected error occurred')

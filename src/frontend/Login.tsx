@@ -23,7 +23,7 @@ export default function Login() {
       if (result.error) {
         setError(result.error.message || 'Login failed')
       } else {
-        void navigate('/')
+        await navigate('/', { replace: true })
       }
     } catch (err) {
       setError('An unexpected error occurred')
