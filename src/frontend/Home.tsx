@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import type { WorkflowType } from '@shared/api-types'
 import { useAuth } from './AuthContext'
@@ -34,8 +34,7 @@ function Home() {
   const [error, setError] = useState<string | null>(null)
   const { session } = useAuth()
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async () => {
       if (!session) return
 
       try {
@@ -69,21 +68,22 @@ function Home() {
       } finally {
         setLoading(false)
       }
-    }
+  }, [session])
 
+  useEffect(() => {
     fetchData().catch((err) => {
       console.error('Failed to fetch data:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
     })
-  }, [session])
+  }, [session, fetchData])
 
   const handleSlackLink = async () => {
     try {
       await authClient.linkSocial({
         provider: 'slack',
       })
-      // Reload data after successful link (await the OAuth completion)
-      window.location.reload()
+      // Refresh data after successful link without reloading the page
+      await fetchData()
     } catch (err) {
       setError('Failed to link Slack account')
       console.error(err)
