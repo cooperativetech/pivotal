@@ -22,7 +22,7 @@ PV_LANGFUSE_PUBLIC_KEY=...
 PV_LANGFUSE_SECRET_KEY=...
 ```
 
-For the next part, you will have to have PostgreSQL installed, so first follow the installation instructions below if you don't have it installed already.
+For the next part, you will have to have PostgreSQL database running, so first follow the "Setting up Local BD" instructions below if you don't have it installed already.
 
 Run the flack server:
 ```
@@ -115,4 +115,23 @@ Install additional dependencies
 
 ```
 pnpm add cron
+```
+
+The remaining steps are the same as for MacOS.
+
+You probably also add the following to your ~/.bashrc
+
+```
+export PV_DB_URL='postgresql://localhost:5432/pivotal'
+```
+
+Run drizzle-kit migrations (`PV_DB_URL` env var must be set):
+```
+pnpm run dkmig
+```
+
+If you change `db/schema.ts`, you can use drizzle-kit to automatically generate and run corresponding migrations:
+```
+pnpm run dkgen
+pnpm run dkmig
 ```
