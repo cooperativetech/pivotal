@@ -23,13 +23,13 @@ export default function Login() {
       if (result.error) {
         setError(result.error.message || 'Login failed')
       } else {
-        void (async () => {
+        (async () => {
           try {
             await navigate('/')
           } catch (err) {
             console.error('Navigation failed:', err)
           }
-        })()
+        })().catch(console.error)
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -77,7 +77,7 @@ export default function Login() {
           </button>
         </form>
         <p>
-          Don&apos;t have an account? <Link to="/register">Register here</Link>
+          Don&apos;t have an account? <Link to="/register">Register here.</Link>
         </p>
       </div>
     </div>
