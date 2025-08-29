@@ -30,8 +30,9 @@ import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { handleSlackMessage } from './slack-message-handler'
-import { mockSlackClient, getOrCreateChannelForUsers } from './flack-helpers'
+import { getOrCreateChannelForUsers } from './flack-helpers'
 import type { AutoMessageDeactivation } from '@shared/api-types'
+import type { WebClient } from '@slack/web-api'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
@@ -439,7 +440,7 @@ export function formatTimestampWithTimezone(timestamp: Date | string, timezone?:
   return `${formatted} (${tzAbbr})`
 }
 
-async function checkAutoMessages(): Promise<void> {
+async function checkAutoMessages(slackClient: WebClient): Promise<void> {
   try {
     // Query for auto messages where nextSendTime is before now and not null
     const now = new Date()
@@ -454,13 +455,13 @@ async function checkAutoMessages(): Promise<void> {
       )
 
     // Process each due message
-    await Promise.all(dueMessages.map(sendAutoMessage))
+    await Promise.all(dueMessages.map((message) => sendAutoMessage(message, slackClient)))
   } catch (error) {
     console.error('Error checking auto messages:', error)
   }
 }
 
-async function sendAutoMessage(autoMessage: AutoMessage) {
+async function sendAutoMessage(autoMessage: AutoMessage, slackClient: WebClient) {
   try {
     // First, update the autoMessage with next scheduled time or deactivate it.
     // Do this before processing the message to avoid error loops where we try
@@ -512,7 +513,7 @@ async function sendAutoMessage(autoMessage: AutoMessage) {
     await handleSlackMessage(
       message,
       botUserId,
-      mockSlackClient,
+      slackClient,
       topicId,
       true, // if topicId is null, create a new topic rather than routing to existing ones
       autoMessage.id,
@@ -561,10 +562,10 @@ async function updateAutoMessageTime(autoMessage: AutoMessage) {
   }
 }
 
-export function startAutoMessageCron(): void {
+export function startAutoMessageCron(slackClient: WebClient): void {
   const job = new CronJob(
     '5 * * * * *', // Run at 5 seconds past every minute
-    checkAutoMessages,
+    () => checkAutoMessages(slackClient),
   )
   job.start()
 }

@@ -266,5 +266,5 @@ export type AppType = typeof honoApp
 await upsertFakeUser({ id: BOT_USER_ID, realName: 'Pivotal', isBot: true })
 
 serve({ fetch: honoApp.fetch, port: PORT })
-startAutoMessageCron()
+startAutoMessageCron(mockSlackClient)
 console.log(`Flack webserver running on port ${PORT}...`)
