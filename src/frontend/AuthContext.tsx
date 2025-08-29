@@ -32,7 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void checkAuth()
+    checkAuth().catch((err) => {
+      console.error('Failed to check auth:', err)
+    })
   }, [])
 
   const checkAuth = async () => {

@@ -2,6 +2,7 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
+import { slackUserInsertToUser } from './shared/slack-utils'
 import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
@@ -80,13 +81,7 @@ export async function getSlackUsers(client: WebClient, includeBots = true): Prom
       }
       usersToUpsert.push(slackUser)
       if (!member.deleted && member.real_name && (!isBot || includeBots)) {
-        const userMapUser: SlackUser = {
-          ...slackUser,
-          realName: slackUser.realName || null,
-          email: slackUser.email || null,
-          tz: slackUser.tz || null,
-          authUserId: null,
-        }
+        const userMapUser = slackUserInsertToUser(slackUser)
         userMap.set(member.id, userMapUser)
       }
     }

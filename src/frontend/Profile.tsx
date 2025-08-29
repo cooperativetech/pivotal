@@ -20,7 +20,10 @@ export default function Profile() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    void loadProfile()
+    loadProfile().catch((err) => {
+      console.error('Failed to load profile:', err)
+      setError('Failed to load profile')
+    })
   }, [])
 
   const loadProfile = async () => {
@@ -56,8 +59,8 @@ export default function Profile() {
       await authClient.linkSocial({
         provider: 'slack',
       })
-      // Reload profile after successful link
-      void loadProfile()
+      // Reload profile after successful link (await the OAuth completion)
+      await loadProfile()
     } catch (err) {
       setError('Failed to link Slack account')
       console.error(err)
@@ -73,6 +76,20 @@ export default function Profile() {
     }
   }
 
+  const handleSignOutClick = () => {
+    handleSignOut().catch((err) => {
+      console.error('Sign out failed:', err)
+      setError('Failed to sign out')
+    })
+  }
+
+  const handleSlackLinkClick = () => {
+    handleSlackLink().catch((err) => {
+      console.error('Slack link failed:', err)
+      setError('Failed to link Slack account')
+    })
+  }
+
   if (loading) return <div>Loading...</div>
   if (error) return <div className="error">{error}</div>
   if (!profile) return <div>No profile data</div>
@@ -81,7 +98,7 @@ export default function Profile() {
     <div className="profile-container">
       <div className="profile-header">
         <h1>Profile</h1>
-        <button onClick={() => { void handleSignOut() }} className="sign-out-btn">Sign Out</button>
+        <button onClick={handleSignOutClick} className="sign-out-btn">Sign Out</button>
       </div>
 
       <div className="profile-section">
@@ -103,7 +120,7 @@ export default function Profile() {
         ) : (
           <p>No Slack accounts linked</p>
         )}
-        <button onClick={() => { void handleSlackLink() }} className="link-slack-btn">
+        <button onClick={handleSlackLinkClick} className="link-slack-btn">
           Link Slack Account
         </button>
       </div>

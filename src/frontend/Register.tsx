@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, Link } from 'react-router'
 import { authClient } from '../shared/auth-client'
 
 export default function Register() {
@@ -25,7 +25,13 @@ export default function Register() {
       if (result.error) {
         setError(result.error.message || 'Registration failed')
       } else {
-        void navigate('/')
+        void (async () => {
+          try {
+            await navigate('/')
+          } catch (err) {
+            console.error('Navigation failed:', err)
+          }
+        })()
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -35,11 +41,18 @@ export default function Register() {
     }
   }
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    handleSubmit(e).catch((err) => {
+      console.error('Form submission failed:', err)
+      setError('Form submission failed')
+    })
+  }
+
   return (
     <div className="auth-container">
       <div className="auth-card">
         <h1>Register</h1>
-        <form onSubmit={(e) => { void handleSubmit(e) }}>
+        <form onSubmit={handleFormSubmit}>
           <div className="form-group">
             <label htmlFor="name">Name</label>
             <input
@@ -77,7 +90,7 @@ export default function Register() {
           </button>
         </form>
         <p>
-          Already have an account? <a href="/login">Sign in here</a>
+          Already have an account? <Link to="/login">Login here</Link>
         </p>
       </div>
     </div>

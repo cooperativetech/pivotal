@@ -41,7 +41,10 @@ function Home() {
       }
     }
 
-    void fetchTopics()
+    fetchTopics().catch((err) => {
+      console.error('Failed to fetch topics:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch topics')
+    })
   }, [session])
 
   if (loading) {
