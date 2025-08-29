@@ -74,5 +74,5 @@ const honoApp = new Hono()
   })
 
 serve({ fetch: honoApp.fetch, port: PORT })
-startAutoMessageCron()
+startAutoMessageCron(slackApp.client)
 console.log(`Prod webserver running on port ${PORT}...`)
