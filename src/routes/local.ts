@@ -1,32 +1,19 @@
 import { Hono } from 'hono'
-import { logger } from 'hono/logger'
-import { serve } from '@hono/node-server'
 import { zValidator } from '@hono/zod-validator'
-import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { eq, desc } from 'drizzle-orm'
 
-import db from './db/engine'
-import type { Topic, SlackUser } from './db/schema/main'
-import { topicTable, slackChannelTable, slackUserTable, userDataTable } from './db/schema/main'
-import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from './flack-helpers.ts'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
-import type { SlackAPIMessage } from './slack-message-handler'
-import { messageProcessingLock, handleSlackMessage } from './slack-message-handler'
-import { GetTopicReq, dumpTopic, startAutoMessageCron } from './utils'
-import { workflowAgentMap, runConversationAgent } from './agents'
+import db from '../db/engine'
+import type { Topic, SlackUser } from '../db/schema/main'
+import { topicTable, slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
+import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from '../local-helpers.ts'
+import type { SlackAPIMessage } from '../slack-message-handler'
+import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
+import { GetTopicReq, dumpTopic } from '../utils'
+import { workflowAgentMap, runConversationAgent } from '../agents'
 
-const PORT = 3001
-const honoApp = new Hono()
-  .use(logger((message) => {
-    const logEntry = `[${new Date().toISOString()}] ${message}`
-    console.log(logEntry)
-  }))
-
-  .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'), mockSlackClient)
-  })
-
-  .get('/api/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
+export const localRoutes = new Hono()
+  .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
     const topicId = c.req.param('topicId')
 
     try {
@@ -43,7 +30,7 @@ const honoApp = new Hono()
     }
   })
 
-  .get('/api/topics', async (c) => {
+  .get('/topics', async (c) => {
     try {
       // Get all active topics, ordered by most recent first
       const topics = await db
@@ -58,7 +45,7 @@ const honoApp = new Hono()
     }
   })
 
-  .get('/api/users', async (c) => {
+  .get('/users', async (c) => {
     try {
       // Get all non-bot users with their context
       const users = await db
@@ -81,7 +68,7 @@ const honoApp = new Hono()
     }
   })
 
-  .post('/api/clear_test_data', async (c) => {
+  .post('/clear_test_data', async (c) => {
     await messageProcessingLock.clear()
     const result = await cleanupTestData()
     return c.json({
@@ -90,7 +77,7 @@ const honoApp = new Hono()
     })
   })
 
-  .post('/api/users/create_fake', zValidator('json', z.strictObject({
+  .post('/users/create_fake', zValidator('json', z.strictObject({
     users: z.array(z.object({
       id: z.string(),
       realName: z.string(),
@@ -107,7 +94,7 @@ const honoApp = new Hono()
     })
   })
 
-  .post('/api/test_llm_response', zValidator('json', z.strictObject({
+  .post('/test_llm_response', zValidator('json', z.strictObject({
     topicId: z.string(),
     messageId: z.string(),
   })), async (c) => {
@@ -186,7 +173,7 @@ const honoApp = new Hono()
     }
   })
 
-  .post('/api/message', zValidator('json', z.strictObject({
+  .post('/message', zValidator('json', z.strictObject({
     userId: z.string(),
     text: z.string(),
     topicId: z.string().optional(),
@@ -239,7 +226,7 @@ const honoApp = new Hono()
     }
   })
 
-  .get('/api/channels/:channelId', async (c) => {
+  .get('/channels/:channelId', async (c) => {
     const channelId = c.req.param('channelId')
 
     try {
@@ -259,12 +246,3 @@ const honoApp = new Hono()
       }, 500)
     }
   })
-
-export type AppType = typeof honoApp
-
-// Insert bot user if it doesn't exist
-await upsertFakeUser({ id: BOT_USER_ID, realName: 'Pivotal', isBot: true })
-
-serve({ fetch: honoApp.fetch, port: PORT })
-startAutoMessageCron(mockSlackClient)
-console.log(`Flack webserver running on port ${PORT}...`)

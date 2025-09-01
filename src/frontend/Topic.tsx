@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { api } from '@shared/api-client'
+import { local_api } from '@shared/api-client'
 import type { TopicData, SlackMessage } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
@@ -36,7 +36,7 @@ function Topic() {
       if (!topicId) return
 
       try {
-        const response = await api.topics[':topicId'].$get({
+        const response = await local_api.topics[':topicId'].$get({
           param: { topicId },
           query: {},
         })
@@ -162,7 +162,7 @@ function Topic() {
 
     setTestingMessageId(messageId)
     try {
-      const response = await api.test_llm_response.$post({
+      const response = await local_api.test_llm_response.$post({
         json: {
           topicId,
           messageId,
@@ -322,7 +322,7 @@ function Topic() {
 
     setSendingChannels((prev) => new Set(prev).add(channelId))
     try {
-      const response = await api.message.$post({
+      const response = await local_api.message.$post({
         json: {
           userId: currentUserId,
           text: chatInput.trim(),
@@ -353,7 +353,7 @@ function Topic() {
         const newChannels = await Promise.all(
           [...new Set(newChannelIds)].map(async (channelId) => {
             try {
-              const response = await api.channels[':channelId'].$get({
+              const response = await local_api.channels[':channelId'].$get({
                 param: { channelId },
               })
               if (response.ok) {
