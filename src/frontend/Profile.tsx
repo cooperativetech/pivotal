@@ -37,6 +37,7 @@ export default function Profile() {
       const response = await fetch('/api/profile', {
         headers: {
           Authorization: `Bearer ${session.data.session.token}`,
+          'ngrok-skip-browser-warning': 'true',
         },
       })
 

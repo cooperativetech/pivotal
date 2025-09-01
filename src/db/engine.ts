@@ -1,4 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
+import * as mainSchema from './schema/main'
+import * as authSchema from './schema/auth'
 
 const dbUrl = process.env.PV_DB_URL!.includes('localhost')
   ? process.env.PV_DB_URL!
@@ -7,6 +9,7 @@ const dbUrl = process.env.PV_DB_URL!.includes('localhost')
 const db = drizzle({
   connection: dbUrl,
   casing: 'snake_case',
+  schema: { ...mainSchema, ...authSchema },
 })
 
 export type DBType = typeof db

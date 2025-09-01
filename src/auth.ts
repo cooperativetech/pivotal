@@ -7,6 +7,8 @@ import { slackUserTable } from './db/schema/main'
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
   emailAndPassword: { enabled: true },
+  trustedOrigins: ['http://localhost:5173'],
+  baseURL: 'https://015231acd470.ngrok-free.app',
   socialProviders: {
     slack: {
       clientId: process.env.PV_SLACK_CLIENT_ID!,

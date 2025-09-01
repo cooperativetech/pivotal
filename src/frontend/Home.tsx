@@ -43,11 +43,13 @@ function Home() {
           fetch('/api/profile', {
             headers: {
               Authorization: `Bearer ${session.token}`,
+              'ngrok-skip-browser-warning': 'true',
             },
           }),
           fetch('/api/profile/topics', {
             headers: {
               Authorization: `Bearer ${session.token}`,
+              'ngrok-skip-browser-warning': 'true',
             },
           }),
         ])

@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono'
+import { cors } from 'hono/cors'
 import { desc, eq, sql } from 'drizzle-orm'
 import db from '../db/engine'
 import { topicTable, slackUserTable } from '../db/schema/main'
@@ -25,10 +26,25 @@ export const webappRoutes = new Hono()
     return sessionRecord || null
   }
 
-// Routes will be added here
-webappRoutes.on(['POST', 'GET'], '/auth/*', (c) => {
+// CORS middleware for auth routes
+webappRoutes.use('/auth/*', cors({
+  origin: ['http://localhost:5173', 'https://015231acd470.ngrok-free.app'],
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  credentials: true,
+}))
+
+// Auth routes
+webappRoutes.all('/auth/*', (c) => {
   return auth.handler(c.req.raw)
 })
+
+// CORS for non-auth API routes
+webappRoutes.use('*', cors({
+  origin: 'http://localhost:5173',
+  allowHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  credentials: true,
+}))
 
 webappRoutes.get('/profile', async (c) => {
   const sessionUser = await getSessionUser(c)
