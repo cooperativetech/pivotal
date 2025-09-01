@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '@shared/api-client'
+import { local_api } from '@shared/api-client'
 import type { WorkflowType } from '@shared/api-types'
 
 interface Topic {
@@ -21,7 +21,7 @@ function Home() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await api.topics.$get()
+        const response = await local_api.topics.$get()
         if (!response.ok) {
           throw new Error('Failed to fetch topics')
         }

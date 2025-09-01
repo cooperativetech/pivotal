@@ -2,7 +2,7 @@ import type { InferResponseType } from 'hono/client'
 import { z } from 'zod'
 
 import type { Topic, SlackMessage, SlackUser, SlackChannel, UserData } from '../db/schema/main'
-import type { api } from './api-client'
+import type { local_api } from './api-client'
 
 // Re-export database types for convenience
 export type { Topic, SlackMessage, SlackUser, SlackChannel, UserData }
@@ -59,7 +59,7 @@ export interface TopicData {
   channels?: SlackChannel[]
 }
 
-export type TopicRes = InferResponseType<typeof api.topics[':topicId']['$get'], 200>
+export type TopicRes = InferResponseType<typeof local_api.topics[':topicId']['$get'], 200>
 
 export function unserializeTopicData(topicRes: TopicRes): TopicData {
   return {

@@ -6,7 +6,7 @@ import type { PersonInput, DataAvailabilityConfig } from './core-benchmark/score
 import { scoreAlgorithmWithCases } from './core-benchmark/score-algorithm'
 import type { PersonProfile, TimeSlot, BenchmarkTestCase } from './core-benchmark/generate-benchmark-data'
 import { generateBenchmarkTestCases } from './core-benchmark/generate-benchmark-data'
-import { api } from '../shared/api-client'
+import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { setupCalendarDataForEval } from './setup-calendar-data'
@@ -25,7 +25,7 @@ async function simulateSchedulingConversation(
 
   // Clear ALL topics, users, and queued messages before each test
   try {
-    const result = await api.clear_test_data.$post()
+    const result = await local_api.clear_test_data.$post()
     if (result.ok) {
       const data = await result.json()
       console.log(`Database cleared: ${data.message}`)
@@ -49,7 +49,7 @@ async function simulateSchedulingConversation(
   const userIdProfileMap = new Map<string, PersonProfile>()
   testCase.profiles.forEach((profile, idx) => userIdProfileMap.set(`U_USER_${idx}`, profile))
 
-  const createUsersRes = await api.users.create_fake.$post({
+  const createUsersRes = await local_api.users.create_fake.$post({
     json: { users: usersToCreate },
   })
   if (!createUsersRes.ok) {
@@ -65,7 +65,7 @@ async function simulateSchedulingConversation(
   const initMessage = `Can you help us schedule a 1-hour meeting for Tuesday? We need ${testCase.profiles.map((p) => p.name).join(', ')} to attend.`
   console.log(`Sending initial message from ${userIds[0]}: ${initMessage}`)
 
-  const initMessageRes = await api.message.$post({
+  const initMessageRes = await local_api.message.$post({
     json: { userId: userIds[0], text: initMessage },
   })
   if (!initMessageRes.ok) {
@@ -96,7 +96,7 @@ async function simulateSchedulingConversation(
         message.text.toLowerCase().includes('confirm') ||
         message.text.toLowerCase().includes('how about')
       )) {
-        const channelRes = await api.channels[':channelId'].$get({
+        const channelRes = await local_api.channels[':channelId'].$get({
           param: { channelId: message.channelId  },
         })
         if (!channelRes.ok) {
@@ -121,7 +121,7 @@ async function simulateSchedulingConversation(
     const msgsToSend = nestedMsgsToSend.flat()
     const nestedMsgsToReplyTo = await Promise.all(msgsToSend.map(async ({ userId, userMsg }) => {
       console.log(`Sending response from ${userId}: ${userMsg}`)
-      const messageRes = await api.message.$post({
+      const messageRes = await local_api.message.$post({
         json: { topicId, userId, text: userMsg },
       })
       if (!messageRes.ok) {
@@ -136,7 +136,7 @@ async function simulateSchedulingConversation(
     msgRoundCount += 1
   }
 
-  const topicResponse = await api.topics[':topicId'].$get({
+  const topicResponse = await local_api.topics[':topicId'].$get({
     param: { topicId },
     query: {},
   })

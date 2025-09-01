@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
-import { api } from '@shared/api-client'
+import { local_api } from '@shared/api-client'
 import type { UserContext } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { UserContextView } from './UserContextView'
@@ -25,7 +25,7 @@ function TopicCreation() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.users.$get({ query: {} })
+        const response = await local_api.users.$get({ query: {} })
         if (!response.ok) {
           throw new Error('Failed to fetch users')
         }
@@ -60,7 +60,7 @@ function TopicCreation() {
     setSending(true)
     setError(null)
     try {
-      const response = await api.message.$post({
+      const response = await local_api.message.$post({
         json: {
           userId: selectedUserId,
           text: message.trim(),

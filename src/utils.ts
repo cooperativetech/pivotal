@@ -30,7 +30,7 @@ import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { handleSlackMessage } from './slack-message-handler'
-import { getOrCreateChannelForUsers } from './flack-helpers'
+import { getOrCreateChannelForUsers } from './local-helpers'
 import type { AutoMessageDeactivation } from '@shared/api-types'
 import type { WebClient } from '@slack/web-api'
 

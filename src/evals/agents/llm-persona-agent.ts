@@ -1,7 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { PersonProfile, TimeSlot } from '../core-benchmark/generate-benchmark-data'
-import { api } from '../../shared/api-client'
+import { local_api } from '../../shared/api-client'
 import { unserializeTopicData } from '../../shared/api-types'
 
 // Initialize OpenRouter with API key from environment
@@ -24,7 +24,7 @@ export async function llmPersonaRespond(
   timestamp: string,
 ): Promise<string> {
   // Fetch topic data from API
-  const topicResponse = await api.topics[':topicId'].$get({
+  const topicResponse = await local_api.topics[':topicId'].$get({
     param: { topicId },
     query: { visibleToUserId: userId, beforeRawTs: timestamp },
   })
