@@ -181,6 +181,30 @@ export async function processSchedulingActions(
       return createdMessages
     }
 
+    // Check if this is a group message (not DM) by looking at the channel's user list
+    const [channel] = await db.select()
+      .from(slackChannelTable)
+      .where(eq(slackChannelTable.id, message.channelId))
+    if (!channel) {
+      throw new Error(`Channel ${message.channelId} not found in database`)
+    }
+
+    // Don't act on group messages unless bot is explicitly @mentioned
+    const isDirectMessage = channel.userIds.length === 1
+    const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
+    if (!isDirectMessage && !isBotMentioned) {
+      try {
+        await client.reactions.add({
+          channel: message.channelId,
+          name: 'thumbsup',
+          timestamp: message.rawTs,
+        })
+      } catch (reactionError) {
+        console.error('Error adding thumbs up reaction:', reactionError)
+      }
+      return createdMessages
+    }
+
     // Get all previous messages for this topic
     const previousMessages = await db
       .select()
@@ -527,8 +551,15 @@ async function getOrCreateTopic(
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
-  // Step 1: Query all active topics from the DB
-  const topics = ignoreExistingTopics ? [] : await db.select().from(topicTable).where(eq(topicTable.isActive, true))
+  // Step 1: Query all of this bot's active topics from the DB
+  const topics = ignoreExistingTopics ? [] : (
+    await db.select()
+    .from(topicTable)
+    .where(and(
+      eq(topicTable.botUserId, botUserId),
+      eq(topicTable.isActive, true),
+    ))
+  )
 
   // Create slack message object for analysis
   const slackMessage = {
@@ -544,7 +575,7 @@ async function getOrCreateTopic(
     autoMessageId: null,
   }
 
-  // Step 2: Call analyzeTopicRelevance for non-bot messages
+  // Step 2: Call analyzeTopicRelevance
   const analysis = await analyzeTopicRelevance(topics, slackMessage, userMap, botUserId)
   console.log('Analysis result:', analysis)
 
@@ -610,18 +641,41 @@ async function saveMessageToTopic(
   topicId: string,
   message: SlackAPIMessage,
   autoMessageId: string | null,
+  client: WebClient,
 ): Promise<SlackMessage> {
   const userId = ('bot_id' in message && message.bot_id) ? message.bot_id : message.user!
-  const isDirectMessage = message.channel_type === 'im'
 
-  // For DM channels, ensure the channel record exists with both users
-  if (isDirectMessage) {
-    // Get the topic to find the other participant (the bot)
-    const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
-    if (topic) {
-      // For DMs, only include the actual user, not the bot
-      await upsertSlackChannel(message.channel, [userId])
+  // Get the topic to find the bot user ID
+  const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
+  if (!topic) {
+    throw new Error(`Topic ${topicId} not found`)
+  }
+
+  // Make sure to create a DB slackChannel for the message, unless it's coming from an AutoMessage
+  if (!autoMessageId) {
+    // Fetch channel members from Slack API, handling pagination if needed
+    let allMemberIds: string[] = []
+    let cursor: string | undefined = ''
+    while (true) {
+      const result = await client.conversations.members({
+        channel: message.channel,
+        cursor,
+      })
+      if (result.ok && result.members) {
+        allMemberIds = allMemberIds.concat(result.members)
+      }
+      cursor = result.response_metadata?.next_cursor
+      if (!cursor) {
+        break
+      }
     }
+    if (allMemberIds.length === 0) {
+      throw new Error(`Failed to fetch channel members for ${message.channel}`)
+    }
+
+    // Filter out the bot from the member list, and upsert the slack channel
+    const nonBotMemberIds = allMemberIds.filter((memberId) => memberId !== topic.botUserId)
+    await upsertSlackChannel(message.channel, nonBotMemberIds)
   }
 
   // Save message to DB related to that topic
@@ -656,6 +710,7 @@ async function getOrCreateDummyTopic(botUserId: string): Promise<string> {
   const [dummyTopic] = await db.select()
     .from(topicTable)
     .where(and(
+      eq(topicTable.botUserId, botUserId),
       eq(topicTable.summary, DUMMY_SUMMARY),
       eq(topicTable.workflowType, 'other'),
     ))
@@ -699,11 +754,11 @@ export async function handleSlackMessage(
     // If getOrCreateTopic returns null or the dummy topic, save the message to the dummy topic and return
     const dummyTopicId = await getOrCreateDummyTopic(botUserId)
     if (!topicId || topicId === dummyTopicId) {
-      await saveMessageToTopic(dummyTopicId, message, autoMessageId)
+      await saveMessageToTopic(dummyTopicId, message, autoMessageId, client)
       return null
     }
 
-    const savedReqMessage = await saveMessageToTopic(topicId, message, autoMessageId)
+    const savedReqMessage = await saveMessageToTopic(topicId, message, autoMessageId, client)
     const resMessages = await processSchedulingActions(
       topicId,
       savedReqMessage,

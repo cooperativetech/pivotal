@@ -1,5 +1,5 @@
 import type { WebClient } from '@slack/web-api'
-import { sql } from 'drizzle-orm'
+import { sql, eq } from 'drizzle-orm'
 
 import type { SlackAPIUser, SlackAPIMessage } from './slack-message-handler'
 import db from './db/engine'
@@ -157,6 +157,20 @@ export const mockSlackClient = {
           is_im: userList.length === 1,
           is_mpim: userList.length > 1,
         },
+      }
+    },
+    members: async ({ channel }: { channel: string }) => {
+      const [slackChannel] = await db.select()
+        .from(slackChannelTable)
+        .where(eq(slackChannelTable.id, channel))
+
+      if (!slackChannel) {
+        throw new Error(`Failed to fetch slackChannel during conversations.open.members: ${channel}`)
+      }
+
+      return {
+        ok: true,
+        members: slackChannel.userIds,
       }
     },
   },
