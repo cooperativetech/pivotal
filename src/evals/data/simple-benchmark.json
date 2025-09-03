@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Alice",
+    "goal": "Schedule a meeting",
+    "calendar": [],
+    "message_buffer": []
+  },
+  {
+    "name": "Bob",
+    "goal": "",
+    "calendar": [],
+    "message_buffer": []
+  }
+]
