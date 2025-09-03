@@ -33,7 +33,7 @@ export PV_LANGFUSE_PUBLIC_KEY=...
 export PV_LANGFUSE_SECRET_KEY=...
 ```
 
-For the next part, you will have to have PostgreSQL database running, so first follow the "Setting up Local BD" instructions below if you don't have it installed already.
+For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local BD" instructions below if you don't have it installed already.
 
 Run the flack server:
 ```
@@ -117,18 +117,11 @@ Look for lines like:
 
 Change the authentication method from `scram-sha-256` to `trust` for local connections:
 
-
 `host all all 127.0.0.1/32 trust`
 
 Restart PostgreSQL:
 
 `sudo systemctl restart postgresql`
-
-Install additional dependencies
-
-```
-pnpm add cron
-```
 
 The remaining steps are the same as for MacOS.
 
