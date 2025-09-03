@@ -42,4 +42,31 @@ export class BaseScheduleUser implements UserProfile {
     }
     return true // No intersection, scheduling is possible
   }
+
+  // Export to JSON-serializable format
+  export(): any {
+    return {
+      name: this.name,
+      goal: this.goal,
+      calendar: this.calendar.map((event) => ({
+        start: event.start.toISOString(),
+        end: event.end.toISOString(),
+        summary: event.summary,
+      })),
+      message_buffer: this.message_buffer,
+    }
+  }
+
+  // Create from exported data
+  static import(data: any): BaseScheduleUser {
+    const calendar = data.calendar.map((event: any) => ({
+      start: new Date(event.start),
+      end: new Date(event.end),
+      summary: event.summary,
+    }))
+    
+    const user = new BaseScheduleUser(data.name, data.goal, calendar)
+    user.message_buffer = data.message_buffer || []
+    return user
+  }
 }
