@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 import { BaseScheduleUser } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
@@ -15,6 +19,33 @@ function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
   return benchmarkData.map((personData: any) => {
     return BaseScheduleUser.import(personData)
   })
+}
+
+// Create all server-side users based on agents
+async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
+  const usersToCreate = agents.map((agent) => ({
+    id: agent.name,
+    realName: agent.name,
+    isBot: false,
+  }))
+  
+  const userAgentMap = new Map<string, BaseScheduleUser>()
+  agents.forEach((agent) => userAgentMap.set(agent.name, agent))
+
+  const createUsersRes = await local_api.users.create_fake.$post({
+    json: { users: usersToCreate },
+  })
+  if (!createUsersRes.ok) {
+    throw new Error(`Failed to create users: ${createUsersRes.statusText}`)
+  }
+
+  const { userIds } = await createUsersRes.json()
+  console.log(`Created ${userIds.length} test users`)
+  if (userIds.length < 1) {
+    throw new Error('Eval requires at least 1 test user')
+  }
+
+  return userAgentMap
 }
 
 // Process bot message responses and add them to appropriate agent buffers
@@ -195,7 +226,11 @@ async function runSimpleEvaluation(): Promise<void> {
       console.log(`  - ${agent.name}: ${agent.calendar.length} calendar events, goal: "${agent.goal}"`)
     })
 
-    // Step 3: Run turn-based simulation
+    // Step 3: Create users in database
+    console.log('\nCreating users in database...')
+    const userAgentMap = await createUsersFromAgents(agents)
+
+    // Step 4: Run turn-based simulation
     const topicData = await simulateTurnBasedConversation(agents)
     console.log(`\nConversation completed with ${topicData.messages.length} messages`)
 
@@ -209,6 +244,6 @@ async function runSimpleEvaluation(): Promise<void> {
 }
 
 // Run the evaluation if called directly
-if (require.main === module) {
+if (import.meta.main) {
   runSimpleEvaluation()
 }
