@@ -18,19 +18,44 @@ function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
 }
 
 // Process bot message responses and add them to appropriate agent buffers
-// TODO: IMPLEMENT APPROPRIATE SORTING : WE ONLY NEED TO SEND THE RESULT TO THE AGENTS WE'RE RESPONSIBLE FOR
-function processBotMessage(messageResult: any, agents: BaseScheduleUser[]): void {
+async function processBotMessage(messageResult: any, agents: BaseScheduleUser[]): Promise<void> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
     return
   }
 
-  // Add each bot response message to all agent buffers
+  // Process each bot response message
   for (const resMessage of messageResult.resMessages) {
     console.log(`Bot response: "${resMessage.text}"`)
     
-    // Add bot message to all agent buffers
-    for (const agent of agents) {
-      agent.receive(resMessage.text)
+    try {
+      // Get channel information to determine which agents should receive this message
+      const channelRes = await local_api.channels[':channelId'].$get({
+        param: { channelId: resMessage.channelId },
+      })
+      
+      if (!channelRes.ok) {
+        console.error(`Failed to get channel info: ${resMessage.channelId}`)
+        // Fallback: send to all agents if we can't get channel info
+        for (const agent of agents) {
+          agent.receive(resMessage.text)
+        }
+        continue
+      }
+
+      const { userIds } = await channelRes.json()
+      
+      // Only send message to agents whose names match the channel userIds
+      for (const agent of agents) {
+        if (userIds.includes(agent.name)) {
+          agent.receive(resMessage.text)
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing bot message for channel ${resMessage.channelId}:`, error)
+      // Fallback: send to all agents if there's an error
+      for (const agent of agents) {
+        agent.receive(resMessage.text)
+      }
     }
   }
 }
@@ -65,9 +90,6 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
     console.log(`Agent ${index + 1}: ${agent.name} - Goal: "${agent.goal}"`)
   })
 
-  // Use agent names as user IDs
-  const userIds = agents.map(agent => agent.name)
-
   // Start conversation: First agent sends initial message through API
   console.log('\n--- Starting Conversation ---')
   const firstAgent = agents[0]
@@ -94,7 +116,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   console.log(`Created topic: ${topicId}`)
 
   // Process initial bot responses
-  processBotMessage(initResData, agents)
+  await processBotMessage(initResData, agents)
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -123,7 +145,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
           if (replyRes.ok) {
             const replyData = await replyRes.json()
             // Process bot responses and add to agent buffers
-            processBotMessage(replyData, agents)
+            await processBotMessage(replyData, agents)
           } else {
             console.error(`Failed to send reply from ${agent.name}: ${replyRes.statusText}`)
           }
