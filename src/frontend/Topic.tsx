@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { api, local_api } from '@shared/api-client'
-import type { TopicData, SlackMessage } from '@shared/api-types'
+import type { TopicData, SlackMessage, SlackChannel } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
@@ -77,8 +77,7 @@ function Topic() {
     }
 
     fetchTopicData().catch(console.error)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicId]) // Intentionally exclude searchParams to prevent re-fetching on URL changes
+  }, [topicId, apiClient, searchParams])
 
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
@@ -260,7 +259,10 @@ function Topic() {
       channelGroups.push(group)
     }
 
-    channelMap.get(msg.channelId)!.messages.push(msg)
+    const channelGroup = channelMap.get(msg.channelId)
+    if (channelGroup) {
+      channelGroup.messages.push(msg)
+    }
   })
 
   // Sort messages within each channel by timestamp
@@ -347,9 +349,9 @@ function Topic() {
         }))
 
         // Check for any new channelIds that aren't in topicData
-        let validChannels: any[] = []
+        let validChannels: SlackChannel[] = []
         if (isLocalMode) {
-          const existingChannelIds = new Set(topicData.channels?.map((ch: any) => ch.id) || [])
+          const existingChannelIds = new Set(topicData.channels?.map((ch) => ch.id) || [])
           const newChannelIds = newMessages
             .map((msg) => msg.channelId)
             .filter((channelId) => !existingChannelIds.has(channelId))
@@ -421,7 +423,7 @@ function Topic() {
     <div className="h-screen bg-gray-50 p-4 flex flex-col">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
-          <Link to={isLocalMode ? "/local" : "/"} className="text-blue-600 hover:underline text-sm">
+          <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
           <h1 className="text-xl font-bold">{topicData.topic.summary}</h1>

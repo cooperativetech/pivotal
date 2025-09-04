@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import type { WorkflowType } from '@shared/api-types'
 import { useAuth } from './AuthContext'
 import { authClient } from '@shared/auth-client'
+import { api } from '@shared/api-client'
 
 interface Topic {
   id: string
@@ -40,18 +41,8 @@ function Home() {
       try {
         // Fetch both profile and topics in parallel
         const [profileResponse, topicsResponse] = await Promise.all([
-          fetch('/api/profile', {
-            headers: {
-              Authorization: `Bearer ${session.token}`,
-              'ngrok-skip-browser-warning': 'true',
-            },
-          }),
-          fetch('/api/profile/topics', {
-            headers: {
-              Authorization: `Bearer ${session.token}`,
-              'ngrok-skip-browser-warning': 'true',
-            },
-          }),
+          api.profile.$get(),
+          api.profile.topics.$get(),
         ])
 
         if (!profileResponse.ok) {
@@ -61,8 +52,8 @@ function Home() {
           throw new Error('Failed to fetch topics')
         }
 
-        const profileData = await profileResponse.json() as Profile
-        const topicsData = await topicsResponse.json() as { topics: Topic[] }
+        const profileData = await profileResponse.json()
+        const topicsData = await topicsResponse.json()
         setProfile(profileData)
         setTopics(topicsData.topics)
       } catch (err) {

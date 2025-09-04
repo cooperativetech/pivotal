@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { authClient } from '../shared/auth-client'
+import { authClient } from '@shared/auth-client'
 
 export default function Auth() {
   const [error, setError] = useState('')

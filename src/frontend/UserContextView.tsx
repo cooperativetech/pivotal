@@ -91,9 +91,9 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
         <div key={dateKey}>
           <div className="text-xs font-medium text-gray-600 mb-1">{dateKey}</div>
           <div className="space-y-1">
-            {dateEvents.map((event, idx) => (
+            {dateEvents.map((event) => (
               <div
-                key={idx}
+                key={`${event.start}-${event.end}-${event.summary ?? ''}`}
                 className={`rounded px-2 py-1 ${
                   event.isManualOverride
                     ? 'bg-blue-100 border border-blue-300'

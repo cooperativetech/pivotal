@@ -1,9 +1,8 @@
 import { Navigate } from 'react-router'
+import type { ReactNode } from 'react'
 import { useAuth } from './AuthContext'
 
-interface ProtectedRouteProps {
-  children: React.ReactNode
-}
+interface ProtectedRouteProps { children: ReactNode }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { session, loading } = useAuth()

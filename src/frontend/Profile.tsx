@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { authClient } from '../shared/auth-client'
+import { authClient } from '@shared/auth-client'
+import { api } from '@shared/api-client'
 
 interface UserProfile {
   user: {
@@ -34,15 +35,10 @@ export default function Profile() {
         return
       }
 
-      const response = await fetch('/api/profile', {
-        headers: {
-          Authorization: `Bearer ${session.data.session.token}`,
-          'ngrok-skip-browser-warning': 'true',
-        },
-      })
+      const response = await api.profile.$get()
 
       if (response.ok) {
-        const profileData = await response.json() as UserProfile
+        const profileData = await response.json()
         setProfile(profileData)
       } else {
         setError('Failed to load profile')

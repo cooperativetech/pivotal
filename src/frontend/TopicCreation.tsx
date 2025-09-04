@@ -54,7 +54,7 @@ function TopicCreation() {
     }
 
     fetchUsers().catch(console.error)
-  }, [])
+  }, [apiClient])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,7 +113,7 @@ function TopicCreation() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-6">
-            <Link to={isLocalMode ? "/local" : "/"} className="text-blue-600 hover:underline text-sm">
+            <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
               ← Back to Topics
             </Link>
             <h1 className="text-2xl font-bold">Start a New Conversation</h1>

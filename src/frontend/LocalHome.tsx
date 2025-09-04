@@ -63,7 +63,7 @@ function LocalHome() {
           <h1 className="text-3xl font-bold text-gray-800">Flack Testing Interface</h1>
           <p className="text-gray-600 mt-2">Testing mode - no authentication required</p>
         </div>
-        
+
         <div className="flex justify-center mb-4">
           <Link
             to="/local/create-topic"
@@ -105,7 +105,7 @@ function LocalHome() {
                   >
                     {topic.isActive ? 'Active' : 'Inactive'}
                   </span>
-                  
+
                   <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
                     Local
                   </span>

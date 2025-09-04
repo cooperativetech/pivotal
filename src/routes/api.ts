@@ -157,10 +157,10 @@ export const apiRoutes = new Hono()
     try {
       // Import the dumpTopic utility
       const { dumpTopic } = await import('../utils')
-      
+
       // Get topic data
       const topicData = await dumpTopic(topicId, {})
-      
+
       // Check if user has access to this topic (via their Slack accounts)
       const linkedSlackIds = await db
         .select({ slackId: account.accountId })
@@ -169,17 +169,17 @@ export const apiRoutes = new Hono()
           eq(account.userId, sessionUser.userId),
           eq(account.providerId, 'slack'),
         ))
-      
+
       const userSlackIds = new Set(linkedSlackIds.map((s) => s.slackId))
       const topicUserIds = new Set(topicData.topic.userIds)
-      
+
       // Check if any of the user's Slack IDs are in the topic
       const hasAccess = [...userSlackIds].some((id) => topicUserIds.has(id))
-      
+
       if (!hasAccess) {
         return c.json({ error: 'Forbidden' }, 403)
       }
-      
+
       return c.json(topicData)
     } catch (error) {
       console.error('Error fetching topic data:', error)

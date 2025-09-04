@@ -40,7 +40,7 @@ createRoot(document.getElementById('root')!).render(
               </ProtectedRoute>
             } />
           </Route>
-          
+
           {/* Local/testing routes - only available in development */}
           {import.meta.env.DEV && (
             <Route path="/local">
@@ -50,7 +50,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="create-topic" element={<TopicCreation />} />
             </Route>
           )}
-          
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { authClient } from '../shared/auth-client'
+import { authClient } from '@shared/auth-client'
 
 interface Session {
   user: {
@@ -41,13 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const sessionData = await authClient.getSession()
       if (sessionData.data?.session && sessionData.data?.user) {
-        setSession({
+        const sessionInfo = {
           user: sessionData.data.user,
           token: sessionData.data.session.token,
-        })
+        }
+        setSession(sessionInfo)
+        // Store in sessionStorage for API client to use
+        window.sessionStorage.setItem('auth-session', JSON.stringify(sessionInfo))
+      } else {
+        window.sessionStorage.removeItem('auth-session')
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      window.sessionStorage.removeItem('auth-session')
     } finally {
       setLoading(false)
     }
@@ -57,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authClient.signOut()
       setSession(null)
+      window.sessionStorage.removeItem('auth-session')
     } catch (error) {
       console.error('Sign out failed:', error)
     }
