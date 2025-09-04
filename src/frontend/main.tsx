@@ -6,19 +6,18 @@ import App from './App.tsx'
 import Home from './Home.tsx'
 import Topic from './Topic.tsx'
 import TopicCreation from './TopicCreation.tsx'
-import Login from './Login.tsx'
-import Register from './Register.tsx'
+import Auth from './Auth.tsx'
 import Profile from './Profile.tsx'
 import { AuthProvider } from './AuthContext.tsx'
 import ProtectedRoute from './ProtectedRoute.tsx'
+import LocalHome from './LocalHome.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<App />}>
             <Route index element={
               <ProtectedRoute>
@@ -41,6 +40,17 @@ createRoot(document.getElementById('root')!).render(
               </ProtectedRoute>
             } />
           </Route>
+          
+          {/* Local/testing routes - only available in development */}
+          {import.meta.env.DEV && (
+            <Route path="/local">
+              <Route index element={<LocalHome />} />
+              <Route path="topics" element={<LocalHome />} />
+              <Route path="topic/:topicId" element={<Topic />} />
+              <Route path="create-topic" element={<TopicCreation />} />
+            </Route>
+          )}
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

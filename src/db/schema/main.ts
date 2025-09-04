@@ -50,7 +50,6 @@ export const slackUserTable = pgTable('slack_user', {
   deleted: boolean().notNull(),
   updated: timestamp({ withTimezone: true }).notNull(),
   raw: jsonb().notNull(),
-  authUserId: text(),
 })
 export type SlackUserInsert = InferInsertModel<typeof slackUserTable>
 export type SlackUser = InferSelectModel<typeof slackUserTable>

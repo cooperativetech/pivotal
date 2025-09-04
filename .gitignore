@@ -7,3 +7,4 @@ pv.log
 .env
 .eslintcache
 .claude-mistakes.md
+AGENTS.md

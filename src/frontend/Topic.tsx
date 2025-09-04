@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { local_api } from '@shared/api-client'
+import { api, local_api } from '@shared/api-client'
 import type { TopicData, SlackMessage } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
+import { useLocalMode } from './LocalModeContext'
 
 interface ChannelGroup {
   channelId: string
@@ -17,6 +18,8 @@ function Topic() {
   const [topicData, setTopicData] = useState<TopicData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isLocalMode = useLocalMode()
+  const apiClient = isLocalMode ? local_api : api
   const [timelinePosition, setTimelinePosition] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [testingMessageId, setTestingMessageId] = useState<string | null>(null)
@@ -36,7 +39,7 @@ function Topic() {
       if (!topicId) return
 
       try {
-        const response = await local_api.topics[':topicId'].$get({
+        const response = await apiClient.topics[':topicId'].$get({
           param: { topicId },
           query: {},
         })
@@ -158,7 +161,7 @@ function Topic() {
 
   // Handle test LLM response
   const handleTestLlmResponse = useCallback(async (messageId: string) => {
-    if (!topicId) return
+    if (!topicId || !isLocalMode) return
 
     setTestingMessageId(messageId)
     try {
@@ -183,7 +186,7 @@ function Topic() {
     } finally {
       setTestingMessageId(null)
     }
-  }, [topicId])
+  }, [topicId, isLocalMode])
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -318,7 +321,7 @@ function Topic() {
   const handleSendMessage = async (channelId: string) => {
     const chatInput = chatInputs.get(channelId) || ''
     const currentUserId = getCurrentUserId(channelId)
-    if (!chatInput.trim() || !currentUserId || !topicId || sendingChannels.has(channelId)) return
+    if (!chatInput.trim() || !currentUserId || !topicId || sendingChannels.has(channelId) || !isLocalMode) return
 
     setSendingChannels((prev) => new Set(prev).add(channelId))
     try {
@@ -344,32 +347,35 @@ function Topic() {
         }))
 
         // Check for any new channelIds that aren't in topicData
-        const existingChannelIds = new Set(topicData.channels?.map((ch) => ch.id) || [])
-        const newChannelIds = newMessages
-          .map((msg) => msg.channelId)
-          .filter((channelId) => !existingChannelIds.has(channelId))
+        let validChannels: any[] = []
+        if (isLocalMode) {
+          const existingChannelIds = new Set(topicData.channels?.map((ch: any) => ch.id) || [])
+          const newChannelIds = newMessages
+            .map((msg) => msg.channelId)
+            .filter((channelId) => !existingChannelIds.has(channelId))
 
-        // Fetch channel info for any new channels
-        const newChannels = await Promise.all(
-          [...new Set(newChannelIds)].map(async (channelId) => {
-            try {
-              const response = await local_api.channels[':channelId'].$get({
-                param: { channelId },
-              })
-              if (response.ok) {
-                return await response.json()
+          // Fetch channel info for any new channels
+          const newChannels = await Promise.all(
+            [...new Set(newChannelIds)].map(async (channelId) => {
+              try {
+                const response = await local_api.channels[':channelId'].$get({
+                  param: { channelId },
+                })
+                if (response.ok) {
+                  return await response.json()
+                }
+                console.error(`Failed to fetch channel ${channelId}`)
+                return null
+              } catch (err) {
+                console.error(`Error fetching channel ${channelId}:`, err)
+                return null
               }
-              console.error(`Failed to fetch channel ${channelId}`)
-              return null
-            } catch (err) {
-              console.error(`Error fetching channel ${channelId}:`, err)
-              return null
-            }
-          }),
-        )
+            }),
+          )
 
-        // Filter out any null results
-        const validChannels = newChannels.filter((ch) => ch !== null)
+          // Filter out any null results
+          validChannels = newChannels.filter((ch) => ch !== null)
+        }
 
         setTopicData((prev) => {
           if (!prev) return prev
@@ -415,7 +421,7 @@ function Topic() {
     <div className="h-screen bg-gray-50 p-4 flex flex-col">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
-          <Link to="/" className="text-blue-600 hover:underline text-sm">
+          <Link to={isLocalMode ? "/local" : "/"} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
           <h1 className="text-xl font-bold">{topicData.topic.summary}</h1>
