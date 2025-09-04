@@ -57,10 +57,10 @@ export class BaseScheduleUser implements UserProfile {
       return `${start}-${end}: ${event.summary}`
     }).join(', ')
 
-    // Simple prompt
-    const prompt = `You are ${this.name}. Your goal is: ${this.goal}
-
-Your calendar: ${calendarText || 'Free all day'}
+    // Simple prompt - only include goal if it's not empty
+    const goalContext = this.goal && this.goal.trim() !== '' ? `Your goal is: ${this.goal}\n\n` : ''
+    
+    const prompt = `You are ${this.name}. ${goalContext}Your calendar: ${calendarText || 'Free all day'}
 
 Message history: ${this.message_buffer.join(' | ')}
 
