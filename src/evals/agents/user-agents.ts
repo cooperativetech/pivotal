@@ -1,6 +1,20 @@
 // The base agent class contains a simple, working agent implementation
 
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { generateText } from 'ai'
 import type { UserProfile } from '../../tools/time_intersection'
+import { local_api } from '../../shared/api-client'
+
+// Initialize OpenRouter with API key from environment
+const apiKey = process.env.PV_OPENROUTER_API_KEY
+if (!apiKey) {
+  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
+}
+const openrouter = createOpenRouter({
+  apiKey,
+})
+
+const MODEL = 'google/gemini-2.5-flash'
 
 // Util types
 export interface SimpleCalendarEvent {
@@ -27,9 +41,46 @@ export class BaseScheduleUser implements UserProfile {
     this.message_buffer.push(message)
   }
 
-  reply_buffer(): string {
-    // TODO: Implement reply generation logic
-    return ''
+  async reply_buffer(): Promise<string> {
+    // If no messages in buffer, nothing to reply to
+    if (this.message_buffer.length === 0) {
+      return ''
+    }
+
+    // Get the most recent message to reply to
+    const latestMessage = this.message_buffer[this.message_buffer.length - 1]
+
+    // Format calendar simply
+    const calendarText = this.calendar.map(event => {
+      const start = event.start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      const end = event.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      return `${start}-${end}: ${event.summary}`
+    }).join(', ')
+
+    // Simple prompt
+    const prompt = `You are ${this.name}. Your goal is: ${this.goal}
+
+Your calendar: ${calendarText || 'Free all day'}
+
+Message history: ${this.message_buffer.join(' | ')}
+
+Respond naturally to: "${latestMessage}"
+
+Be brief and professional.`
+
+    try {
+      const result = await generateText({
+        model: openrouter(MODEL),
+        prompt,
+        maxTokens: 150,
+        temperature: 0.8,
+      })
+      
+      return result.text.trim() || 'Sure, let me check my calendar and get back to you.'
+    } catch (error) {
+      console.error('Error generating response:', error)
+      return 'I unfortunately can\'t access my calendar.'
+    }
   }
 
   eval_possibility(scheduled: SimpleCalendarEvent): boolean {
