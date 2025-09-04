@@ -2,6 +2,37 @@ import { z } from 'zod'
 import { Agent, run, tool } from '../../agents/agent-sdk'
 import { CalendarEvent } from '@shared/api-types'
 
+/**
+ * Extract calendar events from a tool-based agent result
+ * @param toolResult - The result from running an agent with generateCalendarEvents tool
+ * @returns Array of CalendarEvent objects, or null if extraction fails
+ */
+export function extractCalendarEvents(toolResult: any): CalendarEvent[] | null {
+  try {
+    const generatedItems = toolResult.state?._generatedItems || []
+    
+    // Look for direct tool call item
+    const toolCallItem = generatedItems.find((item: any) => 
+      item.type === 'tool_call_item' && 
+      item.rawItem?.name === 'generateCalendarEvents'
+    )
+    
+    if (toolCallItem) {
+      const toolArgs = JSON.parse(toolCallItem.rawItem.arguments)
+      const events = toolArgs.events
+      
+      // Validate events against CalendarEvent schema
+      const validatedEvents = z.array(CalendarEvent).parse(events)
+      return validatedEvents
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error extracting calendar events:', error)
+    return null
+  }
+}
+
 // Create a tool-based agent for better format control
 const generateCalendarEvents = tool({
   name: 'generateCalendarEvents',
@@ -56,38 +87,16 @@ The person is an experienced software engineer working in technology. They shoul
     console.log('Running tool-based agent...')
     const toolResult = await run(toolBasedCalendarAgent, userPrompt)
     
-    // Extract events from tool call using the working approach
-    const result = toolResult as any
-    const generatedItems = result.state?._generatedItems || []
+    // Extract events using our utility function
+    const extractedEvents = extractCalendarEvents(toolResult)
     
-    // Look for direct tool call item
-    const toolCallItem = generatedItems.find((item: any) => 
-      item.type === 'tool_call_item' && 
-      item.rawItem?.name === 'generateCalendarEvents'
-    )
-    
-    if (toolCallItem) {
-      try {
-        const toolArgs = JSON.parse(toolCallItem.rawItem.arguments)
-        const extractedEvents = toolArgs.events
-        
-        console.log('✅ SUCCESS! Extracted events from tool call:')
-        console.log(JSON.stringify(extractedEvents, null, 2))
-        console.log(`\nGenerated ${extractedEvents.length} calendar events via tool`)
-        
-        // Validate that events match CalendarEvent schema
-        try {
-          z.array(CalendarEvent).parse(extractedEvents)
-          console.log('✓ All events pass CalendarEvent validation')
-        } catch (validationError) {
-          console.log('✗ Events failed CalendarEvent validation:')
-          console.log(validationError)
-        }
-      } catch (parseError) {
-        console.log('❌ Error parsing tool call arguments:', parseError)
-      }
+    if (extractedEvents) {
+      console.log('✅ SUCCESS! Extracted events from tool call:')
+      console.log(JSON.stringify(extractedEvents, null, 2))
+      console.log(`\nGenerated ${extractedEvents.length} calendar events via tool`)
+      console.log('✓ All events pass CalendarEvent validation (validated during extraction)')
     } else {
-      console.log('❌ No generateCalendarEvents tool call found')
+      console.log('❌ Failed to extract calendar events')
     }
     
     if (toolResult.finalOutput) {
