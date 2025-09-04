@@ -1,7 +1,7 @@
 [
   {
     "name": "Alice",
-    "goal": "Schedule a meeting",
+    "goal": "Schedule a meeting with Bob",
     "calendar": [
       {
         "start": "2025-09-08T13:00:00.000Z",
