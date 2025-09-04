@@ -24,7 +24,7 @@ const client = new OpenAI({
 const langfuse = new Langfuse({
   publicKey: process.env.PV_LANGFUSE_PUBLIC_KEY,
   secretKey: process.env.PV_LANGFUSE_SECRET_KEY,
-  baseUrl: 'https://us.cloud.langfuse.com',
+  baseUrl: process.env.PV_LANGFUSE_BASE_URL,
 })
 const tracingExporter = new LangfuseTracingExporter(langfuse)
 const traceProcessor = new BatchTraceProcessor(tracingExporter, { maxBatchSize: 1 })
