@@ -7,6 +7,13 @@ import type { local_api } from './api-client'
 // Re-export database types for convenience
 export type { Topic, SlackMessage, SlackUser, SlackChannel, UserData }
 
+// User shape for runtime directories and prompts
+export interface UserDirectoryUser {
+  realName: string
+  tz: string | null
+  isBot: boolean
+}
+
 export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
 

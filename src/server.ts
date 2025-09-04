@@ -7,6 +7,7 @@ import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
 import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { startAutoMessageCron } from './utils'
+import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
 
 function isLocalEnv() {
@@ -34,6 +35,8 @@ const honoApp = new Hono()
   .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
     return handleGoogleAuthCallback(c, c.req.valid('query'), slackClient)
   })
+
+  .route('/api', apiRoutes)
 
   // Only serve local_api if we're running the server locally
   .route('/local_api', isLocalEnv() ? localRoutes : new Hono())

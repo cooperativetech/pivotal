@@ -1,8 +1,29 @@
-import { Outlet } from 'react-router'
+import { Outlet, Link } from 'react-router'
+import { useAuth } from './AuthContext'
 
 function App() {
+  const { session } = useAuth()
+
   return (
     <div className="app">
+      {session && (
+        <nav className="bg-white shadow-sm border-b border-gray-200 px-4 py-2">
+          <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <Link to="/" className="text-xl font-bold text-gray-800">
+              Pivotal
+            </Link>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-600">Welcome, {session.user.name}</span>
+              <Link
+                to="/profile"
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Profile
+              </Link>
+            </div>
+          </div>
+        </nav>
+      )}
       <Outlet />
     </div>
   )

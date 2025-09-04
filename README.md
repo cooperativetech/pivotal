@@ -64,3 +64,38 @@ If you change `db/schema.ts`, you can use drizzle-kit to automatically generate 
 pnpm run dkgen
 pnpm run dkmig
 ```
+
+## Ngrok
+
+- Problem: Slack OAuth requires HTTPS callback URLs, but our local
+development runs on http://localhost:5173
+- Solution: Ngrok creates an HTTPS tunnel (e.g.,
+https://015231acd470.ngrok-free.app) that forwards to localhost
+- Implementation: Modified CORS settings, auth client, and proxy
+configuration to work with ngrok URLs
+
+Setup
+
+1. Install ngrok (for mac):
+```brew install ngrok
+```
+# Or download from https://ngrok.com/download
+You'll also have to make a free account and pass your api key from the website. 
+
+2. Get ngrok tunnel (in separate terminal):
+ngrok http 3001
+2. This will show you an HTTPS URL. 
+3. Update configuration:
+- Replace 015231acd470.ngrok-free.app with your ngrok URL in:
+    - export PV_BASE_URL=`your_new_ngrok_url`
+- Add your ngrok URL to Slack api's trusted domains @ https://api.slack.com/apps/A0989PZDEJX/oauth?, under banner `Redirect URLs`.
+4. Run the app:
+pnpm run local    # Starts both server and frontend
+
+Current Architecture (Temporary)
+
+- Frontend: http://localhost:5173 (Vite dev server)
+- API proxy: /api routes to ngrok HTTPS URL
+- Direct backend: http://localhost:3001 (for flack testing)
+
+Note: This entire workflow is temporary until we switch to the coopt.tech production domain. Then we'll have a stable domain + delete this stuff.
