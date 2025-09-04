@@ -83,6 +83,32 @@ Be brief and professional.`
     }
   }
 
+  async send_initial_message(): Promise<string> {
+    // Return empty string if no goal is set
+    if (!this.goal || this.goal.trim() === '') {
+      return ''
+    }
+    
+    // Simple prompt for initial message
+    const prompt = `You are ${this.name}. Your goal is: ${this.goal}
+
+    Generate a brief initial message to request the Pivotal bot to help. Be natural and professional.`
+
+    try {
+      const result = await generateText({
+        model: openrouter(MODEL),
+        prompt,
+        maxTokens: 100,
+        temperature: 0.7,
+      })
+      
+      return result.text.trim() || `Hi, I'd like to ${this.goal.toLowerCase()}.`
+    } catch (error) {
+      console.error('Error generating initial message:', error)
+      return `Hi, I'd like to ${this.goal.toLowerCase()}.`
+    }
+  }
+
   eval_possibility(scheduled: SimpleCalendarEvent): boolean {
     // Check if the input event intersects with any existing calendar events
     for (const event of this.calendar) {
