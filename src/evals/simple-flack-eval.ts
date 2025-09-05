@@ -311,6 +311,16 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
       }
     }
     
+    // Check if all agents have confirmed the current suggested time
+    if (suggestedTime) {
+      const allConfirmed = agents.every(agent => confirmations[agent.name])
+      if (allConfirmed) {
+        console.log('\n🎉 All agents have confirmed the current suggested time!')
+        console.log('Ending conversation successfully.')
+        break
+      }
+    }
+    
     // If no agent spoke this round, end the conversation
     if (!anyAgentSpoke) {
       console.log('No agents responded. Ending conversation.')
