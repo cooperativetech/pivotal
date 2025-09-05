@@ -7,25 +7,22 @@ import { CalendarEvent } from '@shared/api-types'
  * @param toolResult - The result from running an agent with generateCalendarEvents tool
  * @returns Array of CalendarEvent objects, or null if extraction fails
  */
-export function extractCalendarEvents(toolResult: any): CalendarEvent[] | null {
+export function extractCalendarEvents(toolResult: Record<string, unknown>): CalendarEvent[] | null {
   try {
-    const generatedItems = toolResult.state?._generatedItems || []
-    
+    const generatedItems = (toolResult.state as Record<string, unknown>)?._generatedItems as unknown[] || []
     // Look for direct tool call item
-    const toolCallItem = generatedItems.find((item: any) => 
-      item.type === 'tool_call_item' && 
-      item.rawItem?.name === 'generateCalendarEvents'
-    )
-    
+    const toolCallItem = generatedItems.find((item: unknown) =>
+      (item as Record<string, unknown>).type === 'tool_call_item' &&
+      ((item as Record<string, unknown>).rawItem as Record<string, unknown>)?.name === 'generateCalendarEvents',
+    ) as Record<string, unknown> | undefined
     if (toolCallItem) {
-      const toolArgs = JSON.parse(toolCallItem.rawItem.arguments)
+      const toolArgs = JSON.parse((toolCallItem.rawItem as Record<string, unknown>).arguments as string) as Record<string, unknown>
       const events = toolArgs.events
-      
       // Validate events against CalendarEvent schema
       const validatedEvents = z.array(CalendarEvent).parse(events)
       return validatedEvents
     }
-    
+
     return null
   } catch (error) {
     console.error('Error extracting calendar events:', error)
@@ -41,7 +38,7 @@ const generateCalendarEvents = tool({
     events: z.array(CalendarEvent).describe('Array of calendar events with ISO timestamps and timezone offsets'),
   }),
   strict: true,
-  execute: async ({ events }) => {
+  execute: ({ events }) => {
     return { events }
   },
 })
@@ -80,16 +77,13 @@ The person is an experienced software engineer working in technology. They shoul
 
   console.log('Testing tool-based fakeCalendarAgent with prompt:')
   console.log(userPrompt)
-  
   console.log('\n=== TOOL-BASED AGENT ===\n')
 
   try {
     console.log('Running tool-based agent...')
     const toolResult = await run(toolBasedCalendarAgent, userPrompt)
-    
     // Extract events using our utility function
     const extractedEvents = extractCalendarEvents(toolResult)
-    
     if (extractedEvents) {
       console.log('✅ SUCCESS! Extracted events from tool call:')
       console.log(JSON.stringify(extractedEvents, null, 2))
@@ -98,7 +92,6 @@ The person is an experienced software engineer working in technology. They shoul
     } else {
       console.log('❌ Failed to extract calendar events')
     }
-    
     if (toolResult.finalOutput) {
       console.log('\n📋 Agent Summary:')
       console.log(toolResult.finalOutput)

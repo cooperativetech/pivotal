@@ -77,10 +77,8 @@ The person is an experienced software engineer working in technology. They shoul
   try {
     console.log('Running loose agent to see raw output...')
     const result = await run(looseFakeCalendarAgent, userPrompt)
-    
     console.log('Raw result:')
     console.log(JSON.stringify(result, null, 2))
-    
     if (result.finalOutput) {
       console.log('\nFinal output:')
       console.log(JSON.stringify(result.finalOutput, null, 2))
