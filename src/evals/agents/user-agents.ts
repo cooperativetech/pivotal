@@ -41,6 +41,10 @@ export class BaseScheduleUser implements UserProfile {
     this.message_buffer.push(message)
   }
 
+  empty_buffer(): void {
+    this.message_buffer = []
+  }
+
   async reply_buffer(): Promise<string> {
     // If no messages in buffer, nothing to reply to
     if (this.message_buffer.length === 0) {
