@@ -1,4 +1,4 @@
-import { z } from 'zod'
+// import { z } from 'zod'
 import { Agent, run } from '../../agents/agent-sdk'
 
 // Create the simplest possible agent to test if API calls work
