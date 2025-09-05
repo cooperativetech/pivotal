@@ -10,12 +10,11 @@ const baseURL = (
 )
 
 export const auth = betterAuth({
+  baseURL,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: betterAuthSchema,
   }),
-  emailAndPassword: { enabled: true },
-  baseURL,
   socialProviders: {
     slack: {
       clientId: process.env.PV_SLACK_CLIENT_ID!,
