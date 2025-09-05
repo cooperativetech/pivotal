@@ -11,13 +11,10 @@ const basicAgent = new Agent({
 
 async function testBasicAgent() {
   console.log('Testing basic agent with simple string output...')
-  
   try {
     const result = await run(basicAgent, 'Say hello')
-    
     console.log('Success! Raw result:')
     console.log(JSON.stringify(result, null, 2))
-    
     if (result.finalOutput) {
       console.log('\nFinal output:')
       console.log(result.finalOutput)
