@@ -101,18 +101,18 @@ async function extractSuggestedTimeWithLLM(messageText: string): Promise<SimpleC
       model: openrouter(MODEL),
       prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
 
-For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
+      For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
 
-Message: "${messageText}"
+      Message: "${messageText}"
 
-Response format:
-- If a meeting time is suggested: Return JSON with format: {"start": "YYYY-MM-DDTHH:MM:SS±HH:MM", "end": "YYYY-MM-DDTHH:MM:SS±HH:MM", "summary": "Brief meeting description"}
-- If no end time is specified, assume 1 hour duration
-- If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
+      Response format:
+      - If a meeting time is suggested: Return it in JSON format: {"start": "YYYY-MM-DDTHH:MM:SS±HH:MM", "end": "YYYY-MM-DDTHH:MM:SS±HH:MM", "summary": "Brief meeting description"}
+      - If no end time is specified, assume 1 hour duration
+      - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
 
-Examples:
-- "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
-- "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`,
+      Examples:
+      - "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
+      - "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`,
     })
 
     const response = result.text.trim()
@@ -123,13 +123,27 @@ Examples:
 
     // Try to parse the JSON response
     try {
-      const parsed = JSON.parse(response)
+      // Strip markdown code blocks if present
+      let jsonString = response
+      if (response.includes('```json')) {
+        const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n\s*```/)
+        if (jsonMatch) {
+          jsonString = jsonMatch[1]
+        }
+      } else if (response.includes('```')) {
+        const codeMatch = response.match(/```\s*\n([\s\S]*?)\n\s*```/)
+        if (codeMatch) {
+          jsonString = codeMatch[1]
+        }
+      }
+      
+      const parsed = JSON.parse(jsonString.trim())
       
       const startDate = new Date(parsed.start)
       const endDate = new Date(parsed.end)
       
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`Failed to parse suggested meeting times: ${response}`)
+        console.warn(`Failed to parse suggested meeting times: ${jsonString}`)
         return null
       }
 
@@ -290,7 +304,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
         const reply = await agent.reply_buffer()
 
         // RESETTING BUFFER AFTER REPLY
-        await agent.empty_buffer()
+        //await agent.empty_buffer()
         
         if (reply) {
           console.log(`${agent.name}: ${reply}`)
@@ -418,7 +432,14 @@ async function runSimpleEvaluation(): Promise<void> {
       console.log('❌ No confirmations detected from any agents')
     }
 
-    // TODO: Add scoring/evaluation logic
+    // Check feasibility using eval_possibility
+    if (result.suggestedEvent) {
+      console.log('\nFeasibility Check:')
+      agents.forEach(agent => {
+        const canAttend = agent.eval_possibility(result.suggestedEvent!)
+        console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
+      })
+    }
 
     console.log('\n Evaluation completed successfully')
   } catch (error) {
