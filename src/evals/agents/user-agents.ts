@@ -104,7 +104,7 @@ Be brief and professional.`
         maxTokens: 100,
         temperature: 0.7,
       })
-      
+
       return result.text.trim() || `Hi, I'd like to ${this.goal.toLowerCase()}.`
     } catch (error) {
       console.error('Error generating initial message:', error)
@@ -144,7 +144,7 @@ Be brief and professional.`
       end: new Date(event.end as string),
       summary: event.summary as string,
     }))
-    
+
     const user = new BaseScheduleUser(data.name as string, data.goal as string, calendar)
     user.message_buffer = (data.message_buffer as string[]) || []
     return user
