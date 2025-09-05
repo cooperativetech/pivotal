@@ -44,6 +44,7 @@ const generateCalendarEvents = tool({
   strict: true,
   execute: async ({ events }) => {
     return { success: true, count: events.length }
+    // TODO: Get this to return just events, not this whole object
   },
 })
 
