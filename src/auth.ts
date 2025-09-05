@@ -9,8 +9,13 @@ const baseURL = (
   process.env.PV_BASE_URL || 'https://localhost:3009'
 )
 
+if (process.env.PV_NODE_ENV === 'prod' && !process.env.PV_BETTER_AUTH_SECRET) {
+  throw new Error('PV_BETTER_AUTH_SECRET required for production')
+}
+
 export const auth = betterAuth({
   baseURL,
+  secret: process.env.PV_BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: betterAuthSchema,
@@ -22,10 +27,17 @@ export const auth = betterAuth({
     },
   },
   account: {
+    encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
       trustedProviders: ['slack'],
     },
+  },
+  rateLimit: {
+    enabled: true,
+  },
+  advanced: {
+    useSecureCookies: true,
   },
   telemetry: {
     enabled: false,

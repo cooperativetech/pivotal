@@ -50,7 +50,7 @@ pnpm run dev
 
 You can then visit the website in your browser at https://localhost:3009. This hosts the "production" version of the website, with rolled-up js and css assets served out of the src/dist folder.
 
-To run the bot in production, you additionally need `PV_BASE_URL` set to the public website's URL. Then, run:
+To run the bot in production, you additionally need `PV_BETTER_AUTH_SECRET` set to a random string, and `PV_BASE_URL` set to the public website's URL. Then, run:
 ```
 pnpm run prod
 ```
