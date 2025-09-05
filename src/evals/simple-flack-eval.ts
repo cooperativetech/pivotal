@@ -64,15 +64,21 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
 // Extract suggested meeting time using LLM
 async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | null> {
   try {
+    const currentDate = new Date()
+    const currentDateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    const currentYear = currentDate.getFullYear()
+    const currentMonth = currentDate.toLocaleString('en-US', { month: 'long' })
+    
     const result = await generateText({
       model: openrouter(MODEL),
       prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the suggested time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS±HH:MM). If no specific meeting time is suggested, respond with "NONE".
+      For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
 
-Message: "${messageText}"
+      Message: "${messageText}"
 
-Response format:
-- If a meeting time is suggested: Return just the ISO 8601 timestamp
-- If no meeting time is suggested: Return "NONE"`,
+      Response format:
+      - If a meeting time is suggested: Return just the ISO 8601 timestamp
+      - If no meeting time is suggested: Return "NONE"`,
     })
 
     const response = result.text.trim()
