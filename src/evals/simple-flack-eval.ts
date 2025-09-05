@@ -402,7 +402,7 @@ async function runSimpleEvaluation(): Promise<void> {
 
     // Step 3: Create users in database
     console.log('\nCreating users in database...')
-    const userAgentMap = await createUsersFromAgents(agents)
+    await createUsersFromAgents(agents)
 
     // Step 4: Run turn-based simulation
     const result = await simulateTurnBasedConversation(agents)
