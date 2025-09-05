@@ -9,6 +9,19 @@ import { BaseScheduleUser } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { generateText } from 'ai'
+
+// Initialize OpenRouter with API key from environment
+const apiKey = process.env.PV_OPENROUTER_API_KEY
+if (!apiKey) {
+  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
+}
+const openrouter = createOpenRouter({
+  apiKey,
+})
+
+const MODEL = 'google/gemini-2.5-flash'
 
 // Load benchmark data and create BaseScheduleUser agents using import functionality
 function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
@@ -48,15 +61,60 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
   return userAgentMap
 }
 
-// Process bot message responses and add them to appropriate agent buffers
-async function processBotMessage(messageResult: any, agents: BaseScheduleUser[]): Promise<void> {
-  if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
-    return
+// Extract suggested meeting time using LLM
+async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | null> {
+  try {
+    const result = await generateText({
+      model: openrouter(MODEL),
+      prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the suggested time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS±HH:MM). If no specific meeting time is suggested, respond with "NONE".
+
+Message: "${messageText}"
+
+Response format:
+- If a meeting time is suggested: Return just the ISO 8601 timestamp
+- If no meeting time is suggested: Return "NONE"`,
+    })
+
+    const response = result.text.trim()
+    
+    if (response === 'NONE' || response.toLowerCase() === 'none') {
+      return null
+    }
+
+    // Try to parse the extracted time
+    const extractedDate = new Date(response)
+    if (isNaN(extractedDate.getTime())) {
+      console.warn(`Failed to parse extracted time: ${response}`)
+      return null
+    }
+
+    return extractedDate
+  } catch (error) {
+    console.error('Error extracting suggested time with LLM:', error)
+    return null
   }
+}
+
+// Process bot message responses and add them to appropriate agent buffers
+async function processBotMessages(messageResult: any, agents: BaseScheduleUser[]): Promise<Date | null> {
+  if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
+    return null
+  }
+
+  let suggestedTime: Date | null = null
 
   // Process each bot response message
   for (const resMessage of messageResult.resMessages) {
     console.log(`Bot response: "${resMessage.text}"`)
+    
+    // Extract suggested time from this message using LLM
+    if (!suggestedTime) {
+      const extractedTime = await extractSuggestedTimeWithLLM(resMessage.text)
+      if (extractedTime) {
+        suggestedTime = extractedTime
+        console.log(`Extracted suggested time: ${suggestedTime.toISOString()}`)
+      }
+    }
     
     try {
       // Get channel information to determine which agents should receive this message
@@ -89,6 +147,8 @@ async function processBotMessage(messageResult: any, agents: BaseScheduleUser[])
       }
     }
   }
+
+  return suggestedTime
 }
 
 // Clear database before starting evaluation
@@ -107,7 +167,7 @@ async function clearDatabase(): Promise<void> {
 }
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<TopicData> {
+async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedTime: Date | null }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -147,7 +207,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   console.log(`Created topic: ${topicId}`)
 
   // Process initial bot responses
-  await processBotMessage(initResData, agents)
+  let suggestedTime = await processBotMessages(initResData, agents)
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -176,7 +236,10 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
           if (replyRes.ok) {
             const replyData = await replyRes.json()
             // Process bot responses and add to agent buffers
-            await processBotMessage(replyData, agents)
+            const newSuggestedTime = await processBotMessages(replyData, agents)
+            if (newSuggestedTime && !suggestedTime) {
+              suggestedTime = newSuggestedTime
+            }
           } else {
             console.error(`Failed to send reply from ${agent.name}: ${replyRes.statusText}`)
           }
@@ -207,7 +270,8 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
     throw new Error('Failed to get final topic data')
   }
 
-  return unserializeTopicData(await topicResponse.json())
+  const topicData = unserializeTopicData(await topicResponse.json())
+  return { topicData, suggestedTime }
 }
 
 // Main evaluation function
@@ -231,8 +295,14 @@ async function runSimpleEvaluation(): Promise<void> {
     const userAgentMap = await createUsersFromAgents(agents)
 
     // Step 4: Run turn-based simulation
-    const topicData = await simulateTurnBasedConversation(agents)
-    console.log(`\nConversation completed with ${topicData.messages.length} messages`)
+    const result = await simulateTurnBasedConversation(agents)
+    console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
+    
+    if (result.suggestedTime) {
+      console.log(`Bot suggested meeting time: ${result.suggestedTime.toISOString()}`)
+    } else {
+      console.log('No meeting time was suggested by the bot')
+    }
 
     // TODO: Add scoring/evaluation logic
 
