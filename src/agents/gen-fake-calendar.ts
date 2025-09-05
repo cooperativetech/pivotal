@@ -3,23 +3,41 @@ import { z } from 'zod'
 import { Agent, run, tool } from './agent-sdk'
 import { CalendarEvent } from '@shared/api-types'
 
+interface ToolCallItem {
+  type: string
+  rawItem?: {
+    name?: string
+    arguments: string
+  }
+}
+
+interface ToolResult {
+  state?: {
+    _generatedItems?: ToolCallItem[]
+  }
+}
+
+interface ToolArguments {
+  events: unknown
+}
+
 /**
  * Extract calendar events from a tool-based agent result
  * @param toolResult - The result from running an agent with generateCalendarEvents tool
  * @returns Array of CalendarEvent objects, or null if extraction fails
  */
-function extractCalendarEvents(toolResult: any): CalendarEvent[] | null {
+function extractCalendarEvents(toolResult: ToolResult): CalendarEvent[] | null {
   try {
     const generatedItems = toolResult.state?._generatedItems || []
-    
+
     // Look for direct tool call item
-    const toolCallItem = generatedItems.find((item: any) => 
-      item.type === 'tool_call_item' && 
-      item.rawItem?.name === 'generateCalendarEvents'
+    const toolCallItem = generatedItems.find((item: ToolCallItem) =>
+      item.type === 'tool_call_item' &&
+      item.rawItem?.name === 'generateCalendarEvents',
     )
-    
-    if (toolCallItem) {
-      const toolArgs = JSON.parse(toolCallItem.rawItem.arguments)
+
+    if (toolCallItem?.rawItem?.arguments) {
+      const toolArgs = JSON.parse(toolCallItem.rawItem.arguments) as ToolArguments
       const events = toolArgs.events
       
       // Validate events against CalendarEvent schema
