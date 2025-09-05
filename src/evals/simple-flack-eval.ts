@@ -106,7 +106,7 @@ async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | 
 
       Response format:
       - If a meeting time is suggested: Return just the ISO 8601 timestamp
-      - If no meeting time is suggested: Return "NONE"`,
+      - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"`,
     })
 
     const response = result.text.trim()

@@ -75,6 +75,9 @@ Be brief and professional.`
         maxTokens: 150,
         temperature: 0.8,
       })
+
+      // RESETTING BUFFER AFTER REPLY
+      //this.message_buffer = []
       
       return result.text.trim() || 'Sure, let me check my calendar and get back to you.'
     } catch (error) {
