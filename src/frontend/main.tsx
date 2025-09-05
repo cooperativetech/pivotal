@@ -42,7 +42,7 @@ createRoot(document.getElementById('root')!).render(
           </Route>
 
           {/* Local/testing routes - only available in development */}
-          {import.meta.env.VITE_ENV === 'local' && (
+          {import.meta.env.DEV && (
             <Route path="/local">
               <Route index element={<LocalHome />} />
               <Route path="topics" element={<LocalHome />} />
