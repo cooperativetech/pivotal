@@ -15,16 +15,8 @@ Required for development:
 - `PV_GOOGLE_CLIENT_ID` - Google OAuth client ID for calendar integration
 - `PV_GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 
-For ngrok development (OAuth callbacks):
-- `PV_BASE_URL` - Your ngrok HTTPS URL (e.g., `https://abc123.ngrok-free.app`)
-  
-  Add to your shell profile (~/.zshrc, ~/.bashrc, etc.):
-  ```bash
-  export PV_BASE_URL="https://your-ngrok-url.ngrok-free.app"
-  ```
-
 Additional for production:
-- `PV_SLACK_BOT_TOKEN` - Slack bot user OAuth token  
+- `PV_SLACK_BOT_TOKEN` - Slack bot user OAuth token
 - `PV_SLACK_APP_TOKEN` - Slack app-level token for socket mode
 
 ## Architecture Overview

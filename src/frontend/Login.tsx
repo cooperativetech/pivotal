@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { authClient } from '@shared/auth-client'
 
-export default function Auth() {
+export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -9,10 +9,7 @@ export default function Auth() {
     setError('')
     setLoading(true)
     try {
-      await authClient.signIn.social({
-        provider: 'slack',
-        callbackURL: '/',
-      })
+      await authClient.signIn.social({ provider: 'slack' })
     } catch (err) {
       setError('Failed to continue with Slack')
       console.error(err)

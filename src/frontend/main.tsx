@@ -6,7 +6,7 @@ import App from './App.tsx'
 import Home from './Home.tsx'
 import Topic from './Topic.tsx'
 import TopicCreation from './TopicCreation.tsx'
-import Auth from './Auth.tsx'
+import Login from './Login.tsx'
 import Profile from './Profile.tsx'
 import { AuthProvider } from './AuthContext.tsx'
 import ProtectedRoute from './ProtectedRoute.tsx'
@@ -17,7 +17,7 @@ createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<App />}>
             <Route index element={
               <ProtectedRoute>
@@ -42,7 +42,7 @@ createRoot(document.getElementById('root')!).render(
           </Route>
 
           {/* Local/testing routes - only available in development */}
-          {import.meta.env.DEV && (
+          {import.meta.env.VITE_ENV === 'local' && (
             <Route path="/local">
               <Route index element={<LocalHome />} />
               <Route path="topics" element={<LocalHome />} />

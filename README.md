@@ -12,14 +12,25 @@ brew install pnpm
 pnpm install
 ```
 
+Install `mkcert`, and use it to create a locally trusted CA certificate, which allows us to run our local server using https. This is necessary to authenticate with slack, which requires https for its redirect URLs.
+```
+brew install mkcert
+brew install nss  # if you use Firefox
+mkcert -install
+pnpm run cert
+```
+
 Set the following env vars to their proper values (e.g. in your ~/.bashrc):
 ```
-PV_DB_URL=...
-PV_OPENROUTER_API_KEY=...
-PV_GOOGLE_CLIENT_ID=...
-PV_GOOGLE_CLIENT_SECRET=...
-PV_LANGFUSE_PUBLIC_KEY=...
-PV_LANGFUSE_SECRET_KEY=...
+export PV_DB_URL=...
+export PV_OPENROUTER_API_KEY=...
+export PV_SLACK_CLIENT_ID=...
+export PV_SLACK_CLIENT_SECRET=...
+export PV_GOOGLE_CLIENT_ID=...
+export PV_GOOGLE_CLIENT_SECRET=...
+export PV_LANGFUSE_BASE_URL=...
+export PV_LANGFUSE_PUBLIC_KEY=...
+export PV_LANGFUSE_SECRET_KEY=...
 ```
 
 Run the flack server:
@@ -27,19 +38,21 @@ Run the flack server:
 pnpm run local
 ```
 
-You can then visit the flack website in your browser at http://localhost:5173. While the flack server is running, you can also run evals with:
+You can then visit the website in your browser at https://localhost:5173. While the local server is running, you can also run evals with:
 ```
 pnpm run eval
 ```
 
-To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid starting the dev-only website:
-```
-pnpm run prod
-```
-
-If you want to run the bot in production mode with live-reload (for example, when testing a local version of the code with the live "Pivotal Dev" slack bot), you can run:
+To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
 pnpm run dev
+```
+
+You can then visit the website in your browser at https://localhost:3009. This hosts the "production" version of the website, with rolled-up js and css assets served out of the src/dist folder.
+
+To run the bot in production, you additionally need `PV_BASE_URL` set to the public website's URL. Then, run:
+```
+pnpm run prod
 ```
 
 ## Setting Up Local DB
@@ -64,38 +77,3 @@ If you change `db/schema.ts`, you can use drizzle-kit to automatically generate 
 pnpm run dkgen
 pnpm run dkmig
 ```
-
-## Ngrok
-
-- Problem: Slack OAuth requires HTTPS callback URLs, but our local
-development runs on http://localhost:5173
-- Solution: Ngrok creates an HTTPS tunnel (e.g.,
-https://015231acd470.ngrok-free.app) that forwards to localhost
-- Implementation: Modified CORS settings, auth client, and proxy
-configuration to work with ngrok URLs
-
-Setup
-
-1. Install ngrok (for mac):
-```brew install ngrok
-```
-# Or download from https://ngrok.com/download
-You'll also have to make a free account and pass your api key from the website. 
-
-2. Get ngrok tunnel (in separate terminal):
-ngrok http 3001
-2. This will show you an HTTPS URL. 
-3. Update configuration:
-- Replace 015231acd470.ngrok-free.app with your ngrok URL in:
-    - export PV_BASE_URL=`your_new_ngrok_url`
-- Add your ngrok URL to Slack api's trusted domains @ https://api.slack.com/apps/A0989PZDEJX/oauth?, under banner `Redirect URLs`.
-4. Run the app:
-pnpm run local    # Starts both server and frontend
-
-Current Architecture (Temporary)
-
-- Frontend: http://localhost:5173 (Vite dev server)
-- API proxy: /api routes to ngrok HTTPS URL
-- Direct backend: http://localhost:3001 (for flack testing)
-
-Note: This entire workflow is temporary until we switch to the coopt.tech production domain. Then we'll have a stable domain + delete this stuff.

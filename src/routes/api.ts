@@ -1,80 +1,46 @@
-import { Hono, type Context } from 'hono'
-import { cors } from 'hono/cors'
+import { Hono } from 'hono'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import db from '../db/engine'
 import { topicTable, slackUserTable } from '../db/schema/main'
-import { session, user, account } from '../db/schema/auth'
+import { accountTable } from '../db/schema/auth'
 import { auth } from '../auth'
 
-async function getSessionUser(c: Context) {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null
-  }
-
-  const token = authHeader.replace('Bearer ', '')
-  const [sessionRecord] = await db
-    .select({
-      userId: session.userId,
-    })
-    .from(session)
-    .where(eq(session.token, token))
-    .limit(1)
-
-  return sessionRecord || null
+interface SessionVars {
+  user: typeof auth.$Infer.Session.user | null
+  session: typeof auth.$Infer.Session.session | null
 }
 
-export const apiRoutes = new Hono()
+export const apiRoutes = new Hono<{ Variables: SessionVars }>()
+  .use('*', async (c, next) => {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    if (!session) {
+      c.set('user', null)
+      c.set('session', null)
+      return next()
+    }
+    c.set('user', session.user)
+    c.set('session', session.session)
+    return next()
+  })
 
-  // CORS middleware for auth routes
-  .use('/auth/*', cors({
-    origin: ['http://localhost:5173', process.env.PV_BASE_URL || 'http://localhost:3001'],
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
-    credentials: true,
-  }))
-
-  // Auth routes
   .all('/auth/*', (c) => {
     return auth.handler(c.req.raw)
   })
 
-  // CORS for non-auth API routes
-  .use('*', cors({
-    origin: 'http://localhost:5173',
-    allowHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
-    credentials: true,
-  }))
-
   .get('/profile', async (c) => {
-    const sessionUser = await getSessionUser(c)
+    const sessionUser = c.get('user')
     if (!sessionUser) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
 
     try {
-      // Get user info from auth table
-      const [userInfo] = await db
-        .select({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        })
-        .from(user)
-        .where(eq(user.id, sessionUser.userId))
-        .limit(1)
-
-      if (!userInfo) {
-        return c.json({ error: 'User not found' }, 404)
-      }
-
       // Get linked Slack IDs from auth account table
       const linkedSlackIds = await db
-        .select({ slackId: account.accountId })
-        .from(account)
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
         .where(and(
-          eq(account.userId, sessionUser.userId),
-          eq(account.providerId, 'slack'),
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
         ))
 
       const slackIdList = linkedSlackIds.map((s) => s.slackId)
@@ -95,9 +61,9 @@ export const apiRoutes = new Hono()
 
       return c.json({
         user: {
-          id: userInfo.id,
-          email: userInfo.email,
-          name: userInfo.name,
+          id: sessionUser.id,
+          email: sessionUser.email,
+          name: sessionUser.name,
         },
         slackAccounts: linkedSlackAccounts,
       })
@@ -108,7 +74,7 @@ export const apiRoutes = new Hono()
   })
 
   .get('/profile/topics', async (c) => {
-    const sessionUser = await getSessionUser(c)
+    const sessionUser = c.get('user')
     if (!sessionUser) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -116,11 +82,11 @@ export const apiRoutes = new Hono()
     try {
       // Get user's linked Slack account IDs from auth account table
       const linkedSlackIds = await db
-        .select({ slackId: account.accountId })
-        .from(account)
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
         .where(and(
-          eq(account.userId, sessionUser.userId),
-          eq(account.providerId, 'slack'),
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
         ))
 
       if (linkedSlackIds.length === 0) {
@@ -147,7 +113,7 @@ export const apiRoutes = new Hono()
   })
 
   .get('/topics/:topicId', async (c) => {
-    const sessionUser = await getSessionUser(c)
+    const sessionUser = c.get('user')
     if (!sessionUser) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -163,11 +129,11 @@ export const apiRoutes = new Hono()
 
       // Check if user has access to this topic (via their Slack accounts)
       const linkedSlackIds = await db
-        .select({ slackId: account.accountId })
-        .from(account)
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
         .where(and(
-          eq(account.userId, sessionUser.userId),
-          eq(account.providerId, 'slack'),
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
         ))
 
       const userSlackIds = new Set(linkedSlackIds.map((s) => s.slackId))
@@ -191,7 +157,7 @@ export const apiRoutes = new Hono()
   })
 
   .get('/users', async (c) => {
-    const sessionUser = await getSessionUser(c)
+    const sessionUser = c.get('user')
     if (!sessionUser) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -199,11 +165,11 @@ export const apiRoutes = new Hono()
     try {
       // Get user's linked Slack accounts
       const linkedSlackIds = await db
-        .select({ slackId: account.accountId })
-        .from(account)
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
         .where(and(
-          eq(account.userId, sessionUser.userId),
-          eq(account.providerId, 'slack'),
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
         ))
 
       const slackIdList = linkedSlackIds.map((s) => s.slackId)

@@ -1,15 +1,21 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import db from './db/engine'
+import { betterAuthSchema } from './db/schema/auth'
 
-// Quick wiring for current ngrok setup
-const NGROK_URL = process.env.PV_BASE_URL || 'http://localhost:3001'
+const baseURL = (
+  process.env.PV_NODE_ENV === 'local' ?
+  'https://localhost:5173' :
+  process.env.PV_BASE_URL || 'https://localhost:3009'
+)
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: 'pg' }),
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: betterAuthSchema,
+  }),
   emailAndPassword: { enabled: true },
-  trustedOrigins: ['http://localhost:5173', NGROK_URL],
-  baseURL: NGROK_URL,
+  baseURL,
   socialProviders: {
     slack: {
       clientId: process.env.PV_SLACK_CLIENT_ID!,
@@ -22,9 +28,7 @@ export const auth = betterAuth({
       trustedProviders: ['slack'],
     },
   },
-  advanced: {
-    cookiePrefix: 'auth',
-    useSecureCookies: NGROK_URL.startsWith('https'),
-    crossSubdomainCookies: true,
+  telemetry: {
+    enabled: false,
   },
 })

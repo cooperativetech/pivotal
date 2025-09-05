@@ -5,7 +5,7 @@ import {
   boolean,
 } from 'drizzle-orm/pg-core'
 
-export const user = pgTable('user', {
+export const userTable = pgTable('user', {
   id: text().primaryKey(),
   name: text().notNull(),
   email: text().notNull().unique(),
@@ -15,7 +15,7 @@ export const user = pgTable('user', {
   updatedAt: timestamp().notNull().defaultNow(),
 })
 
-export const session = pgTable('session', {
+export const sessionTable = pgTable('session', {
   id: text().primaryKey(),
   expiresAt: timestamp().notNull(),
   token: text().notNull().unique(),
@@ -23,14 +23,14 @@ export const session = pgTable('session', {
   updatedAt: timestamp().notNull(),
   ipAddress: text(),
   userAgent: text(),
-  userId: text().references(() => user.id, { onDelete: 'cascade' }).notNull(),
+  userId: text().references(() => userTable.id, { onDelete: 'cascade' }).notNull(),
 })
 
-export const account = pgTable('account', {
+export const accountTable = pgTable('account', {
   id: text().primaryKey(),
   accountId: text().notNull(),
   providerId: text().notNull(),
-  userId: text().references(() => user.id, { onDelete: 'cascade' }).notNull(),
+  userId: text().references(() => userTable.id, { onDelete: 'cascade' }).notNull(),
   accessToken: text(),
   refreshToken: text(),
   idToken: text(),
@@ -42,7 +42,7 @@ export const account = pgTable('account', {
   updatedAt: timestamp().notNull(),
 })
 
-export const verification = pgTable('verification', {
+export const verificationTable = pgTable('verification', {
   id: text().primaryKey(),
   identifier: text().notNull(),
   value: text().notNull(),
@@ -50,3 +50,10 @@ export const verification = pgTable('verification', {
   createdAt: timestamp().defaultNow(),
   updatedAt: timestamp().defaultNow(),
 })
+
+export const betterAuthSchema = {
+  user: userTable,
+  session: sessionTable,
+  account: accountTable,
+  verification: verificationTable,
+}
