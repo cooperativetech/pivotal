@@ -7,9 +7,9 @@ import { CalendarEvent } from '@shared/api-types'
  * @param toolResult - The result from running an agent with generateCalendarEvents tool
  * @returns Array of CalendarEvent objects, or null if extraction fails
  */
-export function extractCalendarEvents(toolResult: Record<string, unknown>): CalendarEvent[] | null {
+export function extractCalendarEvents(toolResult: unknown): CalendarEvent[] | null {
   try {
-    const generatedItems = (toolResult.state as Record<string, unknown>)?._generatedItems as unknown[] || []
+    const generatedItems = ((toolResult as Record<string, unknown>).state as Record<string, unknown>)?._generatedItems as unknown[] || []
     // Look for direct tool call item
     const toolCallItem = generatedItems.find((item: unknown) =>
       (item as Record<string, unknown>).type === 'tool_call_item' &&
