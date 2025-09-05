@@ -170,7 +170,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
           
           // Send reply through local API
           const replyRes = await local_api.message.$post({
-            json: { userId: agent.name, text: reply },
+            json: { userId: agent.name, text: reply , topicId: topicId},
           })
           
           if (replyRes.ok) {
