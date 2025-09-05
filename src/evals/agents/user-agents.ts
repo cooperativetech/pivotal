@@ -54,7 +54,7 @@ export class BaseScheduleUser implements UserProfile {
     const latestMessage = this.message_buffer[this.message_buffer.length - 1]
 
     // Format calendar simply
-    const calendarText = this.calendar.map(event => {
+    const calendarText = this.calendar.map((event) => {
       const start = event.start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
       const end = event.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
       return `${start}-${end}: ${event.summary}`
@@ -62,7 +62,6 @@ export class BaseScheduleUser implements UserProfile {
 
     // Simple prompt - only include goal if it's not empty
     const goalContext = this.goal && this.goal.trim() !== '' ? `Your goal is: ${this.goal}\n\n` : ''
-    
     const prompt = `You are ${this.name}. ${goalContext}Your calendar: ${calendarText || 'Free all day'}
 
 Message history: ${this.message_buffer.join(' | ')}
@@ -81,7 +80,6 @@ Be brief and professional.`
 
       // RESETTING BUFFER AFTER REPLY
       //this.message_buffer = []
-      
       return result.text.trim() || 'Sure, let me check my calendar and get back to you.'
     } catch (error) {
       console.error('Error generating response:', error)
@@ -94,7 +92,6 @@ Be brief and professional.`
     if (!this.goal || this.goal.trim() === '') {
       return ''
     }
-    
     // Simple prompt for initial message
     const prompt = `You are ${this.name}. Your goal is: ${this.goal}
 
@@ -127,7 +124,7 @@ Be brief and professional.`
   }
 
   // Export to JSON-serializable format
-  export(): any {
+  export(): Record<string, unknown> {
     return {
       name: this.name,
       goal: this.goal,
@@ -141,15 +138,15 @@ Be brief and professional.`
   }
 
   // Create from exported data
-  static import(data: any): BaseScheduleUser {
-    const calendar = data.calendar.map((event: any) => ({
-      start: new Date(event.start),
-      end: new Date(event.end),
-      summary: event.summary,
+  static import(data: Record<string, unknown>): BaseScheduleUser {
+    const calendar = (data.calendar as Record<string, unknown>[]).map((event: Record<string, unknown>) => ({
+      start: new Date(event.start as string),
+      end: new Date(event.end as string),
+      summary: event.summary as string,
     }))
     
-    const user = new BaseScheduleUser(data.name, data.goal, calendar)
-    user.message_buffer = data.message_buffer || []
+    const user = new BaseScheduleUser(data.name as string, data.goal as string, calendar)
+    user.message_buffer = (data.message_buffer as string[]) || []
     return user
   }
 }
