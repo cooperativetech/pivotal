@@ -8,7 +8,6 @@ const client = new OpenAI({
 
 async function testRawAPI() {
   console.log('Testing raw OpenAI API call...')
-  
   const prompt = `Generate calendar events for a person's work schedule in JSON format.
 
 Guidelines:
@@ -42,7 +41,6 @@ The person is an experienced software engineer working in technology.`
 
     console.log('SUCCESS! Raw API response:')
     console.log(JSON.stringify(response, null, 2))
-    
     if (response.choices && response.choices[0]) {
       console.log('\nActual content returned by LLM:')
       console.log('---')
