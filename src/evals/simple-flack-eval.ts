@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-import { BaseScheduleUser } from './agents/user-agents'
+import { BaseScheduleUser, SimpleCalendarEvent } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
@@ -90,7 +90,7 @@ Response format:
 }
 
 // Extract suggested meeting time using LLM
-async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | null> {
+async function extractSuggestedTimeWithLLM(messageText: string): Promise<SimpleCalendarEvent | null> {
   try {
     const currentDate = new Date()
     const currentDateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
@@ -99,14 +99,20 @@ async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | 
     
     const result = await generateText({
       model: openrouter(MODEL),
-      prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the suggested time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS±HH:MM). If no specific meeting time is suggested, respond with "NONE".
-      For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
+      prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
 
-      Message: "${messageText}"
+For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
 
-      Response format:
-      - If a meeting time is suggested: Return just the ISO 8601 timestamp
-      - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"`,
+Message: "${messageText}"
+
+Response format:
+- If a meeting time is suggested: Return JSON with format: {"start": "YYYY-MM-DDTHH:MM:SS±HH:MM", "end": "YYYY-MM-DDTHH:MM:SS±HH:MM", "summary": "Brief meeting description"}
+- If no end time is specified, assume 1 hour duration
+- If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
+
+Examples:
+- "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
+- "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`,
     })
 
     const response = result.text.trim()
@@ -115,14 +121,27 @@ async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | 
       return null
     }
 
-    // Try to parse the extracted time
-    const extractedDate = new Date(response)
-    if (isNaN(extractedDate.getTime())) {
-      console.warn(`Failed to parse extracted time: ${response}`)
+    // Try to parse the JSON response
+    try {
+      const parsed = JSON.parse(response)
+      
+      const startDate = new Date(parsed.start)
+      const endDate = new Date(parsed.end)
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.warn(`Failed to parse suggested meeting times: ${response}`)
+        return null
+      }
+
+      return {
+        start: startDate,
+        end: endDate,
+        summary: parsed.summary || 'Meeting'
+      }
+    } catch (parseError) {
+      console.warn(`Failed to parse JSON response: ${response}`)
       return null
     }
-
-    return extractedDate
   } catch (error) {
     console.error('Error extracting suggested time with LLM:', error)
     return null
@@ -130,23 +149,23 @@ async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | 
 }
 
 // Process bot message responses and add them to appropriate agent buffers
-async function processBotMessages(messageResult: any, agents: BaseScheduleUser[]): Promise<Date | null> {
+async function processBotMessages(messageResult: any, agents: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
     return null
   }
 
-  let suggestedTime: Date | null = null
+  let suggestedEvent: SimpleCalendarEvent | null = null
 
   // Process each bot response message
   for (const resMessage of messageResult.resMessages) {
     console.log(`Bot response: "${resMessage.text}"`)
     
-    // Extract suggested time from this message using LLM
-    if (!suggestedTime) {
-      const extractedTime = await extractSuggestedTimeWithLLM(resMessage.text)
-      if (extractedTime) {
-        suggestedTime = extractedTime
-        console.log(`Extracted suggested time: ${suggestedTime.toISOString()}`)
+    // Extract suggested event from this message using LLM
+    if (!suggestedEvent) {
+      const extractedEvent = await extractSuggestedTimeWithLLM(resMessage.text)
+      if (extractedEvent) {
+        suggestedEvent = extractedEvent
+        console.log(`Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
       }
     }
     
@@ -182,7 +201,7 @@ async function processBotMessages(messageResult: any, agents: BaseScheduleUser[]
     }
   }
 
-  return suggestedTime
+  return suggestedEvent
 }
 
 // Clear database before starting evaluation
@@ -201,7 +220,7 @@ async function clearDatabase(): Promise<void> {
 }
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedTime: Date | null; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -250,9 +269,9 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   resetConfirmations()
   
   // Process initial bot responses
-  let suggestedTime = await processBotMessages(initResData, agents)
-  if (suggestedTime) {
-    console.log(`  → Initial bot suggestion: ${suggestedTime.toISOString()}`)
+  let suggestedEvent = await processBotMessages(initResData, agents)
+  if (suggestedEvent) {
+    console.log(`  → Initial bot suggestion: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
   }
 
   // Run turn-based conversation for up to 10 rounds
@@ -294,17 +313,17 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
           if (replyRes.ok) {
             const replyData = await replyRes.json()
             // Process bot responses and add to agent buffers
-            const newSuggestedTime = await processBotMessages(replyData, agents)
-            if (newSuggestedTime) {
-              // Check if this is a new/different suggested time
-              if (!suggestedTime || newSuggestedTime.getTime() !== suggestedTime.getTime()) {
-                console.log(`  → Bot suggested new time: ${newSuggestedTime.toISOString()}`)
-                if (suggestedTime) {
-                  console.log(`  → Previous time was: ${suggestedTime.toISOString()}`)
-                  console.log('  → Resetting all confirmations due to time change')
+            const newSuggestedEvent = await processBotMessages(replyData, agents)
+            if (newSuggestedEvent) {
+              // Check if this is a new/different suggested event
+              if (!suggestedEvent || newSuggestedEvent.start.getTime() !== suggestedEvent.start.getTime() || newSuggestedEvent.end.getTime() !== suggestedEvent.end.getTime()) {
+                console.log(`  → Bot suggested new meeting: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+                if (suggestedEvent) {
+                  console.log(`  → Previous meeting was: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
+                  console.log('  → Resetting all confirmations due to meeting change')
                   resetConfirmations()
                 }
-                suggestedTime = newSuggestedTime
+                suggestedEvent = newSuggestedEvent
               }
             }
           } else {
@@ -314,11 +333,11 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
       }
     }
     
-    // Check if all agents have confirmed the current suggested time
-    if (suggestedTime) {
+    // Check if all agents have confirmed the current suggested meeting
+    if (suggestedEvent) {
       const allConfirmed = agents.every(agent => confirmations[agent.name])
       if (allConfirmed) {
-        console.log('\n🎉 All agents have confirmed the current suggested time!')
+        console.log('\n🎉 All agents have confirmed the current suggested meeting!')
         console.log('Ending conversation successfully.')
         break
       }
@@ -348,7 +367,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   }
 
   const topicData = unserializeTopicData(await topicResponse.json())
-  return { topicData, suggestedTime, confirmations }
+  return { topicData, suggestedEvent, confirmations }
 }
 
 // Main evaluation function
@@ -375,10 +394,11 @@ async function runSimpleEvaluation(): Promise<void> {
     const result = await simulateTurnBasedConversation(agents)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
     
-    if (result.suggestedTime) {
-      console.log(`Bot suggested meeting time: ${result.suggestedTime.toISOString()}`)
+    if (result.suggestedEvent) {
+      console.log(`Bot suggested meeting: ${result.suggestedEvent.start.toISOString()} - ${result.suggestedEvent.end.toISOString()}`)
+      console.log(`Meeting summary: ${result.suggestedEvent.summary}`)
     } else {
-      console.log('No meeting time was suggested by the bot')
+      console.log('No meeting was suggested by the bot')
     }
     
     // Check confirmations
