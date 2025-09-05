@@ -61,6 +61,34 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
   return userAgentMap
 }
 
+// Check if user agent is confirming a meeting suggestion
+async function isConfirmingMeetingSuggestion(messageText: string): Promise<boolean> {
+  try {
+    const result = await generateText({
+      model: openrouter(MODEL),
+      prompt: `Analyze this message and determine if it is a SHORT confirmation of a meeting suggestion or time proposal. 
+
+A confirmation message should be:
+- Brief and concise (typically 1-3 words or a short sentence)
+- Clearly indicating agreement, acceptance, or confirmation
+- Examples of confirmations: "Yes", "Sounds good", "Works for me", "Perfect", "Agreed", "That works", "Confirmed"
+- NOT detailed responses, questions, or counter-proposals
+
+Message: "${messageText}"
+
+Response format:
+- If this is a short confirmation: Return "TRUE"
+- Otherwise: Return "FALSE"`,
+    })
+
+    const response = result.text.trim().toUpperCase()
+    return response === 'TRUE'
+  } catch (error) {
+    console.error('Error checking confirmation with LLM:', error)
+    return false
+  }
+}
+
 // Extract suggested meeting time using LLM
 async function extractSuggestedTimeWithLLM(messageText: string): Promise<Date | null> {
   try {
@@ -173,7 +201,7 @@ async function clearDatabase(): Promise<void> {
 }
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedTime: Date | null }> {
+async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedTime: Date | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -212,8 +240,20 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
 
   console.log(`Created topic: ${topicId}`)
 
+  // Initialize confirmation tracking for all agents
+  const confirmations: Record<string, boolean> = {}
+  const resetConfirmations = () => {
+    agents.forEach(agent => {
+      confirmations[agent.name] = false
+    })
+  }
+  resetConfirmations()
+  
   // Process initial bot responses
   let suggestedTime = await processBotMessages(initResData, agents)
+  if (suggestedTime) {
+    console.log(`  → Initial bot suggestion: ${suggestedTime.toISOString()}`)
+  }
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -234,6 +274,15 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
           console.log(`${agent.name}: ${reply}`)
           anyAgentSpoke = true
           
+          // Check if this reply is confirming a meeting suggestion
+          if (!confirmations[agent.name]) {
+            const isConfirmation = await isConfirmingMeetingSuggestion(reply)
+            if (isConfirmation) {
+              confirmations[agent.name] = true
+              console.log(`  → Detected confirmation from ${agent.name}`)
+            }
+          }
+          
           // Send reply through local API
           const replyRes = await local_api.message.$post({
             json: { userId: agent.name, text: reply , topicId: topicId},
@@ -243,8 +292,17 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
             const replyData = await replyRes.json()
             // Process bot responses and add to agent buffers
             const newSuggestedTime = await processBotMessages(replyData, agents)
-            if (newSuggestedTime && !suggestedTime) {
-              suggestedTime = newSuggestedTime
+            if (newSuggestedTime) {
+              // Check if this is a new/different suggested time
+              if (!suggestedTime || newSuggestedTime.getTime() !== suggestedTime.getTime()) {
+                console.log(`  → Bot suggested new time: ${newSuggestedTime.toISOString()}`)
+                if (suggestedTime) {
+                  console.log(`  → Previous time was: ${suggestedTime.toISOString()}`)
+                  console.log('  → Resetting all confirmations due to time change')
+                  resetConfirmations()
+                }
+                suggestedTime = newSuggestedTime
+              }
             }
           } else {
             console.error(`Failed to send reply from ${agent.name}: ${replyRes.statusText}`)
@@ -277,7 +335,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   }
 
   const topicData = unserializeTopicData(await topicResponse.json())
-  return { topicData, suggestedTime }
+  return { topicData, suggestedTime, confirmations }
 }
 
 // Main evaluation function
@@ -308,6 +366,23 @@ async function runSimpleEvaluation(): Promise<void> {
       console.log(`Bot suggested meeting time: ${result.suggestedTime.toISOString()}`)
     } else {
       console.log('No meeting time was suggested by the bot')
+    }
+    
+    // Check confirmations
+    const confirmedAgents = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
+    const allAgentsConfirmed = confirmedAgents.length === agents.length
+    
+    console.log('\nConfirmation Status:')
+    Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
+      console.log(`  ${confirmed ? '✅' : '❌'} ${agentName}: ${confirmed ? 'Confirmed' : 'Not confirmed'}`)
+    })
+    
+    if (allAgentsConfirmed && confirmedAgents.length > 0) {
+      console.log('🎉 All agents have confirmed the meeting suggestion!')
+    } else if (confirmedAgents.length > 0) {
+      console.log(`⚠️  Only ${confirmedAgents.length}/${agents.length} agents have confirmed`)
+    } else {
+      console.log('❌ No confirmations detected from any agents')
     }
 
     // TODO: Add scoring/evaluation logic
