@@ -7,13 +7,18 @@ interface ToolCallItem {
   type: string
   rawItem?: {
     name?: string
-    arguments: string
+    arguments?: string
+    type?: string
+    status?: string
+    providerData?: Record<string, unknown>
+    id?: string
+    output?: string
   }
 }
 
 interface ToolResult {
   state?: {
-    _generatedItems?: ToolCallItem[]
+    _generatedItems?: unknown[]
   }
 }
 
@@ -31,20 +36,20 @@ function extractCalendarEvents(toolResult: ToolResult): CalendarEvent[] | null {
     const generatedItems = toolResult.state?._generatedItems || []
 
     // Look for direct tool call item
-    const toolCallItem = generatedItems.find((item: ToolCallItem) =>
-      item.type === 'tool_call_item' &&
-      item.rawItem?.name === 'generateCalendarEvents',
-    )
+    const toolCallItem = generatedItems.find((item: unknown) => {
+      const typedItem = item as ToolCallItem
+      return typedItem.type === 'tool_call_item' &&
+        typedItem.rawItem?.name === 'generateCalendarEvents'
+    }) as ToolCallItem | undefined
 
     if (toolCallItem?.rawItem?.arguments) {
       const toolArgs = JSON.parse(toolCallItem.rawItem.arguments) as ToolArguments
       const events = toolArgs.events
-      
       // Validate events against CalendarEvent schema
       const validatedEvents = z.array(CalendarEvent).parse(events)
       return validatedEvents
     }
-    
+
     return null
   } catch (error) {
     console.error('Error extracting calendar events:', error)
@@ -60,7 +65,7 @@ const generateCalendarEvents = tool({
     events: z.array(CalendarEvent).describe('Array of calendar events with ISO timestamps and timezone offsets'),
   }),
   strict: true,
-  execute: async ({ events }) => {
+  execute: ({ events }) => {
     return { success: true, count: events.length }
     // TODO: Get this to return just events, not this whole object
   },
@@ -130,11 +135,11 @@ The person is an ${randomAdjective} ${randomProfession} working in ${randomIndus
   try {
     const result = await run(fakeCalendarAgent, userPrompt)
     const events = extractCalendarEvents(result)
-    
+
     if (!events) {
       throw new Error('Failed to extract calendar events from tool result')
     }
-    
+
     return events
   } catch (error) {
     console.error('Error generating fake calendar events:', error)
