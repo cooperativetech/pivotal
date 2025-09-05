@@ -9,24 +9,6 @@ import { CalendarEvent } from '@shared/api-types'
  */
 export function extractCalendarEvents(toolResult: any): CalendarEvent[] | null {
   try {
-    // Check if we have modelResponses with function call output
-    if (toolResult.modelResponses && toolResult.modelResponses[0]?.output?.[0]) {
-      const output = toolResult.modelResponses[0].output[0]
-      
-      // Check if this is a function call with generateCalendarEvents
-      if (output.type === 'function_call' && 
-          output.name === 'generateCalendarEvents' && 
-          output.arguments) {
-        const args = JSON.parse(output.arguments)
-        if (args.events && Array.isArray(args.events)) {
-          console.log("Extracted events from function call output")
-          return args.events
-        }
-      }
-    }
-
-    console.log("Falling back to previous solution")
-    // Fallback: look for _generatedItems (keeping this as backup)
     const generatedItems = toolResult.state?._generatedItems || []
     
     // Look for direct tool call item
