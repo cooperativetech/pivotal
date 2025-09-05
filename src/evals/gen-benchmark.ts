@@ -17,7 +17,7 @@ async function createBenchmark() {
 
   // Generate fake calendars for all agents
   const calendarEvents = await Promise.all(
-    agentNames.map(() => genFakeCalendar('America/New_York', startTime, endTime))
+    agentNames.map(() => genFakeCalendar('America/New_York', startTime, endTime)),
   )
 
   // Create agents list
@@ -31,7 +31,7 @@ async function createBenchmark() {
   agents.forEach((agent) => console.log(`${agent.name}: ${agent.calendar.length} events`))
 
   // Export agents to JSON file
-  const exportedAgents = agents.map((agent) => agent.export())
+  const exportedAgents: Record<string, unknown>[] = agents.map((agent) => agent.export())
   await writeFile('./src/evals/data/simple-benchmark.json', JSON.stringify(exportedAgents, null, 2))
   console.log('Agents saved to simple-benchmark.json')
 
