@@ -1,34 +1,34 @@
 import { z } from 'zod'
 import { Agent, run } from '../../agents/agent-sdk'
-import { CalendarEvent } from '@shared/api-types'
+// import { CalendarEvent } from '@shared/api-types'
 
-// Create the original strict agent
-const fakeCalendarAgent = new Agent({
-  name: 'fakeCalendarAgent',
-  model: 'anthropic/claude-sonnet-4',
-  modelSettings: {
-    temperature: 1,
-  },
-  outputType: z.strictObject({
-    items: z.array(CalendarEvent),
-  }),
-  instructions: `Generate calendar events for a person's work schedule in JSON format.
+// // Create the original strict agent
+// const fakeCalendarAgent = new Agent({
+//   name: 'fakeCalendarAgent',
+//   model: 'anthropic/claude-sonnet-4',
+//   modelSettings: {
+//     temperature: 1,
+//   },
+//   outputType: z.strictObject({
+//     items: z.array(CalendarEvent),
+//   }),
+//   instructions: `Generate calendar events for a person's work schedule in JSON format.
 
-Guidelines:
-- Generate events mostly on weekdays, during work hours in the user's timezone (work hours depend on role / industry)
-- Don't over-schedule - aim for maximum 60-70% calendar density during work hours, and much less calendar density on weekends, or depending on role / industry
+// Guidelines:
+// - Generate events mostly on weekdays, during work hours in the user's timezone (work hours depend on role / industry)
+// - Don't over-schedule - aim for maximum 60-70% calendar density during work hours, and much less calendar density on weekends, or depending on role / industry
 
-Return ONLY a JSON array of objects with this structure:
-[
-  {
-    "start": "2024-01-15T09:00:00-08:00",
-    "end": "2024-01-15T09:30:00-08:00",
-    "summary": "Team Standup"
-  }
-]
+// Return ONLY a JSON array of objects with this structure:
+// [
+//   {
+//     "start": "2024-01-15T09:00:00-08:00",
+//     "end": "2024-01-15T09:30:00-08:00",
+//     "summary": "Team Standup"
+//   }
+// ]
 
-Make sure all timestamps are in ISO 8601 format with the correct timezone offset.`,
-})
+// Make sure all timestamps are in ISO 8601 format with the correct timezone offset.`,
+// })
 
 // Create a loose agent to see raw output without strict validation
 const looseFakeCalendarAgent = new Agent({

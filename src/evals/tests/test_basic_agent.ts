@@ -5,7 +5,7 @@ import { Agent, run } from '../../agents/agent-sdk'
 const basicAgent = new Agent({
   name: 'basicAgent',
   model: 'anthropic/claude-sonnet-4',
-  outputType: z.string(), // Just expect a string output
+  //outputType: z.string(), // Just expect a string output
   instructions: 'You are a helpful assistant. Just respond with a simple greeting.',
 })
 

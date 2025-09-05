@@ -3,7 +3,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import type { UserProfile } from '../../tools/time_intersection'
-import { local_api } from '../../shared/api-client'
 
 // Initialize OpenRouter with API key from environment
 const apiKey = process.env.PV_OPENROUTER_API_KEY
