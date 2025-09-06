@@ -5,11 +5,13 @@ import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
+import { userDataTable, slackUserTable } from './db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
+import { getTopicWithState, updateTopicState } from './utils'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -72,34 +74,23 @@ export async function updateUserContext(slackUserId: string, newContext: UserCon
  * Merges new context with existing topic-specific context
  * Returns the updated topic
  */
-export async function updateTopicUserContext(topicId: string, slackUserId: string, newContext: TopicUserContext): Promise<Topic> {
-  const [topic] = await db
-    .select()
-    .from(topicTable)
-    .where(eq(topicTable.id, topicId))
-    .limit(1)
+export async function updateTopicUserContext(topicId: string, slackUserId: string, newContext: TopicUserContext, messageId: string): Promise<TopicWithState> {
+  const topic = await getTopicWithState(topicId)
 
-  if (!topic) {
-    throw new Error(`Topic ${topicId} not found`)
-  }
-
-  const existingContext = topic.perUserContext[slackUserId] || {}
+  const existingContext = topic.state.perUserContext[slackUserId] || {}
   const mergedContext = { ...existingContext, ...newContext }
 
   // Update the record
   const updatedPerUserContext = {
-    ...topic.perUserContext,
+    ...topic.state.perUserContext,
     [slackUserId]: mergedContext,
   }
 
-  const [updatedTopic] = await db
-    .update(topicTable)
-    .set({
-      perUserContext: updatedPerUserContext,
-      updatedAt: new Date(),
-    })
-    .where(eq(topicTable.id, topicId))
-    .returning()
+  const updatedTopic = await updateTopicState(
+    topic,
+    { perUserContext: updatedPerUserContext },
+    messageId,
+  )
 
   return updatedTopic
 }
@@ -115,23 +106,16 @@ export async function setSuppressCalendarPrompt(slackUserId: string, suppress: b
  * Check if a user has been prompted for calendar connection in a specific topic
  */
 async function hasUserBeenPrompted(topicId: string, userId: string): Promise<boolean> {
-  const [topic] = await db
-    .select()
-    .from(topicTable)
-    .where(eq(topicTable.id, topicId))
-    .limit(1)
-
-  if (!topic) return false
-
-  const userContext = topic.perUserContext[userId]
+  const topic = await getTopicWithState(topicId)
+  const userContext = topic.state.perUserContext[userId]
   return !!userContext?.calendarPrompted
 }
 
 /**
  * Add a user to the list of users who have been prompted for calendar connection in a topic
  */
-export async function addPromptedUser(topicId: string, userId: string): Promise<void> {
-  await updateTopicUserContext(topicId, userId, { calendarPrompted: true })
+export async function addPromptedUser(topicId: string, userId: string, messageId: string): Promise<void> {
+  await updateTopicUserContext(topicId, userId, { calendarPrompted: true }, messageId)
 }
 
 /**
@@ -162,20 +146,11 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
   try {
 
     // Load the specific topic
-    const [topic] = await db
-      .select()
-      .from(topicTable)
-      .where(eq(topicTable.id, topicId))
-      .limit(1)
+    const topic = await getTopicWithState(topicId)
 
-    if (!topic) {
-      throw new Error(`Topic ${topicId} not found`)
-    }
-
-    if (!topic.isActive) {
+    if (!topic.state.isActive) {
       throw new Error(`Topic ${topicId} is not active`)
     }
-
 
     // Get the user's name for the synthetic message
     const [slackUser] = await db
@@ -194,7 +169,7 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
     // Create a synthetic SlackMessage record to trigger scheduling
     const syntheticSlackMessage = {
       id: `synthetic-${Date.now()}`,
-      topicId: topic.id,
+      topicId,
       channelId: 'synthetic',
       userId: slackUserId,
       text: `${userName} connected their Google Calendar`,
@@ -207,7 +182,7 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
 
     // Process scheduling actions for this specific topic only
     await processSchedulingActions(
-      topic.id,
+      topicId,
       syntheticSlackMessage,
       slackClient,
     )
@@ -488,7 +463,7 @@ export function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boo
  * Get structured calendar data from userContext and topic.perUserContext
  * Returns calendar events in structured format
  */
-export async function getUserCalendarStructured(slackUserId: string, topic: Topic, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
+export async function getUserCalendarStructured(slackUserId: string, topic: TopicWithState, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
   try {
     let context = await getUserContext(slackUserId)
 
@@ -503,7 +478,7 @@ export async function getUserCalendarStructured(slackUserId: string, topic: Topi
       context = await fetchAndStoreUserCalendar(slackUserId, startTime, endTime)
     }
 
-    const topicContext = topic.perUserContext[slackUserId]
+    const topicContext = topic.state.perUserContext[slackUserId]
 
     // If there's no calendar info for the user, return null to indicate this
     if (!context.calendar && !topicContext?.calendarManualOverrides) {

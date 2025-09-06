@@ -2,10 +2,10 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
-import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
+import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
-import { tsToDate } from './utils'
+import { tsToDate, getTopicWithState, getTopics, updateTopicState } from './utils'
 import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
@@ -169,11 +169,7 @@ export async function processSchedulingActions(
   const createdMessages: SlackMessage[] = []
   try {
     // Get the topic details
-    let [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
-    if (!topic) {
-      console.error('Topic not found:', topicId)
-      return createdMessages
-    }
+    let topic = await getTopicWithState(topicId)
 
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
@@ -283,12 +279,7 @@ export async function processSchedulingActions(
     }
 
     // Get the updated topic details, which may have changed userIds for example
-    const updatedTopics = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
-    if (updatedTopics.length < 1) {
-      console.error('Updated topic not found:', topicId)
-      return createdMessages
-    }
-    topic = updatedTopics[0]
+    topic = await getTopicWithState(topicId)
 
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
@@ -381,7 +372,7 @@ export async function processSchedulingActions(
                   ]
 
                   // Record that we've prompted this user for calendar connection
-                  await addPromptedUser(topicId, userId)
+                  await addPromptedUser(topicId, userId, message.id)
                 }
               }
 
@@ -417,17 +408,17 @@ export async function processSchedulingActions(
     // Send group message if needed
     if (nextStep.groupMessage) {
       // Create or open an MPIM (multi-party instant message) with all topic users
-      if (topic.userIds && topic.userIds.length > 0) {
+      if (topic.state.userIds && topic.state.userIds.length > 0) {
         try {
           // Open a conversation with multiple users (MPIM)
           const mpimResult = await client.conversations.open({
-            users: topic.userIds.join(','), // Comma-separated list of user IDs
+            users: topic.state.userIds.join(','), // Comma-separated list of user IDs
           })
 
           if (mpimResult.ok && mpimResult.channel?.id) {
             // Create or update slackChannel record for MPIM in the DB
             // Only include actual users, not the bot
-            await upsertSlackChannel(mpimResult.channel.id, [...topic.userIds])
+            await upsertSlackChannel(mpimResult.channel.id, [...topic.state.userIds])
 
             // Send the group message to the MPIM
             const groupResponse = await client.chat.postMessage({
@@ -519,9 +510,7 @@ export async function processSchedulingActions(
 
     // Mark topic as inactive if requested
     if (nextStep.markTopicInactive) {
-      await db.update(topicTable)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(topicTable.id, topicId))
+      await updateTopicState(topic, { isActive: false }, message.id)
       console.log('Workflow topic marked as inactive:', topicId)
     }
   } catch (error) {
@@ -531,52 +520,30 @@ export async function processSchedulingActions(
 }
 
 async function getOrCreateTopic(
-  message: SlackAPIMessage,
+  message: SlackMessage,
   botUserId: string,
   client: WebClient,
   ignoreExistingTopics: boolean = false,
 ): Promise<string | null> {
-  // Ensure we have required fields
-  if (!('text' in message && message.text && message.ts && message.channel)) {
-    return null
+  // Check if this message is a DM by looking at the channel's user list
+  const [channel] = await db.select()
+    .from(slackChannelTable)
+    .where(eq(slackChannelTable.id, message.channelId))
+  if (!channel) {
+    throw new Error(`Channel ${message.channelId} not found in database`)
   }
 
-  // For bot messages, we need to check differently since they don't have a user field
-  const isBotMessage = 'bot_id' in message && message.bot_id
-  const userId = isBotMessage ? message.bot_id! : message.user!
-
-  const isDirectMessage = message.channel_type === 'im'
+  const isDirectMessage = channel.userIds.length === 1
   const isBotMentioned = message.text.includes(`<@${botUserId}>`)
 
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
   // Step 1: Query all of this bot's active topics from the DB
-  const topics = ignoreExistingTopics ? [] : (
-    await db.select()
-    .from(topicTable)
-    .where(and(
-      eq(topicTable.botUserId, botUserId),
-      eq(topicTable.isActive, true),
-    ))
-  )
-
-  // Create slack message object for analysis
-  const slackMessage = {
-    id: '', // Will be set when inserting
-    topicId: '', // Will be set based on analysis
-    channelId: message.channel,
-    userId: userId,
-    text: message.text,
-    timestamp: tsToDate(message.ts),
-    rawTs: message.ts,
-    threadTs: ('thread_ts' in message && message.thread_ts) ? message.thread_ts : null,
-    raw: message,
-    autoMessageId: null,
-  }
+  const topics = ignoreExistingTopics ? [] : await getTopics(botUserId, true)
 
   // Step 2: Call analyzeTopicRelevance
-  const analysis = await analyzeTopicRelevance(topics, slackMessage, userMap, botUserId)
+  const analysis = await analyzeTopicRelevance(topics, message, userMap, botUserId)
   console.log('Analysis result:', analysis)
 
   // Step 3: If message is relevant to existing topic
@@ -589,7 +556,7 @@ async function getOrCreateTopic(
     // Check if it's a valid workflow type, i.e. not 'other'
     if (analysis.workflowType && workflowAgentMap.has(analysis.workflowType)) {
       // Extract mentioned users from the message text
-      const mentionedUserIds = new Set<string>([userId]) // Start with the sender
+      const mentionedUserIds = new Set<string>([message.userId]) // Start with the sender
 
       // Look for user mentions in the format <@USERID>
       const mentionPattern = /<@([A-Z0-9_]+)>/g
@@ -616,18 +583,24 @@ async function getOrCreateTopic(
 
       // Create new topic with all mentioned users
       const [newTopic] = await db.insert(topicTable).values({
-        userIds: Array.from(mentionedUserIds),
         botUserId: botUserId,
-        summary: analysis.suggestedNewTopic,
         workflowType: analysis.workflowType,
       }).returning()
+
+      // Create initial state for the new topic
+      await db.insert(topicStateTable).values({
+        topicId: newTopic.id,
+        userIds: Array.from(mentionedUserIds),
+        summary: analysis.suggestedNewTopic,
+        createdByMessageId: message.id,
+      })
 
       return newTopic.id
     } else {
       // Invalid workflow - send canned response in thread
       await client.chat.postMessage({
-        channel: message.channel,
-        thread_ts: message.ts,
+        channel: message.channelId,
+        thread_ts: message.rawTs,
         text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
       })
       return null
@@ -637,19 +610,39 @@ async function getOrCreateTopic(
   return null
 }
 
-async function saveMessageToTopic(
-  topicId: string,
+async function saveMessageToDummyTopic(
+  botUserId: string,
   message: SlackAPIMessage,
   autoMessageId: string | null,
   client: WebClient,
 ): Promise<SlackMessage> {
-  const userId = ('bot_id' in message && message.bot_id) ? message.bot_id : message.user!
+  const DUMMY_SUMMARY = 'dummy topic for uncategorized messages'
 
-  // Get the topic to find the bot user ID
-  const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
-  if (!topic) {
-    throw new Error(`Topic ${topicId} not found`)
-  }
+  // Check if a dummy topic exists for this bot user
+  const [existingDummyRow] = await db.select()
+    .from(topicTable)
+    .innerJoin(topicStateTable, eq(topicTable.id, topicStateTable.topicId))
+    .where(and(
+      eq(topicTable.botUserId, botUserId),
+      eq(topicTable.workflowType, 'other'),
+      eq(topicStateTable.summary, DUMMY_SUMMARY),
+    ))
+
+  // Create a new dummy topic if one was not found
+  const dummyTopicId = (
+    existingDummyRow ?
+    existingDummyRow.topic.id :
+    (await db
+      .insert(topicTable)
+      .values({
+        botUserId: botUserId,
+        workflowType: 'other',
+      })
+      .returning()
+    )[0].id
+  )
+
+  const userId = ('bot_id' in message && message.bot_id) ? message.bot_id : message.user!
 
   // Make sure to create a DB slackChannel for the message, unless it's coming from an AutoMessage
   if (!autoMessageId) {
@@ -674,13 +667,13 @@ async function saveMessageToTopic(
     }
 
     // Filter out the bot from the member list, and upsert the slack channel
-    const nonBotMemberIds = allMemberIds.filter((memberId) => memberId !== topic.botUserId)
+    const nonBotMemberIds = allMemberIds.filter((memberId) => memberId !== botUserId)
     await upsertSlackChannel(message.channel, nonBotMemberIds)
   }
 
-  // Save message to DB related to that topic
+  // Save message to DB related to the dummy topic
   const [slackMessage] = await db.insert(slackMessageTable).values({
-    topicId: topicId,
+    topicId: dummyTopicId,
     channelId: message.channel,
     userId: userId,
     text: message.text!,
@@ -691,10 +684,16 @@ async function saveMessageToTopic(
     autoMessageId: autoMessageId,
   }).returning()
 
-  // Update the topic's updatedAt timestamp
-  await db.update(topicTable)
-    .set({ updatedAt: new Date() })
-    .where(eq(topicTable.id, topicId))
+
+  // If we created a new dummy topic, insert the dummy topic state
+  if (!existingDummyRow) {
+    await db.insert(topicStateTable).values({
+      topicId: dummyTopicId,
+      summary: DUMMY_SUMMARY,
+      userIds: [],
+      createdByMessageId: slackMessage.id,
+    })
+  }
 
   return slackMessage
 }
@@ -705,28 +704,8 @@ interface MessageProcessingRes {
   resMessages: SlackMessage[],
 }
 
-async function getOrCreateDummyTopic(botUserId: string): Promise<string> {
-  const DUMMY_SUMMARY = 'dummy topic for uncategorized messages'
-  const [dummyTopic] = await db.select()
-    .from(topicTable)
-    .where(and(
-      eq(topicTable.botUserId, botUserId),
-      eq(topicTable.summary, DUMMY_SUMMARY),
-      eq(topicTable.workflowType, 'other'),
-    ))
-  if (dummyTopic) {
-    return dummyTopic.id
-  }
-  const [newDummyTopic] = await db.insert(topicTable).values({
-    botUserId: botUserId,
-    summary: DUMMY_SUMMARY,
-    workflowType: 'other',
-  }).returning()
-  return newDummyTopic.id
-}
-
 export async function handleSlackMessage(
-  message: SlackAPIMessage,
+  apiMessage: SlackAPIMessage,
   botUserId: string,
   client: WebClient,
   presetTopicId: string | null = null,
@@ -734,7 +713,7 @@ export async function handleSlackMessage(
   autoMessageId: string | null = null,
 ): Promise<MessageProcessingRes | null> {
   // Check if message has required fields
-  if (!('text' in message && message.text && message.ts && message.channel)) {
+  if (!('text' in apiMessage && apiMessage.text && apiMessage.ts && apiMessage.channel)) {
     return null
   }
 
@@ -742,23 +721,29 @@ export async function handleSlackMessage(
   try {
     await messageProcessingLock.acquire()
   } catch {
-    console.log('Clearing queue, skipping handleSlackMessage for message:', message)
+    console.log('Clearing queue, skipping handleSlackMessage for apiMessage:', apiMessage)
     return null
   }
-  console.log('Processing message:', message)
+  console.log('Processing message:', apiMessage)
 
   try {
+    // Save the message to the dummy topic by default
+    const message = await saveMessageToDummyTopic(botUserId, apiMessage, autoMessageId, client)
+
     // Route message to topic (creates topic if necessary)
     const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(message, botUserId, client, ignoreExistingTopics)
 
-    // If getOrCreateTopic returns null or the dummy topic, save the message to the dummy topic and return
-    const dummyTopicId = await getOrCreateDummyTopic(botUserId)
-    if (!topicId || topicId === dummyTopicId) {
-      await saveMessageToTopic(dummyTopicId, message, autoMessageId, client)
+    // If getOrCreateTopic returns null or the dummy topic, leave the message
+    // saved to the dummy topic and return
+    if (!topicId || topicId === message.topicId) {
       return null
     }
 
-    const savedReqMessage = await saveMessageToTopic(topicId, message, autoMessageId, client)
+    const [savedReqMessage] = await db.update(slackMessageTable)
+      .set({ topicId })
+      .where(eq(slackMessageTable.id, message.id))
+      .returning()
+
     const resMessages = await processSchedulingActions(
       topicId,
       savedReqMessage,
@@ -771,9 +756,9 @@ export async function handleSlackMessage(
     // Optionally add an error reaction
     try {
       await client.reactions.add({
-        channel: message.channel,
+        channel: apiMessage.channel,
         name: 'x',
-        timestamp: message.ts,
+        timestamp: apiMessage.ts,
       })
     } catch (reactionError) {
       console.error('Error adding error reaction:', reactionError)
