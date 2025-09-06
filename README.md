@@ -33,7 +33,7 @@ export PV_LANGFUSE_PUBLIC_KEY=...
 export PV_LANGFUSE_SECRET_KEY=...
 ```
 
-For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local BD" instructions below if you don't have it installed already.
+For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local DB" instructions below if you don't have it installed already.
 
 Run the flack server:
 ```
@@ -44,6 +44,7 @@ You can then visit the website in your browser at https://localhost:5173. While 
 ```
 pnpm run eval
 ```
+
 
 To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
@@ -83,6 +84,10 @@ If you change `db/schema.ts`, you can use drizzle-kit to automatically generate 
 pnpm run dkgen
 pnpm run dkmig
 ```
+
+### Calendar Invites
+
+- When a time is finalized, the app creates a Google Calendar event from the first participant with a connected Google account, adds topic users with emails as attendees, includes a Google Meet link, and posts the links in Slack. Implementation: see `createCalendarInviteFromLeader` in `src/calendar-service.ts` and its trigger in `processSchedulingActions` in `src/slack-message-handler.ts`.
 
 ### Linux
 

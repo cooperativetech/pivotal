@@ -21,6 +21,7 @@ export interface GoogleAuthTokenResponse {
   token_type: string
 }
 
+// Base URL for OAuth redirect. In local usage, leave PV_BASE_URL unset to default to localhost.
 const API_BASE_URL = process.env.PV_BASE_URL || 'http://localhost:3001'
 const GOOGLE_AUTH_REDIRECT_URI = `${API_BASE_URL}/auth/google/callback`
 
@@ -199,6 +200,7 @@ export function generateGoogleAuthUrl(topicId: string, slackUserId: string): str
   const scope = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
   ].join(' ')
 
   const params = new URLSearchParams({
@@ -312,6 +314,94 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string,
 
   // Continue scheduling workflow after successful token storage
   await continueSchedulingWorkflow(topicId, slackUserId, slackClient)
+}
+
+/**
+ * Create a Google Calendar event from the organizer (leader) and send invites to all users in the topic.
+ * Includes a Google Meet link. Returns the created event's HTML link and meeting link (if any).
+ */
+export async function createCalendarInviteFromLeader(
+  topic: TopicWithState,
+  organizerSlackUserId: string,
+  finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
+): Promise<{ htmlLink?: string, meetLink?: string } | null> {
+  try {
+    // Validate organizer has Google auth
+    const organizerContext = await getUserContext(organizerSlackUserId)
+    if (!organizerContext.googleAccessToken || organizerContext.googleAccessToken === 'fake-token-for-eval') {
+      console.warn(`Organizer ${organizerSlackUserId} does not have a valid Google auth token; cannot create calendar invite.`)
+      return null
+    }
+
+    // Build OAuth2 client
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.PV_GOOGLE_CLIENT_ID,
+      process.env.PV_GOOGLE_CLIENT_SECRET,
+      GOOGLE_AUTH_REDIRECT_URI,
+    )
+    oauth2Client.setCredentials({
+      access_token: organizerContext.googleAccessToken,
+      refresh_token: organizerContext.googleRefreshToken,
+      expiry_date: organizerContext.googleTokenExpiryDate,
+    })
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+    // Load attendee emails from Slack users in the topic (exclude bots / missing emails)
+    const attendees: { email: string }[] = []
+    const users = await db
+      .select()
+      .from(slackUserTable)
+    for (const user of users) {
+      if (topic.state.userIds.includes(user.id) && user.email) {
+        attendees.push({ email: user.email })
+      }
+    }
+
+    // Ensure organizer is included as attendee (helps ensure they are on event if API treats creator separately)
+    const organizer = (await db.select().from(slackUserTable).where(eq(slackUserTable.id, organizerSlackUserId))).at(0)
+    if (organizer?.email && !attendees.some((a) => a.email.toLowerCase() === organizer.email!.toLowerCase())) {
+      attendees.push({ email: organizer.email })
+    }
+
+    const requestId = `pivotal-${topic.id}-${Date.now()}`
+    const summary = finalizedEvent.title || topic.state.summary || 'Meeting'
+    const description = finalizedEvent.description || undefined
+
+    // Prepare event insert request
+    const insertRes = await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: {
+        summary,
+        description,
+        start: { dateTime: new Date(finalizedEvent.start).toISOString() },
+        end: { dateTime: new Date(finalizedEvent.end).toISOString() },
+        location: finalizedEvent.location || undefined,
+        attendees,
+        conferenceData: {
+          createRequest: {
+            requestId,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
+      },
+      conferenceDataVersion: 1,
+      sendUpdates: 'all',
+    })
+
+    const event = insertRes.data
+    let meetLink: string | undefined
+    const entryPoints = event.conferenceData?.entryPoints
+    if (entryPoints && entryPoints.length > 0) {
+      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
+      meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    return { htmlLink: event.htmlLink || undefined, meetLink }
+  } catch (error) {
+    console.error('Error creating calendar invite:', error)
+    return null
+  }
 }
 
 /**
