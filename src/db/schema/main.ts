@@ -13,17 +13,25 @@ import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivati
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
-  userIds: jsonb().$type<string[]>().notNull().default([]),
   botUserId: text().notNull(),
-  summary: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
-  isActive: boolean().notNull().default(true),
-  perUserContext: jsonb().$type<Record<string, TopicUserContext>>().notNull().default({}),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
 export type TopicInsert = InferInsertModel<typeof topicTable>
 export type Topic = InferSelectModel<typeof topicTable>
+
+export const topicStateTable = pgTable('topic_state', {
+  id: uuid().primaryKey().defaultRandom(),
+  topicId: uuid().notNull().references(() => topicTable.id),
+  userIds: jsonb().$type<string[]>().notNull().default([]),
+  summary: text().notNull(),
+  isActive: boolean().notNull().default(true),
+  perUserContext: jsonb().$type<Record<string, TopicUserContext>>().notNull().default({}),
+  createdByMessageId: uuid().notNull().references(() => slackMessageTable.id),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+})
+export type TopicStateInsert = InferInsertModel<typeof topicStateTable>
+export type TopicState = InferSelectModel<typeof topicStateTable>
 
 export const slackMessageTable = pgTable('slack_message', {
   id: uuid().primaryKey().defaultRandom(),

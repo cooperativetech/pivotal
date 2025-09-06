@@ -1,11 +1,15 @@
 import type { InferResponseType } from 'hono/client'
 import { z } from 'zod'
 
-import type { Topic, SlackMessage, SlackUser, SlackChannel, UserData } from '../db/schema/main'
+import type { Topic, TopicState, SlackMessage, SlackUser, SlackChannel, UserData } from '../db/schema/main'
 import type { local_api } from './api-client'
 
 // Re-export database types for convenience
-export type { Topic, SlackMessage, SlackUser, SlackChannel, UserData }
+export type { SlackMessage, SlackUser, SlackChannel, UserData }
+
+export type TopicWithState = Topic & {
+  state: TopicState
+}
 
 export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
@@ -52,22 +56,30 @@ export interface AutoMessageDeactivation {
 }
 
 export interface TopicData {
-  topic: Topic
+  topic: TopicWithState
   messages: SlackMessage[]
   users: SlackUser[]
-  userData?: UserData[]
-  channels?: SlackChannel[]
+  userData: UserData[]
+  channels: SlackChannel[]
 }
 
-export type TopicRes = InferResponseType<typeof local_api.topics[':topicId']['$get'], 200>
+type TopicWithStateRes = InferResponseType<typeof local_api.topics['$get'], 200>['topics'][number]
+export type TopicDataRes = InferResponseType<typeof local_api.topics[':topicId']['$get'], 200>
 
-export function unserializeTopicData(topicRes: TopicRes): TopicData {
+export function unserializeTopicWithState(topic: TopicWithStateRes): TopicWithState {
   return {
-    topic: {
-      ...topicRes.topic,
-      createdAt: new Date(topicRes.topic.createdAt),
-      updatedAt: new Date(topicRes.topic.updatedAt),
+    ...topic,
+    createdAt: new Date(topic.createdAt),
+    state: {
+      ...topic.state,
+      createdAt: new Date(topic.state.createdAt),
     },
+  }
+}
+
+export function unserializeTopicData(topicRes: TopicDataRes): TopicData {
+  return {
+    topic: unserializeTopicWithState(topicRes.topic),
     messages: topicRes.messages.map((message) => ({
       ...message,
       timestamp: new Date(message.timestamp),

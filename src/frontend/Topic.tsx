@@ -426,7 +426,7 @@ function Topic() {
           <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
-          <h1 className="text-xl font-bold">{topicData.topic.summary}</h1>
+          <h1 className="text-xl font-bold">{topicData.topic.state.summary}</h1>
         </div>
         <div className="flex items-center gap-2 mb-2">
           <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
@@ -434,15 +434,15 @@ function Topic() {
           </span>
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicData.topic.isActive
+              topicData.topic.state.isActive
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
             }`}
           >
-            {topicData.topic.isActive ? 'Active' : 'Inactive'}
+            {topicData.topic.state.isActive ? 'Active' : 'Inactive'}
           </span>
           <span className="text-sm text-gray-600">
-            Updated: {new Date(topicData.topic.updatedAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+            Updated: {new Date(topicData.topic.state.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
           </span>
           {sortedMessages.length > 0 && timelinePosition !== null && (
             <span className="text-sm text-gray-600">
@@ -464,7 +464,7 @@ function Topic() {
               const userId = isDM ? getCurrentUserId(channel.channelId) : null
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicData.topic.perUserContext[userId] : null
+              const topicUserContext = userId ? topicData.topic.state.perUserContext[userId] : null
 
               return (
                 <div

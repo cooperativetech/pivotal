@@ -1,20 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router'
-import type { WorkflowType } from '@shared/api-types'
+import type { TopicWithState } from '@shared/api-types'
+import { unserializeTopicWithState } from '@shared/api-types'
 import { useAuth } from './AuthContext'
 import { authClient } from '@shared/auth-client'
 import { api } from '@shared/api-client'
-
-interface Topic {
-  id: string
-  summary: string
-  workflowType: WorkflowType
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  userIds: string[]
-  participantNames?: string[]
-}
 
 interface Profile {
   user: {
@@ -30,8 +20,9 @@ interface Profile {
 }
 
 function Home() {
-  const [topics, setTopics] = useState<Topic[]>([])
+  const [topics, setTopics] = useState<TopicWithState[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [userNameMap, setUserNameMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { session } = useAuth()
@@ -54,9 +45,11 @@ function Home() {
         }
 
         const profileData = await profileResponse.json()
-        const topicsData = await topicsResponse.json()
+        const topicData = await topicsResponse.json()
         setProfile(profileData)
-        setTopics(topicsData.topics)
+        const topicsWithDates = topicData.topics.map(unserializeTopicWithState)
+        setTopics(topicsWithDates)
+        setUserNameMap(topicData.userNameMap)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -142,7 +135,7 @@ function Home() {
               className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 w-full max-w-2xl"
             >
               <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                {topic.summary}
+                {topic.state.summary}
               </h2>
 
               <div className="flex items-center gap-2 mb-3">
@@ -152,20 +145,18 @@ function Home() {
 
                 <span
                   className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                    topic.isActive
+                    topic.state.isActive
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {topic.isActive ? 'Active' : 'Inactive'}
+                  {topic.state.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
 
               <div className="text-sm text-gray-600">
                 <div>
-                  Users: {topic.participantNames && topic.participantNames.length > 0
-                    ? topic.participantNames.join(', ')
-                    : topic.userIds.length}
+                  Users: {topic.state.userIds.map((id) => userNameMap[id]).join(', ')}
                 </div>
                 <div>Created: {new Date(topic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
               </div>
