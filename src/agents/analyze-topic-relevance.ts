@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 import { Agent, run } from './agent-sdk'
 import db from '../db/engine'
-import type { Topic, SlackMessage, SlackUser } from '../db/schema/main'
+import type { SlackMessage, SlackUser } from '../db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
 import { slackMessageTable, slackUserTable } from '../db/schema/main'
 import {
   tsToDate,
@@ -79,7 +80,7 @@ The JSON structure must be:
 IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`,
 })
 
-export async function analyzeTopicRelevance(topics: Topic[], message: SlackMessage, userMap: Map<string, SlackUser>, botUserId: string): Promise<AnalyzeTopicRes> {
+export async function analyzeTopicRelevance(topics: TopicWithState[], message: SlackMessage, userMap: Map<string, SlackUser>, botUserId: string): Promise<AnalyzeTopicRes> {
   // Get calling user's timezone
   const callingUser = await db
     .select()
@@ -145,8 +146,8 @@ ${Array.from(userMap.values())
 
 ` : ''}Existing topics:
 ${(await Promise.all(topics.map(async (topic, i) => {
-  const ageInDays = Math.floor((Date.now() - new Date(topic.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
-  const userNames = topic.userIds.map((id) => {
+  const ageInDays = Math.floor((Date.now() - new Date(topic.state.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  const userNames = topic.state.userIds.map((id) => {
     const name = userMap.get(id)?.realName
     return name || 'Unknown User'
   }).join(', ')
@@ -157,7 +158,7 @@ ${(await Promise.all(topics.map(async (topic, i) => {
     ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
   return `${i + 1}. Topic ID: ${topic.id}
-   Summary: ${topic.summary}
+   Summary: ${topic.state.summary}
    Users involved: [${userNames}]
    Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}${messagesFormatted}`
 }))).join('\n\n')}

@@ -192,9 +192,9 @@ ${Array.from(userMap.entries())
   .join(', ')}
 
 ` : ''}Current Topic:
-Summary: ${topic.summary}
+Summary: ${topic.state.summary}
 Users involved (with timezones and calendar status):
-${await Promise.all(topic.userIds.map(async (userId) => {
+${await Promise.all(topic.state.userIds.map(async (userId: string) => {
   const user = userMap.get(userId)
   const userName = user?.realName || 'Unknown User'
   const tz = user?.tz
@@ -211,7 +211,7 @@ ${await Promise.all(topic.userIds.map(async (userId) => {
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
 Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
-Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone)}`
+Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}`
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 

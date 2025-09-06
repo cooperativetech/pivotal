@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { RRuleTemporal } from 'rrule-temporal'
 import { toText } from 'rrule-temporal/totext'
@@ -7,14 +6,16 @@ import { Temporal } from '@js-temporal/polyfill'
 import type { RunContext } from './agent-sdk'
 import { Agent, Runner, tool } from './agent-sdk'
 import db from '../db/engine'
-import type { Topic, SlackMessage, SlackUser, AutoMessageInsert } from '../db/schema/main'
-import { topicTable, autoMessageTable } from '../db/schema/main'
+import type { SlackMessage, SlackUser, AutoMessageInsert } from '../db/schema/main'
+import { autoMessageTable } from '../db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
 import {
   tsToDate,
   organizeMessagesByChannelAndThread,
   replaceUserMentions,
   getChannelDescription,
   formatTimestampWithTimezone,
+  updateTopicState,
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { getUserCalendarStructured } from '../calendar-service'
@@ -22,7 +23,7 @@ import type { CalendarEvent } from '@shared/api-types'
 
 export interface ConversationContext {
   message: SlackMessage,
-  topic: Topic,
+  topic: TopicWithState,
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
@@ -46,7 +47,7 @@ export type ConversationAgent = InstanceType<typeof ConversationAgent>
 export async function runConversationAgent(
   agent: ConversationAgent,
   message: SlackMessage,
-  topic: Topic,
+  topic: TopicWithState,
   previousMessages: SlackMessage[],
   userMap: Map<string, SlackUser>,
 ): Promise<ConversationRes> {
@@ -138,7 +139,7 @@ export const updateUserNames = tool({
     console.log('Tool called: updateUserNames with names:', userNames)
 
     if (!runContext) throw new Error('runContext not provided')
-    const { topic, userMap } = runContext.context
+    const { message, topic, userMap } = runContext.context
 
     // Map names to user IDs
     const updatedUserIds: string[] = []
@@ -159,15 +160,12 @@ export const updateUserNames = tool({
       }
     }
 
-    // Update the topic in the database with the new user IDs
-    const [updatedTopic] = await db
-      .update(topicTable)
-      .set({
-        userIds: updatedUserIds,
-        updatedAt: new Date(),
-      })
-      .where(eq(topicTable.id, topic.id))
-      .returning()
+    // Update the topic state with the new user IDs
+    const updatedTopic = await updateTopicState(
+      topic,
+      { userIds: updatedUserIds },
+      message.id,
+    )
 
     // Update runContext with the updated topic
     runContext.context.topic = updatedTopic
@@ -188,17 +186,10 @@ export const updateSummary = tool({
     console.log('Tool called: updateSummary with summary:', summary)
 
     if (!runContext) throw new Error('runContext not provided')
-    const { topic } = runContext.context
+    const { message, topic } = runContext.context
 
     // Update the topic in the database with the new summary
-    const [updatedTopic] = await db
-      .update(topicTable)
-      .set({
-        summary,
-        updatedAt: new Date(),
-      })
-      .where(eq(topicTable.id, topic.id))
-      .returning()
+    const updatedTopic = await updateTopicState(topic, { summary }, message.id)
 
     // Update runContext with the updated topic
     runContext.context.topic = updatedTopic
