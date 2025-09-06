@@ -27,6 +27,16 @@ export interface ConversationContext {
   callingUserTimezone: string,
 }
 
+
+export const FinalizedEvent = z.strictObject({
+  start: z.string().describe('ISO timestamp for the start of the finalized meeting'),
+  end: z.string().describe('ISO timestamp for the end of the finalized meeting'),
+  title: z.string().optional().nullable().describe('Optional meeting title/summary'),
+  location: z.string().optional().nullable().describe('Optional physical/virtual location'),
+  description: z.string().optional().nullable().describe('Optional meeting description/agenda'),
+})
+export type FinalizedEvent = z.infer<typeof FinalizedEvent>
+
 export const ConversationRes = z.strictObject({
   replyMessage: z.string().optional().nullable(),
   markTopicInactive: z.boolean().optional().nullable(),
@@ -36,11 +46,11 @@ export const ConversationRes = z.strictObject({
     includeCalendarButtons: z.boolean().optional().nullable(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
+  finalizedEvent: FinalizedEvent.optional().nullable(),
   reasoning: z.string(),
 })
-export type ConversationRes = z.infer<typeof ConversationRes>
-
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
+export type ConversationRes = z.infer<typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
 
 export async function runConversationAgent(

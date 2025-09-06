@@ -32,6 +32,7 @@ You can then visit the flack website in your browser at http://localhost:5173. W
 pnpm run eval
 ```
 
+
 To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid starting the dev-only website:
 ```
 pnpm run prod
@@ -64,3 +65,7 @@ If you change `db/schema.ts`, you can use drizzle-kit to automatically generate 
 pnpm run dkgen
 pnpm run dkmig
 ```
+
+### Calendar Invites
+
+- When a time is finalized, the app creates a Google Calendar event from the first participant with a connected Google account, adds topic users with emails as attendees, includes a Google Meet link, and posts the links in Slack. Implementation: see `createCalendarInviteFromLeader` in `src/calendar-service.ts` and its trigger in `processSchedulingActions` in `src/slack-message-handler.ts`.
