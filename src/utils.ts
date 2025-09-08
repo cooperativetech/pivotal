@@ -41,13 +41,16 @@ export function tsToDate(ts: string): Date {
 
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
+  // Backward-compatible single ID
   visibleToUserId: z.string().optional(),
+  // Preferred: list of visible user IDs
+  visibleToUserIds: z.array(z.string()).optional(),
   beforeRawTs: z.string().optional(),
 })
 export type GetTopicReq = z.infer<typeof GetTopicReq>
 
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
-  const { lastMessageId, visibleToUserId, beforeRawTs } = options
+  const { lastMessageId, visibleToUserId, visibleToUserIds, beforeRawTs } = options
 
   const [topic] = await db
     .select()
@@ -62,8 +65,17 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
   // Build the messages query with optional channel filtering
   let messages: SlackMessage[]
 
-  if (visibleToUserId) {
-    // If visibleToUserId is provided, join with slackChannelTable and filter
+  const visibleIds: string[] | null = Array.isArray(visibleToUserIds)
+    ? visibleToUserIds
+    : (visibleToUserId ? [visibleToUserId] : null)
+
+  if (visibleIds && visibleIds.length > 0) {
+    // If visible user ids are provided, join with slackChannelTable and filter for any match
+    const orClauses = sql.join(
+      visibleIds.map((id) => sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([id])}::jsonb`),
+      sql` OR `,
+    )
+
     const messagesResult = await db
       .select({ message: slackMessageTable })
       .from(slackMessageTable)
@@ -71,7 +83,7 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
       .where(
         and(
           eq(slackMessageTable.topicId, topicId),
-          sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([visibleToUserId])}::jsonb`,
+          sql`(${orClauses})`,
         ),
       )
       .orderBy(slackMessageTable.timestamp)

@@ -124,10 +124,7 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       // Import the dumpTopic utility
       const { dumpTopic } = await import('../utils')
 
-      // Get topic data
-      const topicData = await dumpTopic(topicId, {})
-
-      // Check if user has access to this topic (via their Slack accounts)
+      // Get user's linked Slack accounts
       const linkedSlackIds = await db
         .select({ slackId: accountTable.accountId })
         .from(accountTable)
@@ -135,17 +132,27 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
           eq(accountTable.userId, sessionUser.id),
           eq(accountTable.providerId, 'slack'),
         ))
-
       const userSlackIds = new Set(linkedSlackIds.map((s) => s.slackId))
-      const topicUserIds = new Set(topicData.topic.userIds)
 
-      // Check if any of the user's Slack IDs are in the topic
+      // Check access against the topic's user list
+      const [topicRow] = await db
+        .select({ userIds: topicTable.userIds })
+        .from(topicTable)
+        .where(eq(topicTable.id, topicId))
+        .limit(1)
+
+      if (!topicRow) {
+        return c.json({ error: 'Not found' }, 404)
+      }
+
+      const topicUserIds = new Set(topicRow.userIds)
       const hasAccess = [...userSlackIds].some((id) => topicUserIds.has(id))
-
       if (!hasAccess) {
         return c.json({ error: 'Forbidden' }, 403)
       }
 
+      // Return only data visible to the current user's Slack accounts (messages/channels only)
+      const topicData = await dumpTopic(topicId, { visibleToUserIds: Array.from(userSlackIds) })
       return c.json(topicData)
     } catch (error) {
       console.error('Error fetching topic data:', error)
