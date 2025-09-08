@@ -16,7 +16,6 @@ Required for development:
 - `PV_GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 
 Additional for production:
-- `PV_BASE_URL` - Base URL for callbacks (e.g., `https://yourdomain.com`)
 - `PV_SLACK_BOT_TOKEN` - Slack bot user OAuth token
 - `PV_SLACK_APP_TOKEN` - Slack app-level token for socket mode
 

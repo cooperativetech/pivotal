@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { local_api } from '@shared/api-client'
-import type { TopicData, SlackMessage } from '@shared/api-types'
+import { api, local_api } from '@shared/api-client'
+import type { TopicData, SlackMessage, SlackChannel } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
+import { useLocalMode } from './LocalModeContext'
 
 interface ChannelGroup {
   channelId: string
@@ -17,6 +18,8 @@ function Topic() {
   const [topicData, setTopicData] = useState<TopicData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isLocalMode = useLocalMode()
+  const apiClient = isLocalMode ? local_api : api
   const [timelinePosition, setTimelinePosition] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [testingMessageId, setTestingMessageId] = useState<string | null>(null)
@@ -36,7 +39,7 @@ function Topic() {
       if (!topicId) return
 
       try {
-        const response = await local_api.topics[':topicId'].$get({
+        const response = await apiClient.topics[':topicId'].$get({
           param: { topicId },
           query: {},
         })
@@ -73,9 +76,8 @@ function Topic() {
       }
     }
 
-    void fetchTopicData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicId]) // Intentionally exclude searchParams to prevent re-fetching on URL changes
+    fetchTopicData().catch(console.error)
+  }, [topicId, apiClient, searchParams])
 
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
@@ -158,7 +160,7 @@ function Topic() {
 
   // Handle test LLM response
   const handleTestLlmResponse = useCallback(async (messageId: string) => {
-    if (!topicId) return
+    if (!topicId || !isLocalMode) return
 
     setTestingMessageId(messageId)
     try {
@@ -183,7 +185,7 @@ function Topic() {
     } finally {
       setTestingMessageId(null)
     }
-  }, [topicId])
+  }, [topicId, isLocalMode])
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -257,7 +259,10 @@ function Topic() {
       channelGroups.push(group)
     }
 
-    channelMap.get(msg.channelId)!.messages.push(msg)
+    const channelGroup = channelMap.get(msg.channelId)
+    if (channelGroup) {
+      channelGroup.messages.push(msg)
+    }
   })
 
   // Sort messages within each channel by timestamp
@@ -318,7 +323,7 @@ function Topic() {
   const handleSendMessage = async (channelId: string) => {
     const chatInput = chatInputs.get(channelId) || ''
     const currentUserId = getCurrentUserId(channelId)
-    if (!chatInput.trim() || !currentUserId || !topicId || sendingChannels.has(channelId)) return
+    if (!chatInput.trim() || !currentUserId || !topicId || sendingChannels.has(channelId) || !isLocalMode) return
 
     setSendingChannels((prev) => new Set(prev).add(channelId))
     try {
@@ -344,32 +349,35 @@ function Topic() {
         }))
 
         // Check for any new channelIds that aren't in topicData
-        const existingChannelIds = new Set(topicData.channels?.map((ch) => ch.id) || [])
-        const newChannelIds = newMessages
-          .map((msg) => msg.channelId)
-          .filter((channelId) => !existingChannelIds.has(channelId))
+        let validChannels: SlackChannel[] = []
+        if (isLocalMode) {
+          const existingChannelIds = new Set(topicData.channels?.map((ch) => ch.id) || [])
+          const newChannelIds = newMessages
+            .map((msg) => msg.channelId)
+            .filter((channelId) => !existingChannelIds.has(channelId))
 
-        // Fetch channel info for any new channels
-        const newChannels = await Promise.all(
-          [...new Set(newChannelIds)].map(async (channelId) => {
-            try {
-              const response = await local_api.channels[':channelId'].$get({
-                param: { channelId },
-              })
-              if (response.ok) {
-                return await response.json()
+          // Fetch channel info for any new channels
+          const newChannels = await Promise.all(
+            [...new Set(newChannelIds)].map(async (channelId) => {
+              try {
+                const response = await local_api.channels[':channelId'].$get({
+                  param: { channelId },
+                })
+                if (response.ok) {
+                  return await response.json()
+                }
+                console.error(`Failed to fetch channel ${channelId}`)
+                return null
+              } catch (err) {
+                console.error(`Error fetching channel ${channelId}:`, err)
+                return null
               }
-              console.error(`Failed to fetch channel ${channelId}`)
-              return null
-            } catch (err) {
-              console.error(`Error fetching channel ${channelId}:`, err)
-              return null
-            }
-          }),
-        )
+            }),
+          )
 
-        // Filter out any null results
-        const validChannels = newChannels.filter((ch) => ch !== null)
+          // Filter out any null results
+          validChannels = newChannels.filter((ch) => ch !== null)
+        }
 
         setTopicData((prev) => {
           if (!prev) return prev
@@ -415,7 +423,7 @@ function Topic() {
     <div className="h-screen bg-gray-50 p-4 flex flex-col">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
-          <Link to="/" className="text-blue-600 hover:underline text-sm">
+          <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
           <h1 className="text-xl font-bold">{topicData.topic.summary}</h1>
@@ -605,10 +613,10 @@ function Topic() {
                             </div>
                           </div>
                         </div>
-                        {!isBot && isLatestOverall && (
+                        {isLocalMode && !isBot && isLatestOverall && (
                           <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
                             <button
-                              onClick={() => { void handleTestLlmResponse(msg.id) }}
+                              onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
                               disabled={testingMessageId === msg.id}
                               className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hover:cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
@@ -622,7 +630,7 @@ function Topic() {
                 </div>
 
                 {/* Chat Bar for DM Channels */}
-                {isDM && isViewingLatest && (
+                {isLocalMode && isDM && isViewingLatest && (
                   <div className="mt-2 -mx-2 -mb-2">
                     <div className="flex">
                       <input
@@ -638,7 +646,7 @@ function Topic() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
-                            void handleSendMessage(channel.channelId)
+                            handleSendMessage(channel.channelId).catch(console.error)
                           }
                         }}
                         placeholder="Type a message..."
@@ -646,7 +654,7 @@ function Topic() {
                         className="flex-1 px-3 py-1.5 text-sm border-t border-l border-b border-gray-200 rounded-bl-lg focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <button
-                        onClick={() => { void handleSendMessage(channel.channelId) }}
+                        onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
                         className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                       >

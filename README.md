@@ -12,14 +12,25 @@ brew install pnpm
 pnpm install
 ```
 
+Install `mkcert`, and use it to create a locally trusted CA certificate, which allows us to run our local server using https. This is necessary to authenticate with slack, which requires https for its redirect URLs.
+```
+brew install mkcert
+brew install nss  # if you use Firefox
+mkcert -install
+pnpm run cert
+```
+
 Set the following env vars to their proper values (e.g. in your ~/.bashrc):
 ```
-PV_DB_URL=...
-PV_OPENROUTER_API_KEY=...
-PV_GOOGLE_CLIENT_ID=...
-PV_GOOGLE_CLIENT_SECRET=...
-PV_LANGFUSE_PUBLIC_KEY=...
-PV_LANGFUSE_SECRET_KEY=...
+export PV_DB_URL=...
+export PV_OPENROUTER_API_KEY=...
+export PV_SLACK_CLIENT_ID=...
+export PV_SLACK_CLIENT_SECRET=...
+export PV_GOOGLE_CLIENT_ID=...
+export PV_GOOGLE_CLIENT_SECRET=...
+export PV_LANGFUSE_BASE_URL=...
+export PV_LANGFUSE_PUBLIC_KEY=...
+export PV_LANGFUSE_SECRET_KEY=...
 ```
 
 Run the flack server:
@@ -27,19 +38,21 @@ Run the flack server:
 pnpm run local
 ```
 
-You can then visit the flack website in your browser at http://localhost:5173. While the flack server is running, you can also run evals with:
+You can then visit the website in your browser at https://localhost:5173. While the local server is running, you can also run evals with:
 ```
 pnpm run eval
 ```
 
-To run the bot in production mode, you will additionally need the `PV_BASE_URL`, `PV_SLACK_BOT_TOKEN`, and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid starting the dev-only website:
-```
-pnpm run prod
-```
-
-If you want to run the bot in production mode with live-reload (for example, when testing a local version of the code with the live "Pivotal Dev" slack bot), you can run:
+To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
 pnpm run dev
+```
+
+You can then visit the website in your browser at https://localhost:3009. This hosts the "production" version of the website, with rolled-up js and css assets served out of the src/dist folder.
+
+To run the bot in production, you additionally need `PV_BETTER_AUTH_SECRET` set to a random string, and `PV_BASE_URL` set to the public website's URL. Then, run:
+```
+pnpm run prod
 ```
 
 ## Setting Up Local DB
