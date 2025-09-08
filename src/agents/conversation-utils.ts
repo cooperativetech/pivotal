@@ -260,7 +260,9 @@ export const showUserCalendar = tool({
       }
     }
 
-    if (!calendarEvents || calendarEvents.length === 0) {
+    if (calendarEvents === null) {
+      return `${userName} does not have their calendar connected`
+    } else if (calendarEvents.length === 0) {
       return `No calendar events found for ${userName} between ${formatTimestampWithTimezone(startTimeDate, userTz)} and ${formatTimestampWithTimezone(endTimeDate, userTz)}`
     }
 
