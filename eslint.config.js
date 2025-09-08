@@ -44,7 +44,7 @@ export default tseslint.config(
       '@stylistic/array-bracket-spacing': ['error', 'never'],
       '@stylistic/no-trailing-spaces': ['error'],
       '@stylistic/arrow-parens': ['error', 'always'],
-      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },

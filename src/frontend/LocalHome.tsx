@@ -1,20 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { local_api } from '@shared/api-client'
-import type { WorkflowType } from '@shared/api-types'
-
-interface Topic {
-  id: string
-  summary: string
-  workflowType: WorkflowType
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  userIds: string[]
-}
+import type { TopicWithState } from '@shared/api-types'
+import { unserializeTopicWithState } from '@shared/api-types'
 
 function LocalHome() {
-  const [topics, setTopics] = useState<Topic[]>([])
+  const [topics, setTopics] = useState<TopicWithState[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,7 +17,7 @@ function LocalHome() {
           throw new Error('Failed to fetch topics')
         }
         const data = await response.json()
-        setTopics(data.topics)
+        setTopics(data.topics.map(unserializeTopicWithState))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -88,7 +79,7 @@ function LocalHome() {
                 className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 w-full max-w-2xl"
               >
                 <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                  {topic.summary}
+                  {topic.state.summary}
                 </h2>
 
                 <div className="flex items-center gap-2 mb-3">
@@ -98,12 +89,12 @@ function LocalHome() {
 
                   <span
                     className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                      topic.isActive
+                      topic.state.isActive
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}
                   >
-                    {topic.isActive ? 'Active' : 'Inactive'}
+                    {topic.state.isActive ? 'Active' : 'Inactive'}
                   </span>
 
                   <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
@@ -112,7 +103,7 @@ function LocalHome() {
                 </div>
 
                 <div className="text-sm text-gray-600">
-                  <div>Users: {topic.userIds.length}</div>
+                  <div>Users: {topic.state.userIds.length}</div>
                   <div>Created: {new Date(topic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                 </div>
               </Link>

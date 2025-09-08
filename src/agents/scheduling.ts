@@ -116,7 +116,7 @@ const updateUserCalendar = tool({
     console.log('Tool called: updateUserCalendar for user:', userName, 'with events:', events)
 
     if (!runContext) throw new Error('runContext not provided')
-    const { userMap, topic } = runContext.context
+    const { userMap, topic, message } = runContext.context
 
     // Map name to user ID
     let userId: string | undefined
@@ -131,7 +131,7 @@ const updateUserCalendar = tool({
     }
 
     // Get current topic-specific user context
-    const currentTopicContext = topic.perUserContext[userId]
+    const currentTopicContext = topic.state.perUserContext[userId]
     const existingOverrides = currentTopicContext?.calendarManualOverrides || []
 
     // Convert events to CalendarEvent type
@@ -146,9 +146,12 @@ const updateUserCalendar = tool({
     const mergedOverrides = mergeCalendarWithOverrides(existingOverrides, newOverrides)
 
     // Update topic-specific user context with merged overrides and update runContext
-    const updatedTopic = await updateTopicUserContext(topic.id, userId, {
-      calendarManualOverrides: mergedOverrides,
-    })
+    const updatedTopic = await updateTopicUserContext(
+      topic.id,
+      userId,
+      { calendarManualOverrides: mergedOverrides },
+      message.id,
+    )
 
     // Update the topic in runContext with the updated version
     runContext.context.topic = updatedTopic
@@ -329,16 +332,16 @@ ${Array.from(userMap.entries())
   .join(', ')}
 
 ` : ''}Current Topic:
-Summary: ${topic.summary}
+Summary: ${topic.state.summary}
 Users involved (with timezones and calendar status):
-${await Promise.all(topic.userIds.map(async (userId) => {
+${await Promise.all(topic.state.userIds.map(async (userId) => {
   const user = userMap.get(userId)
   const userName = user?.realName || 'Unknown User'
   const tz = user?.tz
   const userTzStr = tz ? `${userName} (${getShortTimezoneFromIANA(tz)})` : userName
 
   // Check for manual overrides for this user in the current topic
-  const topicContext = topic.perUserContext[userId]
+  const topicContext = topic.state.perUserContext[userId]
   const hasManualOverrides = topicContext?.calendarManualOverrides && topicContext.calendarManualOverrides.length > 0
 
   try {
@@ -356,7 +359,7 @@ ${await Promise.all(topic.userIds.map(async (userId) => {
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
 Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
-Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone)}`
+Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}`
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 

@@ -1,15 +1,16 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { eq, desc } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 import db from '../db/engine'
-import type { Topic, SlackUser } from '../db/schema/main'
-import { topicTable, slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
+import type { SlackUser } from '../db/schema/main'
+import { slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from '../local-helpers.ts'
 import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
-import { GetTopicReq, dumpTopic } from '../utils'
+import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
 
 export const localRoutes = new Hono()
@@ -32,12 +33,7 @@ export const localRoutes = new Hono()
 
   .get('/topics', async (c) => {
     try {
-      // Get all active topics, ordered by most recent first
-      const topics = await db
-        .select()
-        .from(topicTable)
-        .orderBy(desc(topicTable.updatedAt))
-
+      const topics = await getTopics()
       return c.json({ topics })
     } catch (error) {
       console.error('Error fetching topics:', error)
@@ -111,7 +107,7 @@ export const localRoutes = new Hono()
       }
       const previousMessages = topicData.messages.slice(0, -1)
 
-      const topicUserIds = new Set(topicData.topic.userIds)
+      const topicUserIds = new Set(topicData.topic.state.userIds)
       const slackUserIds = new Set<string>()
       const slackChannelIds = new Set<string>()
 
@@ -134,9 +130,12 @@ export const localRoutes = new Hono()
       }
 
       // Set topic to only have users it had at the time of this message
-      const topicWithCurrentUsers: Topic = {
+      const topicWithCurrentUsers: TopicWithState = {
         ...topicData.topic,
-        userIds: Array.from(slackUserIds),
+        state: {
+          ...topicData.topic.state,
+          userIds: Array.from(slackUserIds),
+        },
       }
 
       // Create user map
@@ -184,10 +183,7 @@ export const localRoutes = new Hono()
       // Get botUserId from the topic if topicId is provided, otherwise use default
       let botUserId = BOT_USER_ID
       if (topicId) {
-        const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId))
-        if (!topic) {
-          throw new Error(`No topic found with id: ${topicId}`)
-        }
+        const topic = await getTopicWithState(topicId)
         botUserId = topic.botUserId
       }
 

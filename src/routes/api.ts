@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import db from '../db/engine'
 import { WebClient } from '@slack/web-api'
-import { topicTable, slackUserTable } from '../db/schema/main'
+import { slackUserTable } from '../db/schema/main'
 import { accountTable } from '../db/schema/auth'
 import { auth } from '../auth'
+import { dumpTopic, getTopics } from '../utils'
 
 interface SessionVars {
   user: typeof auth.$Infer.Session.user | null
@@ -108,44 +109,39 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         ))
 
       if (linkedSlackIds.length === 0) {
-        return c.json({ topics: [] })
+        return c.json({ topics: [], userNameMap: {} })
       }
 
-      // Get topics that include any of the user's Slack IDs
       const slackIdList = linkedSlackIds.map((s) => s.slackId)
+      const slackIdSet = new Set(slackIdList)
 
-      // Use raw SQL for JSONB array overlap query
-      const topics = await db
-        .select()
-        .from(topicTable)
-        .where(
-          sql`${topicTable.userIds}::jsonb ?| array[${sql.join(slackIdList.map((id) => sql`${id}`), sql`, `)}]`,
-        )
-        .orderBy(desc(topicTable.updatedAt))
+      // Get all topics (no filtering by bot user ID)
+      const allTopics = await getTopics()
 
-      // Build participant names per topic
+      // Filter topics in TypeScript to include only those with user's Slack IDs
+      const userTopics = allTopics.filter((topic) => (
+        topic.state.userIds.some((userId) => slackIdSet.has(userId))
+      ))
+
+      // Build user ID to name mapping
       const allUserIds = new Set<string>()
-      for (const t of topics) t.userIds.forEach((id: string) => allUserIds.add(id))
+      for (const topic of userTopics) {
+        topic.state.userIds.forEach((id) => allUserIds.add(id))
+      }
+
       const users = allUserIds.size > 0
         ? await db
             .select({ id: slackUserTable.id, realName: slackUserTable.realName })
             .from(slackUserTable)
             .where(inArray(slackUserTable.id, Array.from(allUserIds)))
         : []
-      const nameById = new Map(users.map((u) => [u.id, u.realName || u.id]))
-      const myIds = new Set(slackIdList)
-      const lastName = (full: string) => {
-        const parts = full.trim().split(/\s+/)
-        return parts.length > 1 ? parts[parts.length - 1] : parts[0]
-      }
-      const topicsWithNames = topics.map((t) => {
-        const me = t.userIds.filter((id: string) => myIds.has(id)).map((id: string) => nameById.get(id) || id)
-        const others = t.userIds.filter((id: string) => !myIds.has(id)).map((id: string) => nameById.get(id) || id)
-          .sort((a, b) => lastName(a).localeCompare(lastName(b)))
-        return { ...t, participantNames: [...me, ...others] }
-      })
 
-      return c.json({ topics: topicsWithNames })
+      const userNameMap: Record<string, string> = {}
+      for (const user of users) {
+        userNameMap[user.id] = user.realName || user.id
+      }
+
+      return c.json({ topics: userTopics, userNameMap })
     } catch (error) {
       console.error('Error fetching user topics:', error)
       return c.json({ error: 'Internal server error' }, 500)
@@ -161,9 +157,6 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     const topicId = c.req.param('topicId')
 
     try {
-      // Import the dumpTopic utility
-      const { dumpTopic } = await import('../utils')
-
       // Get user's linked Slack accounts
       const linkedSlackIds = await db
         .select({ slackId: accountTable.accountId })
@@ -174,25 +167,14 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         ))
       const userSlackIds = new Set(linkedSlackIds.map((s) => s.slackId))
 
-      // Check access against the topic's user list
-      const [topicRow] = await db
-        .select({ userIds: topicTable.userIds })
-        .from(topicTable)
-        .where(eq(topicTable.id, topicId))
-        .limit(1)
+      // Return only data visible to the current user's Slack accounts (messages/channels only)
+      const topicData = await dumpTopic(topicId, { visibleToUserIds: Array.from(userSlackIds) })
 
-      if (!topicRow) {
-        return c.json({ error: 'Not found' }, 404)
-      }
-
-      const topicUserIds = new Set(topicRow.userIds)
-      const hasAccess = [...userSlackIds].some((id) => topicUserIds.has(id))
-      if (!hasAccess) {
+      // If the user has no messages visible, they can't access this topic
+      if (topicData.messages.length < 1) {
         return c.json({ error: 'Forbidden' }, 403)
       }
 
-      // Return only data visible to the current user's Slack accounts (messages/channels only)
-      const topicData = await dumpTopic(topicId, { visibleToUserIds: Array.from(userSlackIds) })
       return c.json(topicData)
     } catch (error) {
       console.error('Error fetching topic data:', error)

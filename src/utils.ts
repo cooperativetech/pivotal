@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-import { eq, inArray, and, sql, lt, isNotNull } from 'drizzle-orm'
+import { eq, desc, inArray, and, sql, lt, isNotNull, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { CronJob } from 'cron'
 import { RRuleTemporal } from 'rrule-temporal'
@@ -16,28 +16,112 @@ import type {
   SlackUserInsert,
   SlackChannelInsert,
   UserDataInsert,
-  AutoMessage } from './db/schema/main'
+  AutoMessage,
+  TopicStateInsert,
+} from './db/schema/main'
 import {
   slackMessageTable,
   topicTable,
+  topicStateTable,
   slackUserTable,
   slackChannelTable,
   userDataTable,
   autoMessageTable,
 } from './db/schema/main'
-import type { TopicData, TopicRes } from '@shared/api-types'
+import type { TopicData, TopicDataRes } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { handleSlackMessage } from './slack-message-handler'
 import { getOrCreateChannelForUsers } from './local-helpers'
-import type { AutoMessageDeactivation } from '@shared/api-types'
+import type { AutoMessageDeactivation, TopicWithState } from '@shared/api-types'
 import type { WebClient } from '@slack/web-api'
 
 export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
 }
 
+export async function getTopicWithState(topicId: string): Promise<TopicWithState> {
+  // Get the topic along with its most recent state
+  const [row] = await db
+    .select()
+    .from(topicTable)
+    .innerJoin(topicStateTable, eq(topicTable.id, topicStateTable.topicId))
+    .where(eq(topicTable.id, topicId))
+    .orderBy(desc(topicStateTable.createdAt))
+    .limit(1)
+
+  if (!row) {
+    throw new Error(`Topic with id ${topicId} not found`)
+  }
+
+  return {
+    ...row.topic,
+    state: row.topic_state,
+  }
+}
+
+export async function getTopics(botUserId: string | null = null, onlyActive: boolean = false): Promise<TopicWithState[]> {
+  const filters = []
+  if (botUserId) {
+    filters.push(eq(topicTable.botUserId, botUserId))
+  }
+  if (onlyActive) {
+    filters.push(eq(topicStateTable.isActive, true))
+  }
+
+  const latestStateSubquery = db
+    .select({ maxDate: max(topicStateTable.createdAt) })
+    .from(topicStateTable)
+    .where(eq(topicStateTable.topicId, topicTable.id))
+
+  const rows = await db
+    .select()
+    .from(topicTable)
+    .innerJoin(
+      topicStateTable,
+      and(
+        eq(topicTable.id, topicStateTable.topicId),
+        eq(topicStateTable.createdAt, latestStateSubquery),
+      ),
+    )
+    .where(and(...filters))
+    .orderBy(desc(topicStateTable.createdAt))
+
+  return rows.map((row) => ({
+    ...row.topic,
+    state: row.topic_state,
+  }))
+}
+
+export async function updateTopicState(
+  topic: TopicWithState,
+  updates: Partial<Omit<TopicStateInsert, 'id' | 'topicId' | 'createdByMessageId' | 'createdAt'>>,
+  messageId: string,
+): Promise<TopicWithState> {
+  // Don't pass the current state id or createdAt when creating the new state
+  const {
+    id: _id,
+    createdAt: _createdAt,
+    ...currentState
+  } = topic.state
+
+  // Create new topic state by merging current state with updates
+  const [newTopicState] = await db
+    .insert(topicStateTable)
+    .values({
+      ...currentState,
+      ...updates,
+      createdByMessageId: messageId,
+    })
+    .returning()
+
+  // Return the updated topic with new state
+  return {
+    ...topic,
+    state: newTopicState,
+  }
+}
 
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
@@ -52,15 +136,7 @@ export type GetTopicReq = z.infer<typeof GetTopicReq>
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
   const { lastMessageId, visibleToUserId, visibleToUserIds, beforeRawTs } = options
 
-  const [topic] = await db
-    .select()
-    .from(topicTable)
-    .where(eq(topicTable.id, topicId))
-    .limit(1)
-
-  if (!topic) {
-    throw new Error(`Topic with id ${topicId} not found`)
-  }
+  const topic = await getTopicWithState(topicId)
 
   // Build the messages query with optional channel filtering
   let messages: SlackMessage[]
@@ -118,19 +194,19 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
   }
 
   // Fetch users that are referenced in the topic
-  const users = topic.userIds.length > 0
+  const users = topic.state.userIds.length > 0
     ? await db
         .select()
         .from(slackUserTable)
-        .where(inArray(slackUserTable.id, topic.userIds))
+        .where(inArray(slackUserTable.id, topic.state.userIds))
     : []
 
   // Fetch userData for users referenced in the topic
-  const userData = topic.userIds.length > 0
+  const userData = topic.state.userIds.length > 0
     ? await db
         .select()
         .from(userDataTable)
-        .where(inArray(userDataTable.slackUserId, topic.userIds))
+        .where(inArray(userDataTable.slackUserId, topic.state.userIds))
     : []
 
   // Fetch unique channel IDs from messages
@@ -143,7 +219,7 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
     : []
 
   const result: TopicData = {
-    topic: topic,
+    topic,
     messages,
     users,
     userData,
@@ -155,10 +231,10 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
 
 export async function loadTopics(jsonData: string): Promise<{ topicIds: string[] }> {
   // Parse string input if needed
-  const parsedData = JSON.parse(jsonData) as TopicRes | TopicRes[]
+  const parsedData = JSON.parse(jsonData) as TopicDataRes | TopicDataRes[]
 
   // Normalize to array with Date objects
-  const topicReqsArray: TopicRes[] = Array.isArray(parsedData) ? parsedData : [parsedData]
+  const topicReqsArray: TopicDataRes[] = Array.isArray(parsedData) ? parsedData : [parsedData]
   const topicsArray: TopicData[] = topicReqsArray.map((topicRes) => unserializeTopicData(topicRes))
 
   const topicIds: string[] = []
