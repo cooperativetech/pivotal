@@ -13,6 +13,7 @@ interface Topic {
   createdAt: string
   updatedAt: string
   userIds: string[]
+  participantNames?: string[]
 }
 
 interface Profile {
@@ -168,7 +169,11 @@ function Home() {
               </div>
 
               <div className="text-sm text-gray-600">
-                <div>Users: {topic.userIds.length}</div>
+                <div>
+                  Users: {topic.participantNames && topic.participantNames.length > 0
+                    ? topic.participantNames.join(', ')
+                    : topic.userIds.length}
+                </div>
                 <div>Created: {new Date(topic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
               </div>
             </Link>

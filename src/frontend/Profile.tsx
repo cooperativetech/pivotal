@@ -12,6 +12,7 @@ interface UserProfile {
     id: string
     realName: string | null
     teamId: string
+    teamName?: string | null
   }>
 }
 
@@ -110,7 +111,7 @@ export default function Profile() {
           <ul className="list-none p-0 my-4">
             {profile.slackAccounts.map((account) => (
               <li key={account.id} className="py-2 border-b border-gray-100">
-                <strong>{account.realName || account.id}</strong> (Team: {account.teamId})
+                <strong>{account.realName || account.id}</strong> (Team: {account.teamName || account.teamId})
               </li>
             ))}
           </ul>
