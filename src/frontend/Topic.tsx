@@ -613,7 +613,7 @@ function Topic() {
                             </div>
                           </div>
                         </div>
-                        {!isBot && isLatestOverall && (
+                        {isLocalMode && !isBot && isLatestOverall && (
                           <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
                             <button
                               onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
@@ -630,7 +630,7 @@ function Topic() {
                 </div>
 
                 {/* Chat Bar for DM Channels */}
-                {isDM && isViewingLatest && (
+                {isLocalMode && isDM && isViewingLatest && (
                   <div className="mt-2 -mx-2 -mb-2">
                     <div className="flex">
                       <input

@@ -34,11 +34,7 @@ createRoot(document.getElementById('root')!).render(
                 <Topic />
               </ProtectedRoute>
             } />
-            <Route path="create-topic" element={
-              <ProtectedRoute>
-                <TopicCreation />
-              </ProtectedRoute>
-            } />
+            {/* Webapp does not support creating topics; available in /local */}
           </Route>
 
           {/* Local/testing routes - only available in development */}

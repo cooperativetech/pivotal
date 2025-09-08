@@ -111,14 +111,7 @@ function Home() {
     <div className="min-h-screen flex flex-col items-center px-4 py-8">
       <div className="w-full max-w-6xl">
         <h1 className="text-3xl font-bold mb-6 text-center">Topics</h1>
-        <div className="flex justify-center mb-4">
-          <Link
-            to="/create-topic"
-            className="block w-full max-w-2xl px-4 py-2 bg-green-600 text-white text-center rounded-lg shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200 font-medium"
-          >
-            + New Topic
-          </Link>
-        </div>
+        {/* New topic creation is only available in local testing UI */}
 
         {topics.length === 0 ? (
           <div className="text-center py-8">
