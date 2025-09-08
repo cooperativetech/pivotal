@@ -209,6 +209,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 
 5. Scheduling is done
   - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
+  - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and an optional title. The system will use this to send a calendar invite from the meeting leader.
 
 - Miscellaneous actions needed
   - Sometimes you need to ask for clarification, provide updates, or handle edge cases
@@ -310,6 +311,11 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
+  "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
+    "start": "2025-03-12T18:00:00Z", // ISO string
+    "end": "2025-03-12T18:30:00Z",   // ISO string
+    "title": "Weekly sync"           // Optional
+  },
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
