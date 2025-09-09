@@ -1,33 +1,41 @@
 import { z } from 'zod'
 
-import { Agent, run } from './agent-sdk'
+import { Agent, run, tool } from './agent-sdk'
 import { CalendarEvent } from '@shared/api-types'
+
+const CalendarOutput = z.strictObject({
+  events: z.array(CalendarEvent).describe('Array of calendar events with ISO timestamps and timezone offsets'),
+})
+
+// Create a tool for generating calendar events with strict validation
+const generateCalendarEvents = tool({
+  name: 'generateCalendarEvents',
+  description: 'Generate realistic calendar events for a person based on their profession and industry',
+  parameters: CalendarOutput,
+  strict: true,
+  execute: (output) => output,
+})
 
 const fakeCalendarAgent = new Agent({
   name: 'fakeCalendarAgent',
   model: 'anthropic/claude-sonnet-4',
+  toolUseBehavior: { stopAtToolNames: ['generateCalendarEvents'] },
   modelSettings: {
     temperature: 1, // Increase temperature for calendar diversity
+    toolChoice: 'required',
   },
-  outputType: z.strictObject({
-    items: z.array(CalendarEvent),
-  }),
-  instructions: `Generate calendar events for a person's work schedule in JSON format.
+  tools: [generateCalendarEvents],
+  outputType: CalendarOutput,
+  instructions: `You are a calendar event generator. Generate realistic calendar events for a person's work schedule.
 
 Guidelines:
 - Generate events mostly on weekdays, during work hours in the user's timezone (work hours depend on role / industry)
 - Don't over-schedule - aim for maximum 60-70% calendar density during work hours, and much less calendar density on weekends, or depending on role / industry
+- Make sure all timestamps are in ISO 8601 format with the correct timezone offset
+- Events should be relevant to the person's profession and industry
+- Include a mix of meetings, work blocks, and other professional activities
 
-Return ONLY a JSON array of objects with this structure:
-[
-  {
-    "start": "2024-01-15T09:00:00-08:00",
-    "end": "2024-01-15T09:30:00-08:00",
-    "summary": "Team Standup"
-  }
-]
-
-Make sure all timestamps are in ISO 8601 format with the correct timezone offset.`,
+Use the generateCalendarEvents tool with your generated events. The tool expects an array of calendar events with proper ISO timestamps and timezone offsets.`,
 })
 
 /**
@@ -74,12 +82,12 @@ The person is an ${randomAdjective} ${randomProfession} working in ${randomIndus
   try {
     const result = await run(fakeCalendarAgent, userPrompt)
     if (!result.finalOutput) {
-      throw new Error('No finalOutput generated')
+      throw new Error('No output generated')
     }
-    return result.finalOutput.items
+
+    return result.finalOutput.events
   } catch (error) {
     console.error('Error generating fake calendar events:', error)
+    return []
   }
-
-  return []
 }
