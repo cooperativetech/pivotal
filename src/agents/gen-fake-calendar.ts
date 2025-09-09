@@ -81,7 +81,6 @@ The person is an ${randomAdjective} ${randomProfession} working in ${randomIndus
 
   try {
     const result = await run(fakeCalendarAgent, userPrompt)
-    
     if (!result.finalOutput) {
       throw new Error('No output generated')
     }
