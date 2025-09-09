@@ -12,13 +12,22 @@ brew install pnpm
 pnpm install
 ```
 
-Install `mkcert`, and use it to create a locally trusted CA certificate, which allows us to run our local server using https. This is necessary to authenticate with slack, which requires https for its redirect URLs.
+Install `mkcert`, and use it to create a locally trusted CA certificate, which allows us to run our local server using https. This is necessary to authenticate with slack, which requires https for its redirect URLs. On MacOS, follow the following instructions:
 ```
 brew install mkcert
 brew install nss  # if you use Firefox
 mkcert -install
 pnpm run cert
 ```
+
+To install on Linux, run the following:
+
+```
+sudo apt install mkcert
+mkcert -install
+```
+
+If running on WSL, you also need to trust this in the Windows partition. First, copy the file (which will usually be in ```/usr/local/share/ca-certificates```) over to the Windows partition. Then, double-click to open the certification, and install it to ```Trusted Root Certification Authorities```.
 
 Set the following env vars to their proper values (e.g. in your ~/.bashrc):
 ```
