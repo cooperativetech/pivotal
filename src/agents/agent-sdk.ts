@@ -26,6 +26,7 @@ const langfuse = new Langfuse({
   secretKey: process.env.PV_LANGFUSE_SECRET_KEY,
   baseUrl: process.env.PV_LANGFUSE_BASE_URL,
 })
+
 const tracingExporter = new LangfuseTracingExporter(langfuse)
 const traceProcessor = new BatchTraceProcessor(tracingExporter, { maxBatchSize: 1 })
 
