@@ -1,3 +1,6 @@
+// Load environment variables from .env early (no external deps)
+import './load-env'
+
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { serve } from '@hono/node-server'
@@ -8,7 +11,7 @@ import { readFileSync } from 'fs'
 
 import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
+import { GoogleAuthCallbackReq, handleGoogleAuthCallback, generateBotAuthUrl } from './calendar-service'
 import { startAutoMessageCron } from './utils'
 import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
@@ -44,6 +47,12 @@ const app = new Hono()
   })
 
   .route('/api', apiRoutes)
+
+  // One-time admin route to authorize the bot calendar (grabs refresh token)
+  .get('/admin/google/bot/connect', (c) => {
+    const url = generateBotAuthUrl()
+    return c.redirect(url)
+  })
 
   // Only serve local_api if we're running the server locally
   .route('/local_api', isLocalEnv() ? localRoutes : new Hono())

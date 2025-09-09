@@ -1,8 +1,10 @@
-import { defineConfig } from 'drizzle-kit'
 import fs from 'fs'
 import path from 'path'
 
-// Best-effort load of .env for CLI usage (migrations)
+/**
+ * Minimal .env loader to avoid adding a dependency.
+ * Loads variables from project root .env if they are not already set.
+ */
 (function loadDotEnv() {
   try {
     const envPath = path.resolve(process.cwd(), '.env')
@@ -22,22 +24,8 @@ import path from 'path'
         process.env[key] = val
       }
     }
-  } catch {}
+  } catch {
+    // Best-effort only; ignore errors
+  }
 })()
 
-const dbUrl = process.env.PV_DB_URL!.includes('localhost')
-  ? process.env.PV_DB_URL!
-  : process.env.PV_DB_URL! + '?sslmode=no-verify'
-
-export default defineConfig({
-  out: './src/db/migrations',
-  schema: './src/db/schema',
-  dialect: 'postgresql',
-  casing: 'snake_case',
-  dbCredentials: {
-    url: dbUrl,
-  },
-  migrations: {
-    schema: 'public',
-  },
-})
