@@ -3,82 +3,29 @@ import { z } from 'zod'
 import { Agent, run, tool } from './agent-sdk'
 import { CalendarEvent } from '@shared/api-types'
 
-interface ToolCallItem {
-  type: string
-  rawItem?: {
-    name?: string
-    arguments?: string
-    type?: string
-    status?: string
-    providerData?: Record<string, unknown>
-    id?: string
-    output?: string
-  }
-}
-
-interface ToolResult {
-  state?: {
-    _generatedItems?: unknown[]
-  }
-}
-
-interface ToolArguments {
-  events: unknown
-}
-
-/**
- * Extract calendar events from a tool-based agent result
- * @param toolResult - The result from running an agent with generateCalendarEvents tool
- * @returns Array of CalendarEvent objects, or null if extraction fails
- */
-function extractCalendarEvents(toolResult: ToolResult): CalendarEvent[] | null {
-  try {
-    const generatedItems = toolResult.state?._generatedItems || []
-
-    // Look for direct tool call item
-    const toolCallItem = generatedItems.find((item: unknown) => {
-      const typedItem = item as ToolCallItem
-      return typedItem.type === 'tool_call_item' &&
-        typedItem.rawItem?.name === 'generateCalendarEvents'
-    }) as ToolCallItem | undefined
-
-    if (toolCallItem?.rawItem?.arguments) {
-      const toolArgs = JSON.parse(toolCallItem.rawItem.arguments) as ToolArguments
-      const events = toolArgs.events
-      // Validate events against CalendarEvent schema
-      const validatedEvents = z.array(CalendarEvent).parse(events)
-      return validatedEvents
-    }
-
-    return null
-  } catch (error) {
-    console.error('Error extracting calendar events:', error)
-    return null
-  }
-}
+const CalendarOutput = z.strictObject({
+  events: z.array(CalendarEvent).describe('Array of calendar events with ISO timestamps and timezone offsets'),
+})
 
 // Create a tool for generating calendar events with strict validation
 const generateCalendarEvents = tool({
   name: 'generateCalendarEvents',
   description: 'Generate realistic calendar events for a person based on their profession and industry',
-  parameters: z.object({
-    events: z.array(CalendarEvent).describe('Array of calendar events with ISO timestamps and timezone offsets'),
-  }),
+  parameters: CalendarOutput,
   strict: true,
-  execute: ({ events }) => {
-    return { success: true, count: events.length }
-    // TODO: Get this to return just events, not this whole object
-  },
+  execute: (output) => output,
 })
 
 const fakeCalendarAgent = new Agent({
   name: 'fakeCalendarAgent',
   model: 'anthropic/claude-sonnet-4',
+  toolUseBehavior: { stopAtToolNames: ['generateCalendarEvents'] },
   modelSettings: {
     temperature: 1, // Increase temperature for calendar diversity
-    'toolChoice': 'required',
+    toolChoice: 'required',
   },
   tools: [generateCalendarEvents],
+  outputType: CalendarOutput,
   instructions: `You are a calendar event generator. Generate realistic calendar events for a person's work schedule.
 
 Guidelines:
@@ -134,13 +81,12 @@ The person is an ${randomAdjective} ${randomProfession} working in ${randomIndus
 
   try {
     const result = await run(fakeCalendarAgent, userPrompt)
-    const events = extractCalendarEvents(result)
-
-    if (!events) {
-      throw new Error('Failed to extract calendar events from tool result')
+    
+    if (!result.finalOutput) {
+      throw new Error('No output generated')
     }
 
-    return events
+    return result.finalOutput.events
   } catch (error) {
     console.error('Error generating fake calendar events:', error)
     return []
