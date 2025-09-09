@@ -46,14 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           token: sessionData.data.session.token,
         }
         setSession(sessionInfo)
-        // Store in sessionStorage for API client to use
-        window.sessionStorage.setItem('auth-session', JSON.stringify(sessionInfo))
-      } else {
-        window.sessionStorage.removeItem('auth-session')
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      window.sessionStorage.removeItem('auth-session')
     } finally {
       setLoading(false)
     }
@@ -63,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authClient.signOut()
       setSession(null)
-      window.sessionStorage.removeItem('auth-session')
     } catch (error) {
       console.error('Sign out failed:', error)
     }
