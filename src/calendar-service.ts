@@ -5,11 +5,27 @@ import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
+import { userDataTable, slackUserTable, topicTable, calendarEventTable, type Topic } from './db/schema/main'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
+
+function isBotSenderEnabled(): boolean {
+  return process.env.PV_INVITES_SENDER === 'bot' && !!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN
+}
+
+function getBotCalendarId(): string {
+  return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
+}
+
+function buildOAuthClient() {
+  return new google.auth.OAuth2(
+    process.env.PV_GOOGLE_CLIENT_ID,
+    process.env.PV_GOOGLE_CLIENT_SECRET,
+    GOOGLE_AUTH_REDIRECT_URI,
+  )
+}
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -143,6 +159,10 @@ export async function shouldShowCalendarButtons(
   topicId: string,
   userId: string,
 ): Promise<boolean> {
+  // In bot-sender mode, never prompt users to connect calendars
+  if (process.env.PV_INVITES_SENDER === 'bot') {
+    return false
+  }
   // Fetch user context and topic data in parallel for efficiency
   const [userContext, hasBeenPrompted] = await Promise.all([
     getUserContext(userId),
@@ -251,6 +271,27 @@ export const GoogleAuthCallbackReq = z.strictObject({
 })
 export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
 
+/**
+ * Generate OAuth URL for bot authorization (one-time admin step).
+ */
+export function generateBotAuthUrl(): string {
+  const scope = [
+    'https://www.googleapis.com/auth/calendar.events',
+  ].join(' ')
+
+  const params = new URLSearchParams({
+    client_id: process.env.PV_GOOGLE_CLIENT_ID!,
+    redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
+    response_type: 'code',
+    scope,
+    state: 'bot',
+    access_type: 'offline',
+    prompt: 'consent',
+  })
+
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+}
+
 export async function handleGoogleAuthCallback(
   c: Context,
   queryParams: GoogleAuthCallbackReq,
@@ -272,6 +313,23 @@ export async function handleGoogleAuthCallback(
     }
 
     try {
+      // Support both user-auth (for availability) and bot-auth (organizer) flows
+      if (state === 'bot') {
+        const tokens = await exchangeGoogleAuthCodeForTokens(code)
+        // Show the refresh token so operator can set PV_GOOGLE_BOT_REFRESH_TOKEN
+        const refresh = tokens.refresh_token || ''
+        return c.html(`
+          <html>
+            <body>
+              <h2>Bot Calendar Authorized</h2>
+              <p>Copy this refresh token into your environment as PV_GOOGLE_BOT_REFRESH_TOKEN:</p>
+              <pre style="white-space: pre-wrap; word-wrap: break-word; padding: 12px; background: #f5f5f5; border: 1px solid #ddd;">${refresh}</pre>
+              <p>Then restart the app. No user calendars will be used for sending invites.</p>
+            </body>
+          </html>
+        `)
+      }
+
       await fetchAndStoreGoogleAuthTokens(code, state, slackClient)
 
       return c.html(`
@@ -339,6 +397,31 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string,
 
   // Continue scheduling workflow after successful token storage
   await continueSchedulingWorkflow(topicId, slackUserId, slackClient)
+}
+
+/**
+ * Exchange OAuth authorization code for tokens (no storage).
+ */
+async function exchangeGoogleAuthCodeForTokens(code: string): Promise<GoogleAuthTokenResponse> {
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: process.env.PV_GOOGLE_CLIENT_ID!,
+      client_secret: process.env.PV_GOOGLE_CLIENT_SECRET!,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to exchange code for tokens: ${error}`)
+  }
+  return await response.json() as GoogleAuthTokenResponse
 }
 
 /**
@@ -426,6 +509,160 @@ export async function createCalendarInviteFromLeader(
   } catch (error) {
     console.error('Error creating calendar invite:', error)
     return null
+  }
+}
+
+/**
+ * Create a Google Calendar event from the bot account and return links.
+ * Uses env-provided bot refresh token. Optionally suppresses emails (Slack-only mode).
+ */
+export async function createCalendarInviteFromBot(
+  topic: Topic,
+  finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
+): Promise<{ htmlLink?: string, meetLink?: string } | null> {
+  try {
+    if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) {
+      console.warn('Bot calendar not configured: PV_GOOGLE_BOT_REFRESH_TOKEN is missing')
+      return null
+    }
+
+    const oauth2Client = buildOAuthClient()
+    oauth2Client.setCredentials({
+      refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN,
+    })
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+    // Load attendee emails from Slack users in the topic (exclude bots / missing emails)
+    const attendees: { email: string }[] = []
+    const users = await db
+      .select()
+      .from(slackUserTable)
+    for (const user of users) {
+      if (topic.userIds.includes(user.id) && user.email) {
+        attendees.push({ email: user.email })
+      }
+    }
+
+    const requestId = `pivotal-${topic.id}-${Date.now()}`
+    const summary = finalizedEvent.title || topic.summary || 'Meeting'
+    const description = finalizedEvent.description || undefined
+
+    const insertRes = await calendar.events.insert({
+      calendarId: getBotCalendarId(),
+      requestBody: {
+        summary,
+        description,
+        start: { dateTime: new Date(finalizedEvent.start).toISOString() },
+        end: { dateTime: new Date(finalizedEvent.end).toISOString() },
+        location: finalizedEvent.location || undefined,
+        attendees,
+        conferenceData: {
+          createRequest: {
+            requestId,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
+      },
+      conferenceDataVersion: 1,
+      // Always email calendar invites to attendees
+      sendUpdates: 'all',
+    })
+
+    const event = insertRes.data
+    let meetLink: string | undefined
+    const entryPoints = event.conferenceData?.entryPoints
+    if (entryPoints && entryPoints.length > 0) {
+      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
+      meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    // Persist event metadata so we can reschedule/cancel later
+    try {
+      await db.insert(calendarEventTable).values({
+        topicId: topic.id,
+        provider: 'google',
+        calendarId: getBotCalendarId(),
+        eventId: event.id!,
+        iCalUID: event.iCalUID || undefined,
+        summary,
+        description: description || null,
+        location: finalizedEvent.location || null,
+        meetLink: meetLink || null,
+        htmlLink: event.htmlLink || null,
+        start: new Date(finalizedEvent.start),
+        end: new Date(finalizedEvent.end),
+        createdByUserId: topic.botUserId,
+      })
+    } catch (persistErr) {
+      console.error('Failed to persist calendar event metadata:', persistErr)
+    }
+
+    return { htmlLink: event.htmlLink || undefined, meetLink }
+  } catch (error) {
+    console.error('Error creating calendar invite from bot:', error)
+    return null
+  }
+}
+
+/** Reschedule the latest calendar event for a topic to new times and notify attendees. */
+export async function rescheduleCalendarEvent(
+  topicId: string,
+  newStartISO: string,
+  newEndISO: string,
+): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
+  try {
+    // Fetch most recent event for this topic
+    const [evt] = await db
+      .select()
+      .from(calendarEventTable)
+      .where(eq(calendarEventTable.topicId, topicId))
+      .orderBy(calendarEventTable.updatedAt)
+      .limit(1)
+
+    if (!evt) {
+      return { success: false }
+    }
+
+    const oauth2Client = buildOAuthClient()
+    oauth2Client.setCredentials({
+      refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN,
+    })
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+    const patchRes = await calendar.events.patch({
+      calendarId: evt.calendarId,
+      eventId: evt.eventId,
+      requestBody: {
+        start: { dateTime: new Date(newStartISO).toISOString() },
+        end: { dateTime: new Date(newEndISO).toISOString() },
+      },
+      sendUpdates: 'all',
+    })
+
+    const updated = patchRes.data
+    let meetLink: string | undefined
+    const entryPoints = updated.conferenceData?.entryPoints
+    if (entryPoints && entryPoints.length > 0) {
+      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
+      meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    // Update DB record
+    await db
+      .update(calendarEventTable)
+      .set({
+        start: new Date(newStartISO),
+        end: new Date(newEndISO),
+        htmlLink: updated.htmlLink || evt.htmlLink,
+        meetLink: meetLink || evt.meetLink || null,
+      })
+      .where(eq(calendarEventTable.id, evt.id))
+
+    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
+  } catch (err) {
+    console.error('Error rescheduling calendar event:', err)
+    return { success: false }
   }
 }
 

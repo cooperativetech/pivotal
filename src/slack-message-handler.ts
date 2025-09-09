@@ -2,11 +2,11 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
-import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
+import { topicTable, slackMessageTable, slackUserTable, slackChannelTable, calendarEventTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromLeader, getUserContext } from './calendar-service'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot, rescheduleCalendarEvent } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -517,65 +517,60 @@ export async function processSchedulingActions(
       }
     }
 
-    // Handle finalized event - create calendar invite
+    // Handle finalized event - create calendar invite (bot-only, no fallback)
     if (nextStep.finalizedEvent) {
       console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
 
-      // Determine the leader/organizer - use the first user in the topic who has calendar connected
-      // If no one has calendar connected, skip calendar invite creation
-      let organizerUserId: string | null = null
-      for (const userId of topic.userIds) {
-        const userContext = await getUserContext(userId)
-        if (userContext.googleAccessToken && userContext.googleAccessToken !== 'fake-token-for-eval') {
-          organizerUserId = userId
-          break
-        }
-      }
+      // If an event already exists for this topic, reschedule it; otherwise create a new one
+      const existing = (await db
+        .select()
+        .from(calendarEventTable)
+        .where(eq(calendarEventTable.topicId, topic.id))
+        .limit(1))[0]
 
-      if (organizerUserId) {
-        const calendarResult = await createCalendarInviteFromLeader(
-          topic,
-          organizerUserId,
-          nextStep.finalizedEvent,
-        )
-
-        if (calendarResult) {
-          // Send a message with the calendar invite link
-          let calendarMessage = 'Calendar invite sent! 📅'
-          if (calendarResult.meetLink) {
-            calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
-          }
-          if (calendarResult.htmlLink) {
-            calendarMessage += `\nView event: ${calendarResult.htmlLink}`
-          }
-
-          // Send to group channel if there's one, otherwise to the original channel
-          const targetChannel = nextStep.groupMessage ? message.channelId : message.channelId
-          const calendarResponse = await client.chat.postMessage({
-            channel: targetChannel,
-            thread_ts: message.rawTs,
-            text: calendarMessage,
-          })
-
-          // Save the calendar message to the database
-          if (calendarResponse.ok && calendarResponse.ts) {
-            const [createdMessage] = await db.insert(slackMessageTable).values({
-              topicId: topicId,
-              channelId: targetChannel,
-              userId: topic.botUserId,
-              text: calendarMessage,
-              timestamp: tsToDate(calendarResponse.ts),
-              rawTs: calendarResponse.ts,
-              threadTs: message.rawTs,
-              raw: calendarResponse.message,
-            }).returning()
-            createdMessages.push(createdMessage)
-          }
-        } else {
-          console.log('No calendar invite created - no user with valid calendar connection found')
+      let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+      if (existing) {
+        const result = await rescheduleCalendarEvent(topic.id, nextStep.finalizedEvent.start, nextStep.finalizedEvent.end)
+        if (result.success) {
+          calendarResult = { htmlLink: result.htmlLink, meetLink: result.meetLink }
         }
       } else {
-        console.log('No calendar invite created - no organizer with calendar connection found')
+        calendarResult = await createCalendarInviteFromBot(
+          topic,
+          nextStep.finalizedEvent,
+        )
+      }
+
+      if (calendarResult) {
+        // Send a message with only the Google Meet link
+        const actionWord = existing ? 'updated' : 'created'
+        let calendarMessage = `Calendar invite ${actionWord}! 📅`
+        if (calendarResult.meetLink) {
+          calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
+        }
+
+        const targetChannel = message.channelId
+        const calendarResponse = await client.chat.postMessage({
+          channel: targetChannel,
+          thread_ts: message.rawTs,
+          text: calendarMessage,
+        })
+
+        if (calendarResponse.ok && calendarResponse.ts) {
+          const [createdMessage] = await db.insert(slackMessageTable).values({
+            topicId: topicId,
+            channelId: targetChannel,
+            userId: topic.botUserId,
+            text: calendarMessage,
+            timestamp: tsToDate(calendarResponse.ts),
+            rawTs: calendarResponse.ts,
+            threadTs: message.rawTs,
+            raw: calendarResponse.message,
+          }).returning()
+          createdMessages.push(createdMessage)
+        }
+      } else {
+        console.log('No calendar invite created - bot credentials missing or failed')
       }
     }
 

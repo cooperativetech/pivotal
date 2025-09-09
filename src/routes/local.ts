@@ -11,6 +11,7 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
+import { createCalendarInviteFromBot, rescheduleCalendarEvent } from '../calendar-service'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -223,6 +224,62 @@ export const localRoutes = new Hono()
       return c.json({
         error: error instanceof Error ? error.message : 'Internal server error',
       }, 500)
+    }
+  })
+
+  // Create a test Meet link using the bot calendar (no emails sent)
+  .post('/test_meet', zValidator('json', z.strictObject({
+    start: z.string(),
+    end: z.string(),
+    title: z.string().optional(),
+    userIds: z.array(z.string()).optional(),
+  })), async (c) => {
+    const { start, end, title, userIds } = c.req.valid('json')
+    try {
+      const fakeTopic: Topic = {
+        id: `test-${Date.now()}`,
+        userIds: userIds || [],
+        botUserId: BOT_USER_ID,
+        summary: title || 'Test Meeting',
+        workflowType: 'scheduling',
+        isActive: true,
+        perUserContext: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const result = await createCalendarInviteFromBot(fakeTopic, {
+        start,
+        end,
+        title,
+      })
+
+      if (!result) {
+        return c.json({ error: 'Failed to create bot event. Check PV_GOOGLE_BOT_REFRESH_TOKEN and scopes.' }, 500)
+      }
+      return c.json(result)
+    } catch (error) {
+      console.error('Error creating test Meet:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Reschedule the most recent event for a topic (bot calendar)
+  .post('/topics/:topicId/reschedule', zValidator('json', z.strictObject({
+    start: z.string(),
+    end: z.string(),
+  })), async (c) => {
+    const { topicId } = c.req.param()
+    const { start, end } = c.req.valid('json')
+    try {
+      const result = await rescheduleCalendarEvent(topicId, start, end)
+      if (!result.success) {
+        return c.json({ error: 'Failed to reschedule event' }, 500)
+      }
+      return c.json(result)
+    } catch (error) {
+      console.error('Error in reschedule endpoint:', error)
+      return c.json({ error: 'Internal server error' }, 500)
     }
   })
 
