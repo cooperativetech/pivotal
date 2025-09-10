@@ -110,25 +110,36 @@ export class ConfirmationCheckAgent {
       modelSettings: {
         temperature: 0.1, // Low temperature for consistent classification
       },
-      instructions: `You are a confirmation detection agent. Analyze messages to determine if they are short confirmations of meeting suggestions or time proposals.
+      instructions: `You are a confirmation detection agent. Analyze messages to determine if they contain confirmation of meeting suggestions or time proposals.
 
-A confirmation message should be:
-- Brief and concise (typically 1-3 words or a short sentence)
-- Clearly indicating agreement, acceptance, or confirmation
-- Examples: "Yes", "Sounds good", "Works for me", "Perfect", "Agreed", "That works", "Confirmed"
-- NOT detailed responses, questions, or counter-proposals
+A confirmation message can be:
+- Brief responses like "Yes", "Sounds good", "Works for me", "Perfect", "Agreed", "That works", "Confirmed"
+- Longer messages that contain clear agreement to a specific meeting time, such as "Wednesday 10:00am-11:00am works perfectly for me"
+- Messages that accept a proposed meeting time even if they include additional context or information
+- Messages that say a specific time "works", is "perfect", they "agree", they "accept", etc.
+
+NOT confirmations:
+- Questions about meeting times
+- Counter-proposals suggesting different times
+- Requests for clarification
+- Messages that don't reference a specific meeting time or proposal
 
 Respond with exactly "TRUE" for confirmations, "FALSE" otherwise.`,
     })
   }
 
   async isConfirming(messageText: string): Promise<boolean> {
-    const prompt = `Analyze this message and determine if it is a SHORT confirmation of a meeting suggestion or time proposal.
+    const prompt = `Analyze this message and determine if it contains confirmation or acceptance of a meeting suggestion or time proposal.
 
 Message: "${messageText}"
 
+Look for:
+- Explicit agreement to a specific meeting time
+- Phrases indicating acceptance like "works for me", "perfect", "sounds good", "I agree", "that works"
+- Confirmation of a proposed time slot even if surrounded by other text
+
 Response format:
-- If this is a short confirmation: Return "TRUE"
+- If this message confirms or accepts a meeting time: Return "TRUE"
 - Otherwise: Return "FALSE"`
 
     try {
