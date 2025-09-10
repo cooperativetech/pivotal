@@ -1,5 +1,5 @@
 {
-  "id": "4108b9c6-e731-42af-b6a2-7065ef115b8d",
+  "id": "720a809f-ca80-410e-9f4c-de8ecf28af97",
   "prevId": "2a080f9d-e366-4ff1-8305-6a9d9f372375",
   "version": "7",
   "dialect": "postgresql",
@@ -387,6 +387,149 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
+=======
+    "public.calendar_event": {
+      "name": "calendar_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "topic_id": {
+          "name": "topic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'google'"
+        },
+        "calendar_id": {
+          "name": "calendar_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ical_uid": {
+          "name": "ical_uid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meet_link": {
+          "name": "meet_link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "html_link": {
+          "name": "html_link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start": {
+          "name": "start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end": {
+          "name": "end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "calendar_event_topic_id_topic_id_fk": {
+          "name": "calendar_event_topic_id_topic_id_fk",
+          "tableFrom": "calendar_event",
+          "tableTo": "topic",
+          "columnsFrom": [
+            "topic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "calendar_event_created_by_user_id_slack_user_id_fk": {
+          "name": "calendar_event_created_by_user_id_slack_user_id_fk",
+          "tableFrom": "calendar_event",
+          "tableTo": "slack_user",
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
     "public.slack_channel": {
       "name": "slack_channel",
       "schema": "",
@@ -580,8 +723,13 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.topic_state": {
       "name": "topic_state",
+=======
+    "public.topic": {
+      "name": "topic",
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
       "schema": "",
       "columns": {
         "id": {
@@ -591,12 +739,15 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+<<<<<<< HEAD
         "topic_id": {
           "name": "topic_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
+=======
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
         "user_ids": {
           "name": "user_ids",
           "type": "jsonb",
@@ -604,12 +755,31 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+<<<<<<< HEAD
+=======
+        "bot_user_id": {
+          "name": "bot_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
         "summary": {
           "name": "summary",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
+=======
+        "workflow_type": {
+          "name": "workflow_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'other'"
+        },
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
         "is_active": {
           "name": "is_active",
           "type": "boolean",
@@ -624,18 +794,22 @@
           "notNull": true,
           "default": "'{}'::jsonb"
         },
+<<<<<<< HEAD
         "created_by_message_id": {
           "name": "created_by_message_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
+=======
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+<<<<<<< HEAD
         }
       },
       "indexes": {},
@@ -699,6 +873,11 @@
         },
         "created_at": {
           "name": "created_at",
+=======
+        },
+        "updated_at": {
+          "name": "updated_at",
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,

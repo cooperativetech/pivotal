@@ -98,25 +98,3 @@ export const autoMessageTable = pgTable('auto_message', {
 })
 export type AutoMessageInsert = InferInsertModel<typeof autoMessageTable>
 export type AutoMessage = InferSelectModel<typeof autoMessageTable>
-
-// Store calendar events created by the bot so we can update/cancel later
-export const calendarEventTable = pgTable('calendar_event', {
-  id: uuid().primaryKey().defaultRandom(),
-  topicId: uuid().notNull().references(() => topicTable.id),
-  provider: text().notNull().default('google'),
-  calendarId: text('calendar_id').notNull(),
-  eventId: text('event_id').notNull(),
-  iCalUID: text('ical_uid'),
-  summary: text(),
-  description: text(),
-  location: text(),
-  meetLink: text('meet_link'),
-  htmlLink: text('html_link'),
-  start: timestamp({ withTimezone: true }).notNull(),
-  end: timestamp({ withTimezone: true }).notNull(),
-  createdByUserId: text('created_by_user_id').references(() => slackUserTable.id),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-})
-export type CalendarEventInsert = InferInsertModel<typeof calendarEventTable>
-export type CalendarEventRow = InferSelectModel<typeof calendarEventTable>

@@ -6,8 +6,13 @@ import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
+<<<<<<< HEAD
 import { userDataTable, slackUserTable, calendarEventTable } from './db/schema/main'
 import type { TopicWithState, UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
+=======
+import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
+import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
@@ -541,27 +546,6 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
-    // Persist event metadata so we can reschedule/cancel later
-    try {
-      await db.insert(calendarEventTable).values({
-        topicId: topic.id,
-        provider: 'google',
-        calendarId: getBotCalendarId(),
-        eventId: event.id!,
-        iCalUID: event.iCalUID || undefined,
-        summary,
-        description: description || null,
-        location: finalizedEvent.location || null,
-        meetLink: meetLink || null,
-        htmlLink: event.htmlLink || null,
-        start: new Date(finalizedEvent.start),
-        end: new Date(finalizedEvent.end),
-        createdByUserId: topic.botUserId,
-      })
-    } catch (persistErr) {
-      console.error('Failed to persist calendar event metadata:', persistErr)
-    }
-
     return { htmlLink: event.htmlLink || undefined, meetLink }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
@@ -569,6 +553,7 @@ export async function createCalendarInviteFromBot(
   }
 }
 
+<<<<<<< HEAD
 // Rescheduling helpers (database-backed)
 
 /**
@@ -634,6 +619,8 @@ export async function tryRescheduleTaggedEvent(
   }
 }
 
+=======
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 /**
  * Fetch calendar events for a user and store in user context
  * This caches calendar data for the LLM to use during scheduling

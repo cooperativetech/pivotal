@@ -2,11 +2,19 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
+<<<<<<< HEAD
 import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, getUserContext, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromLeader, createCalendarInviteFromBot, tryRescheduleTaggedEvent } from './calendar-service'
+=======
+import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
+import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
+import { and, eq, ne, sql } from 'drizzle-orm'
+import { tsToDate } from './utils'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot } from './calendar-service'
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -497,6 +505,7 @@ export async function processSchedulingActions(
     if (nextStep.finalizedEvent) {
       console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
 
+<<<<<<< HEAD
       const start = new Date(nextStep.finalizedEvent.start)
       const end = new Date(nextStep.finalizedEvent.end)
 
@@ -552,6 +561,20 @@ export async function processSchedulingActions(
         const header = title ? `Calendar event ${actionWord} for “${title}”! 📅` : `Calendar event ${actionWord}! 📅`
         let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
         if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
+=======
+      // Always create a new invite via bot
+      const calendarResult = await createCalendarInviteFromBot(
+        topic,
+        nextStep.finalizedEvent,
+      )
+
+      if (calendarResult) {
+        // Send a message with only the Google Meet link
+        let calendarMessage = 'Calendar invite created! 📅'
+        if (calendarResult.meetLink) {
+          calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
+        }
+>>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 
         const targetChannel = message.channelId
         const calendarResponse = await client.chat.postMessage({
