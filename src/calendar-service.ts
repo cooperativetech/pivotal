@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import db from './db/engine'
 import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
-import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
+import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext, ScheduledEvent } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
@@ -557,6 +557,12 @@ export async function createCalendarInviteFromBot(
         end: { dateTime: new Date(finalizedEvent.end).toISOString() },
         location: finalizedEvent.location || undefined,
         attendees,
+        extendedProperties: {
+          private: {
+            pv_topic_id: topic.id,
+            pv_request_id: requestId,
+          },
+        },
         conferenceData: {
           createRequest: {
             requestId,
@@ -577,11 +583,156 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
+    // Store lightweight event details in topic context for the bot
+    try {
+      const sched: ScheduledEvent = {
+        provider: 'google',
+        calendarId: getBotCalendarId(),
+        eventId: event.id!,
+        iCalUID: event.iCalUID || undefined,
+        start: new Date(finalizedEvent.start).toISOString(),
+        end: new Date(finalizedEvent.end).toISOString(),
+        title: summary,
+        meetLink: meetLink || null,
+        status: 'scheduled',
+      }
+      await upsertTopicScheduledEvent(topic.id, topic.botUserId, sched)
+    } catch (persistErr) {
+      console.error('Failed to update topic scheduledEvents:', persistErr)
+    }
+
     return { htmlLink: event.htmlLink || undefined, meetLink }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
     return null
   }
+}
+
+/**
+ * Find the most relevant Google Calendar event for a topic using extendedProperties tags.
+ */
+async function findTaggedEventForTopic(topicId: string) {
+  if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return null
+
+  const oauth2Client = buildOAuthClient()
+  oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+  // Use privateExtendedProperty filter to find events tagged with this topic id
+  const res = await calendar.events.list({
+    calendarId: getBotCalendarId(),
+    privateExtendedProperty: `pv_topic_id=${topicId}`,
+    showDeleted: false,
+    maxResults: 50,
+    singleEvents: true,
+    orderBy: 'startTime',
+    timeMin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(), // search last 30 days
+    timeMax: new Date(Date.now() + 1000 * 60 * 60 * 24 * 400).toISOString(), // and up to ~1y ahead
+  })
+
+  const items = res.data.items || []
+  if (items.length === 0) return null
+
+  // Prefer the next upcoming event; otherwise the most recently updated
+  const now = new Date()
+  const upcoming = items
+    .map((e) => ({
+      e,
+      start: new Date(e.start?.dateTime || e.start?.date || 0),
+      end: new Date(e.end?.dateTime || e.end?.date || 0),
+      updated: e.updated ? new Date(e.updated) : new Date(0),
+    }))
+    .filter((x) => x.end >= now)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  if (upcoming.length > 0) return upcoming[0].e
+
+  // Fallback: most recently updated
+  items.sort((a, b) => new Date(b.updated || 0).getTime() - new Date(a.updated || 0).getTime())
+  return items[0]
+}
+
+/**
+ * Attempt to reschedule a previously created (tagged) event for this topic. Returns true if updated.
+ */
+export async function tryRescheduleTaggedEvent(
+  topicId: string,
+  newStartISO: string,
+  newEndISO: string,
+): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }> {
+  try {
+    const event = await findTaggedEventForTopic(topicId)
+    if (!event || !event.id) return { success: false }
+
+    const oauth2Client = buildOAuthClient()
+    oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+    const patchRes = await calendar.events.patch({
+      calendarId: getBotCalendarId(),
+      eventId: event.id,
+      requestBody: {
+        start: { dateTime: new Date(newStartISO).toISOString() },
+        end: { dateTime: new Date(newEndISO).toISOString() },
+      },
+      sendUpdates: 'all',
+    })
+
+    const updated = patchRes.data
+    let meetLink: string | undefined
+    const entryPoints = updated.conferenceData?.entryPoints
+    if (entryPoints && entryPoints.length > 0) {
+      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
+      meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    // Update topic context memory
+    try {
+      const sched: ScheduledEvent = {
+        provider: 'google',
+        calendarId: getBotCalendarId(),
+        eventId: event.id,
+        iCalUID: event.iCalUID || undefined,
+        start: new Date(newStartISO).toISOString(),
+        end: new Date(newEndISO).toISOString(),
+        title: updated.summary || undefined,
+        meetLink: meetLink || null,
+        status: 'scheduled',
+      }
+      // We need botUserId to write perUserContext; fetch topic to get botUserId
+      const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId)).limit(1)
+      if (topic) {
+        await upsertTopicScheduledEvent(topicId, topic.botUserId, sched)
+      }
+    } catch (persistErr) {
+      console.error('Failed to update scheduledEvents after reschedule:', persistErr)
+    }
+
+    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
+  } catch (err) {
+    console.error('Error trying to reschedule tagged event:', err)
+    return { success: false }
+  }
+}
+
+/** Upsert a scheduled event in the topic's perUserContext[botUserId].scheduledEvents */
+async function upsertTopicScheduledEvent(topicId: string, botUserId: string, newEvent: ScheduledEvent) {
+  // Load topic
+  const [topic] = await db.select().from(topicTable).where(eq(topicTable.id, topicId)).limit(1)
+  if (!topic) return
+
+  const botCtx: TopicUserContext = topic.perUserContext[botUserId] || {}
+  const list = Array.isArray(botCtx.scheduledEvents) ? [...botCtx.scheduledEvents] as ScheduledEvent[] : []
+
+  const idx = list.findIndex((e) => (e.eventId && e.eventId === newEvent.eventId) || (e.iCalUID && newEvent.iCalUID && e.iCalUID === newEvent.iCalUID))
+  if (idx >= 0) {
+    // Update keeping provider/ids
+    list[idx] = { ...list[idx], ...newEvent }
+  } else {
+    list.push(newEvent)
+  }
+
+  await updateTopicUserContext(topicId, botUserId, { scheduledEvents: list })
 }
 
 /**

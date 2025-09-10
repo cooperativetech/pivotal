@@ -4,9 +4,9 @@ import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, eq, ne, sql, or } from 'drizzle-orm'
 import { tsToDate } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot } from './calendar-service'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot, tryRescheduleTaggedEvent } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -521,15 +521,23 @@ export async function processSchedulingActions(
     if (nextStep.finalizedEvent) {
       console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
 
-      // Always create a new invite via bot
-      const calendarResult = await createCalendarInviteFromBot(
-        topic,
-        nextStep.finalizedEvent,
-      )
+      // Try to reschedule a previously created (tagged) event; if none found, create a new one
+      let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+      const res = await tryRescheduleTaggedEvent(topic.id, nextStep.finalizedEvent.start, nextStep.finalizedEvent.end)
+      let actionWord = 'created'
+      if (res.success) {
+        actionWord = 'updated'
+        calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
+      } else {
+        calendarResult = await createCalendarInviteFromBot(
+          topic,
+          nextStep.finalizedEvent,
+        )
+      }
 
       if (calendarResult) {
         // Send a message with only the Google Meet link
-        let calendarMessage = 'Calendar invite created! 📅'
+        let calendarMessage = `Calendar invite ${actionWord}! 📅`
         if (calendarResult.meetLink) {
           calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
         }
@@ -561,10 +569,17 @@ export async function processSchedulingActions(
 
     // Mark topic as inactive if requested
     if (nextStep.markTopicInactive) {
-      await db.update(topicTable)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(topicTable.id, topicId))
-      console.log('Workflow topic marked as inactive:', topicId)
+      // For scheduling topics, keep the topic open unless the user explicitly asks to close/cancel.
+      const lower = message.text.toLowerCase()
+      const explicitClose = /(done|all set|close (this )?topic|finished|cancel meeting|cancel it|we're done)/i.test(lower)
+      if (topic.workflowType !== 'scheduling' || explicitClose) {
+        await db.update(topicTable)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(eq(topicTable.id, topicId))
+        console.log('Workflow topic marked as inactive:', topicId)
+      } else {
+        console.log('Ignoring markTopicInactive for scheduling topic to allow rescheduling')
+      }
     }
   } catch (error) {
     console.error('Error processing topic actions:', error)
@@ -581,6 +596,30 @@ async function getOrCreateTopic(
   // Ensure we have required fields
   if (!('text' in message && message.text && message.ts && message.channel)) {
     return null
+  }
+
+  // Thread-first routing: if this message is in a thread, try to attach to the topic
+  // that owns that thread (even if the topic has since been marked inactive).
+  if ('thread_ts' in message && message.thread_ts) {
+    try {
+      // Look for any message that has this thread timestamp either as its own rawTs (root)
+      // or saved as threadTs (replies) and take its topicId.
+      const candidates = await db
+        .select({ topicId: slackMessageTable.topicId, timestamp: slackMessageTable.timestamp })
+        .from(slackMessageTable)
+        .where(
+          or(
+            eq(slackMessageTable.threadTs, message.thread_ts),
+            eq(slackMessageTable.rawTs, message.thread_ts),
+          ),
+        )
+        .orderBy(slackMessageTable.timestamp)
+      if (candidates.length > 0) {
+        return candidates[0].topicId
+      }
+    } catch (err) {
+      console.warn('Thread-first routing lookup failed:', err)
+    }
   }
 
   // For bot messages, we need to check differently since they don't have a user field

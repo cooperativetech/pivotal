@@ -208,7 +208,8 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Return replyMessage with confirmation
 
 5. Scheduling is done
-  - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
+  - Keep the topic open for follow-ups and rescheduling by default.
+  - ONLY set markTopicInactive: true when the user explicitly says to close/finish/cancel (e.g., "done", "all set", "close this", "cancel the meeting").
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and an optional title. The system will use this to send a calendar invite from the meeting leader.
 
 - Miscellaneous actions needed
@@ -326,6 +327,36 @@ IMPORTANT:
 
   const { topic, userMap, callingUserTimezone } = runContext.context
 
+  // Additional concise rules to make rescheduling smooth
+  const rescheduleAddendum = `
+
+## Rescheduling Behavior (Important)
+- If there is exactly ONE scheduled meeting in this topic and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
+- If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification listing the options by day/time. If the message clearly references a specific day/time, pick that one directly.
+- To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
+`
+
+  // Summarize any scheduled events stored in topic context (bot-scoped)
+  const botCtx = topic.perUserContext[topic.botUserId] as any
+  const scheduledEvents = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents as Array<{ start?: string; end?: string; title?: string | null }> : []
+
+  const formatEvent = (e: { start?: string; end?: string; title?: string | null }) => {
+    if (!e?.start || !e?.end) return null
+    const start = new Date(e.start)
+    const end = new Date(e.end)
+    const startStr = formatTimestampWithTimezone(start, callingUserTimezone)
+    const isSameDay = start.toDateString() === end.toDateString()
+    const endStr = isSameDay
+      ? end.toLocaleString('en-US', { timeZone: callingUserTimezone || 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })
+      : formatTimestampWithTimezone(end, callingUserTimezone)
+    const title = e.title ? ` — ${e.title}` : ''
+    return `  - ${startStr} to ${endStr}${title}`
+  }
+
+  const scheduledSection = scheduledEvents.length > 0
+    ? `\nCurrent Scheduled Events (in this topic):\n${scheduledEvents.map(formatEvent).filter(Boolean).join('\n')}`
+    : ''
+
   const userMapAndTopicInfo = `
 ${userMap && userMap.size > 0 ? `User Directory:
 ${Array.from(userMap.entries())
@@ -362,11 +393,11 @@ ${await Promise.all(topic.userIds.map(async (userId) => {
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
 Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
-Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone)}`
+Last updated: ${formatTimestampWithTimezone(topic.updatedAt, callingUserTimezone)}${scheduledSection}`
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 
-  return mainPrompt + userMapAndTopicInfo
+  return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
 }
 
 export const schedulingAgent = new ConversationAgent({

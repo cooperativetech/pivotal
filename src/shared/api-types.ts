@@ -43,6 +43,8 @@ export interface UserContext {
 export interface TopicUserContext {
   calendarPrompted?: boolean
   calendarManualOverrides?: CalendarEvent[]
+  // Events scheduled by the bot for this topic (lightweight, topic-scoped memory)
+  scheduledEvents?: ScheduledEvent[]
 }
 
 export interface AutoMessageDeactivation {
@@ -83,4 +85,17 @@ export function unserializeTopicData(topicRes: TopicRes): TopicData {
     })),
     channels: topicRes.channels,
   }
+}
+
+// Lightweight representation of a scheduled calendar event stored in topic context
+export interface ScheduledEvent {
+  provider: 'google'
+  calendarId: string
+  eventId: string
+  iCalUID?: string | null
+  start: string // ISO
+  end: string   // ISO
+  title?: string | null
+  meetLink?: string | null
+  status?: 'scheduled' | 'canceled'
 }
