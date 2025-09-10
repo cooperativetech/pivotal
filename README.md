@@ -26,7 +26,7 @@ mkcert -install
 pnpm run cert
 ```
 
-If running on WSL, you also need to trust this in the Windows partition. First, copy the file (which will usually be in ```/usr/local/share/ca-certificates```) over to the Windows partition. Then, double-click to open the certification, and install it to ```Trusted Root Certification Authorities```.
+If running on WSL, you also need to trust this in the Windows partition. First, copy the files (which are generated in ```pivotal/.cert```) over to the Windows partition. Then, double-click to open the certification, and install it to ```Trusted Root Certification Authorities```.
 
 Set the following env vars to their proper values (e.g. in your ~/.bashrc):
 ```

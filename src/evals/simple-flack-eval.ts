@@ -258,7 +258,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
     console.log(`${firstAgent.name} has no initial message to send`)
     throw new Error('First agent must have an initial message to start conversation')
   }
-
+  
   console.log(`${firstAgent.name}: ${initialMessage}`)
 
   // Send initial message through local API
