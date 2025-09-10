@@ -49,16 +49,6 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
   return userAgentMap
 }
 
-// Check if user agent is confirming a meeting suggestion
-async function isConfirmingMeetingSuggestion(messageText: string): Promise<boolean> {
-  return await confirmationCheckAgent.isConfirming(messageText)
-}
-
-// Extract suggested meeting time using Agent
-async function extractSuggestedTimeWithAgent(messageText: string): Promise<SimpleCalendarEvent | null> {
-  return await timeExtractionAgent.extractSuggestedTime(messageText)
-}
-
 // Process bot message responses and add them to appropriate agent buffers
 async function processBotMessages(messageResult: Record<string, unknown>, agents: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
@@ -73,7 +63,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, agents
 
     // Extract suggested event from this message using Agent
     if (!suggestedEvent) {
-      const extractedEvent = await extractSuggestedTimeWithAgent(resMessage.text as string)
+      const extractedEvent = await timeExtractionAgent.extractSuggestedTime(resMessage.text as string)
       if (extractedEvent) {
         suggestedEvent = extractedEvent
         console.log(`Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
@@ -209,7 +199,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
 
           // Check if this reply is confirming a meeting suggestion
           if (!confirmations[agent.name]) {
-            const isConfirmation = await isConfirmingMeetingSuggestion(reply)
+            const isConfirmation = await confirmationCheckAgent.isConfirming(reply)
             if (isConfirmation) {
               confirmations[agent.name] = true
               console.log(`  → Detected confirmation from ${agent.name}`)
