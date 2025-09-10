@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-import { BaseScheduleUser, confirmationCheckAgent, timeExtractionAgent } from './agents/user-agents'
+import { BaseScheduleUser } from './agents/user-agents'
+import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
 import type { SimpleCalendarEvent } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
