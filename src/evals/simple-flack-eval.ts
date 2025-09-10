@@ -5,24 +5,11 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-import { BaseScheduleUser } from './agents/user-agents'
+import { BaseScheduleUser, confirmationCheckAgent, timeExtractionAgent } from './agents/user-agents'
 import type { SimpleCalendarEvent } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
-
-// Initialize OpenRouter with API key from environment
-const apiKey = process.env.PV_OPENROUTER_API_KEY
-if (!apiKey) {
-  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
-}
-const openrouter = createOpenRouter({
-  apiKey,
-})
-
-const MODEL = 'google/gemini-2.5-flash'
 
 // Load benchmark data and create BaseScheduleUser agents using import functionality
 function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
@@ -64,103 +51,12 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
 
 // Check if user agent is confirming a meeting suggestion
 async function isConfirmingMeetingSuggestion(messageText: string): Promise<boolean> {
-  try {
-    const result = await generateText({
-      model: openrouter(MODEL),
-      prompt: `Analyze this message and determine if it is a SHORT confirmation of a meeting suggestion or time proposal. 
-
-A confirmation message should be:
-- Brief and concise (typically 1-3 words or a short sentence)
-- Clearly indicating agreement, acceptance, or confirmation
-- Examples of confirmations: "Yes", "Sounds good", "Works for me", "Perfect", "Agreed", "That works", "Confirmed"
-- NOT detailed responses, questions, or counter-proposals
-
-Message: "${messageText}"
-
-Response format:
-- If this is a short confirmation: Return "TRUE"
-- Otherwise: Return "FALSE"`,
-    })
-
-    const response = result.text.trim().toUpperCase()
-    return response === 'TRUE'
-  } catch (error) {
-    console.error('Error checking confirmation with LLM:', error)
-    return false
-  }
+  return await confirmationCheckAgent.isConfirming(messageText)
 }
 
-// Extract suggested meeting time using LLM
-async function extractSuggestedTimeWithLLM(messageText: string): Promise<SimpleCalendarEvent | null> {
-  try {
-    const currentDate = new Date()
-    const currentDateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
-    const currentYear = currentDate.getFullYear()
-    const currentMonth = currentDate.toLocaleString('en-US', { month: 'long' })
-
-    const result = await generateText({
-      model: openrouter(MODEL),
-      prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
-
-      For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
-
-      Message: "${messageText}"
-
-      Response format:
-      - If a meeting time is suggested: Return it in JSON format: {"start": "YYYY-MM-DDTHH:MM:SS±HH:MM", "end": "YYYY-MM-DDTHH:MM:SS±HH:MM", "summary": "Brief meeting description"}
-      - If no end time is specified, assume 1 hour duration
-      - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
-
-      Examples:
-      - "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
-      - "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`,
-    })
-
-    const response = result.text.trim()
-
-    if (response === 'NONE' || response.toLowerCase() === 'none') {
-      return null
-    }
-
-    // Try to parse the JSON response
-    try {
-      // Strip markdown code blocks if present
-      let jsonString = response
-      if (response.includes('```json')) {
-        const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n\s*```/)
-        if (jsonMatch) {
-          jsonString = jsonMatch[1]
-        }
-      } else if (response.includes('```')) {
-        const codeMatch = response.match(/```\s*\n([\s\S]*?)\n\s*```/)
-        if (codeMatch) {
-          jsonString = codeMatch[1]
-        }
-      }
-
-      const parsed = JSON.parse(jsonString.trim()) as Record<string, unknown>
-
-      const startDate = new Date(parsed.start as string)
-      const endDate = new Date(parsed.end as string)
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`Failed to parse suggested meeting times: ${jsonString}`)
-        return null
-      }
-
-      return {
-        start: startDate,
-        end: endDate,
-        summary: (parsed.summary as string) || 'Meeting',
-      }
-    } catch {
-      console.warn(`Failed to parse JSON response: ${response}`)
-      return null
-    }
-  } catch (error) {
-    console.error('Error extracting suggested time with LLM:', error)
-    return null
-  }
+// Extract suggested meeting time using Agent
+async function extractSuggestedTimeWithAgent(messageText: string): Promise<SimpleCalendarEvent | null> {
+  return await timeExtractionAgent.extractSuggestedTime(messageText)
 }
 
 // Process bot message responses and add them to appropriate agent buffers
@@ -175,9 +71,9 @@ async function processBotMessages(messageResult: Record<string, unknown>, agents
   for (const resMessage of messageResult.resMessages as Record<string, unknown>[]) {
     console.log(`Bot response: "${resMessage.text as string}"`)
 
-    // Extract suggested event from this message using LLM
+    // Extract suggested event from this message using Agent
     if (!suggestedEvent) {
-      const extractedEvent = await extractSuggestedTimeWithLLM(resMessage.text as string)
+      const extractedEvent = await extractSuggestedTimeWithAgent(resMessage.text as string)
       if (extractedEvent) {
         suggestedEvent = extractedEvent
         console.log(`Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
