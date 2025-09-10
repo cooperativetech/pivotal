@@ -141,6 +141,13 @@
       "when": 1756432705486,
       "tag": "0019_add_auto_message_table",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1757462148824,
+      "tag": "0020_chief_siren",
+      "breakpoints": true
     }
   ]
 }

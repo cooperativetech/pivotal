@@ -2,11 +2,11 @@ import type { GenericMessageEvent, BotMessageEvent } from '@slack/types'
 import type { UsersListResponse, WebClient } from '@slack/web-api'
 import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
-import { topicTable, slackMessageTable, slackUserTable, slackChannelTable, calendarEventTable } from './db/schema/main'
+import { topicTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot, rescheduleCalendarEvent } from './calendar-service'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, createCalendarInviteFromBot } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -521,30 +521,15 @@ export async function processSchedulingActions(
     if (nextStep.finalizedEvent) {
       console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
 
-      // If an event already exists for this topic, reschedule it; otherwise create a new one
-      const existing = (await db
-        .select()
-        .from(calendarEventTable)
-        .where(eq(calendarEventTable.topicId, topic.id))
-        .limit(1))[0]
-
-      let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
-      if (existing) {
-        const result = await rescheduleCalendarEvent(topic.id, nextStep.finalizedEvent.start, nextStep.finalizedEvent.end)
-        if (result.success) {
-          calendarResult = { htmlLink: result.htmlLink, meetLink: result.meetLink }
-        }
-      } else {
-        calendarResult = await createCalendarInviteFromBot(
-          topic,
-          nextStep.finalizedEvent,
-        )
-      }
+      // Always create a new invite via bot
+      const calendarResult = await createCalendarInviteFromBot(
+        topic,
+        nextStep.finalizedEvent,
+      )
 
       if (calendarResult) {
         // Send a message with only the Google Meet link
-        const actionWord = existing ? 'updated' : 'created'
-        let calendarMessage = `Calendar invite ${actionWord}! 📅`
+        let calendarMessage = 'Calendar invite created! 📅'
         if (calendarResult.meetLink) {
           calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
         }

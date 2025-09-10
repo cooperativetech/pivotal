@@ -5,7 +5,7 @@ import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable, topicTable, calendarEventTable, type Topic } from './db/schema/main'
+import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
@@ -577,92 +577,10 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
-    // Persist event metadata so we can reschedule/cancel later
-    try {
-      await db.insert(calendarEventTable).values({
-        topicId: topic.id,
-        provider: 'google',
-        calendarId: getBotCalendarId(),
-        eventId: event.id!,
-        iCalUID: event.iCalUID || undefined,
-        summary,
-        description: description || null,
-        location: finalizedEvent.location || null,
-        meetLink: meetLink || null,
-        htmlLink: event.htmlLink || null,
-        start: new Date(finalizedEvent.start),
-        end: new Date(finalizedEvent.end),
-        createdByUserId: topic.botUserId,
-      })
-    } catch (persistErr) {
-      console.error('Failed to persist calendar event metadata:', persistErr)
-    }
-
     return { htmlLink: event.htmlLink || undefined, meetLink }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
     return null
-  }
-}
-
-/** Reschedule the latest calendar event for a topic to new times and notify attendees. */
-export async function rescheduleCalendarEvent(
-  topicId: string,
-  newStartISO: string,
-  newEndISO: string,
-): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
-  try {
-    // Fetch most recent event for this topic
-    const [evt] = await db
-      .select()
-      .from(calendarEventTable)
-      .where(eq(calendarEventTable.topicId, topicId))
-      .orderBy(calendarEventTable.updatedAt)
-      .limit(1)
-
-    if (!evt) {
-      return { success: false }
-    }
-
-    const oauth2Client = buildOAuthClient()
-    oauth2Client.setCredentials({
-      refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN,
-    })
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
-
-    const patchRes = await calendar.events.patch({
-      calendarId: evt.calendarId,
-      eventId: evt.eventId,
-      requestBody: {
-        start: { dateTime: new Date(newStartISO).toISOString() },
-        end: { dateTime: new Date(newEndISO).toISOString() },
-      },
-      sendUpdates: 'all',
-    })
-
-    const updated = patchRes.data
-    let meetLink: string | undefined
-    const entryPoints = updated.conferenceData?.entryPoints
-    if (entryPoints && entryPoints.length > 0) {
-      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
-      meetLink = meeting.uri || meeting.label || undefined
-    }
-
-    // Update DB record
-    await db
-      .update(calendarEventTable)
-      .set({
-        start: new Date(newStartISO),
-        end: new Date(newEndISO),
-        htmlLink: updated.htmlLink || evt.htmlLink,
-        meetLink: meetLink || evt.meetLink || null,
-      })
-      .where(eq(calendarEventTable.id, evt.id))
-
-    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
-  } catch (err) {
-    console.error('Error rescheduling calendar event:', err)
-    return { success: false }
   }
 }
 

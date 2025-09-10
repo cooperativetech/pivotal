@@ -11,7 +11,7 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, rescheduleCalendarEvent } from '../calendar-service'
+import { createCalendarInviteFromBot } from '../calendar-service'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -260,25 +260,6 @@ export const localRoutes = new Hono()
       return c.json(result)
     } catch (error) {
       console.error('Error creating test Meet:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
-  // Reschedule the most recent event for a topic (bot calendar)
-  .post('/topics/:topicId/reschedule', zValidator('json', z.strictObject({
-    start: z.string(),
-    end: z.string(),
-  })), async (c) => {
-    const { topicId } = c.req.param()
-    const { start, end } = c.req.valid('json')
-    try {
-      const result = await rescheduleCalendarEvent(topicId, start, end)
-      if (!result.success) {
-        return c.json({ error: 'Failed to reschedule event' }, 500)
-      }
-      return c.json(result)
-    } catch (error) {
-      console.error('Error in reschedule endpoint:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })
