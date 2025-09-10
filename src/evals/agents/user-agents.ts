@@ -307,7 +307,7 @@ Examples:
           summary: (parsed.summary as string) || 'Meeting',
         }
       } catch {
-        console.warn(`Failed to parse JSON response: ${response}`)
+        console.warn(`No time extracted: ${response}`)
         return null
       }
     } catch (error) {
