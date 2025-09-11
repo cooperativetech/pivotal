@@ -5,12 +5,13 @@ import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile } from 'fs/promises'
 
-async function createBenchmark() {
-  // Define date range for fake calendars (in 3 days)
-  const startTime = new Date()
-  startTime.setDate(startTime.getDate() + 3)
-  const endTime = new Date()
-  endTime.setDate(startTime.getDate() + 4)
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number) {
+  // Define date range for fake calendars using offsets from January 1, 2025
+  const referenceDate = new Date('2025-01-01T00:00:00Z')
+  const startTime = new Date(referenceDate)
+  startTime.setDate(referenceDate.getDate() + startTimeOffset)
+  const endTime = new Date(referenceDate)
+  endTime.setDate(referenceDate.getDate() + endTimeOffset)
 
   // Agent names
   const agentNames = ['Alice', 'Bob']
@@ -38,5 +39,5 @@ async function createBenchmark() {
   return agents
 }
 
-// Run the async function
-createBenchmark().catch(console.error)
+// Run the async function with default offsets (equivalent to the previous behavior)
+createBenchmark(3, 7).catch(console.error)
