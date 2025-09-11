@@ -10,18 +10,25 @@ export interface SimpleCalendarEvent {
   summary: string
 }
 
+export interface HistoryMessage {
+  sender: 'bot' | 'user'
+  message: string
+}
+
 // Agent classes
 export class BaseScheduleUser implements UserProfile {
   name: string
   calendar: SimpleCalendarEvent[]
   goal: string
   message_buffer: string[]
+  history: HistoryMessage[]
 
   constructor(name?: string, goal?: string, calendar?: SimpleCalendarEvent[]) {
     this.name = name || ''
     this.calendar = calendar || []
     this.goal = goal || ''
     this.message_buffer = []
+    this.history = []
   }
 
   receive(message: string): void {
@@ -33,7 +40,27 @@ export class BaseScheduleUser implements UserProfile {
   }
 
   async reply_buffer(): Promise<string> {
-    return await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.message_buffer)
+    if (this.message_buffer.length === 0) {
+      return ''
+    }
+
+    // Generate reply using both message buffer and history context
+    const reply = await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.message_buffer, this.history)
+    
+    // Move messages from buffer to history as bot messages
+    for (const message of this.message_buffer) {
+      this.history.push({ sender: 'bot', message })
+    }
+    
+    // Clear the buffer after moving to history
+    this.message_buffer = []
+    
+    // Save the reply to history
+    if (reply) {
+      this.history.push({ sender: 'user', message: reply })
+    }
+    
+    return reply
   }
 
   async send_initial_message(): Promise<string> {
@@ -62,6 +89,7 @@ export class BaseScheduleUser implements UserProfile {
         summary: event.summary,
       })),
       message_buffer: this.message_buffer,
+      history: this.history,
     }
   }
 
@@ -75,6 +103,7 @@ export class BaseScheduleUser implements UserProfile {
 
     const user = new BaseScheduleUser(data.name as string, data.goal as string, calendar)
     user.message_buffer = (data.message_buffer as string[]) || []
+    user.history = (data.history as HistoryMessage[]) || []
     return user
   }
 }

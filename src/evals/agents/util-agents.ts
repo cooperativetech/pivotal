@@ -23,7 +23,7 @@ Guidelines:
     })
   }
 
-  async generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[]): Promise<string> {
+  async generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: import('./user-agents').HistoryMessage[]): Promise<string> {
     if (messageBuffer.length === 0) {
       return ''
     }
@@ -37,10 +37,18 @@ Guidelines:
       return `${start}-${end}: ${event.summary}`
     }).join(', ')
 
+    // Format conversation history
+    const historyText = history.length > 0 
+      ? history.map((h) => `${h.sender === 'bot' ? 'Bot' : userName}: ${h.message}`).join('\n')
+      : 'No previous conversation'
+
     const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\n\n` : ''
     const prompt = `You are ${userName}. ${goalContext}Your calendar: ${calendarText || 'Free all day'}
 
-Message history: ${messageBuffer.join(' | ')}
+Conversation history:
+${historyText}
+
+Current messages to respond to: ${messageBuffer.join(' | ')}
 
 Respond naturally to: "${latestMessage}"
 
