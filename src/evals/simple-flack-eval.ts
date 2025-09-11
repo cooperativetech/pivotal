@@ -14,9 +14,11 @@ import { unserializeTopicData } from '@shared/api-types'
 
 // Load benchmark data and create BaseScheduleUser agents using import functionality
 function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
-  const dataPath = join(__dirname, 'data', 'benchmark-2ppl-medbusy.json')
+  //const dataPath = join(__dirname, 'data', 'benchmark-2ppl-medbusy.json')
+  const dataPath = join(__dirname, 'data', 'benchmark_2agents_1start_2end_60min.json')
   const rawData = readFileSync(dataPath, 'utf-8')
-  const benchmarkData = JSON.parse(rawData) as Record<string, unknown>[]
+  const benchmarkFile = JSON.parse(rawData) as Record<string, unknown>
+  const benchmarkData = benchmarkFile.agents as Record<string, unknown>[]
 
   return benchmarkData.map((personData) => {
     return BaseScheduleUser.import(personData)

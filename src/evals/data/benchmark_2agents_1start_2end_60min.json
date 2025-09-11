@@ -1,0 +1,101 @@
+{
+  "benchmark": {
+    "startTimeOffset": 1,
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Team Standup - Learning Platform Team"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Deep Work: Interactive Learning Module Development"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Product Review: Math Visualization Tools"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Code Review: Student Assessment Engine"
+        },
+        {
+          "start": "2025-01-02T21:45:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Research: Gamification Best Practices"
+        },
+        {
+          "start": "2025-01-03T13:30:00.000Z",
+          "end": "2025-01-03T14:30:00.000Z",
+          "summary": "Weekly Planning & Architecture Review"
+        },
+        {
+          "start": "2025-01-03T15:00:00.000Z",
+          "end": "2025-01-03T16:30:00.000Z",
+          "summary": "Cross-functional Meeting: Teacher Dashboard Features"
+        },
+        {
+          "start": "2025-01-03T17:00:00.000Z",
+          "end": "2025-01-03T18:00:00.000Z",
+          "summary": "Lunch & Learn: Accessibility in Educational Software"
+        },
+        {
+          "start": "2025-01-03T19:00:00.000Z",
+          "end": "2025-01-03T21:00:00.000Z",
+          "summary": "Focused Development: Student Progress Analytics"
+        },
+        {
+          "start": "2025-01-03T21:30:00.000Z",
+          "end": "2025-01-03T22:00:00.000Z",
+          "summary": "1:1 with Engineering Manager"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Memorial Service Music Planning - Johnson Family"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Organ Practice - Bach Arrangements"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Consultation: Contemporary Memorial Music Options"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Memorial Service Performance - Thompson Celebration of Life"
+        },
+        {
+          "start": "2025-01-02T23:00:00.000Z",
+          "end": "2025-01-03T00:00:00.000Z",
+          "summary": "Composition Time - New Healing Hymn Arrangements"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}
