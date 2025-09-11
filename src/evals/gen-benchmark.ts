@@ -5,7 +5,7 @@ import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile } from 'fs/promises'
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number) {
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: string) {
   // Define date range for fake calendars using offsets from January 1, 2025
   const referenceDate = new Date('2025-01-01T00:00:00Z')
   const startTime = new Date(referenceDate)
@@ -24,7 +24,25 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number) {
   // Create agents list
   const agents: BaseScheduleUser[] = agentNames.map((name, index) => {
     const calendar = convertCalendarEventsToUserProfile(calendarEvents[index])
-    const goal = index === 0 ? 'Schedule a meeting' : ''
+    
+    // Only the first agent gets the scheduling goal
+    let goal = ''
+    if (index === 0) {
+      const otherAgentNames = agentNames.filter((_, i) => i !== index)
+      const startDateStr = startTime.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+      const endDateStr = endTime.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+      
+      goal = `Schedule a ${meetingLength} meeting between ${startDateStr} and ${endDateStr} with ${otherAgentNames.join(', ')}`
+    }
+    
     return new BaseScheduleUser(name, goal, calendar)
   })
 
@@ -39,5 +57,5 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number) {
   return agents
 }
 
-// Run the async function with default offsets (equivalent to the previous behavior)
-createBenchmark(3, 7).catch(console.error)
+// Run the async function with default parameters
+createBenchmark(3, 7, '1-hour').catch(console.error)
