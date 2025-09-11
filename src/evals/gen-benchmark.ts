@@ -68,9 +68,21 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   console.log('Created agents:')
   agents.forEach((agent) => console.log(`${agent.name}: ${agent.calendar.length} events`))
 
-  // Export agents to JSON file
+  // Export agents and benchmark parameters to JSON file
   const exportedAgents: Record<string, unknown>[] = agents.map((agent) => agent.export())
-  await writeFile('./src/evals/data/simple-benchmark.json', JSON.stringify(exportedAgents, null, 2))
+  const benchmark = {
+    startTimeOffset,
+    endTimeOffset,
+    meetingLength,
+    nAgents,
+  }
+  
+  const exportData = {
+    benchmark,
+    agents: exportedAgents,
+  }
+  
+  await writeFile('./src/evals/data/simple-benchmark.json', JSON.stringify(exportData, null, 2))
   console.log('Agents saved to simple-benchmark.json')
 
   return agents
