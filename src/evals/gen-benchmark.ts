@@ -82,8 +82,11 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     agents: exportedAgents,
   }
   
-  await writeFile('./src/evals/data/simple-benchmark.json', JSON.stringify(exportData, null, 2))
-  console.log('Agents saved to simple-benchmark.json')
+  // Create filename with benchmark parameters
+  const filename = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min.json`
+  
+  await writeFile(`./src/evals/data/${filename}`, JSON.stringify(exportData, null, 2))
+  console.log(`Agents saved to ${filename}`)
 
   return agents
 }
