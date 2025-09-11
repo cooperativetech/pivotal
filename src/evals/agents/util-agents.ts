@@ -158,6 +158,9 @@ A confirmation message can be:
 - Longer messages that contain clear agreement to a specific meeting time, such as "Wednesday 10:00am-11:00am works perfectly for me"
 - Messages that accept a proposed meeting time even if they include additional context or information
 - Messages that say a specific time "works", is "perfect", they "agree", they "accept", etc.
+- Messages expressing gratitude for scheduling coordination like "Thank you for coordinating this!"
+- Messages showing forward-looking acceptance like "I'm looking forward to meeting with X on [day/time]"
+- Messages that acknowledge successful scheduling even without explicit "yes"
 
 NOT confirmations:
 - Questions about meeting times
@@ -178,6 +181,9 @@ Look for:
 - Explicit agreement to a specific meeting time
 - Phrases indicating acceptance like "works for me", "perfect", "sounds good", "I agree", "that works"
 - Confirmation of a proposed time slot even if surrounded by other text
+- Expressions of gratitude for coordination like "thank you for coordinating", "thanks for setting this up"
+- Forward-looking statements like "looking forward to meeting", "see you on [day]"
+- Acknowledgment of successful scheduling without explicit agreement words
 
 Response format:
 - If this message confirms or accepts a meeting time: Return "TRUE"
