@@ -29,18 +29,24 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     let goal = ''
     if (index === 0) {
       const otherAgentNames = agentNames.filter((_, i) => i !== index)
-      const startDateStr = startTime.toLocaleDateString('en-US', { 
+      const startTimeStr = startTime.toLocaleString('en-US', { 
         weekday: 'long', 
         month: 'long', 
-        day: 'numeric' 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       })
-      const endDateStr = endTime.toLocaleDateString('en-US', { 
+      const endTimeStr = endTime.toLocaleString('en-US', { 
         weekday: 'long', 
         month: 'long', 
-        day: 'numeric' 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       })
       
-      goal = `Schedule a ${meetingLength} meeting between ${startDateStr} and ${endDateStr} with ${otherAgentNames.join(', ')}`
+      goal = `Schedule a ${meetingLength} meeting between ${startTimeStr} and ${endTimeStr} with ${otherAgentNames.join(', ')}`
     }
     
     return new BaseScheduleUser(name, goal, calendar)
