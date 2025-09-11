@@ -198,6 +198,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
     for (const agent of agents) {
       console.log(`${agent.name} buffer length: ${agent.message_buffer.length}`)
       if (agent.message_buffer.length > 0) {
+      //if (true) {
         const reply = await agent.reply_buffer()
 
         if (reply) {
