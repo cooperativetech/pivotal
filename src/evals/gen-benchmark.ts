@@ -92,4 +92,4 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 }
 
 // Run the async function with default parameters
-createBenchmark(3, 7, 60, 2).catch(console.error)
+createBenchmark(1, 2, 60, 2).catch(console.error)
