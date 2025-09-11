@@ -1,6 +1,43 @@
 import { Agent, run } from '../../agents/agent-sdk'
 import type { SimpleCalendarEvent } from './user-agents'
 
+// Helper function to format calendar events with date and time information
+function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {
+  const calendarText = calendar.map((event) => {
+    const startDate = event.start.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    })
+    const startTime = event.start.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    })
+    const endTime = event.end.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    })
+    
+    // Check if the event spans multiple days
+    const sameDay = event.start.toDateString() === event.end.toDateString()
+    
+    if (sameDay) {
+      return `${startDate} ${startTime}-${endTime}: ${event.summary}`
+    } else {
+      const endDate = event.end.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      })
+      return `${startDate} ${startTime} - ${endDate} ${endTime}: ${event.summary}`
+    }
+  }).join(', ')
+
+  return calendarText || 'Free all day'
+}
+
 // Agent for generating replies using Agent SDK
 export class GenerateReplyAgent {
   private agent: Agent
@@ -30,38 +67,8 @@ Guidelines:
 
     const latestMessage = messageBuffer[messageBuffer.length - 1]
     
-    // Format calendar with date and time information
-    const calendarText = calendar.map((event) => {
-      const startDate = event.start.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      })
-      const startTime = event.start.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
-      })
-      const endTime = event.end.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
-      })
-      
-      // Check if the event spans multiple days
-      const sameDay = event.start.toDateString() === event.end.toDateString()
-      
-      if (sameDay) {
-        return `${startDate} ${startTime}-${endTime}: ${event.summary}`
-      } else {
-        const endDate = event.end.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
-          day: 'numeric' 
-        })
-        return `${startDate} ${startTime} - ${endDate} ${endTime}: ${event.summary}`
-      }
-    }).join(', ')
+    // Format calendar using helper function
+    const calendarText = formatCalendarEvents(calendar)
 
     // Format conversation history
     const historyText = history.length > 0 
@@ -69,7 +76,7 @@ Guidelines:
       : 'No previous conversation'
 
     const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\n\n` : ''
-    const prompt = `You are ${userName}. ${goalContext}Your calendar: ${calendarText || 'Free all day'}
+    const prompt = `You are ${userName}. ${goalContext}Your calendar: ${calendarText}
 
 Conversation history:
 ${historyText}
