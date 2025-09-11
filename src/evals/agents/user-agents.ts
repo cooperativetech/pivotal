@@ -72,6 +72,21 @@ export class BaseScheduleUser implements UserProfile {
     for (const event of this.calendar) {
       // Two events intersect if one starts before the other ends
       if (scheduled.start < event.end && scheduled.end > event.start) {
+        // Log the conflicting meeting details
+        const eventStartTime = event.start.toLocaleString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })
+        const eventEndTime = event.end.toLocaleTimeString('en-US', { 
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })
+        console.log(`    Conflict: ${this.name} has "${event.summary}" from ${eventStartTime} to ${eventEndTime}`)
         return false // Intersection found, not possible
       }
     }
