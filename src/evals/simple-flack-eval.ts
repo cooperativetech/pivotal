@@ -55,6 +55,12 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
 // Process bot message responses and add them to appropriate agent buffers
 async function processBotMessages(messageResult: Record<string, unknown>, agents: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
+    console.log('⚠️ Bot did not reply - no resMessages in response')
+    return null
+  }
+
+  if (messageResult.resMessages.length === 0) {
+    console.log('⚠️ Bot did not reply - resMessages array is empty')
     return null
   }
 
