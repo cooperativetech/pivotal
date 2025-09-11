@@ -228,7 +228,7 @@ Response format:
 
     const prompt = `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
 
-For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
+For context, today is January 1, 2025.
 
 Message: "${messageText}"
 
