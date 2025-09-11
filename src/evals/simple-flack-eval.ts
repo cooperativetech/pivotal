@@ -13,14 +13,8 @@ import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 
 // Load benchmark data and create BaseScheduleUser agents using import functionality
-function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
-  //const dataPath = join(__dirname, 'data', 'benchmark-2ppl-medbusy.json')
-  const dataPath = join(__dirname, 'data', 'benchmark_2agents_1start_2end_60min.json')
-  const rawData = readFileSync(dataPath, 'utf-8')
-  const benchmarkFile = JSON.parse(rawData) as Record<string, unknown>
-  const benchmarkData = benchmarkFile.agents as Record<string, unknown>[]
-
-  return benchmarkData.map((personData) => {
+function loadAgentsFromBenchmarkData(benchmarkAgents: Record<string, unknown>[]): BaseScheduleUser[] {
+  return benchmarkAgents.map((personData) => {
     return BaseScheduleUser.import(personData)
   })
 }
@@ -286,10 +280,16 @@ async function runSimpleEvaluation(): Promise<void> {
   try {
     // Step 1: Clear database
     await clearDatabase()
-
-    // Step 2: Load agents from benchmark data
-    console.log('\nLoading agents from benchmark data...')
-    const agents = loadAgentsFromBenchmarkData()
+    
+    // Step 2: Load benchmark file and agents from benchmark data
+    console.log('\nLoading benchmark file...')
+    const dataPath = join(__dirname, 'data', 'benchmark_2agents_1start_2end_60min.json')
+    const rawData = readFileSync(dataPath, 'utf-8')
+    const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
+    const benchmarkAgents = benchmarkData.agents as Record<string, unknown>[]
+    
+    console.log('Loading agents from benchmark data...')
+    const agents = loadAgentsFromBenchmarkData(benchmarkAgents)
     console.log(`Loaded ${agents.length} agents:`)
     agents.forEach((agent) => {
       console.log(`  - ${agent.name}: ${agent.calendar.length} calendar events, goal: "${agent.goal}"`)
@@ -330,6 +330,23 @@ async function runSimpleEvaluation(): Promise<void> {
     // Check feasibility using eval_possibility
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
+      
+      // Check if meeting falls within benchmark time constraints
+      const benchmark = benchmarkData.benchmark as Record<string, unknown>
+      const benchmarkStartTime = new Date(benchmark.startTime as string)
+      const benchmarkEndTime = new Date(benchmark.endTime as string)
+      const meetingStart = result.suggestedEvent.start
+      const meetingEnd = result.suggestedEvent.end
+      
+      const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
+      console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
+      
+      if (!withinTimeRange) {
+        console.log(`    Benchmark range: ${benchmarkStartTime.toISOString()} to ${benchmarkEndTime.toISOString()}`)
+        console.log(`    Suggested meeting: ${meetingStart.toISOString()} to ${meetingEnd.toISOString()}`)
+      }
+      
+      // Check individual agent availability
       agents.forEach((agent) => {
         const canAttend = agent.eval_possibility(result.suggestedEvent!)
         console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)

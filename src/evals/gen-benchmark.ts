@@ -71,7 +71,9 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   // Export agents and benchmark parameters to JSON file
   const exportedAgents: Record<string, unknown>[] = agents.map((agent) => agent.export())
   const benchmark = {
+    startTime,
     startTimeOffset,
+    endTime,
     endTimeOffset,
     meetingLength,
     nAgents,
