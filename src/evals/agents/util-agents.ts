@@ -30,11 +30,37 @@ Guidelines:
 
     const latestMessage = messageBuffer[messageBuffer.length - 1]
     
-    // Format calendar simply
+    // Format calendar with date and time information
     const calendarText = calendar.map((event) => {
-      const start = event.start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-      const end = event.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-      return `${start}-${end}: ${event.summary}`
+      const startDate = event.start.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      })
+      const startTime = event.start.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      })
+      const endTime = event.end.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      })
+      
+      // Check if the event spans multiple days
+      const sameDay = event.start.toDateString() === event.end.toDateString()
+      
+      if (sameDay) {
+        return `${startDate} ${startTime}-${endTime}: ${event.summary}`
+      } else {
+        const endDate = event.end.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        })
+        return `${startDate} ${startTime} - ${endDate} ${endTime}: ${event.summary}`
+      }
     }).join(', ')
 
     // Format conversation history
