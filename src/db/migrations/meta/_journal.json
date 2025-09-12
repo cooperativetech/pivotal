@@ -148,6 +148,13 @@
       "when": 1757462148824,
       "tag": "0020_chief_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1757690554698,
+      "tag": "0021_slow_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

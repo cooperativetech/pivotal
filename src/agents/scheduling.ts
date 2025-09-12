@@ -5,6 +5,7 @@ import { tool } from './agent-sdk'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
+import type { TopicUserContext, ScheduledEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
 import { getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
@@ -337,8 +338,13 @@ IMPORTANT:
 `
 
   // Summarize any scheduled events stored in topic context (bot-scoped)
-  const botCtx = topic.perUserContext[topic.botUserId] as any
-  const scheduledEvents = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents as Array<{ start?: string; end?: string; title?: string | null }> : []
+  const botCtx: TopicUserContext = topic.perUserContext[topic.botUserId] || {}
+  const rawScheduled: ScheduledEvent[] = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents : []
+  const scheduledEvents: Array<{ start?: string; end?: string; title?: string | null }> = rawScheduled.map((e) => ({
+    start: e.start,
+    end: e.end,
+    title: e.title ?? null,
+  }))
 
   const formatEvent = (e: { start?: string; end?: string; title?: string | null }) => {
     if (!e?.start || !e?.end) return null

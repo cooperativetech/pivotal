@@ -1,5 +1,6 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
+import type { calendar_v3 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
@@ -11,9 +12,7 @@ import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
 
-function isBotSenderEnabled(): boolean {
-  return process.env.PV_INVITES_SENDER === 'bot' && !!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN
-}
+// Note: If PV_INVITES_SENDER === 'bot', we never prompt users to connect calendars.
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -621,7 +620,7 @@ async function findTaggedEventForTopic(topicId: string) {
   // Use privateExtendedProperty filter to find events tagged with this topic id
   const res = await calendar.events.list({
     calendarId: getBotCalendarId(),
-    privateExtendedProperty: `pv_topic_id=${topicId}`,
+    privateExtendedProperty: [`pv_topic_id=${topicId}`],
     showDeleted: false,
     maxResults: 50,
     singleEvents: true,
@@ -630,13 +629,14 @@ async function findTaggedEventForTopic(topicId: string) {
     timeMax: new Date(Date.now() + 1000 * 60 * 60 * 24 * 400).toISOString(), // and up to ~1y ahead
   })
 
-  const items = res.data.items || []
+  const items: calendar_v3.Schema$Event[] = res.data.items ?? []
   if (items.length === 0) return null
 
   // Prefer the next upcoming event; otherwise the most recently updated
   const now = new Date()
-  const upcoming = items
-    .map((e) => ({
+  type ListedEvent = { e: calendar_v3.Schema$Event; start: Date; end: Date; updated: Date }
+  const upcoming: ListedEvent[] = items
+    .map((e): ListedEvent => ({
       e,
       start: new Date(e.start?.dateTime || e.start?.date || 0),
       end: new Date(e.end?.dateTime || e.end?.date || 0),
@@ -648,7 +648,9 @@ async function findTaggedEventForTopic(topicId: string) {
   if (upcoming.length > 0) return upcoming[0].e
 
   // Fallback: most recently updated
-  items.sort((a, b) => new Date(b.updated || 0).getTime() - new Date(a.updated || 0).getTime())
+  items.sort((a: calendar_v3.Schema$Event, b: calendar_v3.Schema$Event) =>
+    new Date(b.updated ?? 0).getTime() - new Date(a.updated ?? 0).getTime(),
+  )
   return items[0]
 }
 

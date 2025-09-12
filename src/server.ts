@@ -1,5 +1,4 @@
-// Load environment variables from .env early (no external deps)
-import './load-env'
+// Environment variables must be exported by the shell/CI; no .env loader
 
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'

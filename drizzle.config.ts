@@ -1,33 +1,11 @@
 import { defineConfig } from 'drizzle-kit'
-import fs from 'fs'
-import path from 'path'
 
-// Best-effort load of .env for CLI usage (migrations)
-(function loadDotEnv() {
-  try {
-    const envPath = path.resolve(process.cwd(), '.env')
-    if (!fs.existsSync(envPath)) return
-    const content = fs.readFileSync(envPath, 'utf8')
-    for (const rawLine of content.split(/\r?\n/)) {
-      const line = rawLine.trim()
-      if (!line || line.startsWith('#')) continue
-      const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/)
-      if (!m) continue
-      const key = m[1]
-      let val = m[2].trim()
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith('\'') && val.endsWith('\''))) {
-        val = val.slice(1, -1)
-      }
-      if (process.env[key] === undefined) {
-        process.env[key] = val
-      }
-    }
-  } catch {}
-})()
+const url = process.env.PV_DB_URL
+if (!url) {
+  throw new Error('PV_DB_URL is required. Please export it in your shell (e.g., ~/.zshrc) or set it in CI.')
+}
 
-const dbUrl = process.env.PV_DB_URL!.includes('localhost')
-  ? process.env.PV_DB_URL!
-  : process.env.PV_DB_URL! + '?sslmode=no-verify'
+const dbUrl = url.includes('localhost') ? url : url + '?sslmode=no-verify'
 
 export default defineConfig({
   out: './src/db/migrations',
