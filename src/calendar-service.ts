@@ -1,12 +1,12 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
-import type { calendar_v3 } from 'googleapis'
+// import type { calendar_v3 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable, topicTable, calendarEventTable, type Topic } from './db/schema/main'
+import { userDataTable, slackUserTable, calendarEventTable } from './db/schema/main'
 import type { TopicWithState, UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
@@ -163,35 +163,19 @@ export async function shouldShowCalendarButtons(
  */
 export async function continueSchedulingWorkflow(topicId: string, slackUserId: string, slackClient: WebClient) {
   try {
-
-    // Load the specific topic
     const topic = await getTopicWithState(topicId)
+    if (!topic.state.isActive) throw new Error(`Topic ${topicId} is not active`)
 
-    if (!topic.state.isActive) {
-      throw new Error(`Topic ${topicId} is not active`)
-    }
+    // Open a DM with the user so follow-up lands in their inbox
+    const dm = await slackClient.conversations.open({ users: slackUserId })
+    const dmChannelId = dm.ok && dm.channel?.id ? dm.channel.id : 'synthetic'
 
-    // Get the user's name for the synthetic message
-    const [slackUser] = await db
-      .select({ realName: slackUserTable.realName })
-      .from(slackUserTable)
-      .where(eq(slackUserTable.id, slackUserId))
-      .limit(1)
-
-    const userName = slackUser?.realName
-    if (!userName) {
-      throw new Error(`User ${slackUserId} has no realName in database`)
-    }
-
-    console.log(`Continuing scheduling workflow for topic ${topicId} after calendar connection`)
-
-    // Create a synthetic SlackMessage record to trigger scheduling
     const syntheticSlackMessage = {
       id: `synthetic-${Date.now()}`,
       topicId,
-      channelId: 'synthetic',
+      channelId: dmChannelId,
       userId: slackUserId,
-      text: `${userName} connected their Google Calendar`,
+      text: 'Google Calendar connected',
       timestamp: new Date(),
       rawTs: (Date.now() / 1000).toString(),
       threadTs: null,
@@ -199,12 +183,7 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
       autoMessageId: null,
     }
 
-    // Process scheduling actions for this specific topic only
-    await processSchedulingActions(
-      topicId,
-      syntheticSlackMessage,
-      slackClient,
-    )
+    await processSchedulingActions(topicId, syntheticSlackMessage, slackClient)
   } catch (error) {
     console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
   }
@@ -368,6 +347,22 @@ export async function fetchAndStoreGoogleAuthTokens(code: string, state: string,
     googleTokenExpiryDate: expiryDate,
   })
 
+  // Update the original DM (if we stored a pointer) to show success and remove buttons
+  try {
+    const topic = await getTopicWithState(topicId)
+    const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
+    if (pointer?.channelId && pointer?.ts) {
+      await slackClient.chat.update({
+        channel: pointer.channelId,
+        ts: pointer.ts,
+        text: '✅ Calendar connected.',
+        blocks: [],
+      })
+    }
+  } catch (e) {
+    console.warn('Failed to update calendar prompt message after OAuth:', e)
+  }
+
   // Continue scheduling workflow after successful token storage
   await continueSchedulingWorkflow(topicId, slackUserId, slackClient)
 }
@@ -490,7 +485,7 @@ export async function createCalendarInviteFromLeader(
  * Uses env-provided bot refresh token. Optionally suppresses emails (Slack-only mode).
  */
 export async function createCalendarInviteFromBot(
-  topic: Topic,
+  topic: TopicWithState,
   finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
 ): Promise<{ htmlLink?: string, meetLink?: string } | null> {
   try {
@@ -508,17 +503,13 @@ export async function createCalendarInviteFromBot(
 
     // Load attendee emails from Slack users in the topic (exclude bots / missing emails)
     const attendees: { email: string }[] = []
-    const users = await db
-      .select()
-      .from(slackUserTable)
+    const users = await db.select().from(slackUserTable)
     for (const user of users) {
-      if (topic.userIds.includes(user.id) && user.email) {
-        attendees.push({ email: user.email })
-      }
+      if (topic.state.userIds.includes(user.id) && user.email) attendees.push({ email: user.email })
     }
 
     const requestId = `pivotal-${topic.id}-${Date.now()}`
-    const summary = finalizedEvent.title || topic.summary || 'Meeting'
+    const summary = finalizedEvent.title || topic.state.summary || 'Meeting'
     const description = finalizedEvent.description || undefined
 
     const insertRes = await calendar.events.insert({
@@ -578,54 +569,7 @@ export async function createCalendarInviteFromBot(
   }
 }
 
-/** Reschedule the latest calendar event for a topic to new times and notify attendees. */
-export async function rescheduleCalendarEvent(
-/**
- * Find the most relevant Google Calendar event for a topic using extendedProperties tags.
- */
-async function findTaggedEventForTopic(topicId: string) {
-  if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return null
-
-  const oauth2Client = buildOAuthClient()
-  oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
-  const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
-
-  // Use privateExtendedProperty filter to find events tagged with this topic id
-  const res = await calendar.events.list({
-    calendarId: getBotCalendarId(),
-    privateExtendedProperty: [`pv_topic_id=${topicId}`],
-    showDeleted: false,
-    maxResults: 50,
-    singleEvents: true,
-    orderBy: 'startTime',
-    timeMin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(), // search last 30 days
-    timeMax: new Date(Date.now() + 1000 * 60 * 60 * 24 * 400).toISOString(), // and up to ~1y ahead
-  })
-
-  const items: calendar_v3.Schema$Event[] = res.data.items ?? []
-  if (items.length === 0) return null
-
-  // Prefer the next upcoming event; otherwise the most recently updated
-  const now = new Date()
-  type ListedEvent = { e: calendar_v3.Schema$Event; start: Date; end: Date; updated: Date }
-  const upcoming: ListedEvent[] = items
-    .map((e): ListedEvent => ({
-      e,
-      start: new Date(e.start?.dateTime || e.start?.date || 0),
-      end: new Date(e.end?.dateTime || e.end?.date || 0),
-      updated: e.updated ? new Date(e.updated) : new Date(0),
-    }))
-    .filter((x) => x.end >= now)
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-
-  if (upcoming.length > 0) return upcoming[0].e
-
-  // Fallback: most recently updated
-  items.sort((a: calendar_v3.Schema$Event, b: calendar_v3.Schema$Event) =>
-    new Date(b.updated ?? 0).getTime() - new Date(a.updated ?? 0).getTime(),
-  )
-  return items[0]
-}
+// Rescheduling helpers (database-backed)
 
 /**
  * Attempt to reschedule a previously created (tagged) event for this topic. Returns true if updated.

@@ -47,6 +47,24 @@ export interface UserContext {
 export interface TopicUserContext {
   calendarPrompted?: boolean
   calendarManualOverrides?: CalendarEvent[]
+  // Pointer to the DM message where we showed calendar connect buttons
+  calendarPromptMessage?: { channelId: string, ts: string }
+  // Stores the scheduled event created for this topic (used for rescheduling)
+  scheduledEvent?: {
+    organizer: 'bot' | 'leader'
+    calendarId: string
+    eventId: string
+    meetLink?: string | null
+    title?: string | null
+  }
+  // Optional legacy/plural form used by some prompts/UI
+  scheduledEvents?: ScheduledEvent[]
+}
+
+export interface ScheduledEvent {
+  start?: string
+  end?: string
+  title?: string | null
 }
 
 export interface AutoMessageDeactivation {

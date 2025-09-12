@@ -5,8 +5,8 @@ import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
-import { tsToDate, getTopicWithState, getTopics, updateTopicState } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl } from './calendar-service'
+import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, getUserContext, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromLeader, createCalendarInviteFromBot, tryRescheduleTaggedEvent } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -320,58 +320,35 @@ export async function processSchedulingActions(
               await upsertSlackChannel(dmChannel.channel.id, [userId])
 
               let blocks = undefined
+              let dmText = messageGroup.text
 
               // Check if AI requested calendar buttons for this message
               if (messageGroup.includeCalendarButtons) {
-                // Check if this user should get calendar connection buttons
-                const shouldShow = await shouldShowCalendarButtons(topicId, userId)
+                let showButtons = await shouldShowCalendarButtons(topicId, userId)
+                if (!showButtons) {
+                  try {
+                    const connected = await isCalendarConnected(userId)
+                    if (connected) {
+                      dmText = '✅ Your Google Calendar is already connected.'
+                    } else {
+                      // Explicit ask overrides suppression/prior prompts
+                      showButtons = true
+                    }
+                  } catch {
+                    showButtons = true
+                  }
+                }
 
-                if (shouldShow) {
-                  // Generate OAuth URL for direct linking
+                if (showButtons) {
                   const authUrl = generateGoogleAuthUrl(topicId, userId)
-
-                  // Add calendar connection buttons using Block Kit format
                   blocks = [
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: 'To help with scheduling, you can connect your Google Calendar:',
-                      },
-                    },
-                    {
-                      type: 'actions',
-                      elements: [
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'Connect Google Calendar',
-                          },
-                          style: 'primary',
-                          url: authUrl, // Direct URL link for seamless UX
-                        },
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'Not now',
-                          },
-                          action_id: 'calendar_not_now',
-                        },
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: "Don't ask this again",
-                          },
-                          action_id: 'dont_ask_calendar_again',
-                        },
-                      ],
-                    },
+                    { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
+                    { type: 'actions', elements: [
+                      { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: authUrl },
+                      { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
+                      { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
+                    ] },
                   ]
-
-                  // Record that we've prompted this user for calendar connection
                   await addPromptedUser(topicId, userId, message.id)
                 }
               }
@@ -379,7 +356,7 @@ export async function processSchedulingActions(
               // Send the message with optional blocks
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
-                text: messageGroup.text,
+                text: dmText,
                 ...(blocks && { blocks }),
               })
 
@@ -396,6 +373,14 @@ export async function processSchedulingActions(
                   raw: dmResponse.message,
                 }).returning()
                 createdMessages.push(createdMessage)
+
+                if (blocks) {
+                  try {
+                    await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmChannel.channel.id, ts: dmResponse.ts } }, message.id)
+                  } catch (e) {
+                    console.warn('Failed to store calendarPromptMessage pointer:', e)
+                  }
+                }
               }
             }
           } catch (dmError) {
@@ -508,35 +493,65 @@ export async function processSchedulingActions(
       }
     }
 
-    // Handle finalized event - create calendar invite (bot-only, no fallback)
+    // Handle finalized event - prefer reschedule of bot-owned; else create (bot or leader)
     if (nextStep.finalizedEvent) {
       console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
 
-      // Determine the leader/organizer - use the first user in the topic who has calendar connected
-      // If no one has calendar connected, skip calendar invite creation
-      let organizerUserId: string | null = null
-      for (const userId of topic.state.userIds) {
-        const userContext = await getUserContext(userId)
-        if (userContext.googleAccessToken && userContext.googleAccessToken !== 'fake-token-for-eval') {
-          organizerUserId = userId
-          break
+      const start = new Date(nextStep.finalizedEvent.start)
+      const end = new Date(nextStep.finalizedEvent.end)
+
+      // First, attempt to reschedule a previously tagged bot-owned event
+      let actionWord: 'created' | 'updated' = 'created'
+      let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+      try {
+        const res = await tryRescheduleTaggedEvent(topic.id, nextStep.finalizedEvent.start, nextStep.finalizedEvent.end)
+        if (res.success) {
+          actionWord = 'updated'
+          calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
         }
+      } catch (e) {
+        console.warn('Reschedule attempt failed:', e)
       }
 
-      if (organizerUserId) {
-        const calendarResult = await createCalendarInviteFromLeader(
-          topic,
-          nextStep.finalizedEvent,
-        )
+      // If no existing event was rescheduled, try to create
+      if (!calendarResult) {
+        // Prefer bot-owned if configured; otherwise fall back to leader-owned
+        const botResult = await createCalendarInviteFromBot(topic, nextStep.finalizedEvent)
+        if (botResult) {
+          calendarResult = botResult
+        } else {
+          // Determine organizer with a connected calendar
+          let organizerUserId: string | null = null
+          for (const userId of topic.state.userIds) {
+            const userCtx = await getUserContext(userId)
+            if (userCtx.googleAccessToken && userCtx.googleAccessToken !== 'fake-token-for-eval') {
+              organizerUserId = userId
+              break
+            }
+          }
+          if (organizerUserId) {
+            calendarResult = await createCalendarInviteFromLeader(
+              topic,
+              organizerUserId,
+              nextStep.finalizedEvent,
+            )
+          }
+        }
       }
 
       if (calendarResult) {
-        // Send a message with only the Google Meet link
-        const actionWord = existing ? 'updated' : 'created'
-        let calendarMessage = `Calendar invite ${actionWord}! 📅`
-        if (calendarResult.meetLink) {
-          calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
-        }
+        // Build concise, timezone-aware confirmation
+        const tz = userMap.get(message.userId)?.tz || 'UTC'
+        const startStr = formatTimestampWithTimezone(start, tz)
+        const isSameDay = start.toDateString() === end.toDateString()
+        const endStr = isSameDay
+          ? end.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true })
+          : formatTimestampWithTimezone(end, tz)
+
+        const title = nextStep.finalizedEvent.title?.trim()
+        const header = title ? `Calendar event ${actionWord} for “${title}”! 📅` : `Calendar event ${actionWord}! 📅`
+        let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
+        if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
 
         const targetChannel = message.channelId
         const calendarResponse = await client.chat.postMessage({
@@ -559,7 +574,7 @@ export async function processSchedulingActions(
           createdMessages.push(createdMessage)
         }
       } else {
-        console.log('No calendar invite created - bot credentials missing or failed')
+        console.log('No calendar invite created - missing credentials or organizer')
       }
     }
 

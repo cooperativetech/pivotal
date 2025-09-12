@@ -23,7 +23,7 @@ export async function connectSlackClient(): Promise<WebClient> {
   })
 
   // Handle interactive components (buttons)
-  slackApp.action('dont_ask_calendar_again', async ({ ack, body, respond }) => {
+  slackApp.action('dont_ask_calendar_again', async ({ ack, body, respond, client }) => {
     try {
       // Acknowledge the button action (must be within 3s)
       await ack()
@@ -40,6 +40,21 @@ export async function connectSlackClient(): Promise<WebClient> {
         response_type: 'ephemeral',
       })
 
+      // Remove buttons from the original message
+      try {
+        type ActionBodyLike = {
+          channel?: { id?: string }
+          container?: { channel_id?: string, message_ts?: string }
+          message?: { ts?: string, text?: string }
+        }
+        const a = body as unknown as ActionBodyLike
+        const channelId = a.channel?.id || a.container?.channel_id
+        const ts = a.message?.ts || a.container?.message_ts
+        if (channelId && ts) await client.chat.update({ channel: channelId, ts, text: a.message?.text || 'Thanks!', blocks: [] })
+      } catch (e) {
+        console.warn('Failed to clear buttons after dont_ask_calendar_again:', e)
+      }
+
       console.log(`User ${userId} opted out of calendar prompts`)
     } catch (error) {
       console.error('Error handling dont_ask_calendar_again action:', error)
@@ -48,10 +63,22 @@ export async function connectSlackClient(): Promise<WebClient> {
   })
 
   // Handle "Not now" button - simple dismiss action
-  slackApp.action('calendar_not_now', async ({ ack }) => {
+  slackApp.action('calendar_not_now', async ({ ack, body, client }) => {
     await ack()
-    // Just acknowledge the action - message will be dismissed automatically
-    // User won't see buttons again in this topic (already tracked by addPromptedUser)
+    // Remove buttons to make the action transactional
+    try {
+      type ActionBodyLike = {
+        channel?: { id?: string }
+        container?: { channel_id?: string, message_ts?: string }
+        message?: { ts?: string, text?: string }
+      }
+      const a = body as unknown as ActionBodyLike
+      const channelId = a.channel?.id || a.container?.channel_id
+      const ts = a.message?.ts || a.container?.message_ts
+      if (channelId && ts) await client.chat.update({ channel: channelId, ts, text: a.message?.text || 'Okay, not now.', blocks: [] })
+    } catch (e) {
+      console.warn('Failed to clear buttons after calendar_not_now:', e)
+    }
   })
 
   // Note: "Connect Google Calendar" button is now a direct URL link, no action handler needed

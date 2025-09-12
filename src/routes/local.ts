@@ -12,7 +12,7 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, rescheduleCalendarEvent } from '../calendar-service'
+import { createCalendarInviteFromBot, tryRescheduleTaggedEvent } from '../calendar-service'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -232,16 +232,22 @@ export const localRoutes = new Hono()
   })), async (c) => {
     const { start, end, title, userIds } = c.req.valid('json')
     try {
-      const fakeTopic: Topic = {
+      // Minimal TopicWithState mock for local testing
+      const fakeTopic: TopicWithState = {
         id: `test-${Date.now()}`,
-        userIds: userIds || [],
         botUserId: BOT_USER_ID,
-        summary: title || 'Test Meeting',
         workflowType: 'scheduling',
-        isActive: true,
-        perUserContext: {},
         createdAt: new Date(),
-        updatedAt: new Date(),
+        state: {
+          id: `state-${Date.now()}`,
+          topicId: `test-${Date.now()}`,
+          userIds: userIds || [],
+          summary: title || 'Test Meeting',
+          isActive: true,
+          perUserContext: {},
+          createdByMessageId: '00000000-0000-0000-0000-000000000000',
+          createdAt: new Date(),
+        },
       }
 
       const result = await createCalendarInviteFromBot(fakeTopic, {
@@ -268,7 +274,7 @@ export const localRoutes = new Hono()
     const { topicId } = c.req.param()
     const { start, end } = c.req.valid('json')
     try {
-      const result = await rescheduleCalendarEvent(topicId, start, end)
+      const result = await tryRescheduleTaggedEvent(topicId, start, end)
       if (!result.success) {
         return c.json({ error: 'Failed to reschedule event' }, 500)
       }

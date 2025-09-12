@@ -340,7 +340,7 @@ IMPORTANT:
 `
 
   // Summarize any scheduled events stored in topic context (bot-scoped)
-  const botCtx: TopicUserContext = topic.perUserContext[topic.botUserId] || {}
+  const botCtx: TopicUserContext = topic.state.perUserContext[topic.botUserId] || {}
   const rawScheduled: ScheduledEvent[] = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents : []
   const scheduledEvents: Array<{ start?: string; end?: string; title?: string | null }> = rawScheduled.map((e) => ({
     start: e.start,
@@ -401,11 +401,11 @@ ${await Promise.all(topic.state.userIds.map(async (userId) => {
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
 Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
-Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}`
+Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}${scheduledSection}`
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 
-  return mainPrompt + userMapAndTopicInfo
+  return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
 }
 
 export const schedulingAgent = new ConversationAgent({
