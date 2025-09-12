@@ -420,7 +420,7 @@ function Topic() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 p-4 flex flex-col">
+    <div className="h-full bg-gray-50 p-4 flex flex-col">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
           <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
