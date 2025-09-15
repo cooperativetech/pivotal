@@ -1,0 +1,334 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-04T00:00:00.000Z",
+    "startTimeOffset": 3,
+    "endTime": "2025-01-08T00:00:00.000Z",
+    "endTimeOffset": 7,
+    "meetingLength": 120,
+    "nAgents": 4
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 2-hour meeting between Saturday, January 4 at 1:00 AM and Wednesday, January 8 at 1:00 AM with Bob, Charlie, Diana",
+      "calendar": [
+        {
+          "start": "2025-01-06T15:00:00.000Z",
+          "end": "2025-01-06T16:30:00.000Z",
+          "summary": "Weekly Team Standup - Audio Team"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T21:00:00.000Z",
+          "summary": "Music Production Block - Boss Battle Theme"
+        },
+        {
+          "start": "2025-01-06T21:30:00.000Z",
+          "end": "2025-01-06T22:30:00.000Z",
+          "summary": "Feedback Session with Game Director"
+        },
+        {
+          "start": "2025-01-07T14:30:00.000Z",
+          "end": "2025-01-07T16:00:00.000Z",
+          "summary": "Sound Design Review - Level 3 Assets"
+        },
+        {
+          "start": "2025-01-07T18:00:00.000Z",
+          "end": "2025-01-07T20:30:00.000Z",
+          "summary": "Creative Session - Ambient Tracks Composition"
+        },
+        {
+          "start": "2025-01-07T20:45:00.000Z",
+          "end": "2025-01-07T21:45:00.000Z",
+          "summary": "Cross-Functional Meeting - Art & Audio Sync"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Music Implementation Review"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T22:00:00.000Z",
+          "summary": "Studio Time - Recording Session"
+        },
+        {
+          "start": "2025-01-09T16:00:00.000Z",
+          "end": "2025-01-09T17:30:00.000Z",
+          "summary": "Sprint Planning - Audio Tasks"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:30:00.000Z",
+          "summary": "Music Mixing & Mastering Block"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "1:1 with Audio Director"
+        },
+        {
+          "start": "2025-01-10T18:30:00.000Z",
+          "end": "2025-01-10T20:00:00.000Z",
+          "summary": "Playtesting Session - Audio Feedback"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:30:00.000Z",
+          "summary": "Creative Block - Menu Music Exploration"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-06T13:00:00.000Z",
+          "end": "2025-01-06T14:00:00.000Z",
+          "summary": "Morning Wildlife Survey - East Trail"
+        },
+        {
+          "start": "2025-01-06T14:30:00.000Z",
+          "end": "2025-01-06T15:30:00.000Z",
+          "summary": "Pet Wellness Check - Visitor Center"
+        },
+        {
+          "start": "2025-01-06T16:00:00.000Z",
+          "end": "2025-01-06T17:00:00.000Z",
+          "summary": "Trail Maintenance Planning Meeting"
+        },
+        {
+          "start": "2025-01-06T18:00:00.000Z",
+          "end": "2025-01-06T19:30:00.000Z",
+          "summary": "Lost Pet Search & Rescue - North Sector"
+        },
+        {
+          "start": "2025-01-06T20:00:00.000Z",
+          "end": "2025-01-06T21:00:00.000Z",
+          "summary": "Visitor Education - Responsible Pet Ownership"
+        },
+        {
+          "start": "2025-01-07T12:30:00.000Z",
+          "end": "2025-01-07T13:30:00.000Z",
+          "summary": "Daily Safety Briefing"
+        },
+        {
+          "start": "2025-01-07T14:00:00.000Z",
+          "end": "2025-01-07T16:00:00.000Z",
+          "summary": "Pet First Aid Training Workshop"
+        },
+        {
+          "start": "2025-01-07T16:30:00.000Z",
+          "end": "2025-01-07T17:30:00.000Z",
+          "summary": "Incident Report Review - Aggressive Wildlife Encounter"
+        },
+        {
+          "start": "2025-01-07T19:00:00.000Z",
+          "end": "2025-01-07T20:30:00.000Z",
+          "summary": "Patrol - Dog Park Area & Leash Compliance"
+        },
+        {
+          "start": "2025-01-07T21:00:00.000Z",
+          "end": "2025-01-07T22:00:00.000Z",
+          "summary": "Equipment Maintenance - Animal Control Gear"
+        },
+        {
+          "start": "2025-01-08T13:00:00.000Z",
+          "end": "2025-01-08T14:00:00.000Z",
+          "summary": "Weekly Team Meeting - Pet Care Operations"
+        },
+        {
+          "start": "2025-01-08T15:00:00.000Z",
+          "end": "2025-01-08T16:30:00.000Z",
+          "summary": "Emergency Response Drill - Wildlife Extraction"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:00:00.000Z",
+          "summary": "Visitor Complaint Resolution - Unleashed Dogs"
+        },
+        {
+          "start": "2025-01-08T19:30:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Habitat Restoration - Pet-Safe Area Development"
+        },
+        {
+          "start": "2025-01-04T15:00:00.000Z",
+          "end": "2025-01-04T17:00:00.000Z",
+          "summary": "Weekend Wildlife Monitoring - Pet Interaction Zones"
+        },
+        {
+          "start": "2025-01-05T14:00:00.000Z",
+          "end": "2025-01-05T15:30:00.000Z",
+          "summary": "Community Pet Safety Workshop"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-06T14:00:00.000Z",
+          "end": "2025-01-06T15:30:00.000Z",
+          "summary": "Mission Design Team Sync - Mars Rover Animation Project"
+        },
+        {
+          "start": "2025-01-06T16:00:00.000Z",
+          "end": "2025-01-06T17:30:00.000Z",
+          "summary": "Puppet Character Development - Astronaut Training Series"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T20:30:00.000Z",
+          "summary": "Creative Review - Zero Gravity Movement Techniques"
+        },
+        {
+          "start": "2025-01-06T21:00:00.000Z",
+          "end": "2025-01-06T22:00:00.000Z",
+          "summary": "Workshop Planning - Kids Space Camp Puppet Show"
+        },
+        {
+          "start": "2025-01-07T13:30:00.000Z",
+          "end": "2025-01-07T14:30:00.000Z",
+          "summary": "Science Consultant Meeting - Accurate Space Physics for Performances"
+        },
+        {
+          "start": "2025-01-07T15:00:00.000Z",
+          "end": "2025-01-07T17:00:00.000Z",
+          "summary": "Puppet Construction - Alien Character Prototyping"
+        },
+        {
+          "start": "2025-01-07T18:30:00.000Z",
+          "end": "2025-01-07T19:30:00.000Z",
+          "summary": "Funding Proposal Review - Space Education Grant"
+        },
+        {
+          "start": "2025-01-07T20:00:00.000Z",
+          "end": "2025-01-07T22:00:00.000Z",
+          "summary": "Rehearsal - International Space Station Tour Presentation"
+        },
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:00:00.000Z",
+          "summary": "Client Check-in - NASA Public Outreach Campaign"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Material Testing - Space-Grade Puppet Fabrics"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:30:00.000Z",
+          "summary": "Voice Acting Session - Mission Control Characters"
+        },
+        {
+          "start": "2025-01-08T21:00:00.000Z",
+          "end": "2025-01-08T22:30:00.000Z",
+          "summary": "Technology Integration - Motion Capture for Puppet Performances"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-04T15:00:00.000Z",
+          "end": "2025-01-04T16:30:00.000Z",
+          "summary": "Morning Vinyasa Flow Class"
+        },
+        {
+          "start": "2025-01-04T20:00:00.000Z",
+          "end": "2025-01-04T21:00:00.000Z",
+          "summary": "Restaurant Staff Wellness Workshop Planning"
+        },
+        {
+          "start": "2025-01-04T22:30:00.000Z",
+          "end": "2025-01-05T03:00:00.000Z",
+          "summary": "Evening Shift - The Garden Bistro"
+        },
+        {
+          "start": "2025-01-05T13:00:00.000Z",
+          "end": "2025-01-05T14:30:00.000Z",
+          "summary": "Sunrise Meditation & Gentle Yoga"
+        },
+        {
+          "start": "2025-01-05T16:00:00.000Z",
+          "end": "2025-01-05T21:00:00.000Z",
+          "summary": "Lunch Shift - The Garden Bistro"
+        },
+        {
+          "start": "2025-01-05T23:00:00.000Z",
+          "end": "2025-01-06T00:15:00.000Z",
+          "summary": "Corporate Wellness Class - Downtown Office"
+        },
+        {
+          "start": "2025-01-06T14:30:00.000Z",
+          "end": "2025-01-06T16:00:00.000Z",
+          "summary": "Power Yoga Flow Class"
+        },
+        {
+          "start": "2025-01-06T17:00:00.000Z",
+          "end": "2025-01-06T18:00:00.000Z",
+          "summary": "Meeting with Restaurant Owner - Wellness Program Proposal"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T20:30:00.000Z",
+          "summary": "Prep Work & Menu Planning"
+        },
+        {
+          "start": "2025-01-06T22:00:00.000Z",
+          "end": "2025-01-07T02:30:00.000Z",
+          "summary": "Dinner Service - Oceanview Eats"
+        },
+        {
+          "start": "2025-01-07T12:00:00.000Z",
+          "end": "2025-01-07T13:15:00.000Z",
+          "summary": "Early Bird Yoga Session"
+        },
+        {
+          "start": "2025-01-07T15:00:00.000Z",
+          "end": "2025-01-07T16:00:00.000Z",
+          "summary": "Restaurant Staff Stress Relief Workshop"
+        },
+        {
+          "start": "2025-01-07T18:00:00.000Z",
+          "end": "2025-01-07T19:30:00.000Z",
+          "summary": "Yoga Teacher Training - Continuing Education"
+        },
+        {
+          "start": "2025-01-07T21:00:00.000Z",
+          "end": "2025-01-08T01:30:00.000Z",
+          "summary": "Evening Shift - The Garden Bistro"
+        },
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Restorative Yoga & Sound Bath"
+        },
+        {
+          "start": "2025-01-08T16:30:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Brunch Shift - Oceanview Eats"
+        },
+        {
+          "start": "2025-01-08T22:00:00.000Z",
+          "end": "2025-01-08T23:00:00.000Z",
+          "summary": "Client Consultation - Private Yoga Sessions"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}
