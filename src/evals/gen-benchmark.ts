@@ -19,7 +19,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     'Alice', 'Bob', 'Charlie', 'Diana', 'Edward', 'Fiona', 'George', 'Helen',
     'Ian', 'Julia', 'Kevin', 'Laura', 'Michael', 'Nina', 'Oliver', 'Patricia',
     'Quinn', 'Rachel', 'Samuel', 'Teresa', 'Ulrich', 'Victoria', 'William', 'Xara',
-    'Yasmin', 'Zachary'
+    'Yasmin', 'Zachary',
   ]
 
   // Subsample the first nAgents names
@@ -33,56 +33,56 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   // Validate and trim calendar events to ensure they fall within the specified date range
   const validatedCalendarEvents = calendarEvents.map((events, agentIndex) => {
     const originalLength = events.length
-    const filteredEvents = events.filter(event => {
+    const filteredEvents = events.filter((event) => {
       const eventStart = new Date(event.start)
       const eventEnd = new Date(event.end)
       return eventStart >= startTime && eventEnd <= endTime
     })
-    
+
     if (filteredEvents.length < originalLength) {
       const agentName = agentNames[agentIndex]
       const trimmedCount = originalLength - filteredEvents.length
       console.warn(`⚠️  Warning: ${agentName} had ${trimmedCount} event(s) outside the date range ${startTime.toISOString()} to ${endTime.toISOString()}. Events trimmed from ${originalLength} to ${filteredEvents.length}.`)
     }
-    
+
     return filteredEvents
   })
 
   // Create agents list
   const agents: BaseScheduleUser[] = agentNames.map((name, index) => {
     const calendar = convertCalendarEventsToUserProfile(validatedCalendarEvents[index])
-    
+
     // Only the first agent gets the scheduling goal
     let goal = ''
     if (index === 0) {
       const otherAgentNames = agentNames.filter((_, i) => i !== index)
-      const startTimeStr = startTime.toLocaleString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
+      const startTimeStr = startTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
-        timeZone: 'America/New_York'
+        timeZone: 'America/New_York',
       })
-      const endTimeStr = endTime.toLocaleString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
+      const endTimeStr = endTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
-        timeZone: 'America/New_York'
+        timeZone: 'America/New_York',
       })
-      
+
       // Format meeting length appropriately
-      const meetingLengthStr = meetingLength >= 60 
-        ? `${meetingLength / 60}-hour` 
+      const meetingLengthStr = meetingLength >= 60
+        ? `${meetingLength / 60}-hour`
         : `${meetingLength}-minute`
-      
+
       goal = `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherAgentNames.join(', ')}`
     }
-    
+
     return new BaseScheduleUser(name, goal, calendar)
   })
 
@@ -99,24 +99,24 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     meetingLength,
     nAgents,
   }
-  
+
   const exportData = {
     benchmark,
     agents: exportedAgents,
   }
-  
+
   // Create folder name and filename with benchmark parameters
   const folderName = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
   const timestamp = formatTimestamp()
   const filename = `${folderName}_gen${timestamp}.json`
   const folderPath = join('./src/evals/data', folderName)
-  
+
   // Create folder if it doesn't exist
   if (!existsSync(folderPath)) {
     await mkdir(folderPath, { recursive: true })
     console.log(`Created folder: ${folderName}`)
   }
-  
+
   const filePath = join(folderPath, filename)
   await writeFile(filePath, JSON.stringify(exportData, null, 2))
   console.log(`Agents saved to ${filePath}`)
@@ -179,12 +179,12 @@ console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTim
 
 async function generateMultipleBenchmarks() {
   console.log(`\nGenerating ${nCases} benchmark case(s)...`)
-  
+
   for (let i = 1; i <= nCases; i++) {
     console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
     await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nAgents)
   }
-  
+
   console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
 }
 

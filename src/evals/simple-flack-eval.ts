@@ -6,11 +6,11 @@ import { findCommonFreeTime } from '../tools/time_intersection'
 // Parse command line arguments for benchmark file or folder
 function parseArgs(): { benchmarkFile: string; nReps: number } {
   const args = process.argv.slice(2)
-  
+
   // Default values
   let benchmarkFile = 'benchmark_2agents_1start_2end_60min'
   let nReps = 1
-  
+
   // Parse named arguments (--arg=value format)
   for (const arg of args) {
     if (arg.startsWith('--')) {
@@ -22,7 +22,7 @@ function parseArgs(): { benchmarkFile: string; nReps: number } {
       }
     }
   }
-  
+
   // Parse positional arguments (backwards compatibility)
   if (args.length >= 1 && !args[0].startsWith('--')) {
     benchmarkFile = args[0]
@@ -30,7 +30,7 @@ function parseArgs(): { benchmarkFile: string; nReps: number } {
   if (args.length >= 2 && !args[1].startsWith('--')) {
     nReps = parseInt(args[1], 10)
   }
-  
+
   return { benchmarkFile, nReps }
 }
 import { BaseScheduleUser } from './agents/user-agents'
@@ -308,10 +308,10 @@ async function runSimpleEvaluation(): Promise<void> {
   try {
     // Step 1: Parse command line arguments
     const { benchmarkFile, nReps } = parseArgs()
-    
+
     // Step 2: Determine if it's a single file or folder
     const isFile = isSpecificBenchmarkFile(benchmarkFile)
-    
+
     if (isFile) {
       console.log(`Using benchmark file: ${benchmarkFile}`)
       console.log(`Running ${nReps} repetition(s) per case`)
@@ -321,14 +321,14 @@ async function runSimpleEvaluation(): Promise<void> {
       const benchmarkFiles = findAllBenchmarkFiles(benchmarkFile)
       console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
       console.log(`Running ${nReps} repetition(s) per case`)
-      
+
       for (let i = 0; i < benchmarkFiles.length; i++) {
         console.log(`\n${'='.repeat(80)}`)
         console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
         console.log(`${'='.repeat(80)}`)
         await runRepeatedEvaluation(benchmarkFiles[i], true, nReps)
       }
-      
+
       console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
     }
   } catch (error) {
@@ -340,7 +340,7 @@ async function runSimpleEvaluation(): Promise<void> {
 // Wrapper function to run repeated evaluations
 async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
   const allResults: Record<string, unknown>[] = []
-  
+
   for (let rep = 1; rep <= nReps; rep++) {
     if (nReps > 1) {
       console.log(`\n--- Repetition ${rep}/${nReps} ---`)
@@ -353,10 +353,10 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
       // Continue with other repetitions
     }
   }
-  
+
   if (nReps > 1) {
     console.log(`\n✅ Completed all ${nReps} repetitions for this case`)
-    
+
     // Create aggregated summary if we have multiple runs
     if (allResults.length > 1) {
       const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
@@ -370,7 +370,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
   try {
     // Step 1: Clear database
     await clearDatabase()
-    
+
     // Step 2: Load benchmark file and agents from benchmark data
     console.log('\nLoading benchmark file...')
     const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
@@ -378,7 +378,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const rawData = readFileSync(dataPath, 'utf-8')
     const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
     const benchmarkAgents = benchmarkData.agents as Record<string, unknown>[]
-    
+
     console.log('Loading agents from benchmark data...')
     const agents = loadAgentsFromBenchmarkData(benchmarkAgents)
     console.log(`Loaded ${agents.length} agents:`)
@@ -422,34 +422,34 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     let maxSharedFreeTime = 0
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
-      
+
       // Check if meeting falls within benchmark time constraints
       const benchmark = benchmarkData.benchmark as Record<string, unknown>
       const benchmarkStartTime = new Date(benchmark.startTime as string)
       const benchmarkEndTime = new Date(benchmark.endTime as string)
       const meetingStart = result.suggestedEvent.start
       const meetingEnd = result.suggestedEvent.end
-      
+
       const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
       console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
-      
+
       if (!withinTimeRange) {
         console.log(`    Benchmark range: ${benchmarkStartTime.toISOString()} to ${benchmarkEndTime.toISOString()}`)
         console.log(`    Suggested meeting: ${meetingStart.toISOString()} to ${meetingEnd.toISOString()}`)
       }
-      
+
       // Check individual agent availability
       agents.forEach((agent) => {
         const canAttend = agent.eval_possibility(result.suggestedEvent!)
         console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
       })
-      
+
       // Check if there was actually any common free time when all agents were available
       const commonFreeSlots = findCommonFreeTime(agents, benchmarkStartTime, benchmarkEndTime)
-      maxSharedFreeTime = commonFreeSlots.length > 0 
-        ? Math.max(...commonFreeSlots.map(slot => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
+      maxSharedFreeTime = commonFreeSlots.length > 0
+        ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
-      
+
       const hasCommonFreeTime = maxSharedFreeTime > 0
       console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes` : 'No common free time available'}`)
     }
@@ -462,12 +462,12 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         canAttendResults[agent.name] = agent.eval_possibility(result.suggestedEvent!)
       })
     }
-    
+
     const resultsData = {
       suggestedEvent: result.suggestedEvent ? {
         start: result.suggestedEvent.start.toISOString(),
         end: result.suggestedEvent.end.toISOString(),
-        summary: result.suggestedEvent.summary
+        summary: result.suggestedEvent.summary,
       } : null,
       confirmedAgents: confirmedAgents.map(([name]) => name),
       allAgentsConfirmed,
@@ -477,10 +477,10 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         totalAgents: agents.length,
         confirmedCount: confirmedAgents.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
-        allCanAttend: result.suggestedEvent ? agents.every((agent) => agent.eval_possibility(result.suggestedEvent!)) : false
-      }
+        allCanAttend: result.suggestedEvent ? agents.every((agent) => agent.eval_possibility(result.suggestedEvent!)) : false,
+      },
     }
-    
+
     // Extract filename from path for results saving
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
     saveEvaluationResults(fileName, resultsData)

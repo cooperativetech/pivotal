@@ -1,41 +1,41 @@
 import { Agent, run } from '../../agents/agent-sdk'
-import type { SimpleCalendarEvent } from './user-agents'
+import type { SimpleCalendarEvent, HistoryMessage } from './user-agents'
 
 // Helper function to format calendar events with date and time information
 function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {
   const calendarText = calendar.map((event) => {
-    const startDate = event.start.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
+    const startDate = event.start.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
-      timeZone: 'America/New_York'
+      timeZone: 'America/New_York',
     })
-    const startTime = event.start.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
+    const startTime = event.start.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
-      timeZone: 'America/New_York'
+      timeZone: 'America/New_York',
     })
-    const endTime = event.end.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
+    const endTime = event.end.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
-      timeZone: 'America/New_York'
+      timeZone: 'America/New_York',
     })
-    
+
     // Check if the event spans multiple days in Eastern Time
     const startDateET = event.start.toLocaleDateString('en-US', { timeZone: 'America/New_York' })
     const endDateET = event.end.toLocaleDateString('en-US', { timeZone: 'America/New_York' })
     const sameDay = startDateET === endDateET
-    
+
     if (sameDay) {
       return `${startDate} ${startTime}-${endTime}: ${event.summary}`
     } else {
-      const endDate = event.end.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
+      const endDate = event.end.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
         day: 'numeric',
-        timeZone: 'America/New_York'
+        timeZone: 'America/New_York',
       })
       return `${startDate} ${startTime} - ${endDate} ${endTime}: ${event.summary}`
     }
@@ -66,18 +66,18 @@ Guidelines:
     })
   }
 
-  async generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: import('./user-agents').HistoryMessage[]): Promise<string> {
+  async generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: HistoryMessage[]): Promise<string> {
     if (messageBuffer.length === 0) {
       return ''
     }
 
     const latestMessage = messageBuffer[messageBuffer.length - 1]
-    
+
     // Format calendar using helper function
     const calendarText = formatCalendarEvents(calendar)
 
     // Format conversation history
-    const historyText = history.length > 0 
+    const historyText = history.length > 0
       ? history.map((h) => `${h.sender === 'bot' ? 'Bot' : userName}: ${h.message}`).join('\n')
       : 'No previous conversation'
 

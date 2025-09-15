@@ -46,20 +46,20 @@ export class BaseScheduleUser implements UserProfile {
 
     // Generate reply using both message buffer and history context
     const reply = await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.message_buffer, this.history)
-    
+
     // Move messages from buffer to history as bot messages
     for (const message of this.message_buffer) {
       this.history.push({ sender: 'bot', message })
     }
-    
+
     // Clear the buffer after moving to history
     this.message_buffer = []
-    
+
     // Save the reply to history
     if (reply) {
       this.history.push({ sender: 'user', message: reply })
     }
-    
+
     return reply
   }
 
@@ -73,20 +73,20 @@ export class BaseScheduleUser implements UserProfile {
       // Two events intersect if one starts before the other ends
       if (scheduled.start < event.end && scheduled.end > event.start) {
         // Log the conflicting meeting details
-        const eventStartTime = event.start.toLocaleString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
+        const eventStartTime = event.start.toLocaleString('en-US', {
+          weekday: 'short',
+          month: 'short',
           day: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-          timeZone: 'America/New_York'
+          timeZone: 'America/New_York',
         })
-        const eventEndTime = event.end.toLocaleTimeString('en-US', { 
+        const eventEndTime = event.end.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-          timeZone: 'America/New_York'
+          timeZone: 'America/New_York',
         })
         console.log(`    Conflict: ${this.name} has "${event.summary}" from ${eventStartTime} to ${eventEndTime}`)
         return false // Intersection found, not possible
