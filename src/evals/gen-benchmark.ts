@@ -114,6 +114,7 @@ function parseArgs() {
     endTimeOffset: 2,
     meetingLength: 60,
     nAgents: 2,
+    nCases: 1,
   }
 
   // Parse named arguments (--arg=value format)
@@ -128,6 +129,8 @@ function parseArgs() {
         defaults.meetingLength = parseInt(value, 10)
       } else if (key === 'nAgents' || key === 'agents') {
         defaults.nAgents = parseInt(value, 10)
+      } else if (key === 'nCases' || key === 'cases') {
+        defaults.nCases = parseInt(value, 10)
       }
     }
   }
@@ -145,11 +148,26 @@ function parseArgs() {
   if (args.length >= 4 && !args[3].startsWith('--')) {
     defaults.nAgents = parseInt(args[3], 10)
   }
+  if (args.length >= 5 && !args[4].startsWith('--')) {
+    defaults.nCases = parseInt(args[4], 10)
+  }
 
   return defaults
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nAgents } = parseArgs()
-console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nAgents=${nAgents}`)
-createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nAgents).catch(console.error)
+const { startTimeOffset, endTimeOffset, meetingLength, nAgents, nCases } = parseArgs()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nAgents=${nAgents}, nCases=${nCases}`)
+
+async function generateMultipleBenchmarks() {
+  console.log(`\nGenerating ${nCases} benchmark case(s)...`)
+  
+  for (let i = 1; i <= nCases; i++) {
+    console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
+    await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nAgents)
+  }
+  
+  console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
+}
+
+generateMultipleBenchmarks().catch(console.error)
