@@ -48,14 +48,14 @@ export function saveEvaluationResults(
   benchmarkFileName: string,
   resultsData: Record<string, unknown>
 ): void {
-  const timestamp = formatTimestamp()
+  const eval_timestamp = formatTimestamp()
   
   // Remove .json extension from benchmark filename if present
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
   
   // Create nested folder structure: results/benchmark_file/eval_timestamp/
   const benchmarkFolderPath = join(__dirname, 'results', baseFileName)
-  const evalFolderName = `eval${timestamp}`
+  const evalFolderName = `eval${eval_timestamp}`
   const evalFolderPath = join(benchmarkFolderPath, evalFolderName)
   
   // Create folder if it doesn't exist
@@ -66,7 +66,7 @@ export function saveEvaluationResults(
   
   // Add timestamp to the results data
   const finalResults = {
-    timestamp,
+    eval_timestamp,
     benchmarkFile: baseFileName,
     ...resultsData
   }
