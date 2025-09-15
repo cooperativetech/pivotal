@@ -3,18 +3,21 @@ import { readFileSync } from 'fs'
 import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile } from './utils'
 
 // Parse command line arguments for benchmark file or folder
-function parseArgs(): { benchmarkFile: string } {
+function parseArgs(): { benchmarkFile: string; nReps: number } {
   const args = process.argv.slice(2)
   
-  // Default benchmark file
+  // Default values
   let benchmarkFile = 'benchmark_2agents_1start_2end_60min.json'
+  let nReps = 1
   
-  // Parse named arguments (--file=value format)
+  // Parse named arguments (--arg=value format)
   for (const arg of args) {
     if (arg.startsWith('--')) {
       const [key, value] = arg.slice(2).split('=')
       if (key === 'file' || key === 'benchmark' || key === 'folder' || key === 'cases') {
         benchmarkFile = value
+      } else if (key === 'nReps' || key === 'reps' || key === 'repeat') {
+        nReps = parseInt(value, 10)
       }
     }
   }
@@ -23,8 +26,11 @@ function parseArgs(): { benchmarkFile: string } {
   if (args.length >= 1 && !args[0].startsWith('--')) {
     benchmarkFile = args[0]
   }
+  if (args.length >= 2 && !args[1].startsWith('--')) {
+    nReps = parseInt(args[1], 10)
+  }
   
-  return { benchmarkFile }
+  return { benchmarkFile, nReps }
 }
 import { BaseScheduleUser } from './agents/user-agents'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
@@ -300,31 +306,47 @@ async function runSimpleEvaluation(): Promise<void> {
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkFile } = parseArgs()
+    const { benchmarkFile, nReps } = parseArgs()
     
     // Step 2: Determine if it's a single file or folder
     const isFile = isSpecificBenchmarkFile(benchmarkFile)
     
     if (isFile) {
       console.log(`Using benchmark file: ${benchmarkFile}`)
-      await runSingleEvaluation(benchmarkFile)
+      console.log(`Running ${nReps} repetition(s) per case`)
+      await runRepeatedEvaluation(benchmarkFile, false, nReps)
     } else {
       console.log(`Using benchmark folder: ${benchmarkFile}`)
       const benchmarkFiles = findAllBenchmarkFiles(benchmarkFile)
       console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
+      console.log(`Running ${nReps} repetition(s) per case`)
       
       for (let i = 0; i < benchmarkFiles.length; i++) {
         console.log(`\n${'='.repeat(80)}`)
         console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
         console.log(`${'='.repeat(80)}`)
-        await runSingleEvaluation(benchmarkFiles[i], true)
+        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps)
       }
       
-      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations`)
+      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
     }
   } catch (error) {
     console.error('\n❌ Evaluation failed:', error)
     process.exit(1)
+  }
+}
+
+// Wrapper function to run repeated evaluations
+async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
+  for (let rep = 1; rep <= nReps; rep++) {
+    if (nReps > 1) {
+      console.log(`\n--- Repetition ${rep}/${nReps} ---`)
+    }
+    await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
+  }
+  
+  if (nReps > 1) {
+    console.log(`\n✅ Completed all ${nReps} repetitions for this case`)
   }
 }
 
