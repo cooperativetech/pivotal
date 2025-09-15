@@ -20,6 +20,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     loadProfile().catch((err) => {
@@ -88,6 +89,31 @@ export default function Profile() {
     })
   }
 
+  const handleGoogleConnect = async () => {
+    try {
+      setBusy(true)
+      // Prefer first linked Slack account
+      const slackId = profile?.slackAccounts?.[0]?.id
+      const url = new URL('/api/calendar/auth_url', window.location.origin)
+      if (slackId) url.searchParams.set('slackUserId', slackId)
+      // topicId omitted -> server uses 'profile'
+      const res = await fetch(url.toString())
+      if (!res.ok) throw new Error('Failed to get Google auth URL')
+      const body: unknown = await res.json()
+      if (typeof body === 'object' && body !== null) {
+        const maybeUrl = (body as { url?: unknown }).url
+        if (typeof maybeUrl === 'string') {
+          window.location.href = maybeUrl
+        }
+      }
+    } catch (err) {
+      console.error('Google connect failed:', err)
+      setError('Failed to start Google Calendar connection')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) return <div className="flex justify-center items-center h-52 text-gray-600">Loading...</div>
   if (error) return <div className="text-red-600">{error}</div>
   if (!profile) return <div>No profile data</div>
@@ -118,9 +144,27 @@ export default function Profile() {
         ) : (
           <p>No Slack accounts linked</p>
         )}
-        <button onClick={handleSlackLinkClick} className="px-6 py-3 bg-purple-800 text-white rounded font-medium hover:bg-purple-900 mt-4">
+        <button onClick={handleSlackLinkClick} className="px-6 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 mt-4">
           Link Slack Account
         </button>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Calendar</h2>
+        {profile.slackAccounts.length === 0 ? (
+          <p className="text-sm text-gray-700">Link a Slack account first to connect your Google Calendar.</p>
+        ) : (
+          <>
+            <p className="text-sm text-gray-700 mb-3">Connect your Google Calendar so scheduling can check your availability.</p>
+            <button
+              onClick={() => { handleGoogleConnect().catch(console.error) }}
+              disabled={busy}
+              className="px-6 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {busy ? 'Opening…' : 'Connect Google Calendar'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

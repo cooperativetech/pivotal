@@ -12,7 +12,8 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, tryRescheduleTaggedEvent } from '../calendar-service'
+import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, generateGoogleAuthUrl, continueSchedulingWorkflow, setSuppressCalendarPrompt } from '../calendar-service'
+import { updateUserContext } from '../calendar-service'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -72,6 +73,74 @@ export const localRoutes = new Hono()
       success: result.success,
       message: `Cleared all topics and messages from database (method: ${result.method})`,
     })
+  })
+
+  // Generate Google auth URL for local inspection
+  .get('/calendar/auth_url', zValidator('query', z.strictObject({
+    topicId: z.string(),
+    userId: z.string(),
+  })), (c) => {
+    const { topicId, userId } = c.req.valid('query')
+    try {
+      const url = generateGoogleAuthUrl(topicId, userId)
+      return c.json({ url })
+    } catch (error) {
+      console.error('Error generating auth url:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: Connect a user's calendar (no Google call) and continue scheduling
+  .post('/calendar/mock_connect', zValidator('json', z.strictObject({
+    topicId: z.string(),
+    userId: z.string(),
+  })), async (c) => {
+    const { topicId, userId } = c.req.valid('json')
+    try {
+      const expiry = Date.now() + 60 * 60 * 1000
+      await updateUserContext(userId, {
+        googleAccessToken: 'fake-token-for-eval',
+        googleRefreshToken: 'fake-refresh-token',
+        googleTokenExpiryDate: expiry,
+      })
+      await continueSchedulingWorkflow(topicId, userId, mockSlackClient)
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in mock_connect:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: Disconnect a user's calendar tokens
+  .post('/calendar/mock_disconnect', zValidator('json', z.strictObject({
+    userId: z.string(),
+  })), async (c) => {
+    const { userId } = c.req.valid('json')
+    try {
+      await updateUserContext(userId, {
+        googleAccessToken: undefined,
+        googleRefreshToken: undefined,
+        googleTokenExpiryDate: undefined,
+      })
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in mock_disconnect:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: "Don't ask again" to suppress prompts
+  .post('/calendar/dont_ask_again', zValidator('json', z.strictObject({
+    userId: z.string(),
+  })), async (c) => {
+    const { userId } = c.req.valid('json')
+    try {
+      await setSuppressCalendarPrompt(userId, true)
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in dont_ask_again:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
   })
 
   .post('/users/create_fake', zValidator('json', z.strictObject({

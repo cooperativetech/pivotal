@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
-// import type { calendar_v3 } from 'googleapis'
+// Enable typing for calendar API event shapes where helpful
+import type { calendar_v3 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
@@ -521,6 +522,13 @@ export async function createCalendarInviteFromBot(
         end: { dateTime: new Date(finalizedEvent.end).toISOString() },
         location: finalizedEvent.location || undefined,
         attendees,
+        // Tag event so we can recover it later by topic id
+        extendedProperties: {
+          private: {
+            pv_topic_id: topic.id,
+            pv_request_id: requestId,
+          },
+        },
         conferenceData: {
           createRequest: {
             requestId,
@@ -548,7 +556,78 @@ export async function createCalendarInviteFromBot(
   }
 }
 
-// Rescheduling helpers (per-topic state minimal)
+// Rescheduling and event tracking helpers
+
+/**
+ * Find the most relevant Google Calendar event for a topic using extendedProperties tags.
+ */
+async function findTaggedEventForTopic(topicId: string): Promise<calendar_v3.Schema$Event | null> {
+  if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return null
+
+  const oauth2Client = buildOAuthClient()
+  oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+  const res = await calendar.events.list({
+    calendarId: getBotCalendarId(),
+    privateExtendedProperty: [`pv_topic_id=${topicId}`],
+    showDeleted: false,
+    maxResults: 50,
+    singleEvents: true,
+    orderBy: 'startTime',
+    timeMin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+    timeMax: new Date(Date.now() + 1000 * 60 * 60 * 24 * 400).toISOString(),
+  })
+
+  const items: calendar_v3.Schema$Event[] = res.data.items ?? []
+  if (items.length === 0) return null
+
+  const now = new Date()
+  type Listed = { e: calendar_v3.Schema$Event; start: Date; end: Date; updated: Date }
+  const upcoming: Listed[] = items
+    .map((e): Listed => ({
+      e,
+      start: new Date(e.start?.dateTime || e.start?.date || 0),
+      end: new Date(e.end?.dateTime || e.end?.date || 0),
+      updated: e.updated ? new Date(e.updated) : new Date(0),
+    }))
+    .filter((x) => x.end >= now)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  if (upcoming.length > 0) return upcoming[0].e
+
+  items.sort((a, b) => new Date(b.updated ?? 0).getTime() - new Date(a.updated ?? 0).getTime())
+  return items[0]
+}
+
+/** Upsert a scheduled event in the topic's perUserContext[botUserId].scheduledEvents */
+export async function upsertTopicScheduledEvent(
+  topic: TopicWithState,
+  newEvent: {
+    calendarId: string,
+    eventId?: string | null,
+    iCalUID?: string | null,
+    start?: string | null,
+    end?: string | null,
+    title?: string | null,
+    meetLink?: string | null,
+    status?: 'scheduled' | 'cancelled' | 'updated' | null,
+  },
+  messageId: string,
+): Promise<void> {
+  const botId = topic.botUserId
+  const existing = topic.state.perUserContext[botId]?.scheduledEvents
+  const list = Array.isArray(existing) ? [...existing] : []
+  const idx = list.findIndex((e) =>
+    (newEvent.eventId && e.eventId && e.eventId === newEvent.eventId) ||
+    (newEvent.iCalUID && e.iCalUID && e.iCalUID === newEvent.iCalUID),
+  )
+  const base = idx >= 0 ? list[idx] : {}
+  const merged = { ...base, ...newEvent }
+  if (idx >= 0) list[idx] = merged
+  else list.push(merged)
+  await updateTopicUserContext(topic.id, botId, { scheduledEvents: list }, messageId)
+}
 
 /**
  * Attempt to reschedule a previously created (tagged) event for this topic. Returns true if updated.
@@ -557,19 +636,30 @@ export async function tryRescheduleTaggedEvent(
   topicId: string,
   newStartISO: string,
   newEndISO: string,
+  messageId?: string,
 ): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
   try {
     const topic = await getTopicWithState(topicId)
-    const evt = topic.state.perUserContext[topic.botUserId]?.scheduledEvent
-    if (!evt || evt.organizer !== 'bot' || !evt.calendarId || !evt.eventId) return { success: false }
+    // Try from stored list first
+    const list = topic.state.perUserContext[topic.botUserId]?.scheduledEvents
+    const stored = Array.isArray(list) ? list.find((e) => e.calendarId && e.eventId) : null
+
+    const calendarId = stored?.calendarId || getBotCalendarId()
+    let eventId = stored?.eventId || null
+
+    if (!eventId) {
+      const found = await findTaggedEventForTopic(topicId)
+      eventId = found?.id || null
+    }
+    if (!eventId) return { success: false }
 
     const oauth2Client = buildOAuthClient()
     oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
     const patchRes = await calendar.events.patch({
-      calendarId: evt.calendarId,
-      eventId: evt.eventId,
+      calendarId,
+      eventId,
       requestBody: {
         start: { dateTime: new Date(newStartISO).toISOString() },
         end: { dateTime: new Date(newEndISO).toISOString() },
@@ -581,6 +671,25 @@ export async function tryRescheduleTaggedEvent(
     const entryPoints = updated.conferenceData?.entryPoints
     const meeting = entryPoints?.find((e) => e.entryPointType === 'video') || entryPoints?.[0]
     const meetLink = meeting?.uri || meeting?.label || undefined
+
+    // Persist
+    if (messageId) {
+      await upsertTopicScheduledEvent(
+        topic,
+        {
+          calendarId,
+          eventId,
+          iCalUID: updated.iCalUID || null,
+          start: newStartISO,
+          end: newEndISO,
+          title: updated.summary || null,
+          meetLink: meetLink || null,
+          status: 'updated',
+        },
+        messageId,
+      )
+    }
+
     return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
   } catch (err) {
     console.error('Error rescheduling calendar event:', err)

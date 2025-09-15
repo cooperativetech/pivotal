@@ -61,10 +61,17 @@ export interface TopicUserContext {
   scheduledEvents?: ScheduledEvent[]
 }
 
+// Lightweight representation of a scheduled calendar event stored in topic context
 export interface ScheduledEvent {
-  start?: string
-  end?: string
+  provider?: 'google' // default google if omitted (backward-compatible)
+  calendarId: string
+  eventId?: string | null
+  iCalUID?: string | null
+  start?: string | null // ISO
+  end?: string | null   // ISO
   title?: string | null
+  meetLink?: string | null
+  status?: 'scheduled' | 'cancelled' | 'updated' | null
 }
 
 export interface AutoMessageDeactivation {

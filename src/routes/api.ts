@@ -6,6 +6,7 @@ import { slackUserTable } from '../db/schema/main'
 import { accountTable } from '../db/schema/auth'
 import { auth } from '../auth'
 import { dumpTopic, getTopics } from '../utils'
+import { generateGoogleAuthUrl } from '../calendar-service'
 
 interface SessionVars {
   user: typeof auth.$Infer.Session.user | null
@@ -220,6 +221,44 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       return c.json({ users })
     } catch (error) {
       console.error('Error fetching users:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Generate Google auth URL (webapp). topicId optional; if omitted, use 'profile'.
+  .get('/calendar/auth_url', async (c) => {
+    const sessionUser = c.get('user')
+    if (!sessionUser) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    // Parse query
+    const url = new URL(c.req.url)
+    const topicId = url.searchParams.get('topicId') || 'profile'
+    const slackUserIdParam = url.searchParams.get('slackUserId')
+
+    try {
+      // Determine slackUserId: prefer explicit, else first linked account
+      let slackUserId = slackUserIdParam || null
+      if (!slackUserId) {
+        const linked = await db
+          .select({ slackId: accountTable.accountId })
+          .from(accountTable)
+          .where(and(
+            eq(accountTable.userId, sessionUser.id),
+            eq(accountTable.providerId, 'slack'),
+          ))
+        slackUserId = linked[0]?.slackId || null
+      }
+
+      if (!slackUserId) {
+        return c.json({ error: 'No linked Slack account found' }, 400)
+      }
+
+      const authUrl = generateGoogleAuthUrl(topicId, slackUserId)
+      return c.json({ url: authUrl })
+    } catch (error) {
+      console.error('Error generating Google auth URL:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })

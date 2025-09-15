@@ -6,7 +6,8 @@ import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackCh
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, getUserContext, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromLeader, createCalendarInviteFromBot, tryRescheduleTaggedEvent } from './calendar-service'
+import type { TopicWithState } from '@shared/api-types'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, getUserContext, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromLeader, createCalendarInviteFromBot, tryRescheduleTaggedEvent, upsertTopicScheduledEvent } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -495,118 +496,128 @@ export async function processSchedulingActions(
 
     // Handle finalized event - prefer reschedule of bot-owned; else create (bot or leader)
     if (nextStep.finalizedEvent) {
-      console.log('Creating calendar invite for finalized event:', nextStep.finalizedEvent)
-
-      const start = new Date(nextStep.finalizedEvent.start)
-      const end = new Date(nextStep.finalizedEvent.end)
-
-      // First, attempt to reschedule a previously tagged bot-owned event
-      let actionWord: 'created' | 'updated' = 'created'
-      let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
-      try {
-        const res = await tryRescheduleTaggedEvent(topic.id, nextStep.finalizedEvent.start, nextStep.finalizedEvent.end)
-        if (res.success) {
-          actionWord = 'updated'
-          calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
-        }
-      } catch (e) {
-        console.warn('Reschedule attempt failed:', e)
-      }
-
-      // If no existing event was rescheduled, try to create
-      if (!calendarResult) {
-        // Prefer bot-owned if configured; otherwise fall back to leader-owned
-        const botResult = await createCalendarInviteFromBot(topic, nextStep.finalizedEvent)
-        if (botResult) {
-          calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink }
-          // Persist identifiers in topic state so we can reschedule later
-          try {
-            if (botResult.eventId && botResult.calendarId) {
-              await updateTopicUserContext(
-                topic.id,
-                topic.botUserId,
-                {
-                  scheduledEvent: {
-                    organizer: 'bot',
-                    calendarId: botResult.calendarId,
-                    eventId: botResult.eventId,
-                    meetLink: botResult.meetLink ?? null,
-                    title: nextStep.finalizedEvent.title ?? null,
-                  },
-                },
-                message.id,
-              )
-            }
-          } catch (e) {
-            console.warn('Failed to store scheduledEvent in topic state:', e)
-          }
-        } else {
-          // Determine organizer with a connected calendar
-          let organizerUserId: string | null = null
-          for (const userId of topic.state.userIds) {
-            const userCtx = await getUserContext(userId)
-            if (userCtx.googleAccessToken && userCtx.googleAccessToken !== 'fake-token-for-eval') {
-              organizerUserId = userId
-              break
-            }
-          }
-          if (organizerUserId) {
-            calendarResult = await createCalendarInviteFromLeader(
-              topic,
-              organizerUserId,
-              nextStep.finalizedEvent,
-            )
-          }
-        }
-      }
-
-      if (calendarResult) {
-        // Build concise, timezone-aware confirmation
-        const tz = userMap.get(message.userId)?.tz || 'UTC'
-        const startStr = formatTimestampWithTimezone(start, tz)
-        const isSameDay = start.toDateString() === end.toDateString()
-        const endStr = isSameDay
-          ? end.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true })
-          : formatTimestampWithTimezone(end, tz)
-
-        const title = nextStep.finalizedEvent.title?.trim()
-        const header = title ? `Calendar event ${actionWord} for “${title}”! 📅` : `Calendar event ${actionWord}! 📅`
-        let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
-        if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
-
-        const targetChannel = message.channelId
-        const calendarResponse = await client.chat.postMessage({
-          channel: targetChannel,
-          thread_ts: message.rawTs,
-          text: calendarMessage,
-        })
-
-        if (calendarResponse.ok && calendarResponse.ts) {
-          const [createdMessage] = await db.insert(slackMessageTable).values({
-            topicId: topicId,
-            channelId: targetChannel,
-            userId: topic.botUserId,
-            text: calendarMessage,
-            timestamp: tsToDate(calendarResponse.ts),
-            rawTs: calendarResponse.ts,
-            threadTs: message.rawTs,
-            raw: calendarResponse.message,
-          }).returning()
-          createdMessages.push(createdMessage)
-        }
-      } else {
-        console.log('No calendar invite created - missing credentials or organizer')
-      }
+      const res = await handleFinalizedEvent(topic, message, nextStep.finalizedEvent, userMap, client)
+      createdMessages.push(...res)
     }
 
     // Mark topic as inactive if requested
     if (nextStep.markTopicInactive) {
-      await updateTopicState(topic, { isActive: false }, message.id)
-      console.log('Workflow topic marked as inactive:', topicId)
+      const lower = message.text.toLowerCase()
+      const explicitClose = /(done|all set|close (this )?topic|finished|cancel( the)? meeting|cancel it|we're done)/i.test(lower)
+      if (topic.workflowType !== 'scheduling' || explicitClose) {
+        await updateTopicState(topic, { isActive: false }, message.id)
+        console.log('Workflow topic marked as inactive:', topicId)
+      } else {
+        console.log('Ignoring markTopicInactive for scheduling topic to allow follow-ups/rescheduling')
+      }
     }
   } catch (error) {
     console.error('Error processing topic actions:', error)
   }
+  return createdMessages
+}
+
+// Extracted helper to keep processSchedulingActions tight and focused
+async function handleFinalizedEvent(
+  topic: TopicWithState,
+  message: SlackMessage,
+  finalizedEvent: { start: string, end: string, title?: string | null },
+  userMap: Map<string, SlackUser>,
+  client: WebClient,
+): Promise<SlackMessage[]> {
+  const createdMessages: SlackMessage[] = []
+  const start = new Date(finalizedEvent.start)
+  const end = new Date(finalizedEvent.end)
+
+  let actionWord: 'created' | 'updated' = 'created'
+  let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+
+  try {
+    const res = await tryRescheduleTaggedEvent(topic.id, finalizedEvent.start, finalizedEvent.end, message.id)
+    if (res.success) {
+      actionWord = 'updated'
+      calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
+    }
+  } catch (e) {
+    console.warn('Reschedule attempt failed:', e)
+  }
+
+  if (!calendarResult) {
+    const botResult = await createCalendarInviteFromBot(topic, finalizedEvent)
+    if (botResult) {
+      calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink }
+      try {
+        if (botResult.eventId && botResult.calendarId) {
+          await upsertTopicScheduledEvent(
+            topic,
+            {
+              calendarId: botResult.calendarId,
+              eventId: botResult.eventId,
+              iCalUID: null,
+              start: finalizedEvent.start,
+              end: finalizedEvent.end,
+              title: finalizedEvent.title ?? null,
+              meetLink: botResult.meetLink ?? null,
+              status: 'scheduled',
+            },
+            message.id,
+          )
+        }
+      } catch (e) {
+        console.warn('Failed to store scheduledEvents in topic state:', e)
+      }
+    } else {
+      let organizerUserId: string | null = null
+      for (const userId of topic.state.userIds) {
+        const userCtx = await getUserContext(userId)
+        if (userCtx.googleAccessToken && userCtx.googleAccessToken !== 'fake-token-for-eval') {
+          organizerUserId = userId
+          break
+        }
+      }
+      if (organizerUserId) {
+        calendarResult = await createCalendarInviteFromLeader(topic, organizerUserId, finalizedEvent)
+      }
+    }
+  }
+
+  if (calendarResult) {
+    const tz = userMap.get(message.userId)?.tz || 'UTC'
+    const startStr = formatTimestampWithTimezone(start, tz)
+    const isSameDay = start.toDateString() === end.toDateString()
+    const endStr = isSameDay
+      ? end.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true })
+      : formatTimestampWithTimezone(end, tz)
+
+    const title = finalizedEvent.title?.trim()
+    const header = title ? `Calendar event ${actionWord} for “${title}”! 📅` : `Calendar event ${actionWord}! 📅`
+    let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
+    if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
+
+    const targetChannel = message.channelId
+    const calendarResponse = await client.chat.postMessage({
+      channel: targetChannel,
+      thread_ts: message.rawTs,
+      text: calendarMessage,
+    })
+
+    if (calendarResponse.ok && calendarResponse.ts) {
+      const [createdMessage] = await db.insert(slackMessageTable).values({
+        topicId: topic.id,
+        channelId: targetChannel,
+        userId: topic.botUserId,
+        text: calendarMessage,
+        timestamp: tsToDate(calendarResponse.ts),
+        rawTs: calendarResponse.ts,
+        threadTs: message.rawTs,
+        raw: calendarResponse.message,
+      }).returning()
+      createdMessages.push(createdMessage)
+    }
+  } else {
+    console.log('No calendar invite created - missing credentials or organizer')
+  }
+
   return createdMessages
 }
 

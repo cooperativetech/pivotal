@@ -315,6 +315,7 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
+  // CRITICAL: If you confirm an exact meeting time in groupMessage, ALSO include a matching finalizedEvent in the same response
   "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
     "start": "2025-03-12T18:00:00Z", // ISO string
     "end": "2025-03-12T18:30:00Z",   // ISO string
@@ -342,11 +343,13 @@ IMPORTANT:
   // Summarize any scheduled events stored in topic context (bot-scoped)
   const botCtx: TopicUserContext = topic.state.perUserContext[topic.botUserId] || {}
   const rawScheduled: ScheduledEvent[] = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents : []
-  const scheduledEvents: Array<{ start?: string; end?: string; title?: string | null }> = rawScheduled.map((e) => ({
-    start: e.start,
-    end: e.end,
-    title: e.title ?? null,
-  }))
+  const scheduledEvents: Array<{ start?: string; end?: string; title?: string | null }> = rawScheduled.map((e) => {
+    const obj: { start?: string; end?: string; title?: string | null } = {}
+    if (e.start ?? undefined) obj.start = e.start as string
+    if (e.end ?? undefined) obj.end = e.end as string
+    if (e.title !== undefined) obj.title = e.title ?? null
+    return obj
+  })
 
   const formatEvent = (e: { start?: string; end?: string; title?: string | null }) => {
     if (!e?.start || !e?.end) return null

@@ -8,7 +8,7 @@ function App() {
     <div className="h-screen flex flex-col overflow-hidden">
       {session && (
         <nav className="flex-shrink-0 bg-white shadow-sm border-b border-gray-200 px-4 py-2">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="w-full flex justify-between items-center">
             <Link to="/" className="text-xl font-bold text-gray-800">
               Pivotal
             </Link>
