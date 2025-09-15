@@ -102,8 +102,8 @@ export function findAllBenchmarkFiles(folderName: string): string[] {
   }
 }
 
-// Check if a string looks like a specific benchmark file (contains gen + timestamp)
+// Check if a string looks like a specific benchmark file (contains gen + timestamp OR ends with .json)
 export function isSpecificBenchmarkFile(target: string): boolean {
-  // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms)
-  return /gen\d{17}/.test(target)
+  // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms) OR ends with .json
+  return /gen\d{17}/.test(target) || target.endsWith('.json')
 }
