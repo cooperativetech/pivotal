@@ -1,5 +1,6 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
+import type { calendar_v3 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
@@ -12,9 +13,7 @@ import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
 
-function isBotSenderEnabled(): boolean {
-  return process.env.PV_INVITES_SENDER === 'bot' && !!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN
-}
+// Note: If PV_INVITES_SENDER === 'bot', we never prompt users to connect calendars.
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -581,6 +580,57 @@ export async function createCalendarInviteFromBot(
 
 /** Reschedule the latest calendar event for a topic to new times and notify attendees. */
 export async function rescheduleCalendarEvent(
+/**
+ * Find the most relevant Google Calendar event for a topic using extendedProperties tags.
+ */
+async function findTaggedEventForTopic(topicId: string) {
+  if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return null
+
+  const oauth2Client = buildOAuthClient()
+  oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+  // Use privateExtendedProperty filter to find events tagged with this topic id
+  const res = await calendar.events.list({
+    calendarId: getBotCalendarId(),
+    privateExtendedProperty: [`pv_topic_id=${topicId}`],
+    showDeleted: false,
+    maxResults: 50,
+    singleEvents: true,
+    orderBy: 'startTime',
+    timeMin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(), // search last 30 days
+    timeMax: new Date(Date.now() + 1000 * 60 * 60 * 24 * 400).toISOString(), // and up to ~1y ahead
+  })
+
+  const items: calendar_v3.Schema$Event[] = res.data.items ?? []
+  if (items.length === 0) return null
+
+  // Prefer the next upcoming event; otherwise the most recently updated
+  const now = new Date()
+  type ListedEvent = { e: calendar_v3.Schema$Event; start: Date; end: Date; updated: Date }
+  const upcoming: ListedEvent[] = items
+    .map((e): ListedEvent => ({
+      e,
+      start: new Date(e.start?.dateTime || e.start?.date || 0),
+      end: new Date(e.end?.dateTime || e.end?.date || 0),
+      updated: e.updated ? new Date(e.updated) : new Date(0),
+    }))
+    .filter((x) => x.end >= now)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  if (upcoming.length > 0) return upcoming[0].e
+
+  // Fallback: most recently updated
+  items.sort((a: calendar_v3.Schema$Event, b: calendar_v3.Schema$Event) =>
+    new Date(b.updated ?? 0).getTime() - new Date(a.updated ?? 0).getTime(),
+  )
+  return items[0]
+}
+
+/**
+ * Attempt to reschedule a previously created (tagged) event for this topic. Returns true if updated.
+ */
+export async function tryRescheduleTaggedEvent(
   topicId: string,
   newStartISO: string,
   newEndISO: string,

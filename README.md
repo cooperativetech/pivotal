@@ -20,7 +20,7 @@ mkcert -install
 pnpm run cert
 ```
 
-Set the following env vars to their proper values (e.g. in your ~/.bashrc):
+Set the following env vars to their proper values (e.g. in your `~/.zshrc` or `~/.bashrc`). Note: the app and tooling do not load a `.env` file automatically.
 ```
 export PV_DB_URL=...
 export PV_OPENROUTER_API_KEY=...
@@ -70,7 +70,7 @@ brew install postgresql@16
 brew services start postgresql@16
 createdb pivotal
 
-# probably also add the following to your ~/.bashrc
+# add the following to your shell init (e.g., `~/.zshrc` or `~/.bashrc`)
 export PV_DB_URL='postgresql://localhost:5432/pivotal'
 ```
 

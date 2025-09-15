@@ -5,6 +5,7 @@ import { tool } from './agent-sdk'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
+import type { TopicUserContext, ScheduledEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
 import { getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
@@ -328,6 +329,41 @@ IMPORTANT:
 - Do not include any text before or after the JSON`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
+
+  // Additional concise rules to make rescheduling smooth
+  const rescheduleAddendum = `
+
+## Rescheduling Behavior (Important)
+- If there is exactly ONE scheduled meeting in this topic and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
+- If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification listing the options by day/time. If the message clearly references a specific day/time, pick that one directly.
+- To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
+`
+
+  // Summarize any scheduled events stored in topic context (bot-scoped)
+  const botCtx: TopicUserContext = topic.perUserContext[topic.botUserId] || {}
+  const rawScheduled: ScheduledEvent[] = Array.isArray(botCtx?.scheduledEvents) ? botCtx.scheduledEvents : []
+  const scheduledEvents: Array<{ start?: string; end?: string; title?: string | null }> = rawScheduled.map((e) => ({
+    start: e.start,
+    end: e.end,
+    title: e.title ?? null,
+  }))
+
+  const formatEvent = (e: { start?: string; end?: string; title?: string | null }) => {
+    if (!e?.start || !e?.end) return null
+    const start = new Date(e.start)
+    const end = new Date(e.end)
+    const startStr = formatTimestampWithTimezone(start, callingUserTimezone)
+    const isSameDay = start.toDateString() === end.toDateString()
+    const endStr = isSameDay
+      ? end.toLocaleString('en-US', { timeZone: callingUserTimezone || 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })
+      : formatTimestampWithTimezone(end, callingUserTimezone)
+    const title = e.title ? ` — ${e.title}` : ''
+    return `  - ${startStr} to ${endStr}${title}`
+  }
+
+  const scheduledSection = scheduledEvents.length > 0
+    ? `\nCurrent Scheduled Events (in this topic):\n${scheduledEvents.map(formatEvent).filter(Boolean).join('\n')}`
+    : ''
 
   const userMapAndTopicInfo = `
 ${userMap && userMap.size > 0 ? `User Directory:
