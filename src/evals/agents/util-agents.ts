@@ -241,8 +241,8 @@ Response format:
 - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
 
 Examples:
-- "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
-- "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`
+- "Let's meet at 2 PM tomorrow" → {"start": "2025-01-02T19:00:00-05:00", "end": "2025-01-02T20:00:00-05:00", "summary": "Meeting"}
+- "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-06T20:30:00-05:00", "end": "2025-01-06T21:30:00-05:00", "summary": "Meeting"}`
 
     try {
       const result = await run(this.agent, prompt)

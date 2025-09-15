@@ -79,12 +79,14 @@ export class BaseScheduleUser implements UserProfile {
           day: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
-          hour12: true
+          hour12: true,
+          timeZone: 'America/New_York'
         })
         const eventEndTime = event.end.toLocaleTimeString('en-US', { 
           hour: 'numeric',
           minute: '2-digit',
-          hour12: true
+          hour12: true,
+          timeZone: 'America/New_York'
         })
         console.log(`    Conflict: ${this.name} has "${event.summary}" from ${eventStartTime} to ${eventEndTime}`)
         return false // Intersection found, not possible

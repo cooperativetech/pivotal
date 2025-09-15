@@ -9,8 +9,8 @@ import { join } from 'path'
 import { formatTimestamp } from './utils'
 
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
-  // Define date range for fake calendars using offsets from January 1, 2025
-  const referenceDate = new Date('2025-01-01T00:00:00Z')
+  // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
+  const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate)
   startTime.setDate(referenceDate.getDate() + startTimeOffset)
   const endTime = new Date(referenceDate)
@@ -46,7 +46,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZone: 'America/New_York'
       })
       const endTimeStr = endTime.toLocaleString('en-US', { 
         weekday: 'long', 
@@ -54,7 +55,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZone: 'America/New_York'
       })
       
       // Format meeting length appropriately
