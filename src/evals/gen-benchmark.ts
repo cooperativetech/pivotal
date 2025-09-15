@@ -6,19 +6,7 @@ import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
-
-function formatTimestamp(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
-  
-  return `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}`
-}
+import { formatTimestamp } from './utils'
 
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
   // Define date range for fake calendars using offsets from January 1, 2025
