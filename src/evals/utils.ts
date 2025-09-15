@@ -53,21 +53,34 @@ export function saveEvaluationResults(
   // Remove .json extension from benchmark filename if present
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
   
-  // Create nested folder structure: results/benchmark_file/eval_timestamp/
-  const benchmarkFolderPath = join(__dirname, 'results', baseFileName)
+  // Extract benchmark type and gen timestamp from filename
+  // Format: benchmark_2agents_1start_2end_60min_gen20250915121553773
+  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+  
+  if (!genMatch) {
+    throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
+  }
+  
+  const [, benchmarkType, genTimestamp] = genMatch
+  
+  // Create 3-level nested folder structure: results/benchmark_type/gen_timestamp/eval_timestamp/
+  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
+  const genTimestampPath = join(benchmarkTypePath, genTimestamp)
   const evalFolderName = `eval${eval_timestamp}`
-  const evalFolderPath = join(benchmarkFolderPath, evalFolderName)
+  const evalFolderPath = join(genTimestampPath, evalFolderName)
   
   // Create folder if it doesn't exist
   if (!existsSync(evalFolderPath)) {
     mkdirSync(evalFolderPath, { recursive: true })
-    console.log(`Created results folder: ${baseFileName}/${evalFolderName}`)
+    console.log(`Created results folder: ${benchmarkType}/${genTimestamp}/${evalFolderName}`)
   }
   
   // Add timestamp to the results data
   const finalResults = {
     eval_timestamp,
     benchmarkFile: baseFileName,
+    benchmarkType,
+    genTimestamp,
     ...resultsData
   }
   
@@ -124,10 +137,22 @@ export function createAggregatedSummary(
   // Remove .json extension from benchmark filename if present
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
   
+  // Extract benchmark type and gen timestamp from filename
+  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+  
+  if (!genMatch) {
+    console.error(`Invalid benchmark filename format: ${baseFileName}. Cannot create aggregated summary.`)
+    return
+  }
+  
+  const [, benchmarkType, genTimestamp] = genMatch
+  
   // Create aggregated summary
   const aggregatedData = {
     summary_timestamp: timestamp,
     benchmarkFile: baseFileName,
+    benchmarkType,
+    genTimestamp,
     totalRuns: allResults.length,
     expectedRuns: nReps,
     aggregatedResults: {
@@ -149,14 +174,15 @@ export function createAggregatedSummary(
     }))
   }
   
-  // Save aggregated summary to top-level benchmark folder
-  const benchmarkFolderPath = join(__dirname, 'results', baseFileName)
+  // Save aggregated summary to gen timestamp folder
+  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
+  const genTimestampPath = join(benchmarkTypePath, genTimestamp)
   const summaryFileName = `runs${timestamp}_summary.json`
-  const summaryPath = join(benchmarkFolderPath, summaryFileName)
+  const summaryPath = join(genTimestampPath, summaryFileName)
   
   // Create folder if it doesn't exist
-  if (!existsSync(benchmarkFolderPath)) {
-    mkdirSync(benchmarkFolderPath, { recursive: true })
+  if (!existsSync(genTimestampPath)) {
+    mkdirSync(genTimestampPath, { recursive: true })
   }
   
   writeFileSync(summaryPath, JSON.stringify(aggregatedData, null, 2))
