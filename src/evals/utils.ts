@@ -107,3 +107,68 @@ export function isSpecificBenchmarkFile(target: string): boolean {
   // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms) OR ends with .json
   return /gen\d{17}/.test(target) || target.endsWith('.json')
 }
+
+// Create aggregated summary from multiple evaluation results
+export function createAggregatedSummary(
+  benchmarkFileName: string,
+  allResults: Record<string, unknown>[],
+  nReps: number
+): void {
+  if (allResults.length === 0) {
+    console.log('No results to aggregate')
+    return
+  }
+
+  const timestamp = formatTimestamp()
+  
+  // Remove .json extension from benchmark filename if present
+  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
+  
+  // Create aggregated summary
+  const aggregatedData = {
+    summary_timestamp: timestamp,
+    benchmarkFile: baseFileName,
+    totalRuns: allResults.length,
+    expectedRuns: nReps,
+    aggregatedResults: {
+      successRate: allResults.filter(r => r.suggestedEvent !== null).length / allResults.length,
+      confirmationRate: allResults.filter(r => r.allAgentsConfirmed === true).length / allResults.length,
+      averageConfirmedAgents: allResults.reduce((sum, r) => sum + (r.confirmedAgents as string[]).length, 0) / allResults.length,
+      feasibilityRate: allResults.filter(r => {
+        const evalSummary = r.evaluationSummary as Record<string, unknown>
+        return evalSummary.allCanAttend === true
+      }).length / allResults.length
+    },
+    individualResults: allResults.map((result, index) => ({
+      runNumber: index + 1,
+      eval_timestamp: result.eval_timestamp,
+      success: result.suggestedEvent !== null,
+      confirmed: result.allAgentsConfirmed,
+      confirmedCount: (result.confirmedAgents as string[]).length,
+      feasible: (result.evaluationSummary as Record<string, unknown>).allCanAttend
+    }))
+  }
+  
+  // Save aggregated summary to top-level benchmark folder
+  const benchmarkFolderPath = join(__dirname, 'results', baseFileName)
+  const summaryFileName = `runs${timestamp}_summary.json`
+  const summaryPath = join(benchmarkFolderPath, summaryFileName)
+  
+  // Create folder if it doesn't exist
+  if (!existsSync(benchmarkFolderPath)) {
+    mkdirSync(benchmarkFolderPath, { recursive: true })
+  }
+  
+  writeFileSync(summaryPath, JSON.stringify(aggregatedData, null, 2))
+  console.log(`\n📊 Aggregated summary saved to: ${summaryPath}`)
+  
+  // Print summary statistics
+  console.log('\n📈 Summary Statistics:')
+  console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${allResults.filter(r => r.suggestedEvent !== null).length}/${allResults.length})`)
+  console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${allResults.filter(r => r.allAgentsConfirmed === true).length}/${allResults.length})`)
+  console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${allResults.filter(r => {
+    const evalSummary = r.evaluationSummary as Record<string, unknown>
+    return evalSummary.allCanAttend === true
+  }).length}/${allResults.length})`)
+  console.log(`  Average Confirmed Agents: ${aggregatedData.aggregatedResults.averageConfirmedAgents.toFixed(1)}`)
+}

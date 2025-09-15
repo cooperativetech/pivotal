@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile, createAggregatedSummary } from './utils'
 
 // Parse command line arguments for benchmark file or folder
 function parseArgs(): { benchmarkFile: string; nReps: number } {
@@ -338,20 +338,34 @@ async function runSimpleEvaluation(): Promise<void> {
 
 // Wrapper function to run repeated evaluations
 async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
+  const allResults: Record<string, unknown>[] = []
+  
   for (let rep = 1; rep <= nReps; rep++) {
     if (nReps > 1) {
       console.log(`\n--- Repetition ${rep}/${nReps} ---`)
     }
-    await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
+    try {
+      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
+      allResults.push(result)
+    } catch (error) {
+      console.error(`Repetition ${rep} failed:`, error)
+      // Continue with other repetitions
+    }
   }
   
   if (nReps > 1) {
     console.log(`\n✅ Completed all ${nReps} repetitions for this case`)
+    
+    // Create aggregated summary if we have multiple runs
+    if (allResults.length > 1) {
+      const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+      createAggregatedSummary(fileName, allResults, nReps)
+    }
   }
 }
 
 // Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<void> {
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<Record<string, unknown>> {
   try {
     // Step 1: Clear database
     await clearDatabase()
@@ -459,10 +473,11 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
     saveEvaluationResults(fileName, resultsData)
 
-    console.log('\n Evaluation completed successfully')
+    console.log('\n✅ Evaluation completed successfully')
+    return resultsData
   } catch (error) {
-    console.error('\nL Evaluation failed:', error)
-    process.exit(1)
+    console.error('\n❌ Evaluation failed:', error)
+    throw error // Re-throw to allow calling function to handle it
   }
 }
 
