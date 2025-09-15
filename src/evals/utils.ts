@@ -1,6 +1,6 @@
 import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
-import { existsSync, writeFileSync, mkdirSync } from 'fs'
+import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -75,4 +75,35 @@ export function saveEvaluationResults(
   const summaryPath = join(evalFolderPath, 'summary.json')
   writeFileSync(summaryPath, JSON.stringify(finalResults, null, 2))
   console.log(`Evaluation results saved to: ${summaryPath}`)
+}
+
+// Find all benchmark files in a folder
+export function findAllBenchmarkFiles(folderName: string): string[] {
+  const folderPath = join(__dirname, 'data', folderName)
+  
+  if (!existsSync(folderPath)) {
+    throw new Error(`Benchmark folder not found: ${folderName} at ${folderPath}`)
+  }
+  
+  try {
+    const files = readdirSync(folderPath)
+    const benchmarkFiles = files
+      .filter(file => file.endsWith('.json') && file.includes('_gen'))
+      .map(file => join(folderPath, file))
+      .sort() // Sort files alphabetically for consistent processing order
+    
+    if (benchmarkFiles.length === 0) {
+      throw new Error(`No benchmark files found in folder: ${folderName}`)
+    }
+    
+    return benchmarkFiles
+  } catch (error) {
+    throw new Error(`Error reading benchmark folder ${folderName}: ${error}`)
+  }
+}
+
+// Check if a string looks like a specific benchmark file (contains gen + timestamp)
+export function isSpecificBenchmarkFile(target: string): boolean {
+  // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms)
+  return /gen\d{17}/.test(target)
 }

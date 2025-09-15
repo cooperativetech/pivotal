@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
-import { findBenchmarkFile, saveEvaluationResults } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile } from './utils'
 
-// Parse command line arguments for benchmark file
+// Parse command line arguments for benchmark file or folder
 function parseArgs(): { benchmarkFile: string } {
   const args = process.argv.slice(2)
   
@@ -13,7 +13,7 @@ function parseArgs(): { benchmarkFile: string } {
   for (const arg of args) {
     if (arg.startsWith('--')) {
       const [key, value] = arg.slice(2).split('=')
-      if (key === 'file' || key === 'benchmark') {
+      if (key === 'file' || key === 'benchmark' || key === 'folder' || key === 'cases') {
         benchmarkFile = value
       }
     }
@@ -301,14 +301,42 @@ async function runSimpleEvaluation(): Promise<void> {
   try {
     // Step 1: Parse command line arguments
     const { benchmarkFile } = parseArgs()
-    console.log(`Using benchmark file: ${benchmarkFile}`)
     
-    // Step 2: Clear database
+    // Step 2: Determine if it's a single file or folder
+    const isFile = isSpecificBenchmarkFile(benchmarkFile)
+    
+    if (isFile) {
+      console.log(`Using benchmark file: ${benchmarkFile}`)
+      await runSingleEvaluation(benchmarkFile)
+    } else {
+      console.log(`Using benchmark folder: ${benchmarkFile}`)
+      const benchmarkFiles = findAllBenchmarkFiles(benchmarkFile)
+      console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
+      
+      for (let i = 0; i < benchmarkFiles.length; i++) {
+        console.log(`\n${'='.repeat(80)}`)
+        console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
+        console.log(`${'='.repeat(80)}`)
+        await runSingleEvaluation(benchmarkFiles[i], true)
+      }
+      
+      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations`)
+    }
+  } catch (error) {
+    console.error('\n❌ Evaluation failed:', error)
+    process.exit(1)
+  }
+}
+
+// Run a single evaluation for a specific benchmark file
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<void> {
+  try {
+    // Step 1: Clear database
     await clearDatabase()
     
-    // Step 3: Load benchmark file and agents from benchmark data
+    // Step 2: Load benchmark file and agents from benchmark data
     console.log('\nLoading benchmark file...')
-    const dataPath = findBenchmarkFile(benchmarkFile)
+    const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
     console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
     const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
@@ -405,7 +433,9 @@ async function runSimpleEvaluation(): Promise<void> {
       }
     }
     
-    saveEvaluationResults(benchmarkFile, resultsData)
+    // Extract filename from path for results saving
+    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+    saveEvaluationResults(fileName, resultsData)
 
     console.log('\n Evaluation completed successfully')
   } catch (error) {
