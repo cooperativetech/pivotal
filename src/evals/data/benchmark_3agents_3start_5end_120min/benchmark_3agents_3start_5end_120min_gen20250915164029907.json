@@ -1,0 +1,216 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-04T00:00:00.000Z",
+    "startTimeOffset": 3,
+    "endTime": "2025-01-06T00:00:00.000Z",
+    "endTimeOffset": 5,
+    "meetingLength": 120,
+    "nAgents": 3
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 2-hour meeting between Saturday, January 4 at 1:00 AM and Monday, January 6 at 1:00 AM with Bob, Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-06T14:00:00.000Z",
+          "end": "2025-01-06T15:30:00.000Z",
+          "summary": "Creative Brainstorming Session - New Horror Escape Room"
+        },
+        {
+          "start": "2025-01-06T16:00:00.000Z",
+          "end": "2025-01-06T17:30:00.000Z",
+          "summary": "Site Visit - Abandoned Mine Escape Room Location"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T21:00:00.000Z",
+          "summary": "Puzzle Design Deep Work - Mechanical Lock Mechanisms"
+        },
+        {
+          "start": "2025-01-06T21:30:00.000Z",
+          "end": "2025-01-06T22:30:00.000Z",
+          "summary": "Weekly Team Sync - Escape Room Design Team"
+        },
+        {
+          "start": "2025-01-07T15:00:00.000Z",
+          "end": "2025-01-07T16:30:00.000Z",
+          "summary": "Vendor Meeting - Audio/Visual Equipment for Space Station Room"
+        },
+        {
+          "start": "2025-01-07T18:00:00.000Z",
+          "end": "2025-01-07T20:00:00.000Z",
+          "summary": "Prototype Testing - Egyptian Tomb Escape Mechanisms"
+        },
+        {
+          "start": "2025-01-07T20:30:00.000Z",
+          "end": "2025-01-07T21:30:00.000Z",
+          "summary": "Guest Experience Review - Customer Feedback Analysis"
+        },
+        {
+          "start": "2025-01-08T14:30:00.000Z",
+          "end": "2025-01-08T16:00:00.000Z",
+          "summary": "Budget Review Meeting - Q1 Escape Room Projects"
+        },
+        {
+          "start": "2025-01-08T16:30:00.000Z",
+          "end": "2025-01-08T18:00:00.000Z",
+          "summary": "Themed Entertainment Association Conference Call"
+        },
+        {
+          "start": "2025-01-08T19:30:00.000Z",
+          "end": "2025-01-08T22:00:00.000Z",
+          "summary": "Hands-on Workshop - AR Integration for Escape Rooms"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-04T14:00:00.000Z",
+          "end": "2025-01-04T15:30:00.000Z",
+          "summary": "Cast Member Safety Briefing"
+        },
+        {
+          "start": "2025-01-04T16:00:00.000Z",
+          "end": "2025-01-04T17:00:00.000Z",
+          "summary": "Music Director Meeting - New Show Development"
+        },
+        {
+          "start": "2025-01-04T18:00:00.000Z",
+          "end": "2025-01-04T22:00:00.000Z",
+          "summary": "Live Performance - Main Stage Show"
+        },
+        {
+          "start": "2025-01-04T23:00:00.000Z",
+          "end": "2025-01-05T00:30:00.000Z",
+          "summary": "Equipment Check & Instrument Maintenance"
+        },
+        {
+          "start": "2025-01-05T13:30:00.000Z",
+          "end": "2025-01-05T14:30:00.000Z",
+          "summary": "Rehearsal - Parade Music Coordination"
+        },
+        {
+          "start": "2025-01-05T15:00:00.000Z",
+          "end": "2025-01-05T16:00:00.000Z",
+          "summary": "Guest Interaction Training Session"
+        },
+        {
+          "start": "2025-01-05T17:00:00.000Z",
+          "end": "2025-01-05T21:00:00.000Z",
+          "summary": "Afternoon Performances - Character Meet & Greet Area"
+        },
+        {
+          "start": "2025-01-05T22:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "summary": "Entertainment Team Debrief"
+        },
+        {
+          "start": "2025-01-06T14:00:00.000Z",
+          "end": "2025-01-06T15:00:00.000Z",
+          "summary": "Weekly Entertainment Schedule Review"
+        },
+        {
+          "start": "2025-01-06T16:00:00.000Z",
+          "end": "2025-01-06T17:30:00.000Z",
+          "summary": "New Attraction Music Recording Session"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T23:00:00.000Z",
+          "summary": "Special Event Performance - VIP Guest Experience"
+        },
+        {
+          "start": "2025-01-07T00:00:00.000Z",
+          "end": "2025-01-07T01:00:00.000Z",
+          "summary": "Personal Practice Time - New Material"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-04T10:00:00.000Z",
+          "end": "2025-01-04T11:00:00.000Z",
+          "summary": "Pre-trip Vehicle Inspection & Route Planning"
+        },
+        {
+          "start": "2025-01-04T11:00:00.000Z",
+          "end": "2025-01-04T20:00:00.000Z",
+          "summary": "Long Haul Delivery - Wellness Equipment to Boston"
+        },
+        {
+          "start": "2025-01-04T21:00:00.000Z",
+          "end": "2025-01-04T22:00:00.000Z",
+          "summary": "Virtual Meeting: Fleet Wellness Initiative Strategy"
+        },
+        {
+          "start": "2025-01-04T23:00:00.000Z",
+          "end": "2025-01-05T00:00:00.000Z",
+          "summary": "Workout Session - Mobile Fitness Truck Demo"
+        },
+        {
+          "start": "2025-01-05T10:30:00.000Z",
+          "end": "2025-01-05T11:30:00.000Z",
+          "summary": "Morning Meditation & Wellness Check-in"
+        },
+        {
+          "start": "2025-01-05T12:00:00.000Z",
+          "end": "2025-01-05T16:00:00.000Z",
+          "summary": "Delivery Run - Organic Supplements to NYC Distribution Centers"
+        },
+        {
+          "start": "2025-01-05T17:00:00.000Z",
+          "end": "2025-01-05T18:00:00.000Z",
+          "summary": "Lunch Meeting: Partnership Discussion with Wellness Retreat Centers"
+        },
+        {
+          "start": "2025-01-05T19:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "summary": "Return Haul - Yoga Equipment Pickup from Philadelphia"
+        },
+        {
+          "start": "2025-01-06T00:00:00.000Z",
+          "end": "2025-01-06T01:00:00.000Z",
+          "summary": "Business Development Call: Mobile Wellness Truck Franchise Opportunities"
+        },
+        {
+          "start": "2025-01-06T11:00:00.000Z",
+          "end": "2025-01-06T12:00:00.000Z",
+          "summary": "Fleet Safety & Wellness Training Prep"
+        },
+        {
+          "start": "2025-01-06T13:00:00.000Z",
+          "end": "2025-01-06T17:00:00.000Z",
+          "summary": "Special Delivery - Fitness Equipment to Corporate Wellness Centers"
+        },
+        {
+          "start": "2025-01-06T18:00:00.000Z",
+          "end": "2025-01-06T19:30:00.000Z",
+          "summary": "Team Meeting: Innovative Wellness Logistics Solutions"
+        },
+        {
+          "start": "2025-01-06T20:00:00.000Z",
+          "end": "2025-01-06T21:00:00.000Z",
+          "summary": "Vehicle Maintenance Check & Wellness Tech Integration Review"
+        },
+        {
+          "start": "2025-01-06T22:00:00.000Z",
+          "end": "2025-01-06T23:00:00.000Z",
+          "summary": "Personal Fitness Training Session"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}
