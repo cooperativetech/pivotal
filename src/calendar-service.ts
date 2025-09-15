@@ -12,6 +12,7 @@ import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
+import { baseURL } from './auth'
 
 export interface GoogleAuthTokenResponse {
   access_token: string
@@ -21,8 +22,7 @@ export interface GoogleAuthTokenResponse {
   token_type: string
 }
 
-const API_BASE_URL = process.env.PV_BASE_URL || 'http://localhost:3001'
-const GOOGLE_AUTH_REDIRECT_URI = `${API_BASE_URL}/auth/google/callback`
+const GOOGLE_AUTH_REDIRECT_URI = `${baseURL}/auth/google/callback`
 
 /**
  * Get stored user context
