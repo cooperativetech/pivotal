@@ -106,5 +106,50 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   return agents
 }
 
-// Run the async function with default parameters
-createBenchmark(1, 2, 60, 2).catch(console.error)
+// Parse command line arguments
+function parseArgs() {
+  const args = process.argv.slice(2)
+  const defaults = {
+    startTimeOffset: 1,
+    endTimeOffset: 2,
+    meetingLength: 60,
+    nAgents: 2,
+  }
+
+  // Parse named arguments (--arg=value format)
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      const [key, value] = arg.slice(2).split('=')
+      if (key === 'startTimeOffset' || key === 'start') {
+        defaults.startTimeOffset = parseInt(value, 10)
+      } else if (key === 'endTimeOffset' || key === 'end') {
+        defaults.endTimeOffset = parseInt(value, 10)
+      } else if (key === 'meetingLength' || key === 'length') {
+        defaults.meetingLength = parseInt(value, 10)
+      } else if (key === 'nAgents' || key === 'agents') {
+        defaults.nAgents = parseInt(value, 10)
+      }
+    }
+  }
+
+  // Parse positional arguments (backwards compatibility)
+  if (args.length >= 1 && !args[0].startsWith('--')) {
+    defaults.startTimeOffset = parseInt(args[0], 10)
+  }
+  if (args.length >= 2 && !args[1].startsWith('--')) {
+    defaults.endTimeOffset = parseInt(args[1], 10)
+  }
+  if (args.length >= 3 && !args[2].startsWith('--')) {
+    defaults.meetingLength = parseInt(args[2], 10)
+  }
+  if (args.length >= 4 && !args[3].startsWith('--')) {
+    defaults.nAgents = parseInt(args[3], 10)
+  }
+
+  return defaults
+}
+
+// Run the async function with parsed parameters
+const { startTimeOffset, endTimeOffset, meetingLength, nAgents } = parseArgs()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nAgents=${nAgents}`)
+createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nAgents).catch(console.error)
