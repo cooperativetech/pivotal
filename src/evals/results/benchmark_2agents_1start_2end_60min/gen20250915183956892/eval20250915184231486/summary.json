@@ -1,0 +1,26 @@
+{
+  "eval_timestamp": "20250915184231486",
+  "benchmarkFile": "benchmark_2agents_1start_2end_60min_gen20250915183956892",
+  "benchmarkType": "benchmark_2agents_1start_2end_60min",
+  "genTimestamp": "gen20250915183956892",
+  "suggestedEvent": {
+    "start": "2025-01-03T05:00:00.000Z",
+    "end": "2025-01-03T06:00:00.000Z",
+    "summary": "Discussion meeting"
+  },
+  "confirmedAgents": [
+    "Alice",
+    "Bob"
+  ],
+  "allAgentsConfirmed": true,
+  "canAttend": {
+    "Alice": true,
+    "Bob": true
+  },
+  "evaluationSummary": {
+    "totalAgents": 2,
+    "confirmedCount": 2,
+    "hasSuggestedEvent": true,
+    "allCanAttend": true
+  }
+}

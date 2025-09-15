@@ -7,21 +7,26 @@ function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {
     const startDate = event.start.toLocaleDateString('en-US', { 
       weekday: 'short', 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric',
+      timeZone: 'America/New_York'
     })
     const startTime = event.start.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit', 
-      hour12: false 
+      hour12: false,
+      timeZone: 'America/New_York'
     })
     const endTime = event.end.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit', 
-      hour12: false 
+      hour12: false,
+      timeZone: 'America/New_York'
     })
     
-    // Check if the event spans multiple days
-    const sameDay = event.start.toDateString() === event.end.toDateString()
+    // Check if the event spans multiple days in Eastern Time
+    const startDateET = event.start.toLocaleDateString('en-US', { timeZone: 'America/New_York' })
+    const endDateET = event.end.toLocaleDateString('en-US', { timeZone: 'America/New_York' })
+    const sameDay = startDateET === endDateET
     
     if (sameDay) {
       return `${startDate} ${startTime}-${endTime}: ${event.summary}`
@@ -29,7 +34,8 @@ function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {
       const endDate = event.end.toLocaleDateString('en-US', { 
         weekday: 'short', 
         month: 'short', 
-        day: 'numeric' 
+        day: 'numeric',
+        timeZone: 'America/New_York'
       })
       return `${startDate} ${startTime} - ${endDate} ${endTime}: ${event.summary}`
     }
