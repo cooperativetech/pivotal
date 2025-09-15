@@ -8,7 +8,7 @@ function parseArgs(): { benchmarkFile: string; nReps: number } {
   const args = process.argv.slice(2)
   
   // Default values
-  let benchmarkFile = 'benchmark_2agents_1start_2end_60min.json'
+  let benchmarkFile = 'benchmark_2agents_1start_2end_60min'
   let nReps = 1
   
   // Parse named arguments (--arg=value format)
