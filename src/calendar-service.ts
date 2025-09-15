@@ -6,13 +6,8 @@ import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 
 import db from './db/engine'
-<<<<<<< HEAD
-import { userDataTable, slackUserTable, calendarEventTable } from './db/schema/main'
-import type { TopicWithState, UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
-=======
-import { userDataTable, slackUserTable, topicTable, type Topic } from './db/schema/main'
-import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext } from '@shared/api-types'
->>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
+import { userDataTable, slackUserTable } from './db/schema/main'
+import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
@@ -492,7 +487,7 @@ export async function createCalendarInviteFromLeader(
 export async function createCalendarInviteFromBot(
   topic: TopicWithState,
   finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
-): Promise<{ htmlLink?: string, meetLink?: string } | null> {
+): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string } | null> {
   try {
     if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) {
       console.warn('Bot calendar not configured: PV_GOOGLE_BOT_REFRESH_TOKEN is missing')
@@ -546,15 +541,14 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
-    return { htmlLink: event.htmlLink || undefined, meetLink }
+    return { htmlLink: event.htmlLink || undefined, meetLink, eventId: event.id || undefined, calendarId: getBotCalendarId() }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
     return null
   }
 }
 
-<<<<<<< HEAD
-// Rescheduling helpers (database-backed)
+// Rescheduling helpers (per-topic state minimal)
 
 /**
  * Attempt to reschedule a previously created (tagged) event for this topic. Returns true if updated.
@@ -565,22 +559,12 @@ export async function tryRescheduleTaggedEvent(
   newEndISO: string,
 ): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
   try {
-    // Fetch most recent event for this topic
-    const [evt] = await db
-      .select()
-      .from(calendarEventTable)
-      .where(eq(calendarEventTable.topicId, topicId))
-      .orderBy(calendarEventTable.updatedAt)
-      .limit(1)
-
-    if (!evt) {
-      return { success: false }
-    }
+    const topic = await getTopicWithState(topicId)
+    const evt = topic.state.perUserContext[topic.botUserId]?.scheduledEvent
+    if (!evt || evt.organizer !== 'bot' || !evt.calendarId || !evt.eventId) return { success: false }
 
     const oauth2Client = buildOAuthClient()
-    oauth2Client.setCredentials({
-      refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN,
-    })
+    oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
     const patchRes = await calendar.events.patch({
@@ -594,24 +578,9 @@ export async function tryRescheduleTaggedEvent(
     })
 
     const updated = patchRes.data
-    let meetLink: string | undefined
     const entryPoints = updated.conferenceData?.entryPoints
-    if (entryPoints && entryPoints.length > 0) {
-      const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
-      meetLink = meeting.uri || meeting.label || undefined
-    }
-
-    // Update DB record
-    await db
-      .update(calendarEventTable)
-      .set({
-        start: new Date(newStartISO),
-        end: new Date(newEndISO),
-        htmlLink: updated.htmlLink || evt.htmlLink,
-        meetLink: meetLink || evt.meetLink || null,
-      })
-      .where(eq(calendarEventTable.id, evt.id))
-
+    const meeting = entryPoints?.find((e) => e.entryPointType === 'video') || entryPoints?.[0]
+    const meetLink = meeting?.uri || meeting?.label || undefined
     return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
   } catch (err) {
     console.error('Error rescheduling calendar event:', err)
@@ -619,8 +588,6 @@ export async function tryRescheduleTaggedEvent(
   }
 }
 
-=======
->>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 /**
  * Fetch calendar events for a user and store in user context
  * This caches calendar data for the LLM to use during scheduling

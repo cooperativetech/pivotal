@@ -12,11 +12,7 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-<<<<<<< HEAD
 import { createCalendarInviteFromBot, tryRescheduleTaggedEvent } from '../calendar-service'
-=======
-import { createCalendarInviteFromBot } from '../calendar-service'
->>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -270,7 +266,6 @@ export const localRoutes = new Hono()
     }
   })
 
-<<<<<<< HEAD
   // Reschedule the most recent event for a topic (bot calendar)
   .post('/topics/:topicId/reschedule', zValidator('json', z.strictObject({
     start: z.string(),
@@ -290,8 +285,6 @@ export const localRoutes = new Hono()
     }
   })
 
-=======
->>>>>>> ab5bcd3 (MVP of calendar scheduling works. Testing plan: ran pnpm run dev and scheduled a bunch of meetings with myself)
   .get('/channels/:channelId', async (c) => {
     const channelId = c.req.param('channelId')
 
