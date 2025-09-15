@@ -1,0 +1,88 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T00:00:00.000Z",
+    "startTimeOffset": 1,
+    "endTime": "2025-01-03T00:00:00.000Z",
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 1:00 AM and Friday, January 3 at 1:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Animal Behavior Assessment - Max (German Shepherd)"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Separation Anxiety Session - Luna (Golden Retriever)"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Case Notes & Documentation"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Aggressive Behavior Therapy - Rocky (Pit Bull Mix)"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Owner Consultation - Training Plan for Bella"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Team Meeting - Weekly Case Review"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Client consultation - First-time homebuyer guidance"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Property showing - 3BR townhome near elementary school"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "School district research - Market analysis"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Virtual meeting with teacher relocating from California"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Open house preparation - Staging review"
+        },
+        {
+          "start": "2025-01-02T23:00:00.000Z",
+          "end": "2025-01-03T00:00:00.000Z",
+          "summary": "Evening property showing for working parents"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}

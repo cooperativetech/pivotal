@@ -3,7 +3,22 @@
 import { BaseScheduleUser } from './agents/user-agents'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
+import { join } from 'path'
+
+function formatTimestamp(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
+  
+  return `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}`
+}
 
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
   // Define date range for fake calendars using offsets from January 1, 2025
@@ -84,11 +99,21 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     agents: exportedAgents,
   }
   
-  // Create filename with benchmark parameters
-  const filename = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min.json`
+  // Create folder name and filename with benchmark parameters
+  const folderName = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
+  const timestamp = formatTimestamp()
+  const filename = `${folderName}_gen${timestamp}.json`
+  const folderPath = join('./src/evals/data', folderName)
   
-  await writeFile(`./src/evals/data/${filename}`, JSON.stringify(exportData, null, 2))
-  console.log(`Agents saved to ${filename}`)
+  // Create folder if it doesn't exist
+  if (!existsSync(folderPath)) {
+    await mkdir(folderPath, { recursive: true })
+    console.log(`Created folder: ${folderName}`)
+  }
+  
+  const filePath = join(folderPath, filename)
+  await writeFile(filePath, JSON.stringify(exportData, null, 2))
+  console.log(`Agents saved to ${filePath}`)
 
   return agents
 }

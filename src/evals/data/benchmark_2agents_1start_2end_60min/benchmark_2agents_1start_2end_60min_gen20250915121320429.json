@@ -1,0 +1,133 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T00:00:00.000Z",
+    "startTimeOffset": 1,
+    "endTime": "2025-01-03T00:00:00.000Z",
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 1:00 AM and Friday, January 3 at 1:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Weekly Content Planning Session"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Interview Prep - Dr. Elena Vasquez (Mars Mission Specialist)"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Recording Session - Episode 247: Future of Lunar Mining"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Post-Production Review & Script Editing"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Sponsor Call - Aerospace Dynamics Corp"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Research Block - James Webb Telescope Latest Discoveries"
+        },
+        {
+          "start": "2025-01-03T13:30:00.000Z",
+          "end": "2025-01-03T14:30:00.000Z",
+          "summary": "Guest Outreach & Booking - SpaceX Engineers"
+        },
+        {
+          "start": "2025-01-03T15:00:00.000Z",
+          "end": "2025-01-03T16:00:00.000Z",
+          "summary": "Audio Engineering Session with Alex"
+        },
+        {
+          "start": "2025-01-03T16:30:00.000Z",
+          "end": "2025-01-03T17:30:00.000Z",
+          "summary": "Live Q&A Prep - Upcoming Episode Release"
+        },
+        {
+          "start": "2025-01-03T19:00:00.000Z",
+          "end": "2025-01-03T20:00:00.000Z",
+          "summary": "Social Media Content Creation"
+        },
+        {
+          "start": "2025-01-03T20:30:00.000Z",
+          "end": "2025-01-03T21:30:00.000Z",
+          "summary": "Industry News Research & Fact-Checking"
+        },
+        {
+          "start": "2025-01-03T22:00:00.000Z",
+          "end": "2025-01-03T22:30:00.000Z",
+          "summary": "Weekly Analytics Review"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Team Standup - Puzzle Design Team"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Pet-Safe Materials Research Block"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Client Meeting: Dog Daycare Escape Room Concept"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Animal Behaviorist Consultation - Puzzle Safety"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Creative Design Session - Cat Cafe Mystery Room"
+        },
+        {
+          "start": "2025-01-03T14:30:00.000Z",
+          "end": "2025-01-03T15:30:00.000Z",
+          "summary": "Veterinary Partnership Meeting - Safety Protocols"
+        },
+        {
+          "start": "2025-01-03T16:00:00.000Z",
+          "end": "2025-01-03T17:30:00.000Z",
+          "summary": "Prototype Testing - Interactive Pet Enrichment Puzzles"
+        },
+        {
+          "start": "2025-01-03T18:30:00.000Z",
+          "end": "2025-01-03T19:30:00.000Z",
+          "summary": "Budget Review - Q1 Pet Experience Projects"
+        },
+        {
+          "start": "2025-01-03T20:00:00.000Z",
+          "end": "2025-01-03T21:00:00.000Z",
+          "summary": "Vision Planning - Future of Pet Interactive Experiences"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}
