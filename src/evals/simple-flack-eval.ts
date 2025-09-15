@@ -1,10 +1,31 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { findBenchmarkFile } from './utils'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+// Parse command line arguments for benchmark file
+function parseArgs(): { benchmarkFile: string } {
+  const args = process.argv.slice(2)
+  
+  // Default benchmark file
+  let benchmarkFile = 'benchmark_2agents_1start_2end_60min.json'
+  
+  // Parse named arguments (--file=value format)
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      const [key, value] = arg.slice(2).split('=')
+      if (key === 'file' || key === 'benchmark') {
+        benchmarkFile = value
+      }
+    }
+  }
+  
+  // Parse positional arguments (backwards compatibility)
+  if (args.length >= 1 && !args[0].startsWith('--')) {
+    benchmarkFile = args[0]
+  }
+  
+  return { benchmarkFile }
+}
 import { BaseScheduleUser } from './agents/user-agents'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
 import type { SimpleCalendarEvent } from './agents/user-agents'
@@ -278,12 +299,17 @@ async function runSimpleEvaluation(): Promise<void> {
   console.log('=� Starting Simple Flack Evaluation')
 
   try {
-    // Step 1: Clear database
+    // Step 1: Parse command line arguments
+    const { benchmarkFile } = parseArgs()
+    console.log(`Using benchmark file: ${benchmarkFile}`)
+    
+    // Step 2: Clear database
     await clearDatabase()
     
-    // Step 2: Load benchmark file and agents from benchmark data
+    // Step 3: Load benchmark file and agents from benchmark data
     console.log('\nLoading benchmark file...')
-    const dataPath = join(__dirname, 'data', 'benchmark_2agents_1start_2end_60min.json')
+    const dataPath = findBenchmarkFile(benchmarkFile)
+    console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
     const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
     const benchmarkAgents = benchmarkData.agents as Record<string, unknown>[]
