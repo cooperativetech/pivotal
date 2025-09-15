@@ -3,7 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import db from './db/engine'
 import { betterAuthSchema } from './db/schema/auth'
 
-const baseURL = (
+export const baseURL = (
   process.env.PV_NODE_ENV === 'local' ?
   'https://localhost:5173' :
   process.env.PV_BASE_URL || 'https://localhost:3009'
