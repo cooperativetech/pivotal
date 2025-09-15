@@ -32,9 +32,27 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     agentNames.map(() => genFakeCalendar('America/New_York', startTime, endTime)),
   )
 
+  // Validate and trim calendar events to ensure they fall within the specified date range
+  const validatedCalendarEvents = calendarEvents.map((events, agentIndex) => {
+    const originalLength = events.length
+    const filteredEvents = events.filter(event => {
+      const eventStart = new Date(event.start)
+      const eventEnd = new Date(event.end)
+      return eventStart >= startTime && eventEnd <= endTime
+    })
+    
+    if (filteredEvents.length < originalLength) {
+      const agentName = agentNames[agentIndex]
+      const trimmedCount = originalLength - filteredEvents.length
+      console.warn(`⚠️  Warning: ${agentName} had ${trimmedCount} event(s) outside the date range ${startTime.toISOString()} to ${endTime.toISOString()}. Events trimmed from ${originalLength} to ${filteredEvents.length}.`)
+    }
+    
+    return filteredEvents
+  })
+
   // Create agents list
   const agents: BaseScheduleUser[] = agentNames.map((name, index) => {
-    const calendar = convertCalendarEventsToUserProfile(calendarEvents[index])
+    const calendar = convertCalendarEventsToUserProfile(validatedCalendarEvents[index])
     
     // Only the first agent gets the scheduling goal
     let goal = ''
