@@ -230,11 +230,6 @@ Response format:
   }
 
   async extractSuggestedTime(messageText: string): Promise<SimpleCalendarEvent | null> {
-    const currentDate = new Date()
-    const currentDateString = currentDate.toISOString().split('T')[0]
-    const currentYear = currentDate.getFullYear()
-    const currentMonth = currentDate.toLocaleString('en-US', { month: 'long' })
-
     const prompt = `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
 
 For context, today is January 1, 2025.
