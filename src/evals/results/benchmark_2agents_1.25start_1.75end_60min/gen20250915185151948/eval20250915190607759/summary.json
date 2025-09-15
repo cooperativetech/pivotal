@@ -1,0 +1,27 @@
+{
+  "eval_timestamp": "20250915190607759",
+  "benchmarkFile": "benchmark_2agents_1.25start_1.75end_60min_gen20250915185151948",
+  "benchmarkType": "benchmark_2agents_1.25start_1.75end_60min",
+  "genTimestamp": "gen20250915185151948",
+  "suggestedEvent": {
+    "start": "2025-01-02T17:15:00.000Z",
+    "end": "2025-01-02T18:30:00.000Z",
+    "summary": "Meeting"
+  },
+  "confirmedAgents": [
+    "Alice",
+    "Bob"
+  ],
+  "allAgentsConfirmed": true,
+  "canAttend": {
+    "Alice": true,
+    "Bob": true
+  },
+  "maxSharedFreeTime": 120,
+  "evaluationSummary": {
+    "totalAgents": 2,
+    "confirmedCount": 2,
+    "hasSuggestedEvent": true,
+    "allCanAttend": true
+  }
+}
