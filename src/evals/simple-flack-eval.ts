@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
-import { findBenchmarkFile } from './utils'
+import { findBenchmarkFile, saveEvaluationResults } from './utils'
 
 // Parse command line arguments for benchmark file
 function parseArgs(): { benchmarkFile: string } {
@@ -378,6 +378,34 @@ async function runSimpleEvaluation(): Promise<void> {
         console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
       })
     }
+
+    // Save evaluation results
+    console.log('\nSaving evaluation results...')
+    const canAttendResults: Record<string, boolean> = {}
+    if (result.suggestedEvent) {
+      agents.forEach((agent) => {
+        canAttendResults[agent.name] = agent.eval_possibility(result.suggestedEvent!)
+      })
+    }
+    
+    const resultsData = {
+      suggestedEvent: result.suggestedEvent ? {
+        start: result.suggestedEvent.start.toISOString(),
+        end: result.suggestedEvent.end.toISOString(),
+        summary: result.suggestedEvent.summary
+      } : null,
+      confirmedAgents: confirmedAgents.map(([name]) => name),
+      allAgentsConfirmed,
+      canAttend: canAttendResults,
+      evaluationSummary: {
+        totalAgents: agents.length,
+        confirmedCount: confirmedAgents.length,
+        hasSuggestedEvent: result.suggestedEvent !== null,
+        allCanAttend: result.suggestedEvent ? agents.every((agent) => agent.eval_possibility(result.suggestedEvent!)) : false
+      }
+    }
+    
+    saveEvaluationResults(benchmarkFile, resultsData)
 
     console.log('\n Evaluation completed successfully')
   } catch (error) {

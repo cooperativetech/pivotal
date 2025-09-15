@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250915124057053",
+  "benchmarkFile": "benchmark_3agents_1start_2end_30min_gen20250915121945943",
+  "suggestedEvent": {
+    "start": "2025-01-02T14:00:00Z",
+    "end": "2025-01-02T14:30:00Z",
+    "summary": "Test meeting 2"
+  },
+  "confirmedAgents": [
+    "Alice",
+    "Bob"
+  ],
+  "allAgentsConfirmed": false,
+  "canAttend": {
+    "Alice": true,
+    "Bob": true,
+    "Charlie": false
+  }
+}
