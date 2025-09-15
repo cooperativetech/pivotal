@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs'
 import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile, createAggregatedSummary } from './utils'
+import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
 function parseArgs(): { benchmarkFile: string; nReps: number } {
@@ -418,6 +419,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     }
 
     // Check feasibility using eval_possibility
+    let maxSharedFreeTime = 0
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
       
@@ -441,6 +443,15 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         const canAttend = agent.eval_possibility(result.suggestedEvent!)
         console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
       })
+      
+      // Check if there was actually any common free time when all agents were available
+      const commonFreeSlots = findCommonFreeTime(agents, benchmarkStartTime, benchmarkEndTime)
+      maxSharedFreeTime = commonFreeSlots.length > 0 
+        ? Math.max(...commonFreeSlots.map(slot => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
+        : 0
+      
+      const hasCommonFreeTime = maxSharedFreeTime > 0
+      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes` : 'No common free time available'}`)
     }
 
     // Save evaluation results
@@ -461,6 +472,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       confirmedAgents: confirmedAgents.map(([name]) => name),
       allAgentsConfirmed,
       canAttend: canAttendResults,
+      maxSharedFreeTime,
       evaluationSummary: {
         totalAgents: agents.length,
         confirmedCount: confirmedAgents.length,

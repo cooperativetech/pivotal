@@ -1,12 +1,12 @@
 {
-  "eval_timestamp": "20250915184231486",
-  "benchmarkFile": "benchmark_2agents_1start_2end_60min_gen20250915183956892",
+  "eval_timestamp": "20250915184957693",
+  "benchmarkFile": "benchmark_2agents_1start_2end_60min_gen20250915184015060",
   "benchmarkType": "benchmark_2agents_1start_2end_60min",
-  "genTimestamp": "gen20250915183956892",
+  "genTimestamp": "gen20250915184015060",
   "suggestedEvent": {
-    "start": "2025-01-03T05:00:00.000Z",
-    "end": "2025-01-03T06:00:00.000Z",
-    "summary": "Discussion meeting"
+    "start": "2025-01-03T18:00:00.000Z",
+    "end": "2025-01-03T19:00:00.000Z",
+    "summary": "Meeting with Bob and Alice"
   },
   "confirmedAgents": [
     "Alice",

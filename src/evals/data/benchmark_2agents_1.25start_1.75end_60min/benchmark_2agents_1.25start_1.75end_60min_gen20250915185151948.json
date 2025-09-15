@@ -1,0 +1,93 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Review Daily Production Reports"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Safety Training - New Equipment Protocols"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T16:45:00.000Z",
+          "summary": "One-on-One Mentoring - Junior Technician"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Quality Control Workshop - Problem-Solving Session"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Curriculum Development - Lean Manufacturing Module"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:15:00.000Z",
+          "summary": "Cross-Training Session - CNC Machine Operations"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Daily Animal Health Reports Review"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Facility Health Inspections - Production Floor A"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "HACCP Compliance Meeting"
+        },
+        {
+          "start": "2025-01-02T16:15:00.000Z",
+          "end": "2025-01-02T17:15:00.000Z",
+          "summary": "Veterinary Documentation & Record Keeping"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Animal Welfare Assessment - Livestock Processing Unit"
+        },
+        {
+          "start": "2025-01-02T20:45:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "USDA Inspector Coordination Call"
+        },
+        {
+          "start": "2025-01-02T21:45:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Antibiotic Residue Testing Protocol Review"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}

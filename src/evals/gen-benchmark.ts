@@ -11,10 +11,8 @@ import { formatTimestamp } from './utils'
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
-  const startTime = new Date(referenceDate)
-  startTime.setDate(referenceDate.getDate() + startTimeOffset)
-  const endTime = new Date(referenceDate)
-  endTime.setDate(referenceDate.getDate() + endTimeOffset)
+  const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
+  const endTime = new Date(referenceDate.getTime() + endTimeOffset * 24 * 60 * 60 * 1000)
 
   // Possible agent names (one for each letter of the alphabet)
   const possibleAgentNames = [
@@ -142,9 +140,9 @@ function parseArgs() {
     if (arg.startsWith('--')) {
       const [key, value] = arg.slice(2).split('=')
       if (key === 'startTimeOffset' || key === 'start') {
-        defaults.startTimeOffset = parseInt(value, 10)
+        defaults.startTimeOffset = parseFloat(value)
       } else if (key === 'endTimeOffset' || key === 'end') {
-        defaults.endTimeOffset = parseInt(value, 10)
+        defaults.endTimeOffset = parseFloat(value)
       } else if (key === 'meetingLength' || key === 'length') {
         defaults.meetingLength = parseInt(value, 10)
       } else if (key === 'nAgents' || key === 'agents') {
@@ -157,10 +155,10 @@ function parseArgs() {
 
   // Parse positional arguments (backwards compatibility)
   if (args.length >= 1 && !args[0].startsWith('--')) {
-    defaults.startTimeOffset = parseInt(args[0], 10)
+    defaults.startTimeOffset = parseFloat(args[0])
   }
   if (args.length >= 2 && !args[1].startsWith('--')) {
-    defaults.endTimeOffset = parseInt(args[1], 10)
+    defaults.endTimeOffset = parseFloat(args[1])
   }
   if (args.length >= 3 && !args[2].startsWith('--')) {
     defaults.meetingLength = parseInt(args[2], 10)

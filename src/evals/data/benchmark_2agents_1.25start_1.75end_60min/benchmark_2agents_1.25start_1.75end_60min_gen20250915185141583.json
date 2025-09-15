@@ -1,0 +1,93 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T14:00:00.000Z",
+          "summary": "Morning Meditation & Personal Practice"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Beginner Yoga Class"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Curriculum Planning - New Wellness Workshop Series"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T18:30:00.000Z",
+          "summary": "Check-in with Sarah - Student Progress Review"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Content Creation - Instagram Wellness Tips"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Team Meeting - Wellness Center Staff"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Evening Mindfulness & Movement Class"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T14:00:00.000Z",
+          "summary": "Body transport preparation and documentation review"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Family consultation - Henderson case"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Transport to Memorial Hospital morgue"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Vehicle maintenance inspection"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Coordination meeting with funeral director"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Documentation and route planning"
+        }
+      ],
+      "message_buffer": [],
+      "history": []
+    }
+  ]
+}

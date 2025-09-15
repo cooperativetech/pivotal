@@ -1,0 +1,16 @@
+{
+  "eval_timestamp": "20250915185438936",
+  "benchmarkFile": "benchmark_2agents_1.25start_1.75end_60min_gen20250915185141583",
+  "benchmarkType": "benchmark_2agents_1.25start_1.75end_60min",
+  "genTimestamp": "gen20250915185141583",
+  "suggestedEvent": null,
+  "confirmedAgents": [],
+  "allAgentsConfirmed": false,
+  "canAttend": {},
+  "evaluationSummary": {
+    "totalAgents": 2,
+    "confirmedCount": 0,
+    "hasSuggestedEvent": false,
+    "allCanAttend": false
+  }
+}
