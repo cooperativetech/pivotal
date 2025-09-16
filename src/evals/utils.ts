@@ -48,7 +48,7 @@ export function saveEvaluationResults(
   benchmarkFileName: string,
   resultsData: Record<string, unknown>,
 ): void {
-  const eval_timestamp = formatTimestamp()
+  const evalTimestamp = formatTimestamp()
 
   // Remove .json extension from benchmark filename if present
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
@@ -66,7 +66,7 @@ export function saveEvaluationResults(
   // Create 3-level nested folder structure: results/benchmark_type/gen_timestamp/eval_timestamp/
   const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
   const genTimestampPath = join(benchmarkTypePath, genTimestamp)
-  const evalFolderName = `eval${eval_timestamp}`
+  const evalFolderName = `eval${evalTimestamp}`
   const evalFolderPath = join(genTimestampPath, evalFolderName)
 
   // Create folder if it doesn't exist
@@ -77,7 +77,7 @@ export function saveEvaluationResults(
 
   // Add timestamp to the results data
   const finalResults = {
-    eval_timestamp,
+    evalTimestamp,
     benchmarkFile: baseFileName,
     benchmarkType,
     genTimestamp,
@@ -149,7 +149,7 @@ export function createAggregatedSummary(
 
   // Create aggregated summary
   const aggregatedData = {
-    summary_timestamp: timestamp,
+    summaryTimestamp: timestamp,
     benchmarkFile: baseFileName,
     benchmarkType,
     genTimestamp,
@@ -166,7 +166,7 @@ export function createAggregatedSummary(
     },
     individualResults: allResults.map((result, index) => ({
       runNumber: index + 1,
-      eval_timestamp: result.eval_timestamp,
+      evalTimestamp: result.evalTimestamp,
       success: result.suggestedEvent !== null,
       confirmed: result.allAgentsConfirmed,
       confirmedCount: (result.confirmedAgents as string[]).length,

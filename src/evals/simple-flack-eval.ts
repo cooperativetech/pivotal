@@ -426,7 +426,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       console.log('❌ No confirmations detected from any agents')
     }
 
-    // Check feasibility using eval_possibility
+    // Check feasibility using evalPossibility
     let maxSharedFreeTime = 0
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
