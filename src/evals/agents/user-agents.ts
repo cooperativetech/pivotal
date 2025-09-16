@@ -15,6 +15,18 @@ export interface HistoryMessage {
   message: string
 }
 
+export interface BaseScheduleUserData {
+  name: string
+  goal: string
+  calendar: {
+    start: string
+    end: string
+    summary: string
+  }[]
+  messageBuffer: string[]
+  history: HistoryMessage[]
+}
+
 // Agent classes
 export class BaseScheduleUser implements UserProfile {
   name: string
@@ -96,7 +108,7 @@ export class BaseScheduleUser implements UserProfile {
   }
 
   // Export to JSON-serializable format
-  export(): Record<string, unknown> {
+  export(): BaseScheduleUserData {
     return {
       name: this.name,
       goal: this.goal,
@@ -111,16 +123,16 @@ export class BaseScheduleUser implements UserProfile {
   }
 
   // Create from exported data
-  static import(data: Record<string, unknown>): BaseScheduleUser {
-    const calendar = (data.calendar as Record<string, unknown>[]).map((event: Record<string, unknown>) => ({
-      start: new Date(event.start as string),
-      end: new Date(event.end as string),
-      summary: event.summary as string,
+  static import(data: BaseScheduleUserData): BaseScheduleUser {
+    const calendar = data.calendar.map((event) => ({
+      start: new Date(event.start),
+      end: new Date(event.end),
+      summary: event.summary,
     }))
 
-    const user = new BaseScheduleUser(data.name as string, data.goal as string, calendar)
-    user.messageBuffer = (data.messageBuffer as string[]) || []
-    user.history = (data.history as HistoryMessage[]) || []
+    const user = new BaseScheduleUser(data.name, data.goal, calendar)
+    user.messageBuffer = data.messageBuffer || []
+    user.history = data.history || []
     return user
   }
 }

@@ -41,7 +41,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser } from './agents/user-agents'
+import { BaseScheduleUser, type BaseScheduleUserData } from './agents/user-agents'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
 import type { SimpleCalendarEvent } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
@@ -49,7 +49,7 @@ import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 
 // Load benchmark data and create BaseScheduleUser agents using import functionality
-function loadAgentsFromBenchmarkData(benchmarkAgents: Record<string, unknown>[]): BaseScheduleUser[] {
+function loadAgentsFromBenchmarkData(benchmarkAgents: BaseScheduleUserData[]): BaseScheduleUser[] {
   return benchmarkAgents.map((personData) => {
     return BaseScheduleUser.import(personData)
   })
@@ -385,7 +385,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
     const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
-    const benchmarkAgents = benchmarkData.agents as Record<string, unknown>[]
+    const benchmarkAgents = benchmarkData.agents as BaseScheduleUserData[]
 
     console.log('Loading agents from benchmark data...')
     const agents = loadAgentsFromBenchmarkData(benchmarkAgents)

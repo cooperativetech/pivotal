@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { dirname } from 'node:path'
-import { BaseScheduleUser } from './agents/user-agents'
+import { BaseScheduleUser, type BaseScheduleUserData } from './agents/user-agents'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile, mkdir } from 'fs/promises'
@@ -96,7 +96,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   agents.forEach((agent) => console.log(`${agent.name}: ${agent.calendar.length} events`))
 
   // Export agents and benchmark parameters to JSON file
-  const exportedAgents: Record<string, unknown>[] = agents.map((agent) => agent.export())
+  const exportedAgents: BaseScheduleUserData[] = agents.map((agent) => agent.export())
   const benchmark = {
     startTime,
     startTimeOffset,
