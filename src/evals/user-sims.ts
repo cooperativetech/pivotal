@@ -1,5 +1,6 @@
 // The base agent class contains a simple, working agent implementation
 
+import { z } from 'zod'
 import type { UserProfile } from '../tools/time_intersection'
 import { generateReply, generateInitialMessage } from '../agents/evals'
 
@@ -15,51 +16,66 @@ export interface HistoryMessage {
   message: string
 }
 
-export interface BaseScheduleUserData {
-  name: string
-  goal: string
-  calendar: {
-    start: string
-    end: string
-    summary: string
-  }[]
-  messageBuffer: string[]
-  history: HistoryMessage[]
-}
+// Zod schemas for runtime validation
+const SerializedCalendarEventSchema = z.strictObject({
+  start: z.string(),
+  end: z.string(),
+  summary: z.string(),
+})
 
-export interface BenchmarkData {
-  startTime: string
-  startTimeOffset: number
-  endTime: string
-  endTimeOffset: number
-  meetingLength: number
-  nAgents: number
-}
+const HistoryMessageSchema = z.strictObject({
+  sender: z.enum(['bot', 'user']),
+  message: z.string(),
+})
 
-export interface BenchmarkFileData {
-  benchmark: BenchmarkData
-  agents: BaseScheduleUserData[]
-}
+export const ScheduleSimDataSchema = z.strictObject({
+  name: z.string(),
+  goal: z.string(),
+  calendar: z.array(SerializedCalendarEventSchema),
+  messageBuffer: z.array(z.string()),
+  history: z.array(HistoryMessageSchema),
+})
 
-export interface EvaluationSummary {
-  totalAgents: number
-  confirmedCount: number
-  hasSuggestedEvent: boolean
-  allCanAttend: boolean
-}
+export const BenchmarkDataSchema = z.strictObject({
+  startTime: z.string(),
+  startTimeOffset: z.number(),
+  endTime: z.string(),
+  endTimeOffset: z.number(),
+  meetingLength: z.number(),
+  nAgents: z.number(),
+})
 
-export interface EvaluationResults {
-  suggestedEvent: {
-    start: string
-    end: string
-    summary: string
-  } | null
-  confirmedAgents: string[]
-  allAgentsConfirmed: boolean
-  canAttend: Record<string, boolean>
-  maxSharedFreeTime: number
-  evaluationSummary: EvaluationSummary
-}
+export const BenchmarkFileDataSchema = z.strictObject({
+  benchmark: BenchmarkDataSchema,
+  agents: z.array(ScheduleSimDataSchema),
+})
+
+const EvaluationSummarySchema = z.strictObject({
+  totalAgents: z.number(),
+  confirmedCount: z.number(),
+  hasSuggestedEvent: z.boolean(),
+  allCanAttend: z.boolean(),
+})
+
+export const EvaluationResultsSchema = z.strictObject({
+  suggestedEvent: z.strictObject({
+    start: z.string(),
+    end: z.string(),
+    summary: z.string(),
+  }).nullable(),
+  confirmedAgents: z.array(z.string()),
+  allAgentsConfirmed: z.boolean(),
+  canAttend: z.record(z.boolean()),
+  maxSharedFreeTime: z.number(),
+  evaluationSummary: EvaluationSummarySchema,
+})
+
+// Type exports inferred from Zod schemas
+export type BaseScheduleUserData = z.infer<typeof ScheduleSimDataSchema>
+export type BenchmarkData = z.infer<typeof BenchmarkDataSchema>
+export type BenchmarkFileData = z.infer<typeof BenchmarkFileDataSchema>
+export type EvaluationSummary = z.infer<typeof EvaluationSummarySchema>
+export type EvaluationResults = z.infer<typeof EvaluationResultsSchema>
 
 // Agent classes
 export class BaseScheduleUser implements UserProfile {
@@ -158,15 +174,18 @@ export class BaseScheduleUser implements UserProfile {
 
   // Create from exported data
   static import(data: BaseScheduleUserData): BaseScheduleUser {
-    const calendar = data.calendar.map((event) => ({
+    // Validate the data structure with Zod (defensive validation at boundary)
+    const validatedData = ScheduleSimDataSchema.parse(data)
+
+    const calendar = validatedData.calendar.map((event) => ({
       start: new Date(event.start),
       end: new Date(event.end),
       summary: event.summary,
     }))
 
-    const user = new BaseScheduleUser(data.name, data.goal, calendar)
-    user.messageBuffer = data.messageBuffer || []
-    user.history = data.history || []
+    const user = new BaseScheduleUser(validatedData.name, validatedData.goal, calendar)
+    user.messageBuffer = validatedData.messageBuffer || []
+    user.history = validatedData.history || []
     return user
   }
 }

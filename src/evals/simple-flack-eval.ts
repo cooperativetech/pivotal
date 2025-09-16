@@ -42,7 +42,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './user-sims'
+import { BaseScheduleUser, type EvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './user-sims'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './user-sims'
 import { local_api } from '../shared/api-client'
@@ -385,7 +385,10 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
     console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
-    const benchmarkData = JSON.parse(rawData) as BenchmarkFileData
+    const parsedData = JSON.parse(rawData)
+
+    // Validate benchmark data structure with Zod
+    const benchmarkData = BenchmarkFileDataSchema.parse(parsedData)
     const benchmarkAgents = benchmarkData.agents
 
     console.log('Loading agents from benchmark data...')
@@ -472,7 +475,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       })
     }
 
-    const resultsData = {
+    const resultsData: EvaluationResults = {
       suggestedEvent: result.suggestedEvent ? {
         start: result.suggestedEvent.start.toISOString(),
         end: result.suggestedEvent.end.toISOString(),

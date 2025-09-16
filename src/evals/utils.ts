@@ -2,6 +2,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
 import type { EvaluationResults, SimpleCalendarEvent } from './user-sims'
+import { EvaluationResultsSchema } from './user-sims'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -49,6 +50,8 @@ export function saveEvaluationResults(
   benchmarkFileName: string,
   resultsData: EvaluationResults,
 ): void {
+  // Validate results data structure with Zod (defensive validation at boundary)
+  const validatedResults = EvaluationResultsSchema.parse(resultsData)
   const evalTimestamp = formatTimestamp()
 
   // Remove .json extension from benchmark filename if present
@@ -82,7 +85,7 @@ export function saveEvaluationResults(
     benchmarkFile: baseFileName,
     benchmarkType,
     genTimestamp,
-    ...resultsData,
+    ...validatedResults,
   }
 
   // Save to summary.json
@@ -133,6 +136,9 @@ export function createAggregatedSummary(
     return
   }
 
+  // Validate all results with Zod (defensive validation at boundary)
+  const validatedResults = allResults.map((result) => EvaluationResultsSchema.parse(result))
+
   const timestamp = formatTimestamp()
 
   // Remove .json extension from benchmark filename if present
@@ -154,17 +160,17 @@ export function createAggregatedSummary(
     benchmarkFile: baseFileName,
     benchmarkType,
     genTimestamp,
-    totalRuns: allResults.length,
+    totalRuns: validatedResults.length,
     expectedRuns: nReps,
     aggregatedResults: {
-      successRate: allResults.filter((r) => r.suggestedEvent !== null).length / allResults.length,
-      confirmationRate: allResults.filter((r) => r.allAgentsConfirmed === true).length / allResults.length,
-      averageConfirmedAgents: allResults.reduce((sum, r) => sum + r.confirmedAgents.length, 0) / allResults.length,
-      feasibilityRate: allResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / allResults.length,
+      successRate: validatedResults.filter((r) => r.suggestedEvent !== null).length / validatedResults.length,
+      confirmationRate: validatedResults.filter((r) => r.allAgentsConfirmed === true).length / validatedResults.length,
+      averageConfirmedAgents: validatedResults.reduce((sum, r) => sum + r.confirmedAgents.length, 0) / validatedResults.length,
+      feasibilityRate: validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / validatedResults.length,
     },
-    individualResults: allResults.map((result, index) => ({
+    individualResults: validatedResults.map((result, index) => ({
       runNumber: index + 1,
-      evalTimestamp: result.evalTimestamp,
+      evalTimestamp: (result as any).evalTimestamp, // evalTimestamp is added in saveEvaluationResults
       success: result.suggestedEvent !== null,
       confirmed: result.allAgentsConfirmed,
       confirmedCount: result.confirmedAgents.length,
@@ -188,9 +194,9 @@ export function createAggregatedSummary(
 
   // Print summary statistics
   console.log('\n📈 Summary Statistics:')
-  console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${allResults.filter((r) => r.suggestedEvent !== null).length}/${allResults.length})`)
-  console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${allResults.filter((r) => r.allAgentsConfirmed === true).length}/${allResults.length})`)
-  console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${allResults.filter((r) => r.evaluationSummary.allCanAttend === true).length}/${allResults.length})`)
+  console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.suggestedEvent !== null).length}/${validatedResults.length})`)
+  console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.allAgentsConfirmed === true).length}/${validatedResults.length})`)
+  console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length}/${validatedResults.length})`)
   console.log(`  Average Confirmed Agents: ${aggregatedData.aggregatedResults.averageConfirmedAgents.toFixed(1)}`)
 }
 
