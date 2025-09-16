@@ -11,6 +11,10 @@ export type TopicWithState = Topic & {
   state: TopicState
 }
 
+export type TopicStateWithMessageTs = TopicState & {
+  createdByMessageRawTs: string
+}
+
 export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
 
@@ -56,7 +60,8 @@ export interface AutoMessageDeactivation {
 }
 
 export interface TopicData {
-  topic: TopicWithState
+  topic: Topic
+  states: TopicStateWithMessageTs[]
   messages: SlackMessage[]
   users: SlackUser[]
   userData: UserData[]
@@ -79,7 +84,14 @@ export function unserializeTopicWithState(topic: TopicWithStateRes): TopicWithSt
 
 export function unserializeTopicData(topicRes: TopicDataRes): TopicData {
   return {
-    topic: unserializeTopicWithState(topicRes.topic),
+    topic: {
+      ...topicRes.topic,
+      createdAt: new Date(topicRes.topic.createdAt),
+    },
+    states: topicRes.states.map((state) => ({
+      ...state,
+      createdAt: new Date(state.createdAt),
+    })),
     messages: topicRes.messages.map((message) => ({
       ...message,
       timestamp: new Date(message.timestamp),
@@ -88,7 +100,7 @@ export function unserializeTopicData(topicRes: TopicDataRes): TopicData {
       ...user,
       updated: new Date(user.updated),
     })),
-    userData: topicRes.userData?.map((userData) => ({
+    userData: topicRes.userData.map((userData) => ({
       ...userData,
       createdAt: new Date(userData.createdAt),
       updatedAt: new Date(userData.updatedAt),
