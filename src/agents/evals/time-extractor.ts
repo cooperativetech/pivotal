@@ -52,6 +52,7 @@ Examples:
 - "Let's meet at 2 PM tomorrow" → Use tool with start: "2025-01-02T19:00:00-05:00", end: "2025-01-02T20:00:00-05:00"
 - "How about 3:30-4:30 PM on Monday?" → Use tool with start: "2025-01-06T20:30:00-05:00", end: "2025-01-06T21:30:00-05:00"
 - "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
+- "Meeting confirmed! Thursday, January 2nd from 12:00-1:00 PM (EDT) with Alice and Bob." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "We could meet Monday or Tuesday" → Respond with "NONE" (multiple options)`
 
   try {
