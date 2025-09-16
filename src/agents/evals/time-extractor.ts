@@ -13,30 +13,34 @@ const extractMeetingTime = tool({
   description: 'Extract a specific meeting time suggestion from a message',
   parameters: MeetingTimeOutput,
   strict: true,
-  execute: (output) => output,
+  execute: (output) => {
+    console.log(`🔧 Tool executed with output: ${JSON.stringify(output)}`)
+    return output
+  },
 })
 
 const timeExtractionAgent = new Agent({
   name: 'TimeExtractionAgent',
   model: 'anthropic/claude-sonnet-4',
-  toolUseBehavior: { stopAtToolNames: ['extractMeetingTime'] },
+  toolUseBehavior: {
+    stopAtToolNames: ['extractMeetingTime'],
+    requireToolUse: false,
+  },
   modelSettings: {
-    temperature: 0.2,
+    temperature: 0.1,
     toolChoice: 'auto',
   },
   tools: [extractMeetingTime],
-  instructions: `You are a meeting time extraction agent. Analyze messages to determine if they contain suggestions for specific meeting times.
+  instructions: `You are a meeting time extraction agent. Your job is to identify if a message contains exactly one specific meeting time.
 
-Guidelines:
-- Look for specific meeting time suggestions OR confirmations that contain meeting details
-- Extract times from various formats including markdown formatting (**bold**), multi-line messages, and embedded times
-- Handle confirmation messages, suggestions, and formatted announcements
-- If no specific time is suggested/confirmed, OR multiple times are suggested, do NOT use the tool - just respond with "NONE"
-- If no end time is specified, assume 1 hour duration
-- Use proper ISO 8601 format with timezone offsets
-- Provide a brief meeting description
+CRITICAL: When you find exactly one specific meeting time, you MUST use the extractMeetingTime tool with:
+- start: ISO 8601 format with timezone (e.g., "2025-01-02T17:00:00-05:00")
+- end: ISO 8601 format with timezone (e.g., "2025-01-02T18:00:00-05:00")
+- summary: Brief description (e.g., "Meeting")
 
-Only use the extractMeetingTime tool if there is exactly one specific meeting time suggested or confirmed in the message.`,
+If you find exactly one specific time, use the tool. If not, respond with "NONE".
+
+DO NOT explain or describe the time in text - use the tool to extract it.`,
 })
 
 export async function extractSuggestedTime(messageText: string): Promise<SimpleCalendarEvent | null> {
@@ -70,11 +74,13 @@ Examples:
     // Check if tool was used successfully
     if (result.finalOutput && typeof result.finalOutput === 'object' && 'start' in result.finalOutput) {
       const meetingTime = result.finalOutput as z.infer<typeof MeetingTimeOutput>
+      console.log(`   🔧 Extracted meeting time object: ${JSON.stringify(meetingTime)}`)
+
       const startDate = new Date(meetingTime.start)
       const endDate = new Date(meetingTime.end)
 
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`Failed to parse suggested meeting times: ${JSON.stringify(meetingTime)}`)
+        console.warn(`   ❌ Failed to parse suggested meeting times: ${JSON.stringify(meetingTime)}`)
         return null
       }
 
@@ -84,6 +90,8 @@ Examples:
         end: endDate,
         summary: meetingTime.summary || 'Meeting',
       }
+    } else if (result.finalOutput && typeof result.finalOutput === 'string') {
+      console.log(`   ⚠️  Agent returned text instead of tool output: "${result.finalOutput}"`)
     }
 
     // If no tool was used or response is "NONE", return null
