@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm'
 import db from '../db/engine'
 import type { SlackUser } from '../db/schema/main'
 import { slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
-import type { TopicWithState } from '@shared/api-types'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from '../local-helpers.ts'
 import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
@@ -100,43 +99,18 @@ export const localRoutes = new Hono()
       // Get the topic data
       const topicData = await dumpTopic(topicId, { lastMessageId: messageId })
 
+      // Set the topic state to the latest one
+      const topicWithState = {
+        ...topicData.topic,
+        state:  topicData.states[topicData.states.length - 1],
+      }
+
       // Find the specific message, which should be the last one in the list
       const message = topicData.messages[topicData.messages.length - 1]
       if (!message || message.id !== messageId) {
         throw new Error(`Message ${messageId} not found at end of subset topic ${topicId}`)
       }
       const previousMessages = topicData.messages.slice(0, -1)
-
-      const topicUserIds = new Set(topicData.topic.state.userIds)
-      const slackUserIds = new Set<string>()
-      const slackChannelIds = new Set<string>()
-
-      previousMessages.forEach((msg) => {
-        slackChannelIds.add(msg.channelId)
-      })
-
-      // Add all users in topicUserIds that are also in currently open channels
-      if (topicData.channels) {
-        for (const channel of topicData.channels) {
-          if (!slackChannelIds.has(channel.id)) {
-            continue
-          }
-          for (const userId of channel.userIds) {
-            if (topicUserIds.has(userId)) {
-              slackUserIds.add(userId)
-            }
-          }
-        }
-      }
-
-      // Set topic to only have users it had at the time of this message
-      const topicWithCurrentUsers: TopicWithState = {
-        ...topicData.topic,
-        state: {
-          ...topicData.topic.state,
-          userIds: Array.from(slackUserIds),
-        },
-      }
 
       // Create user map
       const userMap = new Map<string, SlackUser>()
@@ -160,7 +134,7 @@ export const localRoutes = new Hono()
       const result = await runConversationAgent(
         workflowAgent,
         message,
-        topicWithCurrentUsers,
+        topicWithState,
         previousMessages,
         userMap,
       )

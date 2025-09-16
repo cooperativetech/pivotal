@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { api, local_api } from '@shared/api-client'
-import type { TopicData, SlackMessage, SlackChannel } from '@shared/api-types'
+import type { TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
@@ -28,6 +28,7 @@ function Topic() {
   const [chatInputs, setChatInputs] = useState<Map<string, string>>(new Map())
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
   const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
+  const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
@@ -92,6 +93,36 @@ function Topic() {
       ? sortedMessages.slice(0, timelinePosition + 1).map((m) => m.id)
       : sortedMessages.map((m) => m.id),
   )
+
+  // Update topicState based on current timeline position
+  useEffect(() => {
+    if (!topicData?.states || sortedMessages.length === 0) {
+      setTopicState(null)
+      return
+    }
+
+    // Get the current message's rawTs based on timeline position
+    const currentMessageRawTs = timelinePosition !== null && sortedMessages[timelinePosition]
+      ? sortedMessages[timelinePosition].rawTs
+      : sortedMessages[sortedMessages.length - 1]?.rawTs
+
+    if (!currentMessageRawTs) {
+      setTopicState(null)
+      return
+    }
+
+    // Find the newest state where createdByMessageRawTs <= currentMessageRawTs
+    const applicableStates = topicData.states.filter(
+      (state) => Number(state.createdByMessageRawTs) <= Number(currentMessageRawTs),
+    )
+
+    // Get the newest applicable state (states are already in chronological order)
+    setTopicState(
+      applicableStates.length > 0
+        ? applicableStates[applicableStates.length - 1]
+        : null,
+    )
+  }, [timelinePosition, sortedMessages, topicData?.states])
 
   // Update URL query parameter when timeline position changes (debounced)
   useEffect(() => {
@@ -234,7 +265,7 @@ function Topic() {
     )
   }
 
-  if (error || !topicData) {
+  if (error || !topicData || !topicState) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-red-500">Error: {error || 'Topic not found'}</div>
@@ -426,7 +457,7 @@ function Topic() {
           <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
-          <h1 className="text-xl font-bold">{topicData.topic.state.summary}</h1>
+          <h1 className="text-xl font-bold">{topicState.summary}</h1>
         </div>
         <div className="flex items-center gap-2 mb-2">
           <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
@@ -434,15 +465,15 @@ function Topic() {
           </span>
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicData.topic.state.isActive
+              topicState.isActive
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
             }`}
           >
-            {topicData.topic.state.isActive ? 'Active' : 'Inactive'}
+            {topicState.isActive ? 'Active' : 'Inactive'}
           </span>
           <span className="text-sm text-gray-600">
-            Updated: {new Date(topicData.topic.state.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+            Updated: {new Date(topicState.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
           </span>
           {sortedMessages.length > 0 && timelinePosition !== null && (
             <span className="text-sm text-gray-600">
@@ -464,7 +495,7 @@ function Topic() {
               const userId = isDM ? getCurrentUserId(channel.channelId) : null
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicData.topic.state.perUserContext[userId] : null
+              const topicUserContext = userId ? topicState.perUserContext[userId] : null
 
               return (
                 <div

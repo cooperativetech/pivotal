@@ -34,7 +34,7 @@ import { getShortTimezoneFromIANA } from '@shared/utils'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { handleSlackMessage } from './slack-message-handler'
 import { getOrCreateChannelForUsers } from './local-helpers'
-import type { AutoMessageDeactivation, TopicWithState } from '@shared/api-types'
+import type { AutoMessageDeactivation, TopicWithState, TopicStateWithMessageTs } from '@shared/api-types'
 import type { WebClient } from '@slack/web-api'
 
 export function tsToDate(ts: string): Date {
@@ -123,6 +123,24 @@ export async function updateTopicState(
   }
 }
 
+export async function getStatesWithMessageTs(topicId: string): Promise<TopicStateWithMessageTs[]> {
+  // Fetch all states for this topic in chronological order with the rawTs from their creating message
+  const statesWithMessageTs = await db
+    .select({
+      state: topicStateTable,
+      createdByMessageRawTs: slackMessageTable.rawTs,
+    })
+    .from(topicStateTable)
+    .innerJoin(slackMessageTable, eq(topicStateTable.createdByMessageId, slackMessageTable.id))
+    .where(eq(topicStateTable.topicId, topicId))
+    .orderBy(topicStateTable.createdAt)
+
+  return statesWithMessageTs.map(({ state, createdByMessageRawTs }) => ({
+    ...state,
+    createdByMessageRawTs,
+  }))
+}
+
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
   // Backward-compatible single ID
@@ -136,7 +154,11 @@ export type GetTopicReq = z.infer<typeof GetTopicReq>
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
   const { lastMessageId, visibleToUserId, visibleToUserIds, beforeRawTs } = options
 
-  const topic = await getTopicWithState(topicId)
+  const [topic] = await db.select()
+    .from(topicTable)
+    .where(eq(topicTable.id, topicId))
+
+  let states = await getStatesWithMessageTs(topicId)
 
   // Build the messages query with optional channel filtering
   let messages: SlackMessage[]
@@ -180,33 +202,46 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
     if (!targetMessage) {
       throw new Error(`Message with id ${lastMessageId} not found in topic ${topicId}`)
     }
-    // Filter to only include messages up to and including the target message's timestamp
+    // Filter to only include messages and states up to and including the target message's timestamp
     messages = messages.filter((msg) =>
       Number(msg.rawTs) <= Number(targetMessage.rawTs),
+    )
+    states = states.filter((state) =>
+      Number(state.createdByMessageRawTs) <= Number(targetMessage.rawTs),
     )
   }
 
   // If beforeRawTs is provided, filter messages before that raw timestamp
+  // TODO: remove this once the new evals PR lands, and this is no longer used
   if (beforeRawTs) {
     messages = messages.filter((msg) =>
       Number(msg.rawTs) < Number(beforeRawTs),
     )
   }
 
-  // Fetch users that are referenced in the topic
-  const users = topic.state.userIds.length > 0
+  // Collect all unique userIds from all topic states
+  const allUserIds = new Set<string>()
+  for (const state of states) {
+    for (const userId of state.userIds) {
+      allUserIds.add(userId)
+    }
+  }
+  const userIdsArray = Array.from(allUserIds)
+
+  // Fetch users that are referenced in any topic state
+  const users = userIdsArray.length > 0
     ? await db
         .select()
         .from(slackUserTable)
-        .where(inArray(slackUserTable.id, topic.state.userIds))
+        .where(inArray(slackUserTable.id, userIdsArray))
     : []
 
-  // Fetch userData for users referenced in the topic
-  const userData = topic.state.userIds.length > 0
+  // Fetch userData for users referenced in any topic state
+  const userData = userIdsArray.length > 0
     ? await db
         .select()
         .from(userDataTable)
-        .where(inArray(userDataTable.slackUserId, topic.state.userIds))
+        .where(inArray(userDataTable.slackUserId, userIdsArray))
     : []
 
   // Fetch unique channel IDs from messages
@@ -220,6 +255,7 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
 
   const result: TopicData = {
     topic,
+    states,
     messages,
     users,
     userData,
