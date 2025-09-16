@@ -1,6 +1,8 @@
 // This script creates simple benchmark data for testing the scheduling agent
 
 import { parseArgs } from 'node:util'
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
 import { BaseScheduleUser } from './agents/user-agents'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
@@ -8,6 +10,9 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { formatTimestamp } from './utils'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
@@ -110,7 +115,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   const folderName = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
   const timestamp = formatTimestamp()
   const filename = `${folderName}_gen${timestamp}.json`
-  const folderPath = join('./src/evals/data', folderName)
+  const folderPath = join(__dirname, 'data', folderName)
 
   // Create folder if it doesn't exist
   if (!existsSync(folderPath)) {
