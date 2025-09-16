@@ -35,9 +35,13 @@ const timeExtractionAgent = new Agent({
 
 You MUST always use the extractMeetingTime tool.
 
+IMPORTANT: For timezone handling, use the LOCAL time with the timezone offset:
+- "12:00 PM (EST)" = "2025-01-02T12:00:00-05:00" (NOT "2025-01-02T17:00:00-05:00")
+- "2:00 PM" = "2025-01-02T14:00:00-05:00" (assuming EST in January)
+
 If you find exactly one specific meeting time:
-- start: ISO 8601 format with timezone (e.g., "2025-01-02T17:00:00-05:00")
-- end: ISO 8601 format with timezone (e.g., "2025-01-02T18:00:00-05:00")
+- start: Local time with timezone offset (e.g., "2025-01-02T12:00:00-05:00")
+- end: Local time with timezone offset (e.g., "2025-01-02T13:00:00-05:00")
 - summary: Brief description (e.g., "Meeting")
 
 If you find no meeting time OR multiple meeting times:
@@ -59,12 +63,12 @@ If there is exactly one specific meeting time suggested OR confirmed, use the ex
 If no meeting time is suggested/confirmed, OR multiple times are suggested, respond with "NONE".
 
 Examples:
-- "Let's meet at 2 PM tomorrow" → Use tool with start: "2025-01-02T19:00:00-05:00", end: "2025-01-02T20:00:00-05:00"
-- "How about 3:30-4:30 PM on Monday?" → Use tool with start: "2025-01-06T20:30:00-05:00", end: "2025-01-06T21:30:00-05:00"
-- "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
-- "Meeting confirmed! Thursday, January 2nd from 12:00-1:00 PM (EDT) with Alice and Bob." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
-- "Great! I have a time that works for both of you: **Thursday, January 2nd at 12:00-1:00 PM (EDT)** Alice and Bob - please confirm this time works for your final schedules." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
-- "Great! Alice has confirmed Thursday, January 2nd from 12:00-1:00 PM (EDT). Bob, does this time work for you?" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
+- "Let's meet at 2 PM tomorrow" → Use tool with start: "2025-01-02T14:00:00-05:00", end: "2025-01-02T15:00:00-05:00"
+- "How about 3:30-4:30 PM on Monday?" → Use tool with start: "2025-01-06T15:30:00-05:00", end: "2025-01-06T16:30:00-05:00"
+- "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)" → Use tool with start: "2025-01-02T12:00:00-05:00", end: "2025-01-02T13:00:00-05:00"
+- "Meeting confirmed! Thursday, January 2nd from 12:00-1:00 PM (EDT) with Alice and Bob." → Use tool with start: "2025-01-02T12:00:00-05:00", end: "2025-01-02T13:00:00-05:00"
+- "Great! I have a time that works for both of you: **Thursday, January 2nd at 12:00-1:00 PM (EDT)** Alice and Bob - please confirm this time works for your final schedules." → Use tool with start: "2025-01-02T12:00:00-05:00", end: "2025-01-02T13:00:00-05:00"
+- "Great! Alice has confirmed Thursday, January 2nd from 12:00-1:00 PM (EDT). Bob, does this time work for you?" → Use tool with start: "2025-01-02T12:00:00-05:00", end: "2025-01-02T13:00:00-05:00"
 - "We could meet Monday or Tuesday" → Respond with "NONE" (multiple options)`
 
   try {
