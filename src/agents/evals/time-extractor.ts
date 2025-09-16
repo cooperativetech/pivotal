@@ -29,7 +29,8 @@ const timeExtractionAgent = new Agent({
 
 Guidelines:
 - Look for specific meeting time suggestions OR confirmations that contain meeting details
-- Extract times from confirmation messages like "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)"
+- Extract times from various formats including markdown formatting (**bold**), multi-line messages, and embedded times
+- Handle confirmation messages, suggestions, and formatted announcements
 - If no specific time is suggested/confirmed, OR multiple times are suggested, do NOT use the tool - just respond with "NONE"
 - If no end time is specified, assume 1 hour duration
 - Use proper ISO 8601 format with timezone offsets
@@ -53,6 +54,7 @@ Examples:
 - "How about 3:30-4:30 PM on Monday?" → Use tool with start: "2025-01-06T20:30:00-05:00", end: "2025-01-06T21:30:00-05:00"
 - "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "Meeting confirmed! Thursday, January 2nd from 12:00-1:00 PM (EDT) with Alice and Bob." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
+- "Great! I have a time that works for both of you: **Thursday, January 2nd at 12:00-1:00 PM (EDT)** Alice and Bob - please confirm this time works for your final schedules." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "We could meet Monday or Tuesday" → Respond with "NONE" (multiple options)`
 
   try {
