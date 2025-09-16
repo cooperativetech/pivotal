@@ -85,7 +85,7 @@ Examples:
       return null
     }
 
-    // Parse the dates
+    // Parse the dates - JavaScript correctly handles timezone-aware ISO strings
     const startDate = new Date(result.finalOutput.start)
     const endDate = new Date(result.finalOutput.end)
 
@@ -94,7 +94,7 @@ Examples:
       return null
     }
 
-    console.log(`   ✅ Successfully extracted meeting time`)
+    console.log(`   ✅ Successfully extracted meeting time: ${startDate.toISOString()} - ${endDate.toISOString()}`)
     return {
       start: startDate,
       end: endDate,

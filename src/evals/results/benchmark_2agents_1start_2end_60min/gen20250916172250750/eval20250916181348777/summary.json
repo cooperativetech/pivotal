@@ -1,0 +1,17 @@
+{
+  "evalTimestamp": "20250916181348777",
+  "benchmarkFile": "benchmark_2agents_1start_2end_60min_gen20250916172250750",
+  "benchmarkType": "benchmark_2agents_1start_2end_60min",
+  "genTimestamp": "gen20250916172250750",
+  "suggestedEvent": null,
+  "confirmedAgents": [],
+  "allAgentsConfirmed": false,
+  "canAttend": {},
+  "maxSharedFreeTime": 0,
+  "evaluationSummary": {
+    "totalAgents": 2,
+    "confirmedCount": 0,
+    "hasSuggestedEvent": false,
+    "allCanAttend": false
+  }
+}
