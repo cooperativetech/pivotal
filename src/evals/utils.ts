@@ -1,6 +1,7 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
+import type { EvaluationResults } from './agents/user-agents'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -46,7 +47,7 @@ export function findBenchmarkFile(filename: string): string {
 // Save evaluation results to JSON file
 export function saveEvaluationResults(
   benchmarkFileName: string,
-  resultsData: Record<string, unknown>,
+  resultsData: EvaluationResults,
 ): void {
   const evalTimestamp = formatTimestamp()
 
@@ -124,7 +125,7 @@ export function isSpecificBenchmarkFile(target: string): boolean {
 // Create aggregated summary from multiple evaluation results
 export function createAggregatedSummary(
   benchmarkFileName: string,
-  allResults: Record<string, unknown>[],
+  allResults: EvaluationResults[],
   nReps: number,
 ): void {
   if (allResults.length === 0) {
@@ -158,19 +159,16 @@ export function createAggregatedSummary(
     aggregatedResults: {
       successRate: allResults.filter((r) => r.suggestedEvent !== null).length / allResults.length,
       confirmationRate: allResults.filter((r) => r.allAgentsConfirmed === true).length / allResults.length,
-      averageConfirmedAgents: allResults.reduce((sum, r) => sum + (r.confirmedAgents as string[]).length, 0) / allResults.length,
-      feasibilityRate: allResults.filter((r) => {
-        const evalSummary = r.evaluationSummary as Record<string, unknown>
-        return evalSummary.allCanAttend === true
-      }).length / allResults.length,
+      averageConfirmedAgents: allResults.reduce((sum, r) => sum + r.confirmedAgents.length, 0) / allResults.length,
+      feasibilityRate: allResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / allResults.length,
     },
     individualResults: allResults.map((result, index) => ({
       runNumber: index + 1,
       evalTimestamp: result.evalTimestamp,
       success: result.suggestedEvent !== null,
       confirmed: result.allAgentsConfirmed,
-      confirmedCount: (result.confirmedAgents as string[]).length,
-      feasible: (result.evaluationSummary as Record<string, unknown>).allCanAttend,
+      confirmedCount: result.confirmedAgents.length,
+      feasible: result.evaluationSummary.allCanAttend,
     })),
   }
 
@@ -192,9 +190,6 @@ export function createAggregatedSummary(
   console.log('\n📈 Summary Statistics:')
   console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${allResults.filter((r) => r.suggestedEvent !== null).length}/${allResults.length})`)
   console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${allResults.filter((r) => r.allAgentsConfirmed === true).length}/${allResults.length})`)
-  console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${allResults.filter((r) => {
-    const evalSummary = r.evaluationSummary as Record<string, unknown>
-    return evalSummary.allCanAttend === true
-  }).length}/${allResults.length})`)
+  console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${allResults.filter((r) => r.evaluationSummary.allCanAttend === true).length}/${allResults.length})`)
   console.log(`  Average Confirmed Agents: ${aggregatedData.aggregatedResults.averageConfirmedAgents.toFixed(1)}`)
 }

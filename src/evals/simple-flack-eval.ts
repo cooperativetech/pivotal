@@ -41,7 +41,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type BaseScheduleUserData } from './agents/user-agents'
+import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './agents/user-agents'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
 import type { SimpleCalendarEvent } from './agents/user-agents'
 import { local_api } from '../shared/api-client'
@@ -347,7 +347,7 @@ async function runSimpleEvaluation(): Promise<void> {
 
 // Wrapper function to run repeated evaluations
 async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
-  const allResults: Record<string, unknown>[] = []
+  const allResults: EvaluationResults[] = []
 
   for (let rep = 1; rep <= nReps; rep++) {
     if (nReps > 1) {
@@ -374,7 +374,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
 }
 
 // Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<Record<string, unknown>> {
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<EvaluationResults> {
   try {
     // Step 1: Clear database
     await clearDatabase()
@@ -384,8 +384,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
     console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
-    const benchmarkData = JSON.parse(rawData) as Record<string, unknown>
-    const benchmarkAgents = benchmarkData.agents as BaseScheduleUserData[]
+    const benchmarkData = JSON.parse(rawData) as BenchmarkFileData
+    const benchmarkAgents = benchmarkData.agents
 
     console.log('Loading agents from benchmark data...')
     const agents = loadAgentsFromBenchmarkData(benchmarkAgents)
@@ -432,9 +432,9 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       console.log('\nFeasibility Check:')
 
       // Check if meeting falls within benchmark time constraints
-      const benchmark = benchmarkData.benchmark as Record<string, unknown>
-      const benchmarkStartTime = new Date(benchmark.startTime as string)
-      const benchmarkEndTime = new Date(benchmark.endTime as string)
+      const benchmark = benchmarkData.benchmark
+      const benchmarkStartTime = new Date(benchmark.startTime)
+      const benchmarkEndTime = new Date(benchmark.endTime)
       const meetingStart = result.suggestedEvent.start
       const meetingEnd = result.suggestedEvent.end
 

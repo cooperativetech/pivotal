@@ -27,6 +27,40 @@ export interface BaseScheduleUserData {
   history: HistoryMessage[]
 }
 
+export interface BenchmarkData {
+  startTime: string
+  startTimeOffset: number
+  endTime: string
+  endTimeOffset: number
+  meetingLength: number
+  nAgents: number
+}
+
+export interface BenchmarkFileData {
+  benchmark: BenchmarkData
+  agents: BaseScheduleUserData[]
+}
+
+export interface EvaluationSummary {
+  totalAgents: number
+  confirmedCount: number
+  hasSuggestedEvent: boolean
+  allCanAttend: boolean
+}
+
+export interface EvaluationResults {
+  suggestedEvent: {
+    start: string
+    end: string
+    summary: string
+  } | null
+  confirmedAgents: string[]
+  allAgentsConfirmed: boolean
+  canAttend: Record<string, boolean>
+  maxSharedFreeTime: number
+  evaluationSummary: EvaluationSummary
+}
+
 // Agent classes
 export class BaseScheduleUser implements UserProfile {
   name: string
