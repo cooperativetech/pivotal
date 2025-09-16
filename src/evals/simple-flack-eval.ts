@@ -177,7 +177,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   // Start conversation: First agent sends initial message through API
   console.log('\n--- Starting Conversation ---')
   const firstAgent = agents[0]
-  const initialMessage = await firstAgent.send_initial_message()
+  const initialMessage = await firstAgent.sendInitialMessage()
 
   if (!initialMessage) {
     console.log(`${firstAgent.name} has no initial message to send`)
@@ -226,10 +226,10 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
 
     // Each agent replies to messages in their buffer
     for (const agent of agents) {
-      console.log(`${agent.name} buffer length: ${agent.message_buffer.length}`)
-      if (agent.message_buffer.length > 0) {
+      console.log(`${agent.name} buffer length: ${agent.messageBuffer.length}`)
+      if (agent.messageBuffer.length > 0) {
       //if (true) {
-        const reply = await agent.reply_buffer()
+        const reply = await agent.replyBuffer()
 
         if (reply) {
           console.log(`${agent.name}: ${reply}`)
@@ -448,7 +448,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
       // Check individual agent availability
       agents.forEach((agent) => {
-        const canAttend = agent.eval_possibility(result.suggestedEvent!)
+        const canAttend = agent.evalPossibility(result.suggestedEvent!)
         console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
       })
 
@@ -467,7 +467,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const canAttendResults: Record<string, boolean> = {}
     if (result.suggestedEvent) {
       agents.forEach((agent) => {
-        canAttendResults[agent.name] = agent.eval_possibility(result.suggestedEvent!)
+        canAttendResults[agent.name] = agent.evalPossibility(result.suggestedEvent!)
       })
     }
 
@@ -485,7 +485,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         totalAgents: agents.length,
         confirmedCount: confirmedAgents.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
-        allCanAttend: result.suggestedEvent ? agents.every((agent) => agent.eval_possibility(result.suggestedEvent!)) : false,
+        allCanAttend: result.suggestedEvent ? agents.every((agent) => agent.evalPossibility(result.suggestedEvent!)) : false,
       },
     }
 

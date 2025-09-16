@@ -20,40 +20,40 @@ export class BaseScheduleUser implements UserProfile {
   name: string
   calendar: SimpleCalendarEvent[]
   goal: string
-  message_buffer: string[]
+  messageBuffer: string[]
   history: HistoryMessage[]
 
   constructor(name?: string, goal?: string, calendar?: SimpleCalendarEvent[]) {
     this.name = name || ''
     this.calendar = calendar || []
     this.goal = goal || ''
-    this.message_buffer = []
+    this.messageBuffer = []
     this.history = []
   }
 
   receive(message: string): void {
-    this.message_buffer.push(message)
+    this.messageBuffer.push(message)
   }
 
-  empty_buffer(): void {
-    this.message_buffer = []
+  emptyBuffer(): void {
+    this.messageBuffer = []
   }
 
-  async reply_buffer(): Promise<string> {
-    if (this.message_buffer.length === 0) {
+  async replyBuffer(): Promise<string> {
+    if (this.messageBuffer.length === 0) {
       return ''
     }
 
     // Generate reply using both message buffer and history context
-    const reply = await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.message_buffer, this.history)
+    const reply = await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.messageBuffer, this.history)
 
     // Move messages from buffer to history as bot messages
-    for (const message of this.message_buffer) {
+    for (const message of this.messageBuffer) {
       this.history.push({ sender: 'bot', message })
     }
 
     // Clear the buffer after moving to history
-    this.message_buffer = []
+    this.messageBuffer = []
 
     // Save the reply to history
     if (reply) {
@@ -63,11 +63,11 @@ export class BaseScheduleUser implements UserProfile {
     return reply
   }
 
-  async send_initial_message(): Promise<string> {
+  async sendInitialMessage(): Promise<string> {
     return await sendInitialMessageAgent.generateInitialMessage(this.name, this.goal)
   }
 
-  eval_possibility(scheduled: SimpleCalendarEvent): boolean {
+  evalPossibility(scheduled: SimpleCalendarEvent): boolean {
     // Check if the input event intersects with any existing calendar events
     for (const event of this.calendar) {
       // Two events intersect if one starts before the other ends
@@ -105,7 +105,7 @@ export class BaseScheduleUser implements UserProfile {
         end: event.end.toISOString(),
         summary: event.summary,
       })),
-      message_buffer: this.message_buffer,
+      messageBuffer: this.messageBuffer,
       history: this.history,
     }
   }
@@ -119,7 +119,7 @@ export class BaseScheduleUser implements UserProfile {
     }))
 
     const user = new BaseScheduleUser(data.name as string, data.goal as string, calendar)
-    user.message_buffer = (data.message_buffer as string[]) || []
+    user.messageBuffer = (data.messageBuffer as string[]) || []
     user.history = (data.history as HistoryMessage[]) || []
     return user
   }
