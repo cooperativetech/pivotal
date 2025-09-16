@@ -1,5 +1,6 @@
 // This script creates simple benchmark data for testing the scheduling agent
 
+import { parseArgs } from 'node:util'
 import { BaseScheduleUser } from './agents/user-agents'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
@@ -125,56 +126,66 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 }
 
 // Parse command line arguments
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const defaults = {
-    startTimeOffset: 1,
-    endTimeOffset: 2,
-    meetingLength: 60,
-    nAgents: 2,
-    nCases: 1,
+function parseArguments() {
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      startTimeOffset: {
+        type: 'string',
+        short: 's',
+        default: '1',
+      },
+      endTimeOffset: {
+        type: 'string',
+        short: 'e',
+        default: '2',
+      },
+      meetingLength: {
+        type: 'string',
+        short: 'l',
+        default: '60',
+      },
+      nAgents: {
+        type: 'string',
+        short: 'a',
+        default: '2',
+      },
+      nCases: {
+        type: 'string',
+        short: 'c',
+        default: '1',
+      },
+      help: {
+        type: 'boolean',
+        short: 'h',
+        default: false,
+      },
+    },
+  })
+
+  if (values.help) {
+    console.log('Usage: tsx src/evals/gen-benchmark.ts [options]')
+    console.log('\nOptions:')
+    console.log('  -s, --startTimeOffset   Start time offset in days from reference date (default: 1)')
+    console.log('  -e, --endTimeOffset     End time offset in days from reference date (default: 2)')
+    console.log('  -l, --meetingLength     Meeting length in minutes (default: 60)')
+    console.log('  -a, --nAgents           Number of agents (default: 2)')
+    console.log('  -c, --nCases            Number of benchmark cases to generate (default: 1)')
+    console.log('  -h, --help              Show this help message')
+    process.exit(0)
   }
 
-  // Parse named arguments (--arg=value format)
-  for (const arg of args) {
-    if (arg.startsWith('--')) {
-      const [key, value] = arg.slice(2).split('=')
-      if (key === 'startTimeOffset' || key === 'start') {
-        defaults.startTimeOffset = parseFloat(value)
-      } else if (key === 'endTimeOffset' || key === 'end') {
-        defaults.endTimeOffset = parseFloat(value)
-      } else if (key === 'meetingLength' || key === 'length') {
-        defaults.meetingLength = parseInt(value, 10)
-      } else if (key === 'nAgents' || key === 'agents') {
-        defaults.nAgents = parseInt(value, 10)
-      } else if (key === 'nCases' || key === 'cases') {
-        defaults.nCases = parseInt(value, 10)
-      }
-    }
+  return {
+    startTimeOffset: parseFloat(values.startTimeOffset),
+    endTimeOffset: parseFloat(values.endTimeOffset),
+    meetingLength: parseInt(values.meetingLength, 10),
+    nAgents: parseInt(values.nAgents, 10),
+    nCases: parseInt(values.nCases, 10),
   }
-
-  // Parse positional arguments (backwards compatibility)
-  if (args.length >= 1 && !args[0].startsWith('--')) {
-    defaults.startTimeOffset = parseFloat(args[0])
-  }
-  if (args.length >= 2 && !args[1].startsWith('--')) {
-    defaults.endTimeOffset = parseFloat(args[1])
-  }
-  if (args.length >= 3 && !args[2].startsWith('--')) {
-    defaults.meetingLength = parseInt(args[2], 10)
-  }
-  if (args.length >= 4 && !args[3].startsWith('--')) {
-    defaults.nAgents = parseInt(args[3], 10)
-  }
-  if (args.length >= 5 && !args[4].startsWith('--')) {
-    defaults.nCases = parseInt(args[4], 10)
-  }
-
-  return defaults
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nAgents, nCases } = parseArgs()
+const { startTimeOffset, endTimeOffset, meetingLength, nAgents, nCases } = parseArguments()
 console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nAgents=${nAgents}, nCases=${nCases}`)
 
 async function generateMultipleBenchmarks() {
