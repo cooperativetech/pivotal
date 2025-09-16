@@ -504,5 +504,6 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
 // Run the evaluation if called directly
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  void runSimpleEvaluation()
+  process.on('SIGINT', () => process.nextTick(() => process.exit(1)))
+  await runSimpleEvaluation()
 }
