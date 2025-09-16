@@ -531,6 +531,20 @@ async function handleFinalizedEvent(
 
   let actionWord: 'created' | 'updated' = 'created'
   let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+  let lastEventIdForBot: string | null = null
+  let lastCalendarIdForBot: string | null = null
+
+  function parseMeetCode(url?: string | null): string | null {
+    if (!url) return null
+    try {
+      const u = new URL(url)
+      // Expect host like meet.google.com and pathname like /abc-defg-hij
+      const m = u.pathname.match(/\/([a-z0-9-]{10,})/i)
+      return m ? m[1] : null
+    } catch {
+      return null
+    }
+  }
 
   try {
     const res = await tryRescheduleTaggedEvent(topic.id, finalizedEvent.start, finalizedEvent.end, message.id)
@@ -546,6 +560,8 @@ async function handleFinalizedEvent(
     const botResult = await createCalendarInviteFromBot(topic, finalizedEvent)
     if (botResult) {
       calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink }
+      lastEventIdForBot = botResult.eventId || null
+      lastCalendarIdForBot = botResult.calendarId || null
       try {
         if (botResult.eventId && botResult.calendarId) {
           await upsertTopicScheduledEvent(
@@ -558,6 +574,8 @@ async function handleFinalizedEvent(
               end: finalizedEvent.end,
               title: finalizedEvent.title ?? null,
               meetLink: botResult.meetLink ?? null,
+              conferenceId: botResult.conferenceId ?? null,
+              meetCode: parseMeetCode(botResult.meetLink) ?? null,
               status: 'scheduled',
             },
             message.id,
@@ -613,6 +631,24 @@ async function handleFinalizedEvent(
         raw: calendarResponse.message,
       }).returning()
       createdMessages.push(createdMessage)
+
+      try {
+        // Persist Slack posting metadata for later transcript/summary replies
+        if (lastCalendarIdForBot && lastEventIdForBot) {
+          await upsertTopicScheduledEvent(
+            topic,
+            {
+              calendarId: lastCalendarIdForBot,
+              eventId: lastEventIdForBot,
+              slackChannelId: targetChannel,
+              slackThreadTs: message.rawTs,
+            },
+            createdMessage.id,
+          )
+        }
+      } catch (e) {
+        console.warn('Failed to persist Slack thread metadata on scheduled event:', e)
+      }
     }
   } else {
     console.log('No calendar invite created - missing credentials or organizer')

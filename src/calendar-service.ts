@@ -1,10 +1,11 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 // Enable typing for calendar API event shapes where helpful
-import type { calendar_v3 } from 'googleapis'
+import type { calendar_v3, drive_v3 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
+import { CronJob } from 'cron'
 
 import db from './db/engine'
 import { userDataTable, slackUserTable } from './db/schema/main'
@@ -13,6 +14,7 @@ import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
+import { getTopics } from './utils'
 
 // Note: If PV_INVITES_SENDER === 'bot', we never prompt users to connect calendars.
 
@@ -229,7 +231,12 @@ export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
  */
 export function generateBotAuthUrl(): string {
   const scope = [
+    // Create and manage events for bot-owned calendar
     'https://www.googleapis.com/auth/calendar.events',
+    // Read Drive file metadata (to locate transcript/summary Docs)
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    // Read Google Docs content (optional for snippet extraction)
+    'https://www.googleapis.com/auth/documents.readonly',
   ].join(' ')
 
   const params = new URLSearchParams({
@@ -488,7 +495,7 @@ export async function createCalendarInviteFromLeader(
 export async function createCalendarInviteFromBot(
   topic: TopicWithState,
   finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
-): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string } | null> {
+): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string, conferenceId?: string } | null> {
   try {
     if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) {
       console.warn('Bot calendar not configured: PV_GOOGLE_BOT_REFRESH_TOKEN is missing')
@@ -549,7 +556,13 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
-    return { htmlLink: event.htmlLink || undefined, meetLink, eventId: event.id || undefined, calendarId: getBotCalendarId() }
+    return {
+      htmlLink: event.htmlLink || undefined,
+      meetLink,
+      eventId: event.id || undefined,
+      calendarId: getBotCalendarId(),
+      conferenceId: event.conferenceData?.conferenceId || undefined,
+    }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
     return null
@@ -611,6 +624,16 @@ export async function upsertTopicScheduledEvent(
     end?: string | null,
     title?: string | null,
     meetLink?: string | null,
+    conferenceId?: string | null,
+    meetCode?: string | null,
+    transcriptFileId?: string | null,
+    transcriptUrl?: string | null,
+    transcriptStatus?: 'pending' | 'found' | 'missing' | 'error' | null,
+    summaryFileId?: string | null,
+    summaryUrl?: string | null,
+    summaryStatus?: 'pending' | 'found' | 'missing' | 'error' | null,
+    slackChannelId?: string | null,
+    slackThreadTs?: string | null,
     status?: 'scheduled' | 'cancelled' | 'updated' | null,
   },
   messageId: string,
@@ -695,6 +718,164 @@ export async function tryRescheduleTaggedEvent(
     console.error('Error rescheduling calendar event:', err)
     return { success: false }
   }
+}
+
+// === Meet transcript/summary discovery (Drive + Docs) ===
+
+function parseMeetCode(url?: string | null): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    const m = u.pathname.match(/\/([a-z0-9-]{10,})/i)
+    return m ? m[1] : null
+  } catch {
+    return null
+  }
+}
+
+async function findDriveDocs(
+  auth: calendar_v3.Options['auth'],
+  nameContains: string[],
+  timeMinISO?: string,
+  timeMaxISO?: string,
+): Promise<Array<{ id: string, name: string, webViewLink?: string | null }>> {
+  const drive = google.drive({ version: 'v3', auth })
+  const baseFilters = [
+    "mimeType = 'application/vnd.google-apps.document'",
+    'trashed = false',
+  ]
+  if (timeMinISO) baseFilters.push(`createdTime >= '${timeMinISO}'`)
+  if (timeMaxISO) baseFilters.push(`createdTime <= '${timeMaxISO}'`)
+  const nameClauses = nameContains.map((s) => `name contains '${s.replace(/'/g, "\\'")}'`)
+  if (nameClauses.length > 0) baseFilters.push(`(${nameClauses.join(' or ')})`)
+  const q = baseFilters.join(' and ')
+
+  const res = await drive.files.list({
+    q,
+    fields: 'files(id,name,webViewLink,createdTime,modifiedTime)',
+    orderBy: 'createdTime desc',
+    pageSize: 10,
+    supportsAllDrives: false,
+    includeItemsFromAllDrives: false,
+  })
+  const files: drive_v3.Schema$File[] = res.data.files ?? []
+  return files.map((f) => ({ id: f.id!, name: f.name!, webViewLink: f.webViewLink || undefined }))
+}
+
+export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void> {
+  try {
+    if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return
+
+    const oauth2Client = buildOAuthClient()
+    oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
+
+    const topics = await getTopics()
+    const now = Date.now()
+
+    for (const topic of topics) {
+      const botId = topic.botUserId
+      const list = topic.state.perUserContext[botId]?.scheduledEvents
+      const events = Array.isArray(list) ? list : []
+
+      for (const evt of events) {
+        if (evt.status !== 'scheduled') continue
+        const endMs = evt.end ? new Date(evt.end).getTime() : null
+        if (!endMs || now < endMs + 10 * 60 * 1000) continue // wait 10 minutes after end
+        const needTranscript = !evt.transcriptStatus || evt.transcriptStatus === 'pending'
+        const needSummary = !evt.summaryStatus || evt.summaryStatus === 'pending'
+        if (!needTranscript && !needSummary) continue
+
+        const meetCode = evt.meetCode || parseMeetCode(evt.meetLink || undefined) || undefined
+        const timeMinISO = new Date(endMs - 60 * 60 * 1000).toISOString() // 1h before end
+        const timeMaxISO = new Date(endMs + 3 * 60 * 60 * 1000).toISOString() // 3h after end
+
+        try {
+          let transcriptUrl: string | null = evt.transcriptUrl || null
+          let transcriptFileId: string | null = evt.transcriptFileId || null
+          let transcriptStatus: 'pending' | 'found' | 'missing' | 'error' | null = evt.transcriptStatus || 'pending'
+
+          let summaryUrl: string | null = evt.summaryUrl || null
+          let summaryFileId: string | null = evt.summaryFileId || null
+          let summaryStatus: 'pending' | 'found' | 'missing' | 'error' | null = evt.summaryStatus || 'pending'
+
+          if (needTranscript) {
+            const terms = ['Transcript']
+            if (meetCode) terms.push(meetCode)
+            const files = await findDriveDocs(oauth2Client, terms, timeMinISO, timeMaxISO)
+            const file = files.find((f) => /transcript/i.test(f.name)) || files[0]
+            if (file) {
+              transcriptFileId = file.id
+              transcriptUrl = file.webViewLink || `https://docs.google.com/document/d/${file.id}/view`
+              transcriptStatus = 'found'
+            } else if (!evt.transcriptStatus) {
+              transcriptStatus = 'pending' // keep pending for future attempts
+            }
+          }
+
+          if (needSummary) {
+            const terms = ['Summary', 'Meeting notes']
+            if (meetCode) terms.push(meetCode)
+            const files = await findDriveDocs(oauth2Client, terms, timeMinISO, timeMaxISO)
+            const file = files.find((f) => /(summary|meeting notes)/i.test(f.name)) || files[0]
+            if (file) {
+              summaryFileId = file.id
+              summaryUrl = file.webViewLink || `https://docs.google.com/document/d/${file.id}/view`
+              summaryStatus = 'found'
+            } else if (!evt.summaryStatus) {
+              summaryStatus = 'pending'
+            }
+          }
+
+          const messageId = topic.state.createdByMessageId
+          await upsertTopicScheduledEvent(
+            topic,
+            {
+              calendarId: evt.calendarId,
+              eventId: evt.eventId || null,
+              transcriptFileId,
+              transcriptUrl,
+              transcriptStatus,
+              summaryFileId,
+              summaryUrl,
+              summaryStatus,
+            },
+            messageId,
+          )
+
+          // Post to Slack if we have new links and we know thread info
+          const channelId = evt.slackChannelId
+          const threadTs = evt.slackThreadTs
+          const lines: string[] = []
+          if (needTranscript && transcriptStatus === 'found' && transcriptUrl) lines.push(`Transcript: ${transcriptUrl}`)
+          if (needSummary && summaryStatus === 'found' && summaryUrl) lines.push(`Summary: ${summaryUrl}`)
+          if (lines.length > 0 && channelId && threadTs) {
+            try {
+              await slackClient.chat.postMessage({
+                channel: channelId,
+                thread_ts: threadTs,
+                text: lines.join('\n'),
+              })
+            } catch (e) {
+              console.warn('Failed to post transcript/summary links to Slack:', e)
+            }
+          }
+
+        } catch (err) {
+          console.warn('Artifact scan failed for topic/event:', topic.id, evt.eventId, err)
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('scanMeetingArtifacts error:', e)
+  }
+}
+
+export function startMeetingArtifactsCron(slackClient: WebClient): void {
+  const job = new CronJob(
+    '15 * * * * *', // 15s past every minute
+    () => scanMeetingArtifacts(slackClient),
+  )
+  job.start()
 }
 
 /**

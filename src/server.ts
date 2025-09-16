@@ -10,7 +10,7 @@ import { readFileSync } from 'fs'
 
 import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback, generateBotAuthUrl } from './calendar-service'
+import { GoogleAuthCallbackReq, handleGoogleAuthCallback, generateBotAuthUrl, startMeetingArtifactsCron } from './calendar-service'
 import { startAutoMessageCron } from './utils'
 import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
@@ -85,4 +85,5 @@ if (isDevEnv()) {
 }
 
 startAutoMessageCron(slackClient)
+startMeetingArtifactsCron(slackClient)
 console.log(`Webserver running on port ${PORT}...`)
