@@ -1,0 +1,83 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T05:00:00.000Z",
+    "startTimeOffset": 1,
+    "endTime": "2025-01-03T05:00:00.000Z",
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nAgents": 2
+  },
+  "agents": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning Cheese Production - Fresh Mozzarella Batch"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Meeting with Head Chef - New Winter Menu Planning"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Artisan Cheese Aging Room Inspection & Quality Control"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Lunch with Local Dairy Farm Representative"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Staff Training - Advanced Cheese Pairing Techniques"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Recipe Development - Experimental Blue Cheese Variations"
+        },
+        {
+          "start": "2025-01-03T00:00:00.000Z",
+          "end": "2025-01-03T01:00:00.000Z",
+          "summary": "Evening Service Coordination - Special Cheese Board Presentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Studio Security Consultation - Film Set"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Custom Prop Lock Design Meeting"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Theater Emergency Lock System Installation"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Workshop Time - Electronic Lock Programming"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
