@@ -41,9 +41,9 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './agents/user-agents'
+import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './user-sims'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
-import type { SimpleCalendarEvent } from './agents/user-agents'
+import type { SimpleCalendarEvent } from './user-sims'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'

@@ -1,5 +1,5 @@
 import { Agent, run } from '../../agents/agent-sdk'
-import type { SimpleCalendarEvent, HistoryMessage } from './user-agents'
+import type { SimpleCalendarEvent, HistoryMessage } from '../user-sims'
 
 // Helper function to format calendar events with date and time information
 function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {

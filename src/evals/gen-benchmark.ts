@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { dirname } from 'node:path'
-import { BaseScheduleUser, type BaseScheduleUserData } from './agents/user-agents'
+import { BaseScheduleUser, type BaseScheduleUserData } from './user-sims'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile, mkdir } from 'fs/promises'
