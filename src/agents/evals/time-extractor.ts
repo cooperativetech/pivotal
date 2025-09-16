@@ -3,9 +3,9 @@ import { Agent, run, tool } from '../agent-sdk'
 import type { SimpleCalendarEvent } from '../../evals/user-sims'
 
 const MeetingTimeOutput = z.strictObject({
-  start: z.string().describe('Meeting start time in ISO 8601 format with timezone offset'),
-  end: z.string().describe('Meeting end time in ISO 8601 format with timezone offset'),
-  summary: z.string().describe('Brief meeting description'),
+  start: z.string().describe('Meeting start time in ISO 8601 format with timezone offset, or "NONE" if no meeting time found'),
+  end: z.string().describe('Meeting end time in ISO 8601 format with timezone offset, or "NONE" if no meeting time found'),
+  summary: z.string().describe('Brief meeting description, or "NONE" if no meeting time found'),
 })
 
 const extractMeetingTime = tool({
@@ -24,23 +24,28 @@ const timeExtractionAgent = new Agent({
   model: 'anthropic/claude-sonnet-4',
   toolUseBehavior: {
     stopAtToolNames: ['extractMeetingTime'],
-    requireToolUse: false,
   },
   modelSettings: {
     temperature: 0.1,
-    toolChoice: 'auto',
+    toolChoice: 'required',
   },
   tools: [extractMeetingTime],
+  outputType: MeetingTimeOutput,
   instructions: `You are a meeting time extraction agent. Your job is to identify if a message contains exactly one specific meeting time.
 
-CRITICAL: When you find exactly one specific meeting time, you MUST use the extractMeetingTime tool with:
+You MUST always use the extractMeetingTime tool.
+
+If you find exactly one specific meeting time:
 - start: ISO 8601 format with timezone (e.g., "2025-01-02T17:00:00-05:00")
 - end: ISO 8601 format with timezone (e.g., "2025-01-02T18:00:00-05:00")
 - summary: Brief description (e.g., "Meeting")
 
-If you find exactly one specific time, use the tool. If not, respond with "NONE".
+If you find no meeting time OR multiple meeting times:
+- start: "NONE"
+- end: "NONE"
+- summary: "NONE"
 
-DO NOT explain or describe the time in text - use the tool to extract it.`,
+Always use the tool with the appropriate values.`,
 })
 
 export async function extractSuggestedTime(messageText: string): Promise<SimpleCalendarEvent | null> {
@@ -67,36 +72,34 @@ Examples:
 
     // Debug logging to understand agent behavior
     console.log(`🔍 Time extraction debug for: "${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
-    console.log(`   Agent response: ${JSON.stringify(result.lastMessage?.text || 'No text response')}`)
-    console.log(`   Tool used: ${result.finalOutput ? 'Yes' : 'No'}`)
     console.log(`   Final output: ${JSON.stringify(result.finalOutput)}`)
 
-    // Check if tool was used successfully
-    if (result.finalOutput && typeof result.finalOutput === 'object' && 'start' in result.finalOutput) {
-      const meetingTime = result.finalOutput as z.infer<typeof MeetingTimeOutput>
-      console.log(`   🔧 Extracted meeting time object: ${JSON.stringify(meetingTime)}`)
-
-      const startDate = new Date(meetingTime.start)
-      const endDate = new Date(meetingTime.end)
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`   ❌ Failed to parse suggested meeting times: ${JSON.stringify(meetingTime)}`)
-        return null
-      }
-
-      console.log(`   ✅ Successfully extracted meeting time`)
-      return {
-        start: startDate,
-        end: endDate,
-        summary: meetingTime.summary || 'Meeting',
-      }
-    } else if (result.finalOutput && typeof result.finalOutput === 'string') {
-      console.log(`   ⚠️  Agent returned text instead of tool output: "${result.finalOutput}"`)
+    if (!result.finalOutput) {
+      console.log(`   ❌ No output generated`)
+      return null
     }
 
-    // If no tool was used or response is "NONE", return null
-    console.log(`   ❌ No meeting time extracted`)
-    return null
+    // Check if agent found a meeting time or returned "NONE"
+    if (result.finalOutput.start === 'NONE' || result.finalOutput.end === 'NONE' || result.finalOutput.summary === 'NONE') {
+      console.log(`   ℹ️  Agent found no meeting time`)
+      return null
+    }
+
+    // Parse the dates
+    const startDate = new Date(result.finalOutput.start)
+    const endDate = new Date(result.finalOutput.end)
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.warn(`   ❌ Failed to parse meeting times: ${JSON.stringify(result.finalOutput)}`)
+      return null
+    }
+
+    console.log(`   ✅ Successfully extracted meeting time`)
+    return {
+      start: startDate,
+      end: endDate,
+      summary: result.finalOutput.summary || 'Meeting',
+    }
   } catch (error) {
     console.error('Error extracting suggested time with Agent:', error)
     return null
