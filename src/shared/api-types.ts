@@ -80,6 +80,7 @@ export interface ScheduledEvent {
   summaryFileId?: string | null
   summaryUrl?: string | null
   summaryStatus?: 'pending' | 'found' | 'missing' | 'error' | null
+  summarySlackMessageTs?: string | null
   // Slack posting metadata for follow-ups
   slackChannelId?: string | null
   slackThreadTs?: string | null

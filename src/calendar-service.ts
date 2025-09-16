@@ -1,20 +1,19 @@
 import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 // Enable typing for calendar API event shapes where helpful
-import type { calendar_v3, drive_v3 } from 'googleapis'
+import type { calendar_v3, drive_v3, docs_v1 } from 'googleapis'
 import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
 import { z } from 'zod'
 import { CronJob } from 'cron'
 
 import db from './db/engine'
-import { userDataTable, slackUserTable } from './db/schema/main'
+import { userDataTable, slackUserTable, slackMessageTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
-import { getTopicWithState, updateTopicState } from './utils'
-import { getTopics } from './utils'
+import { getTopicWithState, updateTopicState, getTopics, tsToDate } from './utils'
 
 // Note: If PV_INVITES_SENDER === 'bot', we never prompt users to connect calendars.
 
@@ -632,6 +631,7 @@ export async function upsertTopicScheduledEvent(
     summaryFileId?: string | null,
     summaryUrl?: string | null,
     summaryStatus?: 'pending' | 'found' | 'missing' | 'error' | null,
+    summarySlackMessageTs?: string | null,
     slackChannelId?: string | null,
     slackThreadTs?: string | null,
     status?: 'scheduled' | 'cancelled' | 'updated' | null,
@@ -639,7 +639,13 @@ export async function upsertTopicScheduledEvent(
   messageId: string,
 ): Promise<void> {
   const botId = topic.botUserId
-  const existing = topic.state.perUserContext[botId]?.scheduledEvents
+  let existing = topic.state.perUserContext[botId]?.scheduledEvents
+  if (!Array.isArray(existing)) {
+    // When multiple updates happen in quick succession we may receive a stale
+    // TopicWithState instance, so fetch the latest state to merge with.
+    const freshTopic = await getTopicWithState(topic.id)
+    existing = freshTopic.state.perUserContext[botId]?.scheduledEvents
+  }
   const list = Array.isArray(existing) ? [...existing] : []
   const idx = list.findIndex((e) =>
     (newEvent.eventId && e.eventId && e.eventId === newEvent.eventId) ||
@@ -762,6 +768,108 @@ async function findDriveDocs(
   return files.map((f) => ({ id: f.id!, name: f.name!, webViewLink: f.webViewLink || undefined }))
 }
 
+function extractDocIdFromUrl(url?: string | null): { fileId: string, normalizedUrl: string } | null {
+  if (!url) return null
+  const match = url.match(/https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/)
+  if (!match) return null
+  const fileId = match[1]
+  const normalizedUrl = `https://docs.google.com/document/d/${fileId}/view`
+  return { fileId, normalizedUrl }
+}
+
+function findLinkInStructuralElements(elements?: docs_v1.Schema$StructuralElement[]): { fileId: string, normalizedUrl: string } | null {
+  if (!elements) return null
+  for (const el of elements) {
+    const paragraph = el.paragraph?.elements
+    if (paragraph) {
+      for (const run of paragraph) {
+        const link = run.textRun?.textStyle?.link?.url
+        const candidate = extractDocIdFromUrl(link)
+        if (!candidate) continue
+        const text = run.textRun?.content || ''
+        if (/transcript/i.test(text) || link?.toLowerCase().includes('transcript')) {
+          return candidate
+        }
+      }
+    }
+    const tableRows = el.table?.tableRows
+    if (tableRows) {
+      for (const row of tableRows) {
+        for (const cell of row.tableCells ?? []) {
+          const candidate = findLinkInStructuralElements(cell.content)
+          if (candidate) return candidate
+        }
+      }
+    }
+    const toc = el.tableOfContents?.content
+    if (toc) {
+      const candidate = findLinkInStructuralElements(toc)
+      if (candidate) return candidate
+    }
+  }
+  return null
+}
+
+async function extractTranscriptFromSummaryDoc(
+  auth: calendar_v3.Options['auth'],
+  docId: string,
+): Promise<{ fileId: string, url: string } | null> {
+  try {
+    const docs = google.docs({ version: 'v1', auth })
+    const res = await docs.documents.get({ documentId: docId })
+    const candidate = findLinkInStructuralElements(res.data.body?.content)
+    if (!candidate) return null
+    return { fileId: candidate.fileId, url: candidate.normalizedUrl }
+  } catch (err) {
+    console.warn('Failed to inspect summary doc for transcript link:', docId, err)
+    return null
+  }
+}
+
+function collectTextFromStructuralElements(elements?: docs_v1.Schema$StructuralElement[], lines: string[] = []): string[] {
+  if (!elements) return lines
+  for (const el of elements) {
+    const paragraph = el.paragraph?.elements
+    if (paragraph) {
+      let text = ''
+      for (const run of paragraph) {
+        if (run.textRun?.content) text += run.textRun.content
+      }
+      text = text.replace(/\s+$/u, '')
+      if (text.trim().length > 0) lines.push(text)
+    }
+    const tableRows = el.table?.tableRows
+    if (tableRows) {
+      for (const row of tableRows) {
+        for (const cell of row.tableCells ?? []) {
+          collectTextFromStructuralElements(cell.content, lines)
+        }
+      }
+    }
+    const toc = el.tableOfContents?.content
+    if (toc) collectTextFromStructuralElements(toc, lines)
+  }
+  return lines
+}
+
+async function fetchDocPlainText(
+  auth: calendar_v3.Options['auth'],
+  docId: string,
+): Promise<string | null> {
+  try {
+    const docs = google.docs({ version: 'v1', auth })
+    const res = await docs.documents.get({ documentId: docId })
+    const lines = collectTextFromStructuralElements(res.data.body?.content)
+    const text = lines.join('\n').trim()
+    if (!text) return null
+    const limit = 3500
+    return text.length > limit ? `${text.slice(0, limit)}\n…` : text
+  } catch (err) {
+    console.warn('Failed to read summary doc content:', docId, err)
+    return null
+  }
+}
+
 export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void> {
   try {
     if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) return
@@ -797,6 +905,8 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
           let summaryUrl: string | null = evt.summaryUrl || null
           let summaryFileId: string | null = evt.summaryFileId || null
           let summaryStatus: 'pending' | 'found' | 'missing' | 'error' | null = evt.summaryStatus || 'pending'
+          let summarySlackMessageTs: string | null = evt.summarySlackMessageTs || null
+          let summaryText: string | null = null
 
           if (needTranscript) {
             const terms = ['Transcript']
@@ -826,6 +936,55 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
             }
           }
 
+          if (needTranscript && transcriptStatus !== 'found' && summaryStatus === 'found' && summaryFileId) {
+            const extracted = await extractTranscriptFromSummaryDoc(oauth2Client, summaryFileId)
+            if (extracted) {
+              transcriptFileId = extracted.fileId
+              transcriptUrl = extracted.url
+              transcriptStatus = 'found'
+            }
+          }
+
+          const channelId = evt.slackChannelId
+          const threadTs = evt.slackThreadTs
+          if (!summarySlackMessageTs && summaryStatus === 'found' && summaryFileId) {
+            summaryText = await fetchDocPlainText(oauth2Client, summaryFileId)
+            if (summaryText && channelId && threadTs) {
+              const summaryMessageLines = [
+                'Summary notes (Gemini):',
+                summaryText,
+              ]
+              if (summaryUrl) summaryMessageLines.push('', `Full doc: ${summaryUrl}`)
+              const summaryMessage = summaryMessageLines.join('\n')
+              try {
+                const response = await slackClient.chat.postMessage({
+                  channel: channelId,
+                  thread_ts: threadTs,
+                  text: summaryMessage,
+                })
+                if (response.ok && response.ts) {
+                  summarySlackMessageTs = response.ts
+                  try {
+                    await db.insert(slackMessageTable).values({
+                      topicId: topic.id,
+                      channelId,
+                      userId: topic.botUserId,
+                      text: summaryMessage,
+                      timestamp: tsToDate(response.ts),
+                      rawTs: response.ts,
+                      threadTs,
+                      raw: response.message || {},
+                    })
+                  } catch (err) {
+                    console.warn('Failed to persist summary Slack message:', err)
+                  }
+                }
+              } catch (err) {
+                console.warn('Failed to post summary notes to Slack:', err)
+              }
+            }
+          }
+
           const messageId = topic.state.createdByMessageId
           await upsertTopicScheduledEvent(
             topic,
@@ -838,16 +997,15 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
               summaryFileId,
               summaryUrl,
               summaryStatus,
+              summarySlackMessageTs,
             },
             messageId,
           )
 
           // Post to Slack if we have new links and we know thread info
-          const channelId = evt.slackChannelId
-          const threadTs = evt.slackThreadTs
           const lines: string[] = []
           if (needTranscript && transcriptStatus === 'found' && transcriptUrl) lines.push(`Transcript: ${transcriptUrl}`)
-          if (needSummary && summaryStatus === 'found' && summaryUrl) lines.push(`Summary: ${summaryUrl}`)
+          if (!summarySlackMessageTs && summaryStatus === 'found' && summaryUrl) lines.push(`Summary: ${summaryUrl}`)
           if (lines.length > 0 && channelId && threadTs) {
             try {
               await slackClient.chat.postMessage({
