@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
+import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'fs'
 import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile, createAggregatedSummary } from './utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
@@ -502,6 +503,6 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 }
 
 // Run the evaluation if called directly
-if (import.meta.main) {
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   void runSimpleEvaluation()
 }
