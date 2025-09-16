@@ -1,37 +1,45 @@
 #!/usr/bin/env node
+import { parseArgs } from 'node:util'
 import { readFileSync } from 'fs'
 import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile, createAggregatedSummary } from './utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
-function parseArgs(): { benchmarkFile: string; nReps: number } {
-  const args = process.argv.slice(2)
+function parseArguments(): { benchmarkFile: string; nReps: number } {
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      benchmarkFile: {
+        type: 'string',
+        short: 'f',
+        default: 'benchmark_2agents_1start_2end_60min',
+      },
+      nReps: {
+        type: 'string',
+        short: 'r',
+        default: '1',
+      },
+      help: {
+        type: 'boolean',
+        short: 'h',
+        default: false,
+      },
+    },
+  })
 
-  // Default values
-  let benchmarkFile = 'benchmark_2agents_1start_2end_60min'
-  let nReps = 1
-
-  // Parse named arguments (--arg=value format)
-  for (const arg of args) {
-    if (arg.startsWith('--')) {
-      const [key, value] = arg.slice(2).split('=')
-      if (key === 'file' || key === 'benchmark' || key === 'folder' || key === 'cases') {
-        benchmarkFile = value
-      } else if (key === 'nReps' || key === 'reps' || key === 'repeat') {
-        nReps = parseInt(value, 10)
-      }
-    }
+  if (values.help) {
+    console.log('Usage: tsx src/evals/simple-flack-eval.ts [options]')
+    console.log('\nOptions:')
+    console.log('  -f, --benchmarkFile     Benchmark file or folder name (default: benchmark_2agents_1start_2end_60min)')
+    console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
+    console.log('  -h, --help              Show this help message')
+    process.exit(0)
   }
 
-  // Parse positional arguments (backwards compatibility)
-  if (args.length >= 1 && !args[0].startsWith('--')) {
-    benchmarkFile = args[0]
+  return {
+    benchmarkFile: values.benchmarkFile,
+    nReps: parseInt(values.nReps, 10),
   }
-  if (args.length >= 2 && !args[1].startsWith('--')) {
-    nReps = parseInt(args[1], 10)
-  }
-
-  return { benchmarkFile, nReps }
 }
 import { BaseScheduleUser } from './agents/user-agents'
 import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
@@ -307,7 +315,7 @@ async function runSimpleEvaluation(): Promise<void> {
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkFile, nReps } = parseArgs()
+    const { benchmarkFile, nReps } = parseArguments()
 
     // Step 2: Determine if it's a single file or folder
     const isFile = isSpecificBenchmarkFile(benchmarkFile)
