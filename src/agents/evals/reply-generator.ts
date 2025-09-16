@@ -1,6 +1,6 @@
 import { Agent, run } from '../agent-sdk'
 import type { SimpleCalendarEvent, HistoryMessage } from '../../evals/user-sims'
-import { formatCalendarEvents } from './calendar-formatter'
+import { formatCalendarEvents } from '../../evals/utils'
 
 const generateReplyAgent = new Agent({
   name: 'GenerateReplyAgent',
