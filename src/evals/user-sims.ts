@@ -1,7 +1,7 @@
 // The base agent class contains a simple, working agent implementation
 
 import type { UserProfile } from '../tools/time_intersection'
-import { generateReplyAgent, sendInitialMessageAgent } from '../agents/evals'
+import { generateReply, generateInitialMessage } from '../agents/evals'
 
 // Util types
 export interface SimpleCalendarEvent {
@@ -91,7 +91,7 @@ export class BaseScheduleUser implements UserProfile {
     }
 
     // Generate reply using both message buffer and history context
-    const reply = await generateReplyAgent.generateReply(this.name, this.goal, this.calendar, this.messageBuffer, this.history)
+    const reply = await generateReply(this.name, this.goal, this.calendar, this.messageBuffer, this.history)
 
     // Move messages from buffer to history as bot messages
     for (const message of this.messageBuffer) {
@@ -110,7 +110,7 @@ export class BaseScheduleUser implements UserProfile {
   }
 
   async sendInitialMessage(): Promise<string> {
-    return await sendInitialMessageAgent.generateInitialMessage(this.name, this.goal)
+    return await generateInitialMessage(this.name, this.goal)
   }
 
   evalPossibility(scheduled: SimpleCalendarEvent): boolean {

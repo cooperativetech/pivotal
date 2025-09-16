@@ -1,6 +1,6 @@
-// Export all evaluation agents
-export { generateReplyAgent } from './reply-generator'
-export { sendInitialMessageAgent } from './initial-message-generator'
-export { confirmationCheckAgent } from './confirmation-detector'
-export { timeExtractionAgent } from './time-extractor'
+// Export all evaluation agent functions
+export { generateReply } from './reply-generator'
+export { generateInitialMessage } from './initial-message-generator'
+export { isConfirming } from './confirmation-detector'
+export { extractSuggestedTime } from './time-extractor'
 export { formatCalendarEvents } from './calendar-formatter'

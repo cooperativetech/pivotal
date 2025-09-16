@@ -42,7 +42,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
   }
 }
 import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './user-sims'
-import { confirmationCheckAgent, timeExtractionAgent } from '../agents/evals'
+import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './user-sims'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
@@ -102,7 +102,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, agents
 
     // Extract suggested event from this message using Agent
     if (!suggestedEvent) {
-      const extractedEvent = await timeExtractionAgent.extractSuggestedTime(resMessage.text as string)
+      const extractedEvent = await extractSuggestedTime(resMessage.text as string)
       if (extractedEvent) {
         suggestedEvent = extractedEvent
         console.log(`Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
@@ -237,7 +237,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
 
           // Check if this reply is confirming a meeting suggestion
           if (!confirmations[agent.name]) {
-            const isConfirmation = await confirmationCheckAgent.isConfirming(reply)
+            const isConfirmation = await isConfirming(reply)
             if (isConfirmation) {
               confirmations[agent.name] = true
               console.log(`  → Detected confirmation from ${agent.name}`)
