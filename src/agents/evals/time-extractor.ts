@@ -55,10 +55,17 @@ Examples:
 - "Meeting confirmed: Thursday, January 2nd at 12:00-1:00 PM (EDT)" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "Meeting confirmed! Thursday, January 2nd from 12:00-1:00 PM (EDT) with Alice and Bob." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "Great! I have a time that works for both of you: **Thursday, January 2nd at 12:00-1:00 PM (EDT)** Alice and Bob - please confirm this time works for your final schedules." → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
+- "Great! Alice has confirmed Thursday, January 2nd from 12:00-1:00 PM (EDT). Bob, does this time work for you?" → Use tool with start: "2025-01-02T17:00:00-05:00", end: "2025-01-02T18:00:00-05:00"
 - "We could meet Monday or Tuesday" → Respond with "NONE" (multiple options)`
 
   try {
     const result = await run(timeExtractionAgent, prompt)
+
+    // Debug logging to understand agent behavior
+    console.log(`🔍 Time extraction debug for: "${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
+    console.log(`   Agent response: ${JSON.stringify(result.lastMessage?.text || 'No text response')}`)
+    console.log(`   Tool used: ${result.finalOutput ? 'Yes' : 'No'}`)
+    console.log(`   Final output: ${JSON.stringify(result.finalOutput)}`)
 
     // Check if tool was used successfully
     if (result.finalOutput && typeof result.finalOutput === 'object' && 'start' in result.finalOutput) {
@@ -71,6 +78,7 @@ Examples:
         return null
       }
 
+      console.log(`   ✅ Successfully extracted meeting time`)
       return {
         start: startDate,
         end: endDate,
@@ -79,6 +87,7 @@ Examples:
     }
 
     // If no tool was used or response is "NONE", return null
+    console.log(`   ❌ No meeting time extracted`)
     return null
   } catch (error) {
     console.error('Error extracting suggested time with Agent:', error)
