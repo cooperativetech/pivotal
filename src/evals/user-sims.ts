@@ -70,12 +70,20 @@ export const EvaluationResultsSchema = z.strictObject({
   evaluationSummary: EvaluationSummarySchema,
 })
 
+export const SavedEvaluationResultsSchema = EvaluationResultsSchema.extend({
+  evalTimestamp: z.string(),
+  benchmarkFile: z.string(),
+  benchmarkType: z.string(),
+  genTimestamp: z.string(),
+})
+
 // Type exports inferred from Zod schemas
 export type BaseScheduleUserData = z.infer<typeof ScheduleSimDataSchema>
 export type BenchmarkData = z.infer<typeof BenchmarkDataSchema>
 export type BenchmarkFileData = z.infer<typeof BenchmarkFileDataSchema>
 export type EvaluationSummary = z.infer<typeof EvaluationSummarySchema>
 export type EvaluationResults = z.infer<typeof EvaluationResultsSchema>
+export type SavedEvaluationResults = z.infer<typeof SavedEvaluationResultsSchema>
 
 // Agent classes
 export class BaseScheduleUser implements UserProfile {

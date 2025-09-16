@@ -42,7 +42,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type EvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './user-sims'
+import { BaseScheduleUser, type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './user-sims'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './user-sims'
 import { local_api } from '../shared/api-client'
@@ -348,7 +348,7 @@ async function runSimpleEvaluation(): Promise<void> {
 
 // Wrapper function to run repeated evaluations
 async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
-  const allResults: EvaluationResults[] = []
+  const allResults: SavedEvaluationResults[] = []
 
   for (let rep = 1; rep <= nReps; rep++) {
     if (nReps > 1) {
@@ -356,7 +356,9 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
     }
     try {
       const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
-      allResults.push(result)
+      if (result) {
+        allResults.push(result)
+      }
     } catch (error) {
       console.error(`Repetition ${rep} failed:`, error)
       // Continue with other repetitions
@@ -375,7 +377,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
 }
 
 // Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<EvaluationResults> {
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<SavedEvaluationResults | null> {
   try {
     // Step 1: Clear database
     await clearDatabase()
@@ -385,7 +387,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
     console.log(`Found benchmark file at: ${dataPath}`)
     const rawData = readFileSync(dataPath, 'utf-8')
-    const parsedData = JSON.parse(rawData)
+    const parsedData: unknown = JSON.parse(rawData)
 
     // Validate benchmark data structure with Zod
     const benchmarkData = BenchmarkFileDataSchema.parse(parsedData)
@@ -495,13 +497,13 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Extract filename from path for results saving
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-    saveEvaluationResults(fileName, resultsData)
+    const savedResults = saveEvaluationResults(fileName, resultsData)
 
     console.log('\n✅ Evaluation completed successfully')
-    return resultsData
+    return savedResults
   } catch (error) {
     console.error('\n❌ Evaluation failed:', error)
-    throw error // Re-throw to allow calling function to handle it
+    return null // Return null instead of throwing to allow for graceful handling
   }
 }
 

@@ -1,8 +1,8 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
-import type { EvaluationResults, SimpleCalendarEvent } from './user-sims'
-import { EvaluationResultsSchema } from './user-sims'
+import type { EvaluationResults, SavedEvaluationResults, SimpleCalendarEvent } from './user-sims'
+import { EvaluationResultsSchema, SavedEvaluationResultsSchema } from './user-sims'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -49,7 +49,7 @@ export function findBenchmarkFile(filename: string): string {
 export function saveEvaluationResults(
   benchmarkFileName: string,
   resultsData: EvaluationResults,
-): void {
+): SavedEvaluationResults {
   // Validate results data structure with Zod (defensive validation at boundary)
   const validatedResults = EvaluationResultsSchema.parse(resultsData)
   const evalTimestamp = formatTimestamp()
@@ -80,7 +80,7 @@ export function saveEvaluationResults(
   }
 
   // Add timestamp to the results data
-  const finalResults = {
+  const finalResults: SavedEvaluationResults = {
     evalTimestamp,
     benchmarkFile: baseFileName,
     benchmarkType,
@@ -92,6 +92,8 @@ export function saveEvaluationResults(
   const summaryPath = join(evalFolderPath, 'summary.json')
   writeFileSync(summaryPath, JSON.stringify(finalResults, null, 2))
   console.log(`Evaluation results saved to: ${summaryPath}`)
+
+  return finalResults
 }
 
 // Find all benchmark files in a folder
@@ -128,7 +130,7 @@ export function isSpecificBenchmarkFile(target: string): boolean {
 // Create aggregated summary from multiple evaluation results
 export function createAggregatedSummary(
   benchmarkFileName: string,
-  allResults: EvaluationResults[],
+  allResults: SavedEvaluationResults[],
   nReps: number,
 ): void {
   if (allResults.length === 0) {
@@ -137,7 +139,7 @@ export function createAggregatedSummary(
   }
 
   // Validate all results with Zod (defensive validation at boundary)
-  const validatedResults = allResults.map((result) => EvaluationResultsSchema.parse(result))
+  const validatedResults = allResults.map((result) => SavedEvaluationResultsSchema.parse(result))
 
   const timestamp = formatTimestamp()
 
@@ -170,7 +172,7 @@ export function createAggregatedSummary(
     },
     individualResults: validatedResults.map((result, index) => ({
       runNumber: index + 1,
-      evalTimestamp: (result as any).evalTimestamp, // evalTimestamp is added in saveEvaluationResults
+      evalTimestamp: result.evalTimestamp,
       success: result.suggestedEvent !== null,
       confirmed: result.allAgentsConfirmed,
       confirmedCount: result.confirmedAgents.length,
