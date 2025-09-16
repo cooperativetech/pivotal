@@ -1,7 +1,7 @@
 // The base agent class contains a simple, working agent implementation
 
-import type { UserProfile } from '../../tools/time_intersection'
-import { generateReplyAgent, sendInitialMessageAgent } from './util-agents'
+import type { UserProfile } from '../tools/time_intersection'
+import { generateReplyAgent, sendInitialMessageAgent } from '../agents/evals'
 
 // Util types
 export interface SimpleCalendarEvent {

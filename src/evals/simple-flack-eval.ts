@@ -42,7 +42,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
   }
 }
 import { BaseScheduleUser, type BaseScheduleUserData, type BenchmarkFileData, type BenchmarkData, type EvaluationResults } from './user-sims'
-import { confirmationCheckAgent, timeExtractionAgent } from './agents/util-agents'
+import { confirmationCheckAgent, timeExtractionAgent } from '../agents/evals'
 import type { SimpleCalendarEvent } from './user-sims'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
