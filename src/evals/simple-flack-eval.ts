@@ -1,50 +1,84 @@
 #!/usr/bin/env node
+import { parseArgs } from 'node:util'
+import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary } from './utils'
+import { findCommonFreeTime } from '../tools/time_intersection'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-import { BaseScheduleUser } from './agents/user-agents'
-import type { SimpleCalendarEvent } from './agents/user-agents'
+// Parse command line arguments for benchmark file or folder
+function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number } {
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      benchmarkFile: {
+        type: 'string',
+        short: 'f',
+      },
+      benchmarkFolder: {
+        type: 'string',
+        short: 'd',
+      },
+      nReps: {
+        type: 'string',
+        short: 'r',
+        default: '1',
+      },
+      help: {
+        type: 'boolean',
+        short: 'h',
+        default: false,
+      },
+    },
+  })
+
+  if (values.help) {
+    console.log('Usage: pnpm run eval [options]')
+    console.log('\nOptions:')
+    console.log('  -f, --benchmarkFile     Specific benchmark file (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773.json)')
+    console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1start_2end_60min)')
+    console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
+    console.log('  -h, --help              Show this help message')
+    console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1start_2end_60min')
+    process.exit(0)
+  }
+
+  // Validate arguments
+  if (values.benchmarkFile && values.benchmarkFolder) {
+    console.error('Error: Cannot specify both --benchmarkFile and --benchmarkFolder')
+    process.exit(1)
+  }
+
+  return {
+    benchmarkFile: values.benchmarkFile || null,
+    benchmarkFolder: values.benchmarkFolder || null,
+    nReps: parseInt(values.nReps, 10),
+  }
+}
+import { BaseScheduleUser } from './sim-users'
+import { type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
+import { isConfirming, extractSuggestedTime } from '../agents/evals'
+import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
 
-// Initialize OpenRouter with API key from environment
-const apiKey = process.env.PV_OPENROUTER_API_KEY
-if (!apiKey) {
-  throw new Error('PV_OPENROUTER_API_KEY environment variable is required')
-}
-const openrouter = createOpenRouter({
-  apiKey,
-})
-
-const MODEL = 'google/gemini-2.5-flash'
-
-// Load benchmark data and create BaseScheduleUser agents using import functionality
-function loadAgentsFromBenchmarkData(): BaseScheduleUser[] {
-  const dataPath = join(__dirname, 'data', 'benchmark-2ppl-medbusy.json')
-  const rawData = readFileSync(dataPath, 'utf-8')
-  const benchmarkData = JSON.parse(rawData) as Record<string, unknown>[]
-
-  return benchmarkData.map((personData) => {
+// Load benchmark data and create BaseScheduleUser simUsers using import functionality
+function loadSimUsersFromBenchmarkData(benchmarkSimUsers: BaseScheduleUserData[]): BaseScheduleUser[] {
+  return benchmarkSimUsers.map((personData) => {
     return BaseScheduleUser.import(personData)
   })
 }
 
-// Create all server-side users based on agents
-async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
-  const usersToCreate = agents.map((agent) => ({
-    id: agent.name,
-    realName: agent.name,
+// Create all server-side users based on simUsers
+async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
+  const usersToCreate = simUsers.map((simUser) => ({
+    id: simUser.name,
+    realName: simUser.name,
     isBot: false,
   }))
 
-  const userAgentMap = new Map<string, BaseScheduleUser>()
-  agents.forEach((agent) => userAgentMap.set(agent.name, agent))
+  const userSimUserMap = new Map<string, BaseScheduleUser>()
+  simUsers.forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
 
   const createUsersRes = await local_api.users.create_fake.$post({
     json: { users: usersToCreate },
@@ -59,113 +93,18 @@ async function createUsersFromAgents(agents: BaseScheduleUser[]): Promise<Map<st
     throw new Error('Eval requires at least 1 test user')
   }
 
-  return userAgentMap
+  return userSimUserMap
 }
 
-// Check if user agent is confirming a meeting suggestion
-async function isConfirmingMeetingSuggestion(messageText: string): Promise<boolean> {
-  try {
-    const result = await generateText({
-      model: openrouter(MODEL),
-      prompt: `Analyze this message and determine if it is a SHORT confirmation of a meeting suggestion or time proposal. 
-
-A confirmation message should be:
-- Brief and concise (typically 1-3 words or a short sentence)
-- Clearly indicating agreement, acceptance, or confirmation
-- Examples of confirmations: "Yes", "Sounds good", "Works for me", "Perfect", "Agreed", "That works", "Confirmed"
-- NOT detailed responses, questions, or counter-proposals
-
-Message: "${messageText}"
-
-Response format:
-- If this is a short confirmation: Return "TRUE"
-- Otherwise: Return "FALSE"`,
-    })
-
-    const response = result.text.trim().toUpperCase()
-    return response === 'TRUE'
-  } catch (error) {
-    console.error('Error checking confirmation with LLM:', error)
-    return false
-  }
-}
-
-// Extract suggested meeting time using LLM
-async function extractSuggestedTimeWithLLM(messageText: string): Promise<SimpleCalendarEvent | null> {
-  try {
-    const currentDate = new Date()
-    const currentDateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
-    const currentYear = currentDate.getFullYear()
-    const currentMonth = currentDate.toLocaleString('en-US', { month: 'long' })
-
-    const result = await generateText({
-      model: openrouter(MODEL),
-      prompt: `Analyze this message and determine if it contains a suggestion for a specific meeting time. If it does, extract the meeting details in JSON format. If no specific meeting time is suggested, respond with "NONE".
-
-      For context, today is ${currentDateString} (${currentMonth} ${currentYear}).
-
-      Message: "${messageText}"
-
-      Response format:
-      - If a meeting time is suggested: Return it in JSON format: {"start": "YYYY-MM-DDTHH:MM:SS±HH:MM", "end": "YYYY-MM-DDTHH:MM:SS±HH:MM", "summary": "Brief meeting description"}
-      - If no end time is specified, assume 1 hour duration
-      - If no meeting time is suggested, OR the message contains multiple suggested times: Return "NONE"
-
-      Examples:
-      - "Let's meet at 2 PM tomorrow" → {"start": "2025-01-16T14:00:00-05:00", "end": "2025-01-16T15:00:00-05:00", "summary": "Meeting"}
-      - "How about 3:30-4:30 PM on Monday?" → {"start": "2025-01-13T15:30:00-05:00", "end": "2025-01-13T16:30:00-05:00", "summary": "Meeting"}`,
-    })
-
-    const response = result.text.trim()
-
-    if (response === 'NONE' || response.toLowerCase() === 'none') {
-      return null
-    }
-
-    // Try to parse the JSON response
-    try {
-      // Strip markdown code blocks if present
-      let jsonString = response
-      if (response.includes('```json')) {
-        const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n\s*```/)
-        if (jsonMatch) {
-          jsonString = jsonMatch[1]
-        }
-      } else if (response.includes('```')) {
-        const codeMatch = response.match(/```\s*\n([\s\S]*?)\n\s*```/)
-        if (codeMatch) {
-          jsonString = codeMatch[1]
-        }
-      }
-
-      const parsed = JSON.parse(jsonString.trim()) as Record<string, unknown>
-
-      const startDate = new Date(parsed.start as string)
-      const endDate = new Date(parsed.end as string)
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`Failed to parse suggested meeting times: ${jsonString}`)
-        return null
-      }
-
-      return {
-        start: startDate,
-        end: endDate,
-        summary: (parsed.summary as string) || 'Meeting',
-      }
-    } catch {
-      console.warn(`Failed to parse JSON response: ${response}`)
-      return null
-    }
-  } catch (error) {
-    console.error('Error extracting suggested time with LLM:', error)
+// Process bot message responses and add them to appropriate simUser buffers
+async function processBotMessages(messageResult: Record<string, unknown>, simUsers: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
+  if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
+    console.log('⚠️ Bot did not reply - no resMessages in response')
     return null
   }
-}
 
-// Process bot message responses and add them to appropriate agent buffers
-async function processBotMessages(messageResult: Record<string, unknown>, agents: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
-  if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
+  if (messageResult.resMessages.length === 0) {
+    console.log('⚠️ Bot did not reply - resMessages array is empty')
     return null
   }
 
@@ -175,43 +114,45 @@ async function processBotMessages(messageResult: Record<string, unknown>, agents
   for (const resMessage of messageResult.resMessages as Record<string, unknown>[]) {
     console.log(`Bot response: "${resMessage.text as string}"`)
 
-    // Extract suggested event from this message using LLM
+    // Extract suggested event from this message using Agent
     if (!suggestedEvent) {
-      const extractedEvent = await extractSuggestedTimeWithLLM(resMessage.text as string)
+      const extractedEvent = await extractSuggestedTime(resMessage.text as string)
       if (extractedEvent) {
         suggestedEvent = extractedEvent
-        console.log(`Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
+        console.log(`✅ Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
+      } else {
+        console.log('ℹ️  No meeting time detected in bot message')
       }
     }
 
     try {
-      // Get channel information to determine which agents should receive this message
+      // Get channel information to determine which simUsers should receive this message
       const channelRes = await local_api.channels[':channelId'].$get({
         param: { channelId: resMessage.channelId as string },
       })
 
       if (!channelRes.ok) {
         console.error(`Failed to get channel info: ${resMessage.channelId as string}`)
-        // Fallback: send to all agents if we can't get channel info
-        for (const agent of agents) {
-          agent.receive(resMessage.text as string)
+        // Fallback: send to all simUsers if we can't get channel info
+        for (const simUser of simUsers) {
+          simUser.receive(resMessage.text as string)
         }
         continue
       }
 
       const { userIds } = await channelRes.json()
 
-      // Only send message to agents whose names match the channel userIds
-      for (const agent of agents) {
-        if (userIds.includes(agent.name)) {
-          agent.receive(resMessage.text as string)
+      // Only send message to simUsers whose names match the channel userIds
+      for (const simUser of simUsers) {
+        if (userIds.includes(simUser.name)) {
+          simUser.receive(resMessage.text as string)
         }
       }
     } catch (error) {
       console.error(`Error processing bot message for channel ${resMessage.channelId as string}:`, error)
-      // Fallback: send to all agents if there's an error
-      for (const agent of agents) {
-        agent.receive(resMessage.text as string)
+      // Fallback: send to all simUsers if there's an error
+      for (const simUser of simUsers) {
+        simUser.receive(resMessage.text as string)
       }
     }
   }
@@ -235,35 +176,35 @@ async function clearDatabase(): Promise<void> {
 }
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
 
-  if (agents.length === 0) {
-    throw new Error('No agents provided for conversation')
+  if (simUsers.length === 0) {
+    throw new Error('No simUsers provided for conversation')
   }
 
-  // Log all agents
-  agents.forEach((agent, index) => {
-    console.log(`Agent ${index + 1}: ${agent.name} - Goal: "${agent.goal}"`)
+  // Log all simUsers
+  simUsers.forEach((simUser, index) => {
+    console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
 
-  // Start conversation: First agent sends initial message through API
+  // Start conversation: First simUser sends initial message through API
   console.log('\n--- Starting Conversation ---')
-  const firstAgent = agents[0]
-  const initialMessage = await firstAgent.send_initial_message()
+  const firstSimUser = simUsers[0]
+  const initialMessage = await firstSimUser.sendInitialMessage()
 
   if (!initialMessage) {
-    console.log(`${firstAgent.name} has no initial message to send`)
-    throw new Error('First agent must have an initial message to start conversation')
+    console.log(`${firstSimUser.name} has no initial message to send`)
+    throw new Error('First simUser must have an initial message to start conversation')
   }
 
-  console.log(`${firstAgent.name}: ${initialMessage}`)
+  console.log(`${firstSimUser.name}: ${initialMessage}`)
 
   // Send initial message through local API
   const initMessageRes = await local_api.message.$post({
-    json: { userId: firstAgent.name, text: initialMessage },
+    json: { userId: firstSimUser.name, text: initialMessage },
   })
   if (!initMessageRes.ok) {
     throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
@@ -274,17 +215,17 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
 
   console.log(`Created topic: ${topicId}`)
 
-  // Initialize confirmation tracking for all agents
+  // Initialize confirmation tracking for all simUsers
   const confirmations: Record<string, boolean> = {}
   const resetConfirmations = () => {
-    agents.forEach((agent) => {
-      confirmations[agent.name] = false
+    simUsers.forEach((simUser) => {
+      confirmations[simUser.name] = false
     })
   }
   resetConfirmations()
 
   // Process initial bot responses
-  let suggestedEvent = await processBotMessages(initResData, agents)
+  let suggestedEvent = await processBotMessages(initResData, simUsers)
   if (suggestedEvent) {
     console.log(`  → Initial bot suggestion: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
   }
@@ -297,38 +238,37 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
     roundCount++
     console.log(`\n--- Round ${roundCount} ---`)
 
-    let anyAgentSpoke = false
+    let anySimUserSpoke = false
 
-    // Each agent replies to messages in their buffer
-    for (const agent of agents) {
-      if (agent.message_buffer.length > 0) {
-        const reply = await agent.reply_buffer()
-
-        // RESETTING BUFFER AFTER REPLY
-        //await agent.empty_buffer()
+    // Each simUser replies to messages in their buffer
+    for (const simUser of simUsers) {
+      console.log(`${simUser.name} buffer length: ${simUser.messageBuffer.length}`)
+      if (simUser.messageBuffer.length > 0) {
+      //if (true) {
+        const reply = await simUser.replyBuffer()
 
         if (reply) {
-          console.log(`${agent.name}: ${reply}`)
-          anyAgentSpoke = true
+          console.log(`${simUser.name}: ${reply}`)
+          anySimUserSpoke = true
 
           // Check if this reply is confirming a meeting suggestion
-          if (!confirmations[agent.name]) {
-            const isConfirmation = await isConfirmingMeetingSuggestion(reply)
+          if (!confirmations[simUser.name]) {
+            const isConfirmation = await isConfirming(reply)
             if (isConfirmation) {
-              confirmations[agent.name] = true
-              console.log(`  → Detected confirmation from ${agent.name}`)
+              confirmations[simUser.name] = true
+              console.log(`  → Detected confirmation from ${simUser.name}`)
             }
           }
 
           // Send reply through local API
           const replyRes = await local_api.message.$post({
-            json: { userId: agent.name, text: reply , topicId: topicId },
+            json: { userId: simUser.name, text: reply , topicId: topicId },
           })
 
           if (replyRes.ok) {
             const replyData = await replyRes.json()
-            // Process bot responses and add to agent buffers
-            const newSuggestedEvent = await processBotMessages(replyData, agents)
+            // Process bot responses and add to simUser buffers
+            const newSuggestedEvent = await processBotMessages(replyData, simUsers)
             if (newSuggestedEvent) {
               // Check if this is a new/different suggested event
               if (!suggestedEvent || newSuggestedEvent.start.getTime() !== suggestedEvent.start.getTime() || newSuggestedEvent.end.getTime() !== suggestedEvent.end.getTime()) {
@@ -342,25 +282,25 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
               }
             }
           } else {
-            console.error(`Failed to send reply from ${agent.name}: ${replyRes.statusText}`)
+            console.error(`Failed to send reply from ${simUser.name}: ${replyRes.statusText}`)
           }
         }
       }
     }
 
-    // Check if all agents have confirmed the current suggested meeting
+    // Check if all simUsers have confirmed the current suggested meeting
     if (suggestedEvent) {
-      const allConfirmed = agents.every((agent) => confirmations[agent.name])
+      const allConfirmed = simUsers.every((simUser) => confirmations[simUser.name])
       if (allConfirmed) {
-        console.log('\n🎉 All agents have confirmed the current suggested meeting!')
+        console.log('\n🎉 All simUsers have confirmed the current suggested meeting!')
         console.log('Ending conversation successfully.')
         break
       }
     }
 
-    // If no agent spoke this round, end the conversation
-    if (!anyAgentSpoke) {
-      console.log('No agents responded. Ending conversation.')
+    // If no simUser spoke this round, end the conversation
+    if (!anySimUserSpoke) {
+      console.log('No simUsers responded. Ending conversation.')
       break
     }
   }
@@ -374,7 +314,7 @@ async function simulateTurnBasedConversation(agents: BaseScheduleUser[]): Promis
   // Get final topic data
   const topicResponse = await local_api.topics[':topicId'].$get({
     param: { topicId },
-    query: { visibleToUserId: firstAgent.name },
+    query: { visibleToUserId: firstSimUser.name },
   })
 
   if (!topicResponse.ok) {
@@ -390,23 +330,98 @@ async function runSimpleEvaluation(): Promise<void> {
   console.log('=� Starting Simple Flack Evaluation')
 
   try {
+    // Step 1: Parse command line arguments
+    const { benchmarkFile, benchmarkFolder, nReps } = parseArguments()
+
+    // Step 2: Determine what to run based on arguments
+    if (benchmarkFile) {
+      // Run specific file
+      console.log(`Using benchmark file: ${benchmarkFile}`)
+      console.log(`Running ${nReps} repetition(s) per case`)
+      await runRepeatedEvaluation(benchmarkFile, false, nReps)
+    } else {
+      // Run folder (either specified or default)
+      const folderName = benchmarkFolder || 'benchmark_2simusers_1start_2end_60min'
+      console.log(`Using benchmark folder: ${folderName}`)
+      const benchmarkFiles = findAllBenchmarkFiles(folderName)
+      console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
+      console.log(`Running ${nReps} repetition(s) per case`)
+
+      for (let i = 0; i < benchmarkFiles.length; i++) {
+        console.log(`\n${'='.repeat(80)}`)
+        console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
+        console.log(`${'='.repeat(80)}`)
+        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps)
+      }
+
+      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
+    }
+  } catch (error) {
+    console.error('\n❌ Evaluation failed:', error)
+    process.exit(1)
+  }
+}
+
+// Wrapper function to run repeated evaluations
+async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
+  const allResults: SavedEvaluationResults[] = []
+
+  for (let rep = 1; rep <= nReps; rep++) {
+    if (nReps > 1) {
+      console.log(`\n--- Repetition ${rep}/${nReps} ---`)
+    }
+    try {
+      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
+      if (result) {
+        allResults.push(result)
+      }
+    } catch (error) {
+      console.error(`Repetition ${rep} failed:`, error)
+      // Continue with other repetitions
+    }
+  }
+
+  if (nReps > 1) {
+    console.log(`\n✅ Completed all ${nReps} repetitions for this case`)
+
+    // Create aggregated summary if we have multiple runs
+    if (allResults.length > 1) {
+      const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+      createAggregatedSummary(fileName, allResults, nReps)
+    }
+  }
+}
+
+// Run a single evaluation for a specific benchmark file
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<SavedEvaluationResults | null> {
+  try {
     // Step 1: Clear database
     await clearDatabase()
 
-    // Step 2: Load agents from benchmark data
-    console.log('\nLoading agents from benchmark data...')
-    const agents = loadAgentsFromBenchmarkData()
-    console.log(`Loaded ${agents.length} agents:`)
-    agents.forEach((agent) => {
-      console.log(`  - ${agent.name}: ${agent.calendar.length} calendar events, goal: "${agent.goal}"`)
+    // Step 2: Load benchmark file and agents from benchmark data
+    console.log('\nLoading benchmark file...')
+    const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
+    console.log(`Found benchmark file at: ${dataPath}`)
+    const rawData = readFileSync(dataPath, 'utf-8')
+    const parsedData: unknown = JSON.parse(rawData)
+
+    // Validate benchmark data structure with Zod
+    const benchmarkData = BenchmarkFileData.parse(parsedData)
+    const benchmarkSimUsers = benchmarkData.simUsers
+
+    console.log('Loading simUsers from benchmark data...')
+    const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
+    console.log(`Loaded ${simUsers.length} simUsers:`)
+    simUsers.forEach((simUser) => {
+      console.log(`  - ${simUser.name}: ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
     // Step 3: Create users in database
     console.log('\nCreating users in database...')
-    await createUsersFromAgents(agents)
+    await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(agents)
+    const result = await simulateTurnBasedConversation(simUsers)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
 
     if (result.suggestedEvent) {
@@ -417,39 +432,99 @@ async function runSimpleEvaluation(): Promise<void> {
     }
 
     // Check confirmations
-    const confirmedAgents = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
-    const allAgentsConfirmed = confirmedAgents.length === agents.length
+    const confirmedSimUsers = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
+    const allSimUsersConfirmed = confirmedSimUsers.length === simUsers.length
 
     console.log('\nConfirmation Status:')
     Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
       console.log(`  ${confirmed ? '✅' : '❌'} ${agentName}: ${confirmed ? 'Confirmed' : 'Not confirmed'}`)
     })
 
-    if (allAgentsConfirmed && confirmedAgents.length > 0) {
-      console.log('🎉 All agents have confirmed the meeting suggestion!')
-    } else if (confirmedAgents.length > 0) {
-      console.log(`⚠️  Only ${confirmedAgents.length}/${agents.length} agents have confirmed`)
+    if (allSimUsersConfirmed && confirmedSimUsers.length > 0) {
+      console.log('🎉 All simUsers have confirmed the meeting suggestion!')
+    } else if (confirmedSimUsers.length > 0) {
+      console.log(`⚠️  Only ${confirmedSimUsers.length}/${simUsers.length} simUsers have confirmed`)
     } else {
-      console.log('❌ No confirmations detected from any agents')
+      console.log('❌ No confirmations detected from any simUsers')
     }
 
-    // Check feasibility using eval_possibility
+    // Check feasibility using evalPossibility
+    let maxSharedFreeTime = 0
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
-      agents.forEach((agent) => {
-        const canAttend = agent.eval_possibility(result.suggestedEvent!)
-        console.log(`  ${canAttend ? '✅' : '❌'} ${agent.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
+
+      // Check if meeting falls within benchmark time constraints
+      const benchmark = benchmarkData.benchmark
+      const benchmarkStartTime = new Date(benchmark.startTime)
+      const benchmarkEndTime = new Date(benchmark.endTime)
+      const meetingStart = result.suggestedEvent.start
+      const meetingEnd = result.suggestedEvent.end
+
+      const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
+      console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
+
+      if (!withinTimeRange) {
+        console.log(`    Benchmark range: ${benchmarkStartTime.toISOString()} to ${benchmarkEndTime.toISOString()}`)
+        console.log(`    Suggested meeting: ${meetingStart.toISOString()} to ${meetingEnd.toISOString()}`)
+      }
+
+      // Check individual simUser availability
+      simUsers.forEach((simUser) => {
+        const canAttend = simUser.evalPossibility(result.suggestedEvent!)
+        console.log(`  ${canAttend ? '✅' : '❌'} ${simUser.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
+      })
+
+      // Check if there was actually any common free time when all simUsers were available
+      const commonFreeSlots = findCommonFreeTime(simUsers, benchmarkStartTime, benchmarkEndTime)
+      maxSharedFreeTime = commonFreeSlots.length > 0
+        ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
+        : 0
+
+      const hasCommonFreeTime = maxSharedFreeTime > 0
+      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes` : 'No common free time available'}`)
+    }
+
+    // Save evaluation results
+    console.log('\nSaving evaluation results...')
+    const canAttendResults: Record<string, boolean> = {}
+    if (result.suggestedEvent) {
+      simUsers.forEach((simUser) => {
+        canAttendResults[simUser.name] = simUser.evalPossibility(result.suggestedEvent!)
       })
     }
 
-    console.log('\n Evaluation completed successfully')
+    const resultsData: EvaluationResults = {
+      suggestedEvent: result.suggestedEvent ? {
+        start: result.suggestedEvent.start.toISOString(),
+        end: result.suggestedEvent.end.toISOString(),
+        summary: result.suggestedEvent.summary,
+      } : null,
+      confirmedSimUsers: confirmedSimUsers.map(([name]) => name),
+      allSimUsersConfirmed,
+      canAttend: canAttendResults,
+      maxSharedFreeTime,
+      evaluationSummary: {
+        totalSimUsers: simUsers.length,
+        confirmedCount: confirmedSimUsers.length,
+        hasSuggestedEvent: result.suggestedEvent !== null,
+        allCanAttend: result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false,
+      },
+    }
+
+    // Extract filename from path for results saving
+    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+    const savedResults = saveEvaluationResults(fileName, resultsData)
+
+    console.log('\n✅ Evaluation completed successfully')
+    return savedResults
   } catch (error) {
-    console.error('\nL Evaluation failed:', error)
-    process.exit(1)
+    console.error('\n❌ Evaluation failed:', error)
+    return null // Return null instead of throwing to allow for graceful handling
   }
 }
 
 // Run the evaluation if called directly
-if (import.meta.main) {
-  void runSimpleEvaluation()
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
+  process.on('SIGINT', () => process.nextTick(() => process.exit(1)))
+  await runSimpleEvaluation()
 }
