@@ -80,13 +80,13 @@ Examples:
     console.log(`   Final output: ${JSON.stringify(result.finalOutput)}`)
 
     if (!result.finalOutput) {
-      console.log(`   ❌ No output generated`)
+      console.log('   ❌ No output generated')
       return null
     }
 
     // Check if agent found a meeting time or returned "NONE"
     if (result.finalOutput.start === 'NONE' || result.finalOutput.end === 'NONE' || result.finalOutput.summary === 'NONE') {
-      console.log(`   ℹ️  Agent found no meeting time`)
+      console.log('   ℹ️  Agent found no meeting time')
       return null
     }
 

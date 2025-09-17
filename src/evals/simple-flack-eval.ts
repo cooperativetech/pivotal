@@ -108,7 +108,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
         suggestedEvent = extractedEvent
         console.log(`✅ Extracted suggested meeting: ${extractedEvent.start.toISOString()} - ${extractedEvent.end.toISOString()} (${extractedEvent.summary})`)
       } else {
-        console.log(`ℹ️  No meeting time detected in bot message`)
+        console.log('ℹ️  No meeting time detected in bot message')
       }
     }
 

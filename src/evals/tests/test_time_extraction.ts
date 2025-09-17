@@ -13,8 +13,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T17:00:00.000Z', // 12:00 PM EST = 17:00 UTC
       end: '2025-01-02T18:00:00.000Z',   // 1:00 PM EST = 18:00 UTC
-      summary: 'Meeting'
-    }
+      summary: 'Meeting',
+    },
   },
   {
     name: 'Exclamation confirmation with participants',
@@ -22,8 +22,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T17:00:00.000Z',
       end: '2025-01-02T18:00:00.000Z',
-      summary: '1-hour meeting' // or similar
-    }
+      summary: '1-hour meeting', // or similar
+    },
   },
   {
     name: 'Markdown formatted announcement',
@@ -31,8 +31,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T17:00:00.000Z',
       end: '2025-01-02T18:00:00.000Z',
-      summary: 'Meeting'
-    }
+      summary: 'Meeting',
+    },
   },
   {
     name: 'Confirmation with follow-up question',
@@ -40,8 +40,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T17:00:00.000Z',
       end: '2025-01-02T18:00:00.000Z',
-      summary: 'Meeting'
-    }
+      summary: 'Meeting',
+    },
   },
   {
     name: 'Final confirmation message',
@@ -49,8 +49,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T17:00:00.000Z',
       end: '2025-01-02T18:00:00.000Z',
-      summary: '1-hour meeting'
-    }
+      summary: '1-hour meeting',
+    },
   },
   {
     name: 'Simple suggestion - tomorrow 2 PM',
@@ -58,8 +58,8 @@ const testCases = [
     expected: {
       start: '2025-01-02T19:00:00.000Z', // 2:00 PM EST = 19:00 UTC
       end: '2025-01-02T20:00:00.000Z',   // 3:00 PM EST = 20:00 UTC (1 hour assumed)
-      summary: 'Meeting'
-    }
+      summary: 'Meeting',
+    },
   },
   {
     name: 'Time range suggestion',
@@ -67,19 +67,19 @@ const testCases = [
     expected: {
       start: '2025-01-06T20:30:00.000Z', // 3:30 PM EST = 20:30 UTC
       end: '2025-01-06T21:30:00.000Z',   // 4:30 PM EST = 21:30 UTC
-      summary: 'Meeting'
-    }
+      summary: 'Meeting',
+    },
   },
   {
     name: 'No meeting time - multiple options',
     input: 'We could meet Monday or Tuesday',
-    expected: null
+    expected: null,
   },
   {
     name: 'No meeting time - generic message',
     input: 'Thanks for the update. Let me know when you\'re available.',
-    expected: null
-  }
+    expected: null,
+  },
 ]
 
 async function runTests() {
@@ -121,14 +121,14 @@ async function runTests() {
             passed++
           } else {
             console.log('❌ FAIL - Times do not match')
-            if (!startMatch) console.log(`  Start time mismatch`)
-            if (!endMatch) console.log(`  End time mismatch`)
+            if (!startMatch) console.log('  Start time mismatch')
+            if (!endMatch) console.log('  End time mismatch')
             failed++
           }
         }
       }
     } catch (error) {
-      console.log(`❌ FAIL - Error occurred: ${error}`)
+      console.log(`❌ FAIL - Error occurred: ${String(error)}`)
       failed++
     }
   }
