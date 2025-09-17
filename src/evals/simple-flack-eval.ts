@@ -54,9 +54,9 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './user-sims'
+import { BaseScheduleUser, type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './sim-users'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
-import type { SimpleCalendarEvent } from './user-sims'
+import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'

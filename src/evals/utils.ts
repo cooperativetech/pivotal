@@ -1,8 +1,8 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
-import type { EvaluationResults, SavedEvaluationResults, SimpleCalendarEvent } from './user-sims'
-import { EvaluationResultsSchema, SavedEvaluationResultsSchema } from './user-sims'
+import type { EvaluationResults, SavedEvaluationResults, SimpleCalendarEvent } from './sim-users'
+import { EvaluationResultsSchema, SavedEvaluationResultsSchema } from './sim-users'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
