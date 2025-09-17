@@ -2,7 +2,7 @@
 
 import type { UserProfile } from '../tools/time_intersection'
 import { generateReply, generateInitialMessage } from '../agents/evals'
-import { ScheduleSimData, type BaseScheduleUserData, type HistoryMessage } from './utils'
+import { SerializedSimUserData, type BaseScheduleUserData, type HistoryMessage } from './utils'
 
 // Util types
 export interface SimpleCalendarEvent {
@@ -109,7 +109,7 @@ export class BaseScheduleUser implements UserProfile {
   // Create from exported data
   static import(data: BaseScheduleUserData): BaseScheduleUser {
     // Validate the data structure with Zod (defensive validation at boundary)
-    const validatedData = ScheduleSimData.parse(data)
+    const validatedData = SerializedSimUserData.parse(data)
 
     const calendar = validatedData.calendar.map((event) => ({
       start: new Date(event.start),

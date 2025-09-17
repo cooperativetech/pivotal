@@ -16,7 +16,7 @@ export const HistoryMessage = z.strictObject({
   message: z.string(),
 })
 
-export const ScheduleSimData = z.strictObject({
+export const SerializedSimUserData = z.strictObject({
   name: z.string(),
   goal: z.string(),
   calendar: z.array(SerializedCalendarEvent),
@@ -35,7 +35,7 @@ export const BenchmarkData = z.strictObject({
 
 export const BenchmarkFileData = z.strictObject({
   benchmark: BenchmarkData,
-  simUsers: z.array(ScheduleSimData),
+  simUsers: z.array(SerializedSimUserData),
 })
 
 const EvaluationSummary = z.strictObject({
@@ -66,7 +66,7 @@ export const SavedEvaluationResults = EvaluationResults.extend({
 })
 
 // Type exports inferred from Zod schemas
-export type BaseScheduleUserData = z.infer<typeof ScheduleSimData>
+export type BaseScheduleUserData = z.infer<typeof SerializedSimUserData>
 export type BenchmarkData = z.infer<typeof BenchmarkData>
 export type BenchmarkFileData = z.infer<typeof BenchmarkFileData>
 export type EvaluationSummary = z.infer<typeof EvaluationSummary>
