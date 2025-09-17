@@ -6,14 +6,14 @@ This directory contains tools for evaluating AI-assisted scheduling performance 
 
 ```bash
 # Generate benchmark data
-npx tsx gen-benchmark.ts
+pnpm run gen-benchmark
 
 # Run evaluation on the generated benchmark
-npx tsx simple-flack-eval.ts
+pnpm run eval
 
 # Run evaluation with specific parameters
-npx tsx gen-benchmark.ts --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
-npx tsx simple-flack-eval.ts benchmark_3simusers_1start_2end_60min --nReps=3
+pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
+pnpm run eval --benchmarkFile=benchmark_3simusers_1start_2end_60min --nReps=3
 ```
 
 ## Benchmark Generation (`gen-benchmark.ts`)
@@ -24,13 +24,13 @@ Creates realistic scheduling scenarios with AI-generated calendar events.
 
 ```bash
 # Basic usage with defaults
-npx tsx gen-benchmark.ts
+pnpm run gen-benchmark
 
 # With command line arguments
-npx tsx gen-benchmark.ts --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nCases=10
+pnpm run gen-benchmark --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nCases=10
 
 # Positional arguments (backwards compatibility)
-npx tsx gen-benchmark.ts 1 2 60 3 5
+pnpm run gen-benchmark 1 2 60 3 5
 ```
 
 ### Parameters
@@ -70,13 +70,13 @@ Simulates scheduling conversations and evaluates bot performance.
 
 ```bash
 # Run on a specific benchmark file
-npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
+pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
 
 # Run on all benchmarks in a folder
-npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min
+pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min
 
 # Run multiple repetitions for statistical analysis
-npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min --nReps=5
+pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min --nReps=5
 
 # Copy/paste full file paths (automatically detected)
 npx tsx simple-flack-eval.ts /full/path/to/benchmark_file_gen20250915121553773.json
