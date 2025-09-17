@@ -28,7 +28,7 @@ const timeExtractionAgent = new Agent({
   },
   modelSettings: {
     temperature: 0.1,
-    toolChoice: 'required',
+    toolChoice: 'auto', // gemini doesn't support 'required', use 'auto' instead
   },
   tools: [extractMeetingTime],
   outputType: MeetingTimeOutput,
