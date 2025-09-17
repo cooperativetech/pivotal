@@ -20,8 +20,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
   const endTime = new Date(referenceDate.getTime() + endTimeOffset * 24 * 60 * 60 * 1000)
 
-  // Possible sim names (one for each letter of the alphabet)
-  const possibleSimNames = [
+  // Possible simUser names (one for each letter of the alphabet)
+  const possibleSimUserNames = [
     'Alice', 'Bob', 'Charlie', 'Diana', 'Edward', 'Fiona', 'George', 'Helen',
     'Ian', 'Julia', 'Kevin', 'Laura', 'Michael', 'Nina', 'Oliver', 'Patricia',
     'Quinn', 'Rachel', 'Samuel', 'Teresa', 'Ulrich', 'Victoria', 'William', 'Xara',
@@ -29,15 +29,15 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   ]
 
   // Subsample the first nSimUsers names
-  const simNames = possibleSimNames.slice(0, nSimUsers)
+  const simUserNames = possibleSimUserNames.slice(0, nSimUsers)
 
-  // Generate fake calendars for all sims
+  // Generate fake calendars for all simUsers
   const calendarEvents = await Promise.all(
-    simNames.map(() => genFakeCalendar('America/New_York', startTime, endTime)),
+    simUserNames.map(() => genFakeCalendar('America/New_York', startTime, endTime)),
   )
 
   // Validate and trim calendar events to ensure they fall within the specified date range
-  const validatedCalendarEvents = calendarEvents.map((events, simIndex) => {
+  const validatedCalendarEvents = calendarEvents.map((events, simUserIndex) => {
     const originalLength = events.length
     const filteredEvents = events.filter((event) => {
       const eventStart = new Date(event.start)
@@ -46,22 +46,22 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     })
 
     if (filteredEvents.length < originalLength) {
-      const simName = simNames[simIndex]
+      const simUserName = simUserNames[simUserIndex]
       const trimmedCount = originalLength - filteredEvents.length
-      console.warn(`⚠️  Warning: ${simName} had ${trimmedCount} event(s) outside the date range ${startTime.toISOString()} to ${endTime.toISOString()}. Events trimmed from ${originalLength} to ${filteredEvents.length}.`)
+      console.warn(`⚠️  Warning: ${simUserName} had ${trimmedCount} event(s) outside the date range ${startTime.toISOString()} to ${endTime.toISOString()}. Events trimmed from ${originalLength} to ${filteredEvents.length}.`)
     }
 
     return filteredEvents
   })
 
-  // Create sims list
-  const sims: BaseScheduleUser[] = simNames.map((name, index) => {
+  // Create simUsers list
+  const simUsers: BaseScheduleUser[] = simUserNames.map((name, index) => {
     const calendar = convertCalendarEventsToUserProfile(validatedCalendarEvents[index])
 
-    // Only the first sim gets the scheduling goal
+    // Only the first simUser gets the scheduling goal
     let goal = ''
     if (index === 0) {
-      const otherSimNames = simNames.filter((_, i) => i !== index)
+      const otherSimUserNames = simUserNames.filter((_, i) => i !== index)
       const startTimeStr = startTime.toLocaleString('en-US', {
         weekday: 'long',
         month: 'long',
@@ -86,17 +86,17 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
         ? `${meetingLength / 60}-hour`
         : `${meetingLength}-minute`
 
-      goal = `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherSimNames.join(', ')}`
+      goal = `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherSimUserNames.join(', ')}`
     }
 
     return new BaseScheduleUser(name, goal, calendar)
   })
 
-  console.log('Created sims:')
-  sims.forEach((sim) => console.log(`${sim.name}: ${sim.calendar.length} events`))
+  console.log('Created simUsers:')
+  simUsers.forEach((simUser) => console.log(`${simUser.name}: ${simUser.calendar.length} events`))
 
-  // Export sims and benchmark parameters to JSON file
-  const exportedSims: BaseScheduleUserData[] = sims.map((sim) => sim.export())
+  // Export simUsers and benchmark parameters to JSON file
+  const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
   const benchmark = {
     startTime,
     startTimeOffset,
@@ -108,7 +108,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 
   const exportData = {
     benchmark,
-    agents: exportedSims,
+    agents: exportedSimUsers,
   }
 
   // Create folder name and filename with benchmark parameters
@@ -127,7 +127,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   await writeFile(filePath, JSON.stringify(exportData, null, 2))
   console.log(`Agents saved to ${filePath}`)
 
-  return sims
+  return simUsers
 }
 
 // Parse command line arguments

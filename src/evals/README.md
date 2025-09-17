@@ -95,7 +95,7 @@ The tool automatically detects whether you're specifying a file or folder:
 
 ### Features
 
-- **Conversation simulation**: AI simulated users with realistic personas and goals
+- **Conversation simulation**: AI simulated users (simUsers) with realistic personas and goals
 - **Multi-metric evaluation**: Success rate, confirmation rate, feasibility analysis
 - **Common availability check**: Uses `findCommonFreeTime` to verify actual scheduling feasibility
 - **Timezone-aware logging**: All times displayed in Eastern Time

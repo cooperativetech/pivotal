@@ -166,16 +166,16 @@ export function createAggregatedSummary(
     expectedRuns: nReps,
     aggregatedResults: {
       successRate: validatedResults.filter((r) => r.suggestedEvent !== null).length / validatedResults.length,
-      confirmationRate: validatedResults.filter((r) => r.allSimsConfirmed === true).length / validatedResults.length,
-      averageConfirmedSims: validatedResults.reduce((sum, r) => sum + r.confirmedSims.length, 0) / validatedResults.length,
+      confirmationRate: validatedResults.filter((r) => r.allSimUsersConfirmed === true).length / validatedResults.length,
+      averageConfirmedSimUsers: validatedResults.reduce((sum, r) => sum + r.confirmedSimUsers.length, 0) / validatedResults.length,
       feasibilityRate: validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / validatedResults.length,
     },
     individualResults: validatedResults.map((result, index) => ({
       runNumber: index + 1,
       evalTimestamp: result.evalTimestamp,
       success: result.suggestedEvent !== null,
-      confirmed: result.allSimsConfirmed,
-      confirmedCount: result.confirmedSims.length,
+      confirmed: result.allSimUsersConfirmed,
+      confirmedCount: result.confirmedSimUsers.length,
       feasible: result.evaluationSummary.allCanAttend,
     })),
   }
@@ -197,9 +197,9 @@ export function createAggregatedSummary(
   // Print summary statistics
   console.log('\n📈 Summary Statistics:')
   console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.suggestedEvent !== null).length}/${validatedResults.length})`)
-  console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.allSimsConfirmed === true).length}/${validatedResults.length})`)
+  console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.allSimUsersConfirmed === true).length}/${validatedResults.length})`)
   console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length}/${validatedResults.length})`)
-  console.log(`  Average Confirmed Sims: ${aggregatedData.aggregatedResults.averageConfirmedSims.toFixed(1)}`)
+  console.log(`  Average Confirmed SimUsers: ${aggregatedData.aggregatedResults.averageConfirmedSimUsers.toFixed(1)}`)
 }
 
 // Helper function to format calendar events with date and time information

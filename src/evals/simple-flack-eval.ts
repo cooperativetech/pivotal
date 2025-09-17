@@ -49,23 +49,23 @@ import { local_api } from '../shared/api-client'
 import type { TopicData } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 
-// Load benchmark data and create BaseScheduleUser sims using import functionality
-function loadSimsFromBenchmarkData(benchmarkSims: BaseScheduleUserData[]): BaseScheduleUser[] {
-  return benchmarkSims.map((personData) => {
+// Load benchmark data and create BaseScheduleUser simUsers using import functionality
+function loadSimUsersFromBenchmarkData(benchmarkSimUsers: BaseScheduleUserData[]): BaseScheduleUser[] {
+  return benchmarkSimUsers.map((personData) => {
     return BaseScheduleUser.import(personData)
   })
 }
 
-// Create all server-side users based on sims
-async function createUsersFromSims(sims: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
-  const usersToCreate = sims.map((sim) => ({
-    id: sim.name,
-    realName: sim.name,
+// Create all server-side users based on simUsers
+async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
+  const usersToCreate = simUsers.map((simUser) => ({
+    id: simUser.name,
+    realName: simUser.name,
     isBot: false,
   }))
 
-  const userSimMap = new Map<string, BaseScheduleUser>()
-  sims.forEach((sim) => userSimMap.set(sim.name, sim))
+  const userSimUserMap = new Map<string, BaseScheduleUser>()
+  simUsers.forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
 
   const createUsersRes = await local_api.users.create_fake.$post({
     json: { users: usersToCreate },
@@ -80,11 +80,11 @@ async function createUsersFromSims(sims: BaseScheduleUser[]): Promise<Map<string
     throw new Error('Eval requires at least 1 test user')
   }
 
-  return userSimMap
+  return userSimUserMap
 }
 
-// Process bot message responses and add them to appropriate sim buffers
-async function processBotMessages(messageResult: Record<string, unknown>, sims: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
+// Process bot message responses and add them to appropriate simUser buffers
+async function processBotMessages(messageResult: Record<string, unknown>, simUsers: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
     console.log('⚠️ Bot did not reply - no resMessages in response')
     return null
@@ -113,33 +113,33 @@ async function processBotMessages(messageResult: Record<string, unknown>, sims: 
     }
 
     try {
-      // Get channel information to determine which sims should receive this message
+      // Get channel information to determine which simUsers should receive this message
       const channelRes = await local_api.channels[':channelId'].$get({
         param: { channelId: resMessage.channelId as string },
       })
 
       if (!channelRes.ok) {
         console.error(`Failed to get channel info: ${resMessage.channelId as string}`)
-        // Fallback: send to all sims if we can't get channel info
-        for (const sim of sims) {
-          sim.receive(resMessage.text as string)
+        // Fallback: send to all simUsers if we can't get channel info
+        for (const simUser of simUsers) {
+          simUser.receive(resMessage.text as string)
         }
         continue
       }
 
       const { userIds } = await channelRes.json()
 
-      // Only send message to sims whose names match the channel userIds
-      for (const sim of sims) {
-        if (userIds.includes(sim.name)) {
-          sim.receive(resMessage.text as string)
+      // Only send message to simUsers whose names match the channel userIds
+      for (const simUser of simUsers) {
+        if (userIds.includes(simUser.name)) {
+          simUser.receive(resMessage.text as string)
         }
       }
     } catch (error) {
       console.error(`Error processing bot message for channel ${resMessage.channelId as string}:`, error)
-      // Fallback: send to all sims if there's an error
-      for (const sim of sims) {
-        sim.receive(resMessage.text as string)
+      // Fallback: send to all simUsers if there's an error
+      for (const simUser of simUsers) {
+        simUser.receive(resMessage.text as string)
       }
     }
   }
@@ -163,35 +163,35 @@ async function clearDatabase(): Promise<void> {
 }
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(sims: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
 
-  if (sims.length === 0) {
-    throw new Error('No sims provided for conversation')
+  if (simUsers.length === 0) {
+    throw new Error('No simUsers provided for conversation')
   }
 
-  // Log all sims
-  sims.forEach((sim, index) => {
-    console.log(`Sim ${index + 1}: ${sim.name} - Goal: "${sim.goal}"`)
+  // Log all simUsers
+  simUsers.forEach((simUser, index) => {
+    console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
 
-  // Start conversation: First sim sends initial message through API
+  // Start conversation: First simUser sends initial message through API
   console.log('\n--- Starting Conversation ---')
-  const firstSim = sims[0]
-  const initialMessage = await firstSim.sendInitialMessage()
+  const firstSimUser = simUsers[0]
+  const initialMessage = await firstSimUser.sendInitialMessage()
 
   if (!initialMessage) {
-    console.log(`${firstSim.name} has no initial message to send`)
-    throw new Error('First sim must have an initial message to start conversation')
+    console.log(`${firstSimUser.name} has no initial message to send`)
+    throw new Error('First simUser must have an initial message to start conversation')
   }
 
-  console.log(`${firstSim.name}: ${initialMessage}`)
+  console.log(`${firstSimUser.name}: ${initialMessage}`)
 
   // Send initial message through local API
   const initMessageRes = await local_api.message.$post({
-    json: { userId: firstSim.name, text: initialMessage },
+    json: { userId: firstSimUser.name, text: initialMessage },
   })
   if (!initMessageRes.ok) {
     throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
@@ -202,17 +202,17 @@ async function simulateTurnBasedConversation(sims: BaseScheduleUser[]): Promise<
 
   console.log(`Created topic: ${topicId}`)
 
-  // Initialize confirmation tracking for all sims
+  // Initialize confirmation tracking for all simUsers
   const confirmations: Record<string, boolean> = {}
   const resetConfirmations = () => {
-    sims.forEach((sim) => {
-      confirmations[sim.name] = false
+    simUsers.forEach((simUser) => {
+      confirmations[simUser.name] = false
     })
   }
   resetConfirmations()
 
   // Process initial bot responses
-  let suggestedEvent = await processBotMessages(initResData, sims)
+  let suggestedEvent = await processBotMessages(initResData, simUsers)
   if (suggestedEvent) {
     console.log(`  → Initial bot suggestion: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
   }
@@ -225,37 +225,37 @@ async function simulateTurnBasedConversation(sims: BaseScheduleUser[]): Promise<
     roundCount++
     console.log(`\n--- Round ${roundCount} ---`)
 
-    let anySimSpoke = false
+    let anySimUserSpoke = false
 
-    // Each sim replies to messages in their buffer
-    for (const sim of sims) {
-      console.log(`${sim.name} buffer length: ${sim.messageBuffer.length}`)
-      if (sim.messageBuffer.length > 0) {
+    // Each simUser replies to messages in their buffer
+    for (const simUser of simUsers) {
+      console.log(`${simUser.name} buffer length: ${simUser.messageBuffer.length}`)
+      if (simUser.messageBuffer.length > 0) {
       //if (true) {
-        const reply = await sim.replyBuffer()
+        const reply = await simUser.replyBuffer()
 
         if (reply) {
-          console.log(`${sim.name}: ${reply}`)
-          anySimSpoke = true
+          console.log(`${simUser.name}: ${reply}`)
+          anySimUserSpoke = true
 
           // Check if this reply is confirming a meeting suggestion
-          if (!confirmations[sim.name]) {
+          if (!confirmations[simUser.name]) {
             const isConfirmation = await isConfirming(reply)
             if (isConfirmation) {
-              confirmations[sim.name] = true
-              console.log(`  → Detected confirmation from ${sim.name}`)
+              confirmations[simUser.name] = true
+              console.log(`  → Detected confirmation from ${simUser.name}`)
             }
           }
 
           // Send reply through local API
           const replyRes = await local_api.message.$post({
-            json: { userId: sim.name, text: reply , topicId: topicId },
+            json: { userId: simUser.name, text: reply , topicId: topicId },
           })
 
           if (replyRes.ok) {
             const replyData = await replyRes.json()
-            // Process bot responses and add to sim buffers
-            const newSuggestedEvent = await processBotMessages(replyData, sims)
+            // Process bot responses and add to simUser buffers
+            const newSuggestedEvent = await processBotMessages(replyData, simUsers)
             if (newSuggestedEvent) {
               // Check if this is a new/different suggested event
               if (!suggestedEvent || newSuggestedEvent.start.getTime() !== suggestedEvent.start.getTime() || newSuggestedEvent.end.getTime() !== suggestedEvent.end.getTime()) {
@@ -269,25 +269,25 @@ async function simulateTurnBasedConversation(sims: BaseScheduleUser[]): Promise<
               }
             }
           } else {
-            console.error(`Failed to send reply from ${sim.name}: ${replyRes.statusText}`)
+            console.error(`Failed to send reply from ${simUser.name}: ${replyRes.statusText}`)
           }
         }
       }
     }
 
-    // Check if all sims have confirmed the current suggested meeting
+    // Check if all simUsers have confirmed the current suggested meeting
     if (suggestedEvent) {
-      const allConfirmed = sims.every((sim) => confirmations[sim.name])
+      const allConfirmed = simUsers.every((simUser) => confirmations[simUser.name])
       if (allConfirmed) {
-        console.log('\n🎉 All sims have confirmed the current suggested meeting!')
+        console.log('\n🎉 All simUsers have confirmed the current suggested meeting!')
         console.log('Ending conversation successfully.')
         break
       }
     }
 
-    // If no sim spoke this round, end the conversation
-    if (!anySimSpoke) {
-      console.log('No sims responded. Ending conversation.')
+    // If no simUser spoke this round, end the conversation
+    if (!anySimUserSpoke) {
+      console.log('No simUsers responded. Ending conversation.')
       break
     }
   }
@@ -301,7 +301,7 @@ async function simulateTurnBasedConversation(sims: BaseScheduleUser[]): Promise<
   // Get final topic data
   const topicResponse = await local_api.topics[':topicId'].$get({
     param: { topicId },
-    query: { visibleToUserId: firstSim.name },
+    query: { visibleToUserId: firstSimUser.name },
   })
 
   if (!topicResponse.ok) {
@@ -393,21 +393,21 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Validate benchmark data structure with Zod
     const benchmarkData = BenchmarkFileDataSchema.parse(parsedData)
-    const benchmarkSims = benchmarkData.agents
+    const benchmarkSimUsers = benchmarkData.agents
 
-    console.log('Loading sims from benchmark data...')
-    const sims = loadSimsFromBenchmarkData(benchmarkSims)
-    console.log(`Loaded ${sims.length} sims:`)
-    sims.forEach((sim) => {
-      console.log(`  - ${sim.name}: ${sim.calendar.length} calendar events, goal: "${sim.goal}"`)
+    console.log('Loading simUsers from benchmark data...')
+    const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
+    console.log(`Loaded ${simUsers.length} simUsers:`)
+    simUsers.forEach((simUser) => {
+      console.log(`  - ${simUser.name}: ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
     // Step 3: Create users in database
     console.log('\nCreating users in database...')
-    await createUsersFromSims(sims)
+    await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(sims)
+    const result = await simulateTurnBasedConversation(simUsers)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
 
     if (result.suggestedEvent) {
@@ -418,20 +418,20 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     }
 
     // Check confirmations
-    const confirmedSims = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
-    const allSimsConfirmed = confirmedSims.length === sims.length
+    const confirmedSimUsers = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
+    const allSimUsersConfirmed = confirmedSimUsers.length === simUsers.length
 
     console.log('\nConfirmation Status:')
     Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
       console.log(`  ${confirmed ? '✅' : '❌'} ${agentName}: ${confirmed ? 'Confirmed' : 'Not confirmed'}`)
     })
 
-    if (allSimsConfirmed && confirmedSims.length > 0) {
-      console.log('🎉 All sims have confirmed the meeting suggestion!')
-    } else if (confirmedSims.length > 0) {
-      console.log(`⚠️  Only ${confirmedSims.length}/${sims.length} sims have confirmed`)
+    if (allSimUsersConfirmed && confirmedSimUsers.length > 0) {
+      console.log('🎉 All simUsers have confirmed the meeting suggestion!')
+    } else if (confirmedSimUsers.length > 0) {
+      console.log(`⚠️  Only ${confirmedSimUsers.length}/${simUsers.length} simUsers have confirmed`)
     } else {
-      console.log('❌ No confirmations detected from any sims')
+      console.log('❌ No confirmations detected from any simUsers')
     }
 
     // Check feasibility using evalPossibility
@@ -454,14 +454,14 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         console.log(`    Suggested meeting: ${meetingStart.toISOString()} to ${meetingEnd.toISOString()}`)
       }
 
-      // Check individual sim availability
-      sims.forEach((sim) => {
-        const canAttend = sim.evalPossibility(result.suggestedEvent!)
-        console.log(`  ${canAttend ? '✅' : '❌'} ${sim.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
+      // Check individual simUser availability
+      simUsers.forEach((simUser) => {
+        const canAttend = simUser.evalPossibility(result.suggestedEvent!)
+        console.log(`  ${canAttend ? '✅' : '❌'} ${simUser.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
       })
 
-      // Check if there was actually any common free time when all sims were available
-      const commonFreeSlots = findCommonFreeTime(sims, benchmarkStartTime, benchmarkEndTime)
+      // Check if there was actually any common free time when all simUsers were available
+      const commonFreeSlots = findCommonFreeTime(simUsers, benchmarkStartTime, benchmarkEndTime)
       maxSharedFreeTime = commonFreeSlots.length > 0
         ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
@@ -474,8 +474,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nSaving evaluation results...')
     const canAttendResults: Record<string, boolean> = {}
     if (result.suggestedEvent) {
-      sims.forEach((sim) => {
-        canAttendResults[sim.name] = sim.evalPossibility(result.suggestedEvent!)
+      simUsers.forEach((simUser) => {
+        canAttendResults[simUser.name] = simUser.evalPossibility(result.suggestedEvent!)
       })
     }
 
@@ -485,15 +485,15 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         end: result.suggestedEvent.end.toISOString(),
         summary: result.suggestedEvent.summary,
       } : null,
-      confirmedSims: confirmedSims.map(([name]) => name),
-      allSimsConfirmed,
+      confirmedSimUsers: confirmedSimUsers.map(([name]) => name),
+      allSimUsersConfirmed,
       canAttend: canAttendResults,
       maxSharedFreeTime,
       evaluationSummary: {
-        totalSims: sims.length,
-        confirmedCount: confirmedSims.length,
+        totalSimUsers: simUsers.length,
+        confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
-        allCanAttend: result.suggestedEvent ? sims.every((sim) => sim.evalPossibility(result.suggestedEvent!)) : false,
+        allCanAttend: result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false,
       },
     }
 
