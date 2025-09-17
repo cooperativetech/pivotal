@@ -13,7 +13,7 @@ pnpm run eval
 
 # Run evaluation with specific parameters
 pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
-pnpm run eval --benchmarkFile=benchmark_3simusers_1start_2end_60min --nReps=3
+pnpm run eval --benchmarkFolder=benchmark_3simusers_1start_2end_60min --nReps=3
 ```
 
 ## Benchmark Generation (`gen-benchmark.ts`)
@@ -73,13 +73,17 @@ Simulates scheduling conversations and evaluates bot performance.
 pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
 
 # Run on all benchmarks in a folder
-pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min
+pnpm run eval --benchmarkFolder=benchmark_2simusers_1start_2end_60min
 
 # Run multiple repetitions for statistical analysis
-pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min --nReps=5
+pnpm run eval --benchmarkFolder=benchmark_2simusers_1start_2end_60min --nReps=5
 
-# Copy/paste full file paths (automatically detected)
-npx tsx simple-flack-eval.ts /full/path/to/benchmark_file_gen20250915121553773.json
+# Default behavior (if no arguments specified)
+pnpm run eval  # Uses default folder: benchmark_2simusers_1start_2end_60min
+```
+
+**Note**: Use `--benchmarkFile` for a specific JSON file, or `--benchmarkFolder` to run all benchmarks in a directory.
+
 ```
 
 ### Parameters
