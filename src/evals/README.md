@@ -38,7 +38,7 @@ npx tsx gen-benchmark.ts 1 2 60 3 5
 - `--startTimeOffset` / `--start`: Days offset from Jan 1, 2025 midnight EST for benchmark start (supports decimals, default: 1)
 - `--endTimeOffset` / `--end`: Days offset from Jan 1, 2025 midnight EST for benchmark end (supports decimals, default: 2)  
 - `--meetingLength` / `--length`: Meeting duration in minutes (default: 60)
-- `--nAgents` / `--agents`: Number of agents to create (default: 2)
+- `--nAgents` / `--agents`: Number of simulated users to create (default: 2)
 - `--nCases` / `--cases`: Number of benchmark cases to generate (default: 1)
 
 ### Features
@@ -93,7 +93,7 @@ The tool automatically detects whether you're specifying a file or folder:
 
 ### Features
 
-- **Conversation simulation**: AI agents with realistic personas and goals
+- **Conversation simulation**: AI simulated users with realistic personas and goals
 - **Multi-metric evaluation**: Success rate, confirmation rate, feasibility analysis
 - **Common availability check**: Uses `findCommonFreeTime` to verify actual scheduling feasibility
 - **Timezone-aware logging**: All times displayed in Eastern Time

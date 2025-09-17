@@ -51,7 +51,7 @@ export const BenchmarkFileDataSchema = z.strictObject({
 })
 
 const EvaluationSummarySchema = z.strictObject({
-  totalAgents: z.number(),
+  totalSims: z.number(),
   confirmedCount: z.number(),
   hasSuggestedEvent: z.boolean(),
   allCanAttend: z.boolean(),
@@ -63,8 +63,8 @@ export const EvaluationResultsSchema = z.strictObject({
     end: z.string(),
     summary: z.string(),
   }).nullable(),
-  confirmedAgents: z.array(z.string()),
-  allAgentsConfirmed: z.boolean(),
+  confirmedSims: z.array(z.string()),
+  allSimsConfirmed: z.boolean(),
   canAttend: z.record(z.boolean()),
   maxSharedFreeTime: z.number(),
   evaluationSummary: EvaluationSummarySchema,
