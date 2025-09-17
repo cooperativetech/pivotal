@@ -494,7 +494,7 @@ export async function createCalendarInviteFromLeader(
 export async function createCalendarInviteFromBot(
   topic: TopicWithState,
   finalizedEvent: { start: string, end: string, title?: string | null, location?: string | null, description?: string | null },
-): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string, conferenceId?: string } | null> {
+): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string, conferenceId?: string, participantEmails?: string[] } | null> {
   try {
     if (!process.env.PV_GOOGLE_BOT_REFRESH_TOKEN) {
       console.warn('Bot calendar not configured: PV_GOOGLE_BOT_REFRESH_TOKEN is missing')
@@ -518,6 +518,12 @@ export async function createCalendarInviteFromBot(
     const requestId = `pivotal-${topic.id}-${Date.now()}`
     const summary = finalizedEvent.title || topic.state.summary || 'Meeting'
     const description = finalizedEvent.description || undefined
+
+    const participantEmails = Array.from(new Set(
+      attendees
+        .map((a) => a.email?.trim().toLowerCase())
+        .filter((email): email is string => !!email),
+    ))
 
     const insertRes = await calendar.events.insert({
       calendarId: getBotCalendarId(),
@@ -561,6 +567,7 @@ export async function createCalendarInviteFromBot(
       eventId: event.id || undefined,
       calendarId: getBotCalendarId(),
       conferenceId: event.conferenceData?.conferenceId || undefined,
+      participantEmails,
     }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
@@ -625,12 +632,15 @@ export async function upsertTopicScheduledEvent(
     meetLink?: string | null,
     conferenceId?: string | null,
     meetCode?: string | null,
+    participantEmails?: string[] | null,
     transcriptFileId?: string | null,
     transcriptUrl?: string | null,
     transcriptStatus?: 'pending' | 'found' | 'missing' | 'error' | null,
+    transcriptSharedWith?: string[] | null,
     summaryFileId?: string | null,
     summaryUrl?: string | null,
     summaryStatus?: 'pending' | 'found' | 'missing' | 'error' | null,
+    summarySharedWith?: string[] | null,
     summarySlackMessageTs?: string | null,
     slackChannelId?: string | null,
     slackThreadTs?: string | null,
@@ -772,6 +782,64 @@ async function findDriveDocs(
   return files.map((f) => ({ id: f.id!, name: f.name!, webViewLink: f.webViewLink || undefined }))
 }
 
+function normalizeEmail(email?: string | null): string | null {
+  if (!email) return null
+  const normalized = email.trim().toLowerCase()
+  return normalized.length > 0 ? normalized : null
+}
+
+function isDuplicatePermissionError(err: unknown): boolean {
+  const anyErr = err as {
+    code?: number
+    status?: number
+    message?: string
+    errors?: Array<{ reason?: string }>
+    response?: { status?: number, data?: { error?: { message?: string, errors?: Array<{ reason?: string }> } } }
+  }
+  const code = anyErr?.code ?? anyErr?.status ?? anyErr?.response?.status
+  const reason = anyErr?.errors?.[0]?.reason || anyErr?.response?.data?.error?.errors?.[0]?.reason
+  const message = anyErr?.response?.data?.error?.message || anyErr?.message
+  if (code === 409) return true
+  if (reason === 'duplicate') return true
+  if (typeof message === 'string' && message.toLowerCase().includes('already has a permission')) return true
+  return false
+}
+
+async function shareDriveFileWithEmails(
+  auth: calendar_v3.Options['auth'],
+  fileId: string,
+  emails: string[],
+  role: 'reader' | 'commenter' = 'reader',
+): Promise<string[]> {
+  if (emails.length === 0) return []
+  const drive = google.drive({ version: 'v3', auth })
+  const granted: string[] = []
+  for (const rawEmail of emails) {
+    const email = normalizeEmail(rawEmail)
+    if (!email) continue
+    try {
+      await drive.permissions.create({
+        fileId,
+        requestBody: {
+          type: 'user',
+          role,
+          emailAddress: email,
+        },
+        sendNotificationEmail: false,
+        fields: 'id',
+      })
+      granted.push(email)
+    } catch (err) {
+      if (isDuplicatePermissionError(err)) {
+        granted.push(email)
+      } else {
+        console.warn('Failed to add Drive permission:', { fileId, email }, err)
+      }
+    }
+  }
+  return granted
+}
+
 function extractDocIdFromUrl(url?: string | null): { fileId: string, normalizedUrl: string } | null {
   if (!url) return null
   const match = url.match(/https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/)
@@ -881,6 +949,13 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
     const oauth2Client = buildOAuthClient()
     oauth2Client.setCredentials({ refresh_token: process.env.PV_GOOGLE_BOT_REFRESH_TOKEN })
 
+    const slackUsers = await db.select().from(slackUserTable)
+    const slackEmailById = new Map<string, string>()
+    for (const user of slackUsers) {
+      const normalized = normalizeEmail(user.email)
+      if (normalized) slackEmailById.set(user.id, normalized)
+    }
+
     const topics = await getTopics()
     const now = Date.now()
 
@@ -955,6 +1030,68 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
             }
           }
 
+          const existingParticipantSet = new Set<string>(
+            Array.isArray(evt.participantEmails)
+              ? evt.participantEmails.map((email) => normalizeEmail(email)).filter((email): email is string => !!email)
+              : [],
+          )
+          const participantSet = new Set(existingParticipantSet)
+          for (const userId of topic.state.userIds) {
+            const email = slackEmailById.get(userId)
+            if (email) participantSet.add(email)
+          }
+          const participantEmails = Array.from(participantSet)
+          let participantEmailsChanged = false
+          if (participantEmails.length > 0) {
+            if (participantEmails.length !== existingParticipantSet.size) {
+              participantEmailsChanged = true
+            } else {
+              for (const email of participantEmails) {
+                if (!existingParticipantSet.has(email)) {
+                  participantEmailsChanged = true
+                  break
+                }
+              }
+            }
+          }
+
+          const transcriptSharedSet = new Set<string>(
+            Array.isArray(evt.transcriptSharedWith)
+              ? evt.transcriptSharedWith.map((email) => normalizeEmail(email)).filter((email): email is string => !!email)
+              : [],
+          )
+          let transcriptSharedChanged = false
+          if (transcriptStatus === 'found' && transcriptFileId && participantEmails.length > 0) {
+            const shareTargets = participantEmails.filter((email) => !transcriptSharedSet.has(email))
+            if (shareTargets.length > 0) {
+              const granted = await shareDriveFileWithEmails(oauth2Client, transcriptFileId, shareTargets, 'reader')
+              if (granted.length > 0) {
+                for (const email of granted) transcriptSharedSet.add(email)
+                transcriptSharedChanged = true
+              }
+            }
+          }
+
+          const summarySharedSet = new Set<string>(
+            Array.isArray(evt.summarySharedWith)
+              ? evt.summarySharedWith.map((email) => normalizeEmail(email)).filter((email): email is string => !!email)
+              : [],
+          )
+          let summarySharedChanged = false
+          if (summaryStatus === 'found' && summaryFileId && participantEmails.length > 0) {
+            const shareTargets = participantEmails.filter((email) => !summarySharedSet.has(email))
+            if (shareTargets.length > 0) {
+              const granted = await shareDriveFileWithEmails(oauth2Client, summaryFileId, shareTargets, 'commenter')
+              if (granted.length > 0) {
+                for (const email of granted) summarySharedSet.add(email)
+                summarySharedChanged = true
+              }
+            }
+          }
+
+          const transcriptSharedWith = transcriptSharedSet.size > 0 ? Array.from(transcriptSharedSet) : null
+          const summarySharedWith = summarySharedSet.size > 0 ? Array.from(summarySharedSet) : null
+
           const channelId = evt.slackChannelId
           const threadTs = evt.slackThreadTs
           if (!summarySlackMessageTs && summaryStatus === 'found' && summaryFileId) {
@@ -996,19 +1133,24 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
           }
 
           const messageId = topic.state.createdByMessageId
+          const eventUpdate: Parameters<typeof upsertTopicScheduledEvent>[1] = {
+            calendarId: evt.calendarId,
+            eventId: evt.eventId || null,
+            iCalUID: evt.iCalUID || null,
+            transcriptFileId,
+            transcriptUrl,
+            transcriptStatus,
+            summaryFileId,
+            summaryUrl,
+            summaryStatus,
+            summarySlackMessageTs,
+          }
+          if (participantEmailsChanged) eventUpdate.participantEmails = participantEmails
+          if (transcriptSharedChanged) eventUpdate.transcriptSharedWith = transcriptSharedWith
+          if (summarySharedChanged) eventUpdate.summarySharedWith = summarySharedWith
           await upsertTopicScheduledEvent(
             topic,
-            {
-              calendarId: evt.calendarId,
-              eventId: evt.eventId || null,
-              transcriptFileId,
-              transcriptUrl,
-              transcriptStatus,
-              summaryFileId,
-              summaryUrl,
-              summaryStatus,
-              summarySlackMessageTs,
-            },
+            eventUpdate,
             messageId,
           )
 

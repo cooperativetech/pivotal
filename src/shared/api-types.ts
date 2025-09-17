@@ -73,13 +73,16 @@ export interface ScheduledEvent {
   meetLink?: string | null
   conferenceId?: string | null
   meetCode?: string | null
+  participantEmails?: string[] | null
   // Drive/Docs artifacts
   transcriptFileId?: string | null
   transcriptUrl?: string | null
   transcriptStatus?: 'pending' | 'found' | 'missing' | 'error' | null
+  transcriptSharedWith?: string[] | null
   summaryFileId?: string | null
   summaryUrl?: string | null
   summaryStatus?: 'pending' | 'found' | 'missing' | 'error' | null
+  summarySharedWith?: string[] | null
   summarySlackMessageTs?: string | null
   // Slack posting metadata for follow-ups
   slackChannelId?: string | null

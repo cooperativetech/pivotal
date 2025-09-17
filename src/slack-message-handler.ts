@@ -530,7 +530,13 @@ async function handleFinalizedEvent(
   const end = new Date(finalizedEvent.end)
 
   let actionWord: 'created' | 'updated' = 'created'
-  let calendarResult: { htmlLink?: string, meetLink?: string, eventId?: string | null, calendarId?: string | null } | null = null
+  let calendarResult: {
+    htmlLink?: string
+    meetLink?: string
+    eventId?: string | null
+    calendarId?: string | null
+    participantEmails?: string[] | null
+  } | null = null
   let lastEventIdForBot: string | null = null
   let lastCalendarIdForBot: string | null = null
 
@@ -561,7 +567,13 @@ async function handleFinalizedEvent(
   if (!calendarResult) {
     const botResult = await createCalendarInviteFromBot(topic, finalizedEvent)
     if (botResult) {
-      calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink, eventId: botResult.eventId ?? null, calendarId: botResult.calendarId ?? null }
+      calendarResult = {
+        htmlLink: botResult.htmlLink,
+        meetLink: botResult.meetLink,
+        eventId: botResult.eventId ?? null,
+        calendarId: botResult.calendarId ?? null,
+        participantEmails: botResult.participantEmails ?? null,
+      }
       lastEventIdForBot = botResult.eventId || null
       lastCalendarIdForBot = botResult.calendarId || null
       try {
@@ -578,6 +590,7 @@ async function handleFinalizedEvent(
               meetLink: botResult.meetLink ?? null,
               conferenceId: botResult.conferenceId ?? null,
               meetCode: parseMeetCode(botResult.meetLink) ?? null,
+              participantEmails: botResult.participantEmails ?? null,
               status: 'scheduled',
             },
             message.id,
