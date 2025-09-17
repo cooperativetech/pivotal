@@ -2,7 +2,7 @@
 
 import type { UserProfile } from '../tools/time_intersection'
 import { generateReply, generateInitialMessage } from '../agents/evals'
-import { ScheduleSimData, type BaseScheduleUserData } from './utils'
+import { ScheduleSimData, type BaseScheduleUserData, type HistoryMessage } from './utils'
 
 // Util types
 export interface SimpleCalendarEvent {
@@ -11,10 +11,6 @@ export interface SimpleCalendarEvent {
   summary: string
 }
 
-export interface HistoryMessage {
-  sender: 'bot' | 'user'
-  message: string
-}
 
 // Agent classes
 export class BaseScheduleUser implements UserProfile {

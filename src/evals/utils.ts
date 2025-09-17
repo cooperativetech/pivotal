@@ -11,7 +11,7 @@ const SerializedCalendarEvent = z.strictObject({
   summary: z.string(),
 })
 
-const HistoryMessage = z.strictObject({
+export const HistoryMessage = z.strictObject({
   sender: z.enum(['bot', 'user']),
   message: z.string(),
 })
@@ -72,6 +72,7 @@ export type BenchmarkFileData = z.infer<typeof BenchmarkFileData>
 export type EvaluationSummary = z.infer<typeof EvaluationSummary>
 export type EvaluationResults = z.infer<typeof EvaluationResults>
 export type SavedEvaluationResults = z.infer<typeof SavedEvaluationResults>
+export type HistoryMessage = z.infer<typeof HistoryMessage>
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
