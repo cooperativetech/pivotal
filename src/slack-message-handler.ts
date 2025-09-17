@@ -530,7 +530,7 @@ async function handleFinalizedEvent(
   const end = new Date(finalizedEvent.end)
 
   let actionWord: 'created' | 'updated' = 'created'
-  let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+  let calendarResult: { htmlLink?: string, meetLink?: string, eventId?: string | null, calendarId?: string | null } | null = null
   let lastEventIdForBot: string | null = null
   let lastCalendarIdForBot: string | null = null
 
@@ -550,7 +550,9 @@ async function handleFinalizedEvent(
     const res = await tryRescheduleTaggedEvent(topic.id, finalizedEvent.start, finalizedEvent.end, message.id)
     if (res.success) {
       actionWord = 'updated'
-      calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
+      calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink, eventId: res.eventId ?? null, calendarId: res.calendarId ?? null }
+      lastEventIdForBot = res.eventId ?? null
+      lastCalendarIdForBot = res.calendarId ?? null
     }
   } catch (e) {
     console.warn('Reschedule attempt failed:', e)
@@ -559,7 +561,7 @@ async function handleFinalizedEvent(
   if (!calendarResult) {
     const botResult = await createCalendarInviteFromBot(topic, finalizedEvent)
     if (botResult) {
-      calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink }
+      calendarResult = { htmlLink: botResult.htmlLink, meetLink: botResult.meetLink, eventId: botResult.eventId ?? null, calendarId: botResult.calendarId ?? null }
       lastEventIdForBot = botResult.eventId || null
       lastCalendarIdForBot = botResult.calendarId || null
       try {
@@ -612,10 +614,32 @@ async function handleFinalizedEvent(
     let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
     if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
 
-    const targetChannel = message.channelId
+    let targetChannel: string | null = null
+    let threadTsForPost: string | undefined
+
+    if (topic.state.userIds && topic.state.userIds.length > 0) {
+      try {
+        const mpimResult = await client.conversations.open({
+          users: topic.state.userIds.join(','),
+        })
+        if (mpimResult.ok && mpimResult.channel?.id) {
+          targetChannel = mpimResult.channel.id
+        } else if (mpimResult.error) {
+          console.error('Failed to open MPIM for finalized event:', mpimResult.error)
+        }
+      } catch (mpimError) {
+        console.error('Error creating MPIM for finalized event:', mpimError)
+      }
+    }
+
+    if (!targetChannel) {
+      targetChannel = message.channelId
+      threadTsForPost = message.rawTs
+    }
+
     const calendarResponse = await client.chat.postMessage({
       channel: targetChannel,
-      thread_ts: message.rawTs,
+      ...(threadTsForPost ? { thread_ts: threadTsForPost } : {}),
       text: calendarMessage,
     })
 
@@ -627,21 +651,43 @@ async function handleFinalizedEvent(
         text: calendarMessage,
         timestamp: tsToDate(calendarResponse.ts),
         rawTs: calendarResponse.ts,
-        threadTs: message.rawTs,
+        threadTs: threadTsForPost ?? null,
         raw: calendarResponse.message,
       }).returning()
       createdMessages.push(createdMessage)
 
       try {
-        // Persist Slack posting metadata for later transcript/summary replies
-        if (lastCalendarIdForBot && lastEventIdForBot) {
+        const threadAnchorTs = threadTsForPost ?? calendarResponse.ts
+        let calendarIdForUpdate: string | null = lastCalendarIdForBot
+        let eventIdForUpdate: string | null = lastEventIdForBot
+        let iCalForUpdate: string | null = null
+
+        if (!calendarIdForUpdate || (!eventIdForUpdate && !iCalForUpdate)) {
+          const freshTopic = await getTopicWithState(topic.id)
+          const botEvents = freshTopic.state.perUserContext[topic.botUserId]?.scheduledEvents
+          if (Array.isArray(botEvents)) {
+            const match = botEvents.find((evt) => {
+              const sameTiming = evt.start === finalizedEvent.start && evt.end === finalizedEvent.end
+              const hasIds = (evt.eventId && evt.eventId.length > 0) || (evt.iCalUID && evt.iCalUID.length > 0)
+              return hasIds && sameTiming
+            }) || botEvents.find((evt) => (evt.eventId && evt.eventId.length > 0) || (evt.iCalUID && evt.iCalUID.length > 0))
+            if (match) {
+              calendarIdForUpdate = match.calendarId || calendarIdForUpdate
+              eventIdForUpdate = match.eventId || eventIdForUpdate
+              iCalForUpdate = match.iCalUID ?? null
+            }
+          }
+        }
+
+        if (calendarIdForUpdate && (eventIdForUpdate || iCalForUpdate)) {
           await upsertTopicScheduledEvent(
             topic,
             {
-              calendarId: lastCalendarIdForBot,
-              eventId: lastEventIdForBot,
+              calendarId: calendarIdForUpdate,
+              eventId: eventIdForUpdate,
+              iCalUID: iCalForUpdate,
               slackChannelId: targetChannel,
-              slackThreadTs: message.rawTs,
+              slackThreadTs: threadAnchorTs,
             },
             createdMessage.id,
           )

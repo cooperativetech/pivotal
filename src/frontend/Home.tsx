@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import type { TopicWithState } from '@shared/api-types'
 import { unserializeTopicWithState } from '@shared/api-types'
-import { useAuth } from './AuthContext'
+import { useAuth } from './useAuth'
 import { authClient } from '@shared/auth-client'
 import { api } from '@shared/api-client'
 

@@ -666,7 +666,7 @@ export async function tryRescheduleTaggedEvent(
   newStartISO: string,
   newEndISO: string,
   messageId?: string,
-): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
+): Promise<{ success: boolean, meetLink?: string, htmlLink?: string, eventId?: string, calendarId?: string }>{
   try {
     const topic = await getTopicWithState(topicId)
     // Try from stored list first
@@ -700,6 +700,8 @@ export async function tryRescheduleTaggedEvent(
     const entryPoints = updated.conferenceData?.entryPoints
     const meeting = entryPoints?.find((e) => e.entryPointType === 'video') || entryPoints?.[0]
     const meetLink = meeting?.uri || meeting?.label || undefined
+    const conferenceId = updated.conferenceData?.conferenceId || null
+    const meetCode = parseMeetCode(meetLink)
 
     // Persist
     if (messageId) {
@@ -713,13 +715,15 @@ export async function tryRescheduleTaggedEvent(
           end: newEndISO,
           title: updated.summary || null,
           meetLink: meetLink || null,
+          conferenceId,
+          meetCode: meetCode || null,
           status: 'updated',
         },
         messageId,
       )
     }
 
-    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
+    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined, eventId: eventId || undefined, calendarId }
   } catch (err) {
     console.error('Error rescheduling calendar event:', err)
     return { success: false }
@@ -887,15 +891,21 @@ export async function scanMeetingArtifacts(slackClient: WebClient): Promise<void
 
       for (const evt of events) {
         if (evt.status !== 'scheduled') continue
+        const startMs = evt.start ? new Date(evt.start).getTime() : null
         const endMs = evt.end ? new Date(evt.end).getTime() : null
-        if (!endMs || now < endMs + 10 * 60 * 1000) continue // wait 10 minutes after end
+
+        // Skip until we're close to the meeting window to avoid hammering Drive for far-future events
+        if (startMs && now < startMs - 5 * 60 * 1000) continue
+
         const needTranscript = !evt.transcriptStatus || evt.transcriptStatus === 'pending'
         const needSummary = !evt.summaryStatus || evt.summaryStatus === 'pending'
         if (!needTranscript && !needSummary) continue
 
         const meetCode = evt.meetCode || parseMeetCode(evt.meetLink || undefined) || undefined
-        const timeMinISO = new Date(endMs - 60 * 60 * 1000).toISOString() // 1h before end
-        const timeMaxISO = new Date(endMs + 3 * 60 * 60 * 1000).toISOString() // 3h after end
+        const anchorStart = startMs ?? endMs ?? now
+        const anchorEnd = endMs ?? startMs ?? now
+        const timeMinISO = new Date(anchorStart - 60 * 60 * 1000).toISOString() // 1h before start/end anchor
+        const timeMaxISO = new Date(anchorEnd + 6 * 60 * 60 * 1000).toISOString() // 6h after end/start anchor
 
         try {
           let transcriptUrl: string | null = evt.transcriptUrl || null
