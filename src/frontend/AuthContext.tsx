@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { authClient } from '@shared/auth-client'
+import { authClient } from '@shared/api-client'
 
 interface Session {
   user: {

@@ -649,7 +649,7 @@ function Topic() {
                             <button
                               onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
                               disabled={testingMessageId === msg.id}
-                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hover:cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                               {testingMessageId === msg.id ? 'Testing...' : 'Test LLM Response'}
                             </button>
@@ -687,7 +687,7 @@ function Topic() {
                       <button
                         onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
-                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                       >
                         {sendingChannels.has(channel.channelId) ? '...' : 'Send'}
                       </button>

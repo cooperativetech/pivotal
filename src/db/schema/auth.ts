@@ -12,25 +12,25 @@ export const userTable = pgTable('user', {
   emailVerified: boolean().notNull().default(false),
   image: text(),
   createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const sessionTable = pgTable('session', {
   id: text().primaryKey(),
   expiresAt: timestamp().notNull(),
   token: text().notNull().unique(),
-  createdAt: timestamp().notNull(),
-  updatedAt: timestamp().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().$onUpdate(() => new Date()),
   ipAddress: text(),
   userAgent: text(),
-  userId: text().references(() => userTable.id, { onDelete: 'cascade' }).notNull(),
+  userId: text().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
 })
 
 export const accountTable = pgTable('account', {
   id: text().primaryKey(),
   accountId: text().notNull(),
   providerId: text().notNull(),
-  userId: text().references(() => userTable.id, { onDelete: 'cascade' }).notNull(),
+  userId: text().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
   accessToken: text(),
   refreshToken: text(),
   idToken: text(),
@@ -38,8 +38,9 @@ export const accountTable = pgTable('account', {
   refreshTokenExpiresAt: timestamp(),
   scope: text(),
   password: text(),
-  createdAt: timestamp().notNull(),
-  updatedAt: timestamp().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().$onUpdate(() => new Date()),
+  installationId: text(),
 })
 
 export const verificationTable = pgTable('verification', {
@@ -47,8 +48,8 @@ export const verificationTable = pgTable('verification', {
   identifier: text().notNull(),
   value: text().notNull(),
   expiresAt: timestamp().notNull(),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const betterAuthSchema = {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { authClient } from '@shared/auth-client'
+import { authClient } from '@shared/api-client'
 
 export default function Login() {
   const [error, setError] = useState('')
@@ -25,7 +25,7 @@ export default function Login() {
         <button
           onClick={() => { handleSlackSignIn().catch(console.error) }}
           disabled={loading}
-          className="w-full p-3 bg-purple-700 text-white rounded font-medium hover:bg-purple-800 disabled:bg-gray-400 disabled:cursor-not-allowed mb-4"
+          className="w-full p-3 bg-purple-700 text-white rounded font-medium hover:bg-purple-800 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed mb-4"
         >
           {loading ? 'Redirecting…' : 'Continue with Slack'}
         </button>

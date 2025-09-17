@@ -1,11 +1,53 @@
 import { Hono } from 'hono'
+import { Octokit } from '@octokit/core'
+import { createOAuthUserAuth } from '@octokit/auth-oauth-user'
 import { and, eq, inArray } from 'drizzle-orm'
+
 import db from '../db/engine'
 import { WebClient } from '@slack/web-api'
 import { slackUserTable } from '../db/schema/main'
 import { accountTable } from '../db/schema/auth'
 import { auth } from '../auth'
 import { dumpTopic, getTopics } from '../utils'
+
+async function getOctokit(userId: string, accountPk: string): Promise<Octokit | null> {
+  try {
+    const { accessToken } = await auth.api.getAccessToken({
+      body: {
+        providerId: 'github',
+        userId,
+        accountId: accountPk,
+      },
+    })
+
+    const octokit = new Octokit({
+      authStrategy: createOAuthUserAuth,
+      auth: {
+        clientId: process.env.PV_GITHUB_CLIENT_ID,
+        clientSecret: process.env.PV_GITHUB_CLIENT_SECRET,
+        clientType: 'github-app',
+        token: accessToken,
+      },
+    })
+
+    // Test the credentials with a simple API call
+    await octokit.request('GET /user')
+
+    return octokit
+  } catch (error) {
+    // Check for bad credentials error
+    if (error && typeof error === 'object' && 'status' in error && 'message' in error) {
+      const requestError = error as { status: number; message: string }
+      // Clear the user's GitHub account credentials if they are invalid
+      if (requestError.status === 401 && requestError.message?.includes('Bad credentials')) {
+        await db.delete(accountTable).where(eq(accountTable.id, accountPk))
+        console.log(`Cleared bad GitHub credentials for account ${accountPk}`)
+      }
+    }
+
+    return null
+  }
+}
 
 interface SessionVars {
   user: typeof auth.$Infer.Session.user | null
@@ -71,12 +113,45 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         console.warn('team.info failed:', err)
       }
 
-      const linkedSlackAccounts = slackIdList.map((id) => {
+      const linkedSlackInfo = slackIdList.map((id) => {
         const row = slackMap.get(id)
         const teamId = row?.teamId || 'unknown'
         const teamName = teamNameCache.get(teamId) || null
         return { id, realName: row?.realName ?? null, teamId, teamName }
       })
+
+      // Get linked Github accounts from auth account table
+      const linkedGithubAccounts = await db
+        .select()
+        .from(accountTable)
+        .where(and(
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'github'),
+        ))
+
+      const linkedGithubInfo = await Promise.all(linkedGithubAccounts.map(async (account) => {
+        const octokit = await getOctokit(sessionUser.id, account.id)
+        if (!octokit) {
+          // Account not found due to bad credentials or other error
+          return null
+        }
+        try {
+          const { data: profile } = await octokit.request('GET /user')
+          const { data: orgs } = await octokit.request('GET /user/orgs', {
+            username: profile.login,
+          })
+          const orgName = orgs.length > 0 ? orgs[0].login : null
+          return {
+            accountId: account.accountId,
+            username: profile.login,
+            orgName,
+          }
+        } catch (error) {
+          console.error(`Failed to fetch GitHub profile for account ${account.id}:`, error)
+          return null
+        }
+      }))
+      .then((results) => results.filter((info) => info !== null))
 
       return c.json({
         user: {
@@ -84,7 +159,8 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
           email: sessionUser.email,
           name: sessionUser.name,
         },
-        slackAccounts: linkedSlackAccounts,
+        slackAccounts: linkedSlackInfo,
+        githubAccounts: linkedGithubInfo,
       })
     } catch (error) {
       console.error('Error fetching profile:', error)
