@@ -54,7 +54,8 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
     nReps: parseInt(values.nReps, 10),
   }
 }
-import { BaseScheduleUser, type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileDataSchema } from './sim-users'
+import { BaseScheduleUser } from './sim-users'
+import { type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -405,7 +406,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const parsedData: unknown = JSON.parse(rawData)
 
     // Validate benchmark data structure with Zod
-    const benchmarkData = BenchmarkFileDataSchema.parse(parsedData)
+    const benchmarkData = BenchmarkFileData.parse(parsedData)
     const benchmarkSimUsers = benchmarkData.agents
 
     console.log('Loading simUsers from benchmark data...')

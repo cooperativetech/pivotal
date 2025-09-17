@@ -1,8 +1,77 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
-import type { EvaluationResults, SavedEvaluationResults, SimpleCalendarEvent } from './sim-users'
-import { EvaluationResultsSchema, SavedEvaluationResultsSchema } from './sim-users'
+import { z } from 'zod'
+import type { SimpleCalendarEvent } from './sim-users'
+
+// Zod schemas for runtime validation
+const SerializedCalendarEvent = z.strictObject({
+  start: z.string(),
+  end: z.string(),
+  summary: z.string(),
+})
+
+const HistoryMessage = z.strictObject({
+  sender: z.enum(['bot', 'user']),
+  message: z.string(),
+})
+
+export const ScheduleSimData = z.strictObject({
+  name: z.string(),
+  goal: z.string(),
+  calendar: z.array(SerializedCalendarEvent),
+  messageBuffer: z.array(z.string()),
+  history: z.array(HistoryMessage),
+})
+
+export const BenchmarkData = z.strictObject({
+  startTime: z.string(),
+  startTimeOffset: z.number(),
+  endTime: z.string(),
+  endTimeOffset: z.number(),
+  meetingLength: z.number(),
+  nSimUsers: z.number(),
+})
+
+export const BenchmarkFileData = z.strictObject({
+  benchmark: BenchmarkData,
+  agents: z.array(ScheduleSimData),
+})
+
+const EvaluationSummary = z.strictObject({
+  totalSimUsers: z.number(),
+  confirmedCount: z.number(),
+  hasSuggestedEvent: z.boolean(),
+  allCanAttend: z.boolean(),
+})
+
+export const EvaluationResults = z.strictObject({
+  suggestedEvent: z.strictObject({
+    start: z.string(),
+    end: z.string(),
+    summary: z.string(),
+  }).nullable(),
+  confirmedSimUsers: z.array(z.string()),
+  allSimUsersConfirmed: z.boolean(),
+  canAttend: z.record(z.boolean()),
+  maxSharedFreeTime: z.number(),
+  evaluationSummary: EvaluationSummary,
+})
+
+export const SavedEvaluationResults = EvaluationResults.extend({
+  evalTimestamp: z.string(),
+  benchmarkFile: z.string(),
+  benchmarkType: z.string(),
+  genTimestamp: z.string(),
+})
+
+// Type exports inferred from Zod schemas
+export type BaseScheduleUserData = z.infer<typeof ScheduleSimData>
+export type BenchmarkData = z.infer<typeof BenchmarkData>
+export type BenchmarkFileData = z.infer<typeof BenchmarkFileData>
+export type EvaluationSummary = z.infer<typeof EvaluationSummary>
+export type EvaluationResults = z.infer<typeof EvaluationResults>
+export type SavedEvaluationResults = z.infer<typeof SavedEvaluationResults>
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -51,7 +120,7 @@ export function saveEvaluationResults(
   resultsData: EvaluationResults,
 ): SavedEvaluationResults {
   // Validate results data structure with Zod (defensive validation at boundary)
-  const validatedResults = EvaluationResultsSchema.parse(resultsData)
+  const validatedResults = EvaluationResults.parse(resultsData)
   const evalTimestamp = formatTimestamp()
 
   // Remove .json extension from benchmark filename if present
@@ -139,7 +208,7 @@ export function createAggregatedSummary(
   }
 
   // Validate all results with Zod (defensive validation at boundary)
-  const validatedResults = allResults.map((result) => SavedEvaluationResultsSchema.parse(result))
+  const validatedResults = allResults.map((result) => SavedEvaluationResults.parse(result))
 
   const timestamp = formatTimestamp()
 

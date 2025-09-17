@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { Agent, run, tool } from '../agent-sdk'
-import type { SimpleCalendarEvent } from '../../evals/user-sims'
+import type { SimpleCalendarEvent } from '../../evals/sim-users'
 
 const MeetingTimeOutput = z.strictObject({
   start: z.string().describe('Meeting start time in ISO 8601 format with timezone offset, or "NONE" if no meeting time found'),
