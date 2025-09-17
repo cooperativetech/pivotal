@@ -11,7 +11,6 @@ export interface SimpleCalendarEvent {
   summary: string
 }
 
-
 // Agent classes
 export class BaseScheduleUser implements UserProfile {
   name: string

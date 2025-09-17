@@ -35,7 +35,7 @@ export const BenchmarkData = z.strictObject({
 
 export const BenchmarkFileData = z.strictObject({
   benchmark: BenchmarkData,
-  agents: z.array(ScheduleSimData),
+  simUsers: z.array(ScheduleSimData),
 })
 
 const EvaluationSummary = z.strictObject({
@@ -103,7 +103,7 @@ export function findBenchmarkFile(filename: string): string {
 
   // Try looking in subdirectory (for organized benchmark files)
   // Extract folder name pattern from filename
-  const folderMatch = baseFilename.match(/^(benchmark_\d+(?:simusers|agents)_[\d-]+start_[\d-]+end_\d+min)/)
+  const folderMatch = baseFilename.match(/^(benchmark_\d+simusers_[\d-]+start_[\d-]+end_\d+min)/)
   if (folderMatch) {
     const folderName = folderMatch[1]
     const subDirPath = join(__dirname, 'data', folderName, `${baseFilename}.json`)

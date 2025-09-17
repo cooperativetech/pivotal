@@ -109,7 +109,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 
   const exportData = {
     benchmark,
-    agents: exportedSimUsers,
+    simUsers: exportedSimUsers,
   }
 
   // Create folder name and filename with benchmark parameters

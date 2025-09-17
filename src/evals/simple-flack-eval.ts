@@ -407,7 +407,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Validate benchmark data structure with Zod
     const benchmarkData = BenchmarkFileData.parse(parsedData)
-    const benchmarkSimUsers = benchmarkData.agents
+    const benchmarkSimUsers = benchmarkData.simUsers
 
     console.log('Loading simUsers from benchmark data...')
     const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)

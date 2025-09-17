@@ -7,7 +7,7 @@
     "meetingLength": 60,
     "nSimUsers": 2
   },
-  "agents": [
+  "simUsers": [
     {
       "name": "Alice",
       "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Bob",
