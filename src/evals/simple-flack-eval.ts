@@ -6,7 +6,7 @@ import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpec
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
-function parseArguments(): { benchmarkTarget: string; nReps: number } {
+function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -42,22 +42,15 @@ function parseArguments(): { benchmarkTarget: string; nReps: number } {
     process.exit(0)
   }
 
-  // Determine the benchmark target
-  let benchmarkTarget: string
+  // Validate arguments
   if (values.benchmarkFile && values.benchmarkFolder) {
     console.error('Error: Cannot specify both --benchmarkFile and --benchmarkFolder')
     process.exit(1)
-  } else if (values.benchmarkFile) {
-    benchmarkTarget = values.benchmarkFile
-  } else if (values.benchmarkFolder) {
-    benchmarkTarget = values.benchmarkFolder
-  } else {
-    // Default to folder
-    benchmarkTarget = 'benchmark_2simusers_1start_2end_60min'
   }
 
   return {
-    benchmarkTarget,
+    benchmarkFile: values.benchmarkFile || null,
+    benchmarkFolder: values.benchmarkFolder || null,
     nReps: parseInt(values.nReps, 10),
   }
 }
@@ -337,18 +330,19 @@ async function runSimpleEvaluation(): Promise<void> {
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkTarget, nReps } = parseArguments()
+    const { benchmarkFile, benchmarkFolder, nReps } = parseArguments()
 
-    // Step 2: Determine if it's a single file or folder
-    const isFile = isSpecificBenchmarkFile(benchmarkTarget)
-
-    if (isFile) {
-      console.log(`Using benchmark file: ${benchmarkTarget}`)
+    // Step 2: Determine what to run based on arguments
+    if (benchmarkFile) {
+      // Run specific file
+      console.log(`Using benchmark file: ${benchmarkFile}`)
       console.log(`Running ${nReps} repetition(s) per case`)
-      await runRepeatedEvaluation(benchmarkTarget, false, nReps)
+      await runRepeatedEvaluation(benchmarkFile, false, nReps)
     } else {
-      console.log(`Using benchmark folder: ${benchmarkTarget}`)
-      const benchmarkFiles = findAllBenchmarkFiles(benchmarkTarget)
+      // Run folder (either specified or default)
+      const folderName = benchmarkFolder || 'benchmark_2simusers_1start_2end_60min'
+      console.log(`Using benchmark folder: ${folderName}`)
+      const benchmarkFiles = findAllBenchmarkFiles(folderName)
       console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
       console.log(`Running ${nReps} repetition(s) per case`)
 
