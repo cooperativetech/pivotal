@@ -13,7 +13,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
       benchmarkFile: {
         type: 'string',
         short: 'f',
-        default: 'benchmark_2agents_1start_2end_60min',
+        default: 'benchmark_2simusers_1start_2end_60min',
       },
       nReps: {
         type: 'string',
@@ -31,7 +31,7 @@ function parseArguments(): { benchmarkFile: string; nReps: number } {
   if (values.help) {
     console.log('Usage: tsx src/evals/simple-flack-eval.ts [options]')
     console.log('\nOptions:')
-    console.log('  -f, --benchmarkFile     Benchmark file or folder name (default: benchmark_2agents_1start_2end_60min)')
+    console.log('  -f, --benchmarkFile     Benchmark file or folder name (default: benchmark_2simusers_1start_2end_60min)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
     console.log('  -h, --help              Show this help message')
     process.exit(0)

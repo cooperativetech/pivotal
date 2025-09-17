@@ -12,8 +12,8 @@ npx tsx gen-benchmark.ts
 npx tsx simple-flack-eval.ts
 
 # Run evaluation with specific parameters
-npx tsx gen-benchmark.ts --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nAgents=3 --nCases=5
-npx tsx simple-flack-eval.ts benchmark_3agents_1start_2end_60min --nReps=3
+npx tsx gen-benchmark.ts --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
+npx tsx simple-flack-eval.ts benchmark_3simusers_1start_2end_60min --nReps=3
 ```
 
 ## Benchmark Generation (`gen-benchmark.ts`)
@@ -27,7 +27,7 @@ Creates realistic scheduling scenarios with AI-generated calendar events.
 npx tsx gen-benchmark.ts
 
 # With command line arguments
-npx tsx gen-benchmark.ts --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nAgents=4 --nCases=10
+npx tsx gen-benchmark.ts --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nCases=10
 
 # Positional arguments (backwards compatibility)
 npx tsx gen-benchmark.ts 1 2 60 3 5
@@ -38,7 +38,7 @@ npx tsx gen-benchmark.ts 1 2 60 3 5
 - `--startTimeOffset` / `--start`: Days offset from Jan 1, 2025 midnight EST for benchmark start (supports decimals, default: 1)
 - `--endTimeOffset` / `--end`: Days offset from Jan 1, 2025 midnight EST for benchmark end (supports decimals, default: 2)  
 - `--meetingLength` / `--length`: Meeting duration in minutes (default: 60)
-- `--nAgents` / `--agents`: Number of simulated users to create (default: 2)
+- `--nSimUsers` / `-a`: Number of simulated users to create (default: 2)
 - `--nCases` / `--cases`: Number of benchmark cases to generate (default: 1)
 
 ### Features
@@ -53,12 +53,14 @@ npx tsx gen-benchmark.ts 1 2 60 3 5
 
 ```
 src/evals/data/
-├── benchmark_2agents_1start_2end_60min/
-│   ├── benchmark_2agents_1start_2end_60min_gen20250915121553773.json
-│   └── benchmark_2agents_1start_2end_60min_gen20250915121601234.json
-└── benchmark_3agents_1_5start_3end_90min/
-    └── benchmark_3agents_1_5start_3end_90min_gen20250915122034567.json
+├── benchmark_2simusers_1start_2end_60min/
+│   ├── benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
+│   └── benchmark_2simusers_1start_2end_60min_gen20250915121601234.json
+└── benchmark_3simusers_1_5start_3end_90min/
+    └── benchmark_3simusers_1_5start_3end_90min_gen20250915122034567.json
 ```
+
+**Note**: Folder naming convention changed from `agents` to `simusers` for clarity. Existing folders with `agents` naming are still supported.
 
 ## Evaluation (`simple-flack-eval.ts`)
 
@@ -68,13 +70,13 @@ Simulates scheduling conversations and evaluates bot performance.
 
 ```bash
 # Run on a specific benchmark file
-npx tsx simple-flack-eval.ts benchmark_2agents_1start_2end_60min_gen20250915121553773.json
+npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
 
 # Run on all benchmarks in a folder
-npx tsx simple-flack-eval.ts benchmark_2agents_1start_2end_60min
+npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min
 
 # Run multiple repetitions for statistical analysis
-npx tsx simple-flack-eval.ts benchmark_2agents_1start_2end_60min --nReps=5
+npx tsx simple-flack-eval.ts benchmark_2simusers_1start_2end_60min --nReps=5
 
 # Copy/paste full file paths (automatically detected)
 npx tsx simple-flack-eval.ts /full/path/to/benchmark_file_gen20250915121553773.json
@@ -104,7 +106,7 @@ The tool automatically detects whether you're specifying a file or folder:
 
 ```
 src/evals/results/
-├── benchmark_2agents_1start_2end_60min/
+├── benchmark_2simusers_1start_2end_60min/
 │   ├── gen20250915121553773/
 │   │   ├── eval20250915123045123_rep1.json
 │   │   ├── eval20250915123047456_rep2.json

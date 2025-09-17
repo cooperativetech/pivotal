@@ -42,7 +42,7 @@ export const BenchmarkDataSchema = z.strictObject({
   endTime: z.string(),
   endTimeOffset: z.number(),
   meetingLength: z.number(),
-  nAgents: z.number(),
+  nSimUsers: z.number(),
 })
 
 export const BenchmarkFileDataSchema = z.strictObject({

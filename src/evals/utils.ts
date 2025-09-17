@@ -33,7 +33,7 @@ export function findBenchmarkFile(filename: string): string {
 
   // Try looking in subdirectory (for organized benchmark files)
   // Extract folder name pattern from filename
-  const folderMatch = baseFilename.match(/^(benchmark_\d+agents_[\d.]+start_[\d.]+end_\d+min)/)
+  const folderMatch = baseFilename.match(/^(benchmark_\d+(?:simusers|agents)_[\d.]+start_[\d.]+end_\d+min)/)
   if (folderMatch) {
     const folderName = folderMatch[1]
     const subDirPath = join(__dirname, 'data', folderName, `${baseFilename}.json`)
@@ -58,7 +58,7 @@ export function saveEvaluationResults(
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
 
   // Extract benchmark type and gen timestamp from filename
-  // Format: benchmark_2agents_1start_2end_60min_gen20250915121553773
+  // Format: benchmark_2simusers_1start_2end_60min_gen20250915121553773
   const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
 
   if (!genMatch) {

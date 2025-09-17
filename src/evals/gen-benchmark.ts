@@ -14,7 +14,7 @@ import { formatTimestamp } from './utils'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nAgents: number) {
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
@@ -28,8 +28,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     'Yasmin', 'Zachary',
   ]
 
-  // Subsample the first nAgents names
-  const simNames = possibleSimNames.slice(0, nAgents)
+  // Subsample the first nSimUsers names
+  const simNames = possibleSimNames.slice(0, nSimUsers)
 
   // Generate fake calendars for all sims
   const calendarEvents = await Promise.all(
@@ -103,7 +103,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     endTime,
     endTimeOffset,
     meetingLength,
-    nAgents,
+    nSimUsers,
   }
 
   const exportData = {
@@ -112,7 +112,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   }
 
   // Create folder name and filename with benchmark parameters
-  const folderName = `benchmark_${nAgents}agents_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
+  const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
   const timestamp = formatTimestamp()
   const filename = `${folderName}_gen${timestamp}.json`
   const folderPath = join(__dirname, 'data', folderName)
@@ -150,7 +150,7 @@ function parseArguments() {
         short: 'l',
         default: '60',
       },
-      nAgents: {
+      nSimUsers: {
         type: 'string',
         short: 'a',
         default: '2',
@@ -174,7 +174,7 @@ function parseArguments() {
     console.log('  -s, --startTimeOffset   Start time offset in days from reference date (default: 1)')
     console.log('  -e, --endTimeOffset     End time offset in days from reference date (default: 2)')
     console.log('  -l, --meetingLength     Meeting length in minutes (default: 60)')
-    console.log('  -a, --nAgents           Number of simulated users (default: 2)')
+    console.log('  -a, --nSimUsers         Number of simulated users (default: 2)')
     console.log('  -c, --nCases            Number of benchmark cases to generate (default: 1)')
     console.log('  -h, --help              Show this help message')
     process.exit(0)
@@ -184,21 +184,21 @@ function parseArguments() {
     startTimeOffset: parseFloat(values.startTimeOffset),
     endTimeOffset: parseFloat(values.endTimeOffset),
     meetingLength: parseInt(values.meetingLength, 10),
-    nAgents: parseInt(values.nAgents, 10),
+    nSimUsers: parseInt(values.nSimUsers, 10),
     nCases: parseInt(values.nCases, 10),
   }
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nAgents, nCases } = parseArguments()
-console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nAgents=${nAgents}, nCases=${nCases}`)
+const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nCases } = parseArguments()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nCases=${nCases}`)
 
 async function generateMultipleBenchmarks() {
   console.log(`\nGenerating ${nCases} benchmark case(s)...`)
 
   for (let i = 1; i <= nCases; i++) {
     console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
-    await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nAgents)
+    await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers)
   }
 
   console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
