@@ -2,7 +2,7 @@
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'fs'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, isSpecificBenchmarkFile, createAggregatedSummary } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary } from './utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
