@@ -56,8 +56,8 @@ src/evals/data/
 ├── benchmark_2simusers_1start_2end_60min/
 │   ├── benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
 │   └── benchmark_2simusers_1start_2end_60min_gen20250915121601234.json
-└── benchmark_3simusers_1_5start_3end_90min/
-    └── benchmark_3simusers_1_5start_3end_90min_gen20250915122034567.json
+└── benchmark_3simusers_1-5start_3end_90min/
+    └── benchmark_3simusers_1-5start_3end_90min_gen20250915122034567.json
 ```
 
 **Note**: Folder naming convention changed from `agents` to `simusers` for clarity. Existing folders with `agents` naming are still supported.

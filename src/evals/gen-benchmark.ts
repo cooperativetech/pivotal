@@ -112,7 +112,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   }
 
   // Create folder name and filename with benchmark parameters
-  const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset}start_${endTimeOffset}end_${meetingLength}min`
+  const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
   const timestamp = formatTimestamp()
   const filename = `${folderName}_gen${timestamp}.json`
   const folderPath = join(__dirname, 'data', folderName)
