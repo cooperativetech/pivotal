@@ -3,8 +3,7 @@ import { Link } from 'react-router'
 import type { TopicWithState } from '@shared/api-types'
 import { unserializeTopicWithState } from '@shared/api-types'
 import { useAuth } from './AuthContext'
-import { authClient } from '@shared/auth-client'
-import { api } from '@shared/api-client'
+import { api, authClient } from '@shared/api-client'
 
 interface Profile {
   user: {
@@ -115,7 +114,7 @@ function Home() {
                 </div>
                 <button
                   onClick={handleSlackLinkClick}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer"
                 >
                   Link Slack Account
                 </button>
