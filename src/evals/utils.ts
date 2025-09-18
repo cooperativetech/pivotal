@@ -43,6 +43,7 @@ const EvaluationSummary = z.strictObject({
   confirmedCount: z.number(),
   hasSuggestedEvent: z.boolean(),
   allCanAttend: z.boolean(),
+  evaluationSucceeded: z.boolean(),
 })
 
 export const EvaluationResults = z.strictObject({

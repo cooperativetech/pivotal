@@ -480,9 +480,37 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
 
-      const hasCommonFreeTime = maxSharedFreeTime > 0
-      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes` : 'No common free time available'}`)
+      const hasCommonFreeTime = maxSharedFreeTime > benchmarkData.benchmark.meetingLength
+      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)` : `Insufficient shared free time: ${maxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)`}`)
     }
+
+    // Overall evaluation judgment
+    console.log('\n--- Overall Evaluation Judgment ---')
+    const hasSufficientFreeTime = maxSharedFreeTime > benchmarkData.benchmark.meetingLength
+    const meetingWasFound = result.suggestedEvent !== null
+    const allUsersCanAttend = result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false
+
+    let evaluationSucceeded = false
+    let evaluationReason = ''
+
+    if (hasSufficientFreeTime && meetingWasFound && allUsersCanAttend) {
+      evaluationSucceeded = true
+      evaluationReason = 'SUCCESS: Meeting found when users had sufficient shared free time and all users can attend'
+    } else if (!hasSufficientFreeTime && !meetingWasFound) {
+      evaluationSucceeded = true
+      evaluationReason = 'SUCCESS: No meeting found when there was insufficient shared free time'
+    } else if (hasSufficientFreeTime && (!meetingWasFound || !allUsersCanAttend)) {
+      evaluationSucceeded = false
+      evaluationReason = `FAILURE: Sufficient shared free time (${maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min) but ${!meetingWasFound ? 'no meeting suggested' : 'not all users can attend suggested meeting'}`
+    } else if (!hasSufficientFreeTime && meetingWasFound) {
+      evaluationSucceeded = false
+      evaluationReason = `FAILURE: Meeting suggested when insufficient shared free time (${maxSharedFreeTime} min <= ${benchmarkData.benchmark.meetingLength} min)`
+    } else {
+      evaluationSucceeded = false
+      evaluationReason = 'FAILURE: Unexpected evaluation state'
+    }
+
+    console.log(`${evaluationSucceeded ? '✅' : '❌'} ${evaluationReason}`)
 
     // Save evaluation results
     console.log('\nSaving evaluation results...')
@@ -508,6 +536,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
         allCanAttend: result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false,
+        evaluationSucceeded,
       },
     }
 
