@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { resolve } from 'node:path'
 import { eq, desc, inArray, and, sql, lt, isNotNull, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { CronJob } from 'cron'
@@ -11,7 +12,6 @@ import db from './db/engine'
 import type {
   SlackMessage,
   SlackUser,
-  SlackMessageInsert,
   TopicInsert,
   SlackUserInsert,
   SlackChannelInsert,
@@ -340,18 +340,29 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
       .values(topicData)
       .returning()
 
-    // Insert messages with new topic ID
-    if (data.messages.length > 0) {
-      const messagesWithNewTopicId = data.messages.map((msg) => {
-        const msgData: SlackMessageInsert = { ...msg }
-        delete msgData.id
-        return {
-          ...msgData,
-          topicId: insertedTopic.id,
-        }
-      })
+    // Create a map from old message IDs to new message IDs
+    const messageIdMap = new Map<string, string>()
 
-      await db.insert(slackMessageTable).values(messagesWithNewTopicId)
+    // Insert messages with new IDs
+    if (data.messages.length > 0) {
+      for (const msg of data.messages) {
+        const { id: oldId, ...msgData } = msg
+        const [insertedMsg] = await db.insert(slackMessageTable)
+          .values({ ...msgData, topicId: insertedTopic.id })
+          .returning()
+        messageIdMap.set(oldId, insertedMsg.id)
+      }
+    }
+
+    // Insert topic states with new IDs and mapped message references
+    if (data.states && data.states.length > 0) {
+      for (const state of data.states) {
+        const stateData: TopicStateInsert = { ...state }
+        delete stateData.id
+        stateData.createdByMessageId = messageIdMap.get(stateData.createdByMessageId)!
+        await db.insert(topicStateTable)
+          .values({ ...stateData, topicId: insertedTopic.id })
+      }
     }
 
     topicIds.push(insertedTopic.id)
@@ -739,8 +750,13 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     const topicData = await dumpTopic(topicId, { lastMessageId: messageId })
     const jsonData = JSON.stringify(topicData, null, 2)
     if (values.output) {
-      await fs.writeFile(values.output, jsonData)
-      console.log(`Topic data written to ${values.output}`)
+      // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
+      // Otherwise fall back to process.cwd()
+      const workingDir = process.env.INIT_CWD || process.cwd()
+      const resolvedPath = resolve(workingDir, values.output)
+
+      await fs.writeFile(resolvedPath, jsonData)
+      console.log(`Topic data written to ${resolvedPath}`)
     } else {
       console.log(jsonData)
     }
@@ -753,7 +769,12 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
       process.exit(1)
     }
 
-    const jsonData = await fs.readFile(jsonFile, 'utf-8')
+    // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
+    // Otherwise fall back to process.cwd()
+    const workingDir = process.env.INIT_CWD || process.cwd()
+    const resolvedPath = resolve(workingDir, jsonFile)
+
+    const jsonData = await fs.readFile(resolvedPath, 'utf-8')
     const result = await loadTopics(jsonData)
     if (result.topicIds.length === 1) {
       console.log(`Topic loaded with new ID: ${result.topicIds[0]}`)
