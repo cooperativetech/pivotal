@@ -1,4 +1,4 @@
-import { createContext } from 'react'
+import { createContext, useContext } from 'react'
 
 export interface Session {
   user: {
@@ -17,3 +17,10 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
+  return context
+}

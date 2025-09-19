@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router'
-import { useAuth } from './useAuth'
+import { useAuth } from './auth-context'
 
 function App() {
   const { session } = useAuth()

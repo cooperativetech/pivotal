@@ -1,31 +1,8 @@
 import type { ReactNode } from 'react'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { authClient } from '@shared/api-client'
-
-interface Session {
-  user: {
-    id: string
-    email: string
-    name: string
-  }
-  token: string
-}
-
-interface AuthContextType {
-  session: Session | null
-  loading: boolean
-  signOut: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
-  return context
-}
+import { AuthContext } from './auth-context'
+import type { Session } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)

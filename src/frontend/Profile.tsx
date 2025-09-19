@@ -422,15 +422,17 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2">How to connect a context repository:</h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-                <li>Create a new GitHub repository in your organization</li>
-                <li>Invite GitHub username <span className="font-mono bg-blue-100 px-1 py-0.5 rounded">pivotal-bot</span> to that repository with <b>write</b> access</li>
-                <li>Refresh this page</li>
-                <li>The repository name should appear below. Click &quot;Connect&quot; to connect it with your organization</li>
-              </ol>
-            </div>
+            {!profile.githubAccount.linkedRepo && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">How to connect a context repository:</h3>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
+                  <li>Create a new GitHub repository in your organization (suggested name: <span className="font-mono bg-blue-100 px-1 py-0.5 rounded">pivotal-context</span>)</li>
+                  <li>Invite GitHub username <span className="font-mono bg-blue-100 px-1 py-0.5 rounded">pivotal-bot</span> to that repository with <b>write</b> access</li>
+                  <li>Refresh this page</li>
+                  <li>The repository name should appear below. Click &quot;Connect&quot; to connect it with your organization</li>
+                </ol>
+              </div>
+            )}
             {profile.githubAccount.linkedRepo ? (
               <div className="mt-4">
                 <p className="text-sm font-semibold text-gray-700 mb-2">Connected repository:</p>

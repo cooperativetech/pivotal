@@ -8,7 +8,7 @@ import Topic from './Topic.tsx'
 import TopicCreation from './TopicCreation.tsx'
 import Login from './Login.tsx'
 import Profile from './Profile.tsx'
-import { AuthProvider } from './AuthContext.tsx'
+import { AuthProvider } from './AuthProvider.tsx'
 import ProtectedRoute from './ProtectedRoute.tsx'
 import LocalHome from './LocalHome.tsx'
 
