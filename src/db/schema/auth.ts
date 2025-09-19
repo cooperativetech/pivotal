@@ -41,6 +41,7 @@ export const accountTable = pgTable('account', {
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().$onUpdate(() => new Date()),
   installationId: text(),
+  repositoryId: text(),
 })
 
 export const verificationTable = pgTable('verification', {

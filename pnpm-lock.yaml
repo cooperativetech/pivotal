@@ -26,6 +26,9 @@ importers:
       '@octokit/core':
         specifier: 7.0.3
         version: 7.0.3
+      '@octokit/request-error':
+        specifier: 7.0.0
+        version: 7.0.0
       '@openai/agents':
         specifier: 0.0.17
         version: 0.0.17(ws@8.18.3)(zod@3.25.76)
