@@ -3,7 +3,7 @@ const { App } = await import('@slack/bolt')
 import type { WebClient } from '@slack/web-api'
 
 import { handleSlackMessage } from './slack-message-handler'
-import { setSuppressCalendarPrompt } from './calendar-service'
+import { clearUserGoogleTokens, setSuppressCalendarPrompt } from './calendar-service'
 
 export async function connectSlackClient(): Promise<WebClient> {
   const slackApp = new App({
@@ -23,7 +23,7 @@ export async function connectSlackClient(): Promise<WebClient> {
   })
 
   // Handle interactive components (buttons)
-  slackApp.action('dont_ask_calendar_again', async ({ ack, body, respond }) => {
+  slackApp.action('dont_ask_calendar_again', async ({ ack, body, respond, client }) => {
     try {
       // Acknowledge the button action (must be within 3s)
       await ack()
@@ -36,9 +36,31 @@ export async function connectSlackClient(): Promise<WebClient> {
 
       // Send ephemeral confirmation message to the user who clicked
       await respond({
-        text: '✅ Got it! I won\'t ask you to connect your calendar again unless you explicitly ask me to.',
+        text: "Okay, I won't ask again. If you change your mind, just let me know.",
         response_type: 'ephemeral',
       })
+
+      // Remove buttons from the original message
+      try {
+        type ActionBodyLike = {
+          channel?: { id?: string }
+          container?: { channel_id?: string, message_ts?: string }
+          message?: { ts?: string, text?: string }
+        }
+        const a = body as unknown as ActionBodyLike
+        const channelId = a.channel?.id || a.container?.channel_id
+        const ts = a.message?.ts || a.container?.message_ts
+        if (channelId && ts) {
+          await client.chat.update({
+            channel: channelId,
+            ts,
+            text: "Okay, I won't ask again. If you change your mind, just let me know.",
+            blocks: [],
+          })
+        }
+      } catch (e) {
+        console.warn('Failed to clear buttons after dont_ask_calendar_again:', e)
+      }
 
       console.log(`User ${userId} opted out of calendar prompts`)
     } catch (error) {
@@ -48,10 +70,70 @@ export async function connectSlackClient(): Promise<WebClient> {
   })
 
   // Handle "Not now" button - simple dismiss action
-  slackApp.action('calendar_not_now', async ({ ack }) => {
+  slackApp.action('calendar_not_now', async ({ ack, body, client }) => {
     await ack()
-    // Just acknowledge the action - message will be dismissed automatically
-    // User won't see buttons again in this topic (already tracked by addPromptedUser)
+    // Remove buttons to make the action transactional
+    try {
+      type ActionBodyLike = {
+        channel?: { id?: string }
+        container?: { channel_id?: string, message_ts?: string }
+        message?: { ts?: string, text?: string }
+      }
+      const a = body as unknown as ActionBodyLike
+      const channelId = a.channel?.id || a.container?.channel_id
+      const ts = a.message?.ts || a.container?.message_ts
+      if (channelId && ts) {
+        await client.chat.update({
+          channel: channelId,
+          ts,
+          text: "Got it – I'll hold off on connecting your calendar for now. If you change your mind, just let me know and I'll resend the calendar link.",
+          blocks: [],
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to clear buttons after calendar_not_now:', e)
+    }
+  })
+
+  slackApp.action('calendar_disconnect', async ({ ack, body, client }) => {
+    await ack()
+    try {
+      const userId = body.user.id
+      await clearUserGoogleTokens(userId)
+
+      type ActionBodyLike = {
+        channel?: { id?: string }
+        container?: { channel_id?: string, message_ts?: string }
+        message?: { ts?: string }
+      }
+      const a = body as unknown as ActionBodyLike
+      const channelId = a.channel?.id || a.container?.channel_id
+      const ts = a.message?.ts || a.container?.message_ts
+      if (channelId && ts) {
+        await client.chat.update({ channel: channelId, ts, text: '⏹️ Google Calendar disconnected.', blocks: [] })
+      }
+    } catch (error) {
+      console.error('Error handling calendar_disconnect action:', error)
+    }
+  })
+
+  slackApp.action('cancel_calendar_disconnect', async ({ ack, body, client }) => {
+    await ack()
+    try {
+      type ActionBodyLike = {
+        channel?: { id?: string }
+        container?: { channel_id?: string, message_ts?: string }
+        message?: { ts?: string }
+      }
+      const a = body as unknown as ActionBodyLike
+      const channelId = a.channel?.id || a.container?.channel_id
+      const ts = a.message?.ts || a.container?.message_ts
+      if (channelId && ts) {
+        await client.chat.update({ channel: channelId, ts, text: '👌 Keeping your Google Calendar connected.', blocks: [] })
+      }
+    } catch (error) {
+      console.error('Error handling cancel_calendar_disconnect action:', error)
+    }
   })
 
   // Note: "Connect Google Calendar" button is now a direct URL link, no action handler needed

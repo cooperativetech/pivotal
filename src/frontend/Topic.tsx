@@ -29,6 +29,7 @@ function Topic() {
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
   const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
   const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
+  const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
@@ -350,6 +351,121 @@ function Topic() {
     })
   }
 
+  // Render Slack-like action buttons (local only)
+  const renderActionButtons = (msg: SlackMessage, channelId: string) => {
+    if (!isLocalMode || hiddenBlocks.has(msg.id)) return null
+    type SlackText = { type?: string; text?: string }
+    type SlackActionElement = { url?: string; action_id?: string; text?: SlackText }
+    type SlackActionsBlock = { type: 'actions'; elements: SlackActionElement[] }
+
+    const raw: unknown = msg.raw
+    const hasBlocks = typeof raw === 'object' && raw !== null && Object.prototype.hasOwnProperty.call(Object(raw), 'blocks')
+    const rawBlocks = hasBlocks ? (raw as { blocks?: unknown }).blocks : undefined
+    if (!Array.isArray(rawBlocks)) return null
+
+    const actions = rawBlocks.find((b): b is SlackActionsBlock => {
+      if (typeof b !== 'object' || b === null) return false
+      const block = b as Partial<SlackActionsBlock>
+      return block.type === 'actions' && Array.isArray(block.elements)
+    })
+    if (!actions) return null
+
+    const isDM = isDMChannel(channelId)
+    const currentUserId = isDM ? getCurrentUserId(channelId) : null
+
+    const onNotNow = () => {
+      setHiddenBlocks((prev) => new Set(prev).add(msg.id))
+    }
+
+    const onDontAskAgain = async () => {
+      if (!currentUserId) return
+      try {
+        await local_api.calendar.dont_ask_again.$post({ json: { userId: currentUserId } })
+      } catch (e) {
+        console.warn('dont_ask_again failed', e)
+      } finally {
+        setHiddenBlocks((prev) => new Set(prev).add(msg.id))
+      }
+    }
+
+    const onDisconnectCalendar = async () => {
+      if (!currentUserId) return
+      try {
+        await local_api.calendar.mock_disconnect.$post({ json: { userId: currentUserId } })
+      } catch (e) {
+        console.warn('mock_disconnect failed', e)
+      } finally {
+        setHiddenBlocks((prev) => new Set(prev).add(msg.id))
+      }
+    }
+
+    return (
+      <div className="mt-2 flex gap-2 flex-wrap">
+        {actions.elements.map((el, idx: number) => {
+          const label = el.text?.text || 'Button'
+          if (typeof el.url === 'string') {
+            return (
+              <a
+                key={idx}
+                href={el.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-white text-blue-700 border border-blue-300 hover:bg-blue-50"
+              >
+                {label}
+              </a>
+            )
+          }
+          if (el.action_id === 'calendar_not_now') {
+            return (
+              <button
+                key={idx}
+                onClick={onNotNow}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+              >
+                {label}
+              </button>
+            )
+          }
+          if (el.action_id === 'dont_ask_calendar_again') {
+            return (
+              <button
+                key={idx}
+                onClick={() => { onDontAskAgain().catch(console.error) }}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+              >
+                {label}
+              </button>
+            )
+          }
+          if (el.action_id === 'calendar_disconnect') {
+            return (
+              <button
+                key={idx}
+                onClick={() => { onDisconnectCalendar().catch(console.error) }}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-red-600 text-white border border-red-700 hover:bg-red-700"
+              >
+                {label}
+              </button>
+            )
+          }
+          if (el.action_id === 'cancel_calendar_disconnect') {
+            return (
+              <button
+                key={idx}
+                onClick={onNotNow}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+              >
+                {label}
+              </button>
+            )
+          }
+          return null
+        })}
+      </div>
+    )
+  }
+
   // Handle sending a message
   const handleSendMessage = async (channelId: string) => {
     const chatInput = chatInputs.get(channelId) || ''
@@ -451,7 +567,7 @@ function Topic() {
   }
 
   return (
-    <div className="h-full bg-gray-50 p-4 flex flex-col">
+    <div className="h-full min-h-0 bg-gray-50 p-4 flex flex-col overflow-hidden">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
           <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
@@ -488,7 +604,7 @@ function Topic() {
           <div className="text-gray-500">No conversations found for this topic</div>
         </div>
         ) : (
-        <div className="flex-1 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
+        <div className="flex-1 min-h-0 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
             {channelGroups.map((channel) => {
               const isExpanded = expandedContexts.has(channel.channelId)
               const isDM = isDMChannel(channel.channelId)
@@ -500,7 +616,7 @@ function Topic() {
               return (
                 <div
                   key={channel.channelId}
-                  className="bg-white rounded-lg shadow-md p-2 overflow-y-auto flex flex-col"
+                  className="bg-white rounded-lg shadow-md p-2 flex flex-col min-h-0"
                 >
                   <div
                     className={`flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between -m-2 p-2 mb-0 rounded-t-lg ${
@@ -551,6 +667,35 @@ function Topic() {
                         context={userData?.context}
                         topicContext={topicUserContext}
                         userTimezone={user?.tz || null}
+                        onConnectClick={userId && topicId ? (() => {
+                          if (isLocalMode) {
+                            local_api.calendar.auth_url.$get({ query: { topicId, userId } })
+                              .then(async (res) => {
+                                if (!res.ok) throw new Error('Failed to get auth URL')
+                                const body: unknown = await res.json()
+                                if (typeof body === 'object' && body !== null) {
+                                  const maybeUrl = (body as { url?: unknown }).url
+                                  if (typeof maybeUrl === 'string') window.location.href = maybeUrl
+                                }
+                              })
+                              .catch((err) => console.error('Error getting local auth URL:', err))
+                          } else {
+                            api.calendar.auth_url.$get({
+                              query: {
+                                topicId,
+                                slackUserId: userId,
+                                origin: 'webapp',
+                              },
+                            }).then(async (res) => {
+                              if (!res.ok) throw new Error('Failed to get auth URL')
+                              const body: unknown = await res.json()
+                              if (typeof body === 'object' && body !== null) {
+                                const maybeUrl = (body as { url?: unknown }).url
+                                if (typeof maybeUrl === 'string') window.location.href = maybeUrl
+                              }
+                            }).catch((err) => console.error('Error getting auth URL:', err))
+                          }
+                        }) : null}
                       />
                     </div>
                   )}
@@ -601,6 +746,7 @@ function Topic() {
                             </div>
                             <div className="text-sm whitespace-pre-wrap break-words">
                               {msg.text}
+                              {renderActionButtons(msg, channel.channelId)}
                             </div>
                             <div
                               className={`text-xs mt-1 ${

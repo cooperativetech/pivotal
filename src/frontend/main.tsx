@@ -39,7 +39,7 @@ createRoot(document.getElementById('root')!).render(
 
           {/* Local/testing routes - only available in development */}
           {import.meta.env.DEV && (
-            <Route path="/local">
+            <Route path="/local" element={<App />}>
               <Route index element={<LocalHome />} />
               <Route path="topics" element={<LocalHome />} />
               <Route path="topic/:topicId" element={<Topic />} />

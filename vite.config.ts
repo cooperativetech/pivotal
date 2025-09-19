@@ -25,6 +25,7 @@ export default defineConfig(({ command }) => ({
     proxy: {
       '/local_api': 'http://localhost:3001',
       '/api': 'http://localhost:3001',
+      '/auth/google/callback': 'http://localhost:3001', // For auth via webapp.
     },
   },
 }))

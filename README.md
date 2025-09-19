@@ -20,7 +20,7 @@ mkcert -install
 pnpm run cert
 ```
 
-Set the following env vars to their proper values (e.g. in your ~/.bashrc):
+Set the following env vars to their proper values (e.g. in your `~/.zshrc` or `~/.bashrc`). Note: the app and tooling do not load a `.env` file automatically.
 ```
 export PV_DB_URL=...
 export PV_OPENROUTER_API_KEY=...
@@ -37,7 +37,7 @@ export PV_LANGFUSE_PUBLIC_KEY=...
 export PV_LANGFUSE_SECRET_KEY=...
 ```
 
-For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local BD" instructions below if you don't have it installed already.
+For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local DB" instructions below if you don't have it installed already.
 
 Run the flack server:
 ```
@@ -48,6 +48,7 @@ You can then visit the website in your browser at https://localhost:5173. While 
 ```
 pnpm run eval
 ```
+
 
 To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
@@ -73,7 +74,7 @@ brew install postgresql@16
 brew services start postgresql@16
 createdb pivotal
 
-# probably also add the following to your ~/.bashrc
+# add the following to your shell init (e.g., `~/.zshrc` or `~/.bashrc`)
 export PV_DB_URL='postgresql://localhost:5432/pivotal'
 ```
 
@@ -87,6 +88,10 @@ If you change `db/schema.ts`, you can use drizzle-kit to automatically generate 
 pnpm run dkgen
 pnpm run dkmig
 ```
+
+### Calendar Invites
+
+- When a time is finalized, the bot uses the Google service account configured via `PV_GOOGLE_SERVICE_ACCOUNT_EMAIL`, `PV_GOOGLE_SERVICE_ACCOUNT_KEY`, and `PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT` to create a calendar event, adds topic users with emails as attendees, includes a Google Meet link, and posts the links in Slack. Implementation: see `createCalendarInviteFromBot` in `src/calendar-service.ts` and its trigger in `processSchedulingActions` in `src/slack-message-handler.ts`.
 
 ### Linux
 
