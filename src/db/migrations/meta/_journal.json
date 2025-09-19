@@ -155,6 +155,13 @@
       "when": 1758062925648,
       "tag": "0021_add_installation_id_to_account_table",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1758241023027,
+      "tag": "0022_add_repository_id_to_account_table",
+      "breakpoints": true
     }
   ]
 }
