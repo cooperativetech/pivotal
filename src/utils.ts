@@ -147,12 +147,11 @@ export const GetTopicReq = z.strictObject({
   visibleToUserId: z.string().optional(),
   // Preferred: list of visible user IDs
   visibleToUserIds: z.array(z.string()).optional(),
-  beforeRawTs: z.string().optional(),
 })
 export type GetTopicReq = z.infer<typeof GetTopicReq>
 
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
-  const { lastMessageId, visibleToUserId, visibleToUserIds, beforeRawTs } = options
+  const { lastMessageId, visibleToUserId, visibleToUserIds } = options
 
   const [topic] = await db.select()
     .from(topicTable)
@@ -208,14 +207,6 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
     )
     states = states.filter((state) =>
       Number(state.createdByMessageRawTs) <= Number(targetMessage.rawTs),
-    )
-  }
-
-  // If beforeRawTs is provided, filter messages before that raw timestamp
-  // TODO: remove this once the new evals PR lands, and this is no longer used
-  if (beforeRawTs) {
-    messages = messages.filter((msg) =>
-      Number(msg.rawTs) < Number(beforeRawTs),
     )
   }
 
