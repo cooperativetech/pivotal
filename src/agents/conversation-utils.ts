@@ -19,7 +19,7 @@ import {
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { getUserCalendarStructured } from '../calendar-service'
-import type { CalendarEvent } from '@shared/api-types'
+import { CalendarEvent } from '@shared/api-types'
 
 export interface ConversationContext {
   message: SlackMessage,
@@ -27,7 +27,6 @@ export interface ConversationContext {
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
-
 export const ConversationRes = z.strictObject({
   replyMessage: z.string().optional().nullable(),
   markTopicInactive: z.boolean().optional().nullable(),
@@ -35,13 +34,14 @@ export const ConversationRes = z.strictObject({
     userNames: z.array(z.string()),
     text: z.string(),
     includeCalendarButtons: z.boolean().optional().nullable(),
+    includeCalendarDisconnectButtons: z.boolean().optional().nullable(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
+  finalizedEvent: CalendarEvent.optional().nullable(),
   reasoning: z.string(),
 })
-export type ConversationRes = z.infer<typeof ConversationRes>
-
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
+export type ConversationRes = z.infer<typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
 
 export async function runConversationAgent(
@@ -51,31 +51,6 @@ export async function runConversationAgent(
   previousMessages: SlackMessage[],
   userMap: Map<string, SlackUser>,
 ): Promise<ConversationRes> {
-  // If user is explicitly asking for calendar connection, send link immediately
-  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
-    (message.text.toLowerCase().includes('link') ||
-     message.text.toLowerCase().includes('connect') ||
-     message.text.toLowerCase().includes('send me'))
-
-  if (userRequestingCalendar) {
-    const userName = userMap.get(message.userId)?.realName
-    if (!userName) {
-      throw new Error(`User ${message.userId} has no realName in userMap`)
-    }
-
-    return {
-      replyMessage: '',
-      messagesToUsers: [
-        {
-          userNames: [userName],
-          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
-          includeCalendarButtons: true,
-        },
-      ],
-      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
-    }
-  }
-
   // Get timezone information for the calling user
   const callingUser = userMap.get(message.userId)
   const callingUserTimezone = callingUser?.tz || 'UTC'

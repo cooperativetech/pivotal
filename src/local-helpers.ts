@@ -1,4 +1,5 @@
 import type { WebClient } from '@slack/web-api'
+import type { KnownBlock, Block } from '@slack/types'
 import { sql, eq } from 'drizzle-orm'
 
 import type { SlackAPIUser, SlackAPIMessage } from './slack-message-handler'
@@ -175,11 +176,11 @@ export const mockSlackClient = {
     },
   },
   chat: {
-    postMessage: async (params: { channel: string; text: string; thread_ts?: string }) => {
+    postMessage: async (params: { channel: string; text: string; thread_ts?: string, blocks?: (KnownBlock | Block)[] }) => {
       const timestamp = (Date.now() / 1000).toString()
 
       // Prepare the message as SlackAPIMessage
-      const message: SlackAPIMessage = {
+      const message: SlackAPIMessage & { blocks?: (KnownBlock | Block)[] } = {
         type: 'message',
         subtype: undefined,
         channel: params.channel,
@@ -189,6 +190,7 @@ export const mockSlackClient = {
         user: '', // This field is not used by the caller downstream
         channel_type: params.channel.startsWith('D') ? 'im' : 'channel',
         event_ts: timestamp,
+        ...(params.blocks ? { blocks: params.blocks } : {}),
       }
 
       return Promise.resolve({

@@ -6,11 +6,14 @@ import { eq } from 'drizzle-orm'
 import db from '../db/engine'
 import type { SlackUser } from '../db/schema/main'
 import { slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from '../local-helpers.ts'
 import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
+import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, generateGoogleAuthUrl, continueSchedulingWorkflow, setSuppressCalendarPrompt } from '../calendar-service'
+import { updateUserContext } from '../calendar-service'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -70,6 +73,76 @@ export const localRoutes = new Hono()
       success: result.success,
       message: `Cleared all topics and messages from database (method: ${result.method})`,
     })
+  })
+
+  // Generate Google auth URL for local inspection
+  .get('/calendar/auth_url', zValidator('query', z.strictObject({
+    topicId: z.string(),
+    userId: z.string(),
+  })), (c) => {
+    const { topicId, userId } = c.req.valid('query')
+    try {
+      const url = generateGoogleAuthUrl(topicId, userId)
+      return c.json({ url })
+    } catch (error) {
+      console.error('Error generating auth url:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: Connect a user's calendar (no Google call) and continue scheduling
+  .post('/calendar/mock_connect', zValidator('json', z.strictObject({
+    topicId: z.string(),
+    userId: z.string(),
+  })), async (c) => {
+    const { topicId, userId } = c.req.valid('json')
+    try {
+      const expiry = Date.now() + 60 * 60 * 1000
+      await updateUserContext(userId, {
+        googleAccessToken: 'fake-token-for-eval',
+        googleRefreshToken: 'fake-refresh-token',
+        googleTokenExpiryDate: expiry,
+        googleConnectedAt: Date.now(),
+      })
+      await continueSchedulingWorkflow(topicId, userId, mockSlackClient)
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in mock_connect:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: Disconnect a user's calendar tokens
+  .post('/calendar/mock_disconnect', zValidator('json', z.strictObject({
+    userId: z.string(),
+  })), async (c) => {
+    const { userId } = c.req.valid('json')
+    try {
+      await updateUserContext(userId, {
+        googleAccessToken: undefined,
+        googleRefreshToken: undefined,
+        googleTokenExpiryDate: undefined,
+        googleConnectedAt: undefined,
+      })
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in mock_disconnect:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Mock: "Don't ask again" to suppress prompts
+  .post('/calendar/dont_ask_again', zValidator('json', z.strictObject({
+    userId: z.string(),
+  })), async (c) => {
+    const { userId } = c.req.valid('json')
+    try {
+      await setSuppressCalendarPrompt(userId, true)
+      return c.json({ success: true })
+    } catch (error) {
+      console.error('Error in dont_ask_again:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
   })
 
   .post('/users/create_fake', zValidator('json', z.strictObject({
@@ -193,6 +266,68 @@ export const localRoutes = new Hono()
       return c.json({
         error: error instanceof Error ? error.message : 'Internal server error',
       }, 500)
+    }
+  })
+
+  // Create a test Meet link using the bot calendar (no emails sent)
+  .post('/test_meet', zValidator('json', z.strictObject({
+    start: z.string(),
+    end: z.string(),
+    summary: z.string().optional(),
+    userIds: z.array(z.string()).optional(),
+  })), async (c) => {
+    const { start, end, summary, userIds } = c.req.valid('json')
+    try {
+      // Minimal TopicWithState mock for local testing
+      const fakeTopic: TopicWithState = {
+        id: `test-${Date.now()}`,
+        botUserId: BOT_USER_ID,
+        workflowType: 'scheduling',
+        createdAt: new Date(),
+        state: {
+          id: `state-${Date.now()}`,
+          topicId: `test-${Date.now()}`,
+          userIds: userIds || [],
+          summary: summary || 'Test Meeting',
+          isActive: true,
+          perUserContext: {},
+          createdByMessageId: '00000000-0000-0000-0000-000000000000',
+          createdAt: new Date(),
+        },
+      }
+
+      const result = await createCalendarInviteFromBot(fakeTopic, {
+        start,
+        end,
+        summary,
+      })
+
+      if (!result) {
+        return c.json({ error: 'Failed to create bot event. Ensure service account env vars (PV_GOOGLE_SERVICE_ACCOUNT_EMAIL / PV_GOOGLE_SERVICE_ACCOUNT_KEY / PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT) are configured correctly.' }, 500)
+      }
+      return c.json(result)
+    } catch (error) {
+      console.error('Error creating test Meet:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  // Reschedule the most recent event for a topic (bot calendar)
+  .post('/topics/:topicId/reschedule', zValidator('json', z.strictObject({
+    start: z.string(),
+    end: z.string(),
+  })), async (c) => {
+    const { topicId } = c.req.param()
+    const { start, end } = c.req.valid('json')
+    try {
+      const result = await tryRescheduleTaggedEvent(topicId, start, end)
+      if (!result.success) {
+        return c.json({ error: 'Failed to reschedule event' }, 500)
+      }
+      return c.json(result)
+    } catch (error) {
+      console.error('Error in reschedule endpoint:', error)
+      return c.json({ error: 'Internal server error' }, 500)
     }
   })
 

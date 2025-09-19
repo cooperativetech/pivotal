@@ -5,13 +5,13 @@ import { createOAuthUserAuth } from '@octokit/auth-oauth-user'
 import { RequestError } from '@octokit/request-error'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
-
 import db from '../db/engine'
 import { WebClient } from '@slack/web-api'
 import { slackUserTable } from '../db/schema/main'
 import { accountTable } from '../db/schema/auth'
 import { auth } from '../auth'
 import { dumpTopic, getTopics } from '../utils'
+import { getUserContext, clearUserGoogleTokens, generateGoogleAuthUrl } from '../calendar-service'
 
 async function getOctokit(userId: string, accountPk: string): Promise<Octokit | null> {
   try {
@@ -252,6 +252,18 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         return { id, realName: row?.realName ?? null, teamId, teamName }
       })
 
+      const calendarConnections = await Promise.all(
+        slackIdList.map(async (id) => {
+          const context = await getUserContext(id)
+          return {
+            slackUserId: id,
+            googleAccessToken: context.googleAccessToken ?? null,
+            googleTokenExpiryDate: context.googleTokenExpiryDate ?? null,
+            googleConnectedAt: context.googleConnectedAt ?? null,
+          }
+        }),
+      )
+
       // Get linked Github account
       const githubAccount = await getLinkedGithubAccount(sessionUser.id)
 
@@ -262,6 +274,7 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
           name: sessionUser.name,
         },
         slackAccounts: linkedSlackInfo,
+        calendarConnections,
         githubAccount,
       })
     } catch (error) {
@@ -362,6 +375,72 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       return c.json({ error: 'Internal server error' }, 500)
     }
   })
+
+  .post(
+    '/calendar/disconnect',
+    zValidator('json', z.strictObject({ slackUserId: z.string() })),
+    async (c) => {
+      const sessionUser = c.get('user')
+      if (!sessionUser) {
+        return c.json({ error: 'Unauthorized' }, 401)
+      }
+
+      const { slackUserId } = c.req.valid('json')
+      const linkedSlackIds = await db
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
+        .where(and(
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
+        ))
+
+      if (!linkedSlackIds.some((row) => row.slackId === slackUserId)) {
+        return c.json({ error: 'Slack account not linked' }, 400)
+      }
+
+      await clearUserGoogleTokens(slackUserId)
+      return c.json({ success: true })
+    },
+  )
+
+  .get(
+    '/calendar/auth_url',
+    zValidator('query', z.object({
+      topicId: z.string().optional(),
+      slackUserId: z.string().optional(),
+      origin: z.enum(['slack', 'webapp']).optional(),
+    })),
+    async (c) => {
+      const sessionUser = c.get('user')
+      if (!sessionUser) {
+        return c.json({ error: 'Unauthorized' }, 401)
+      }
+
+      const { topicId, slackUserId, origin = 'slack' } = c.req.valid('query')
+
+      const linkedSlackIds = await db
+        .select({ slackId: accountTable.accountId })
+        .from(accountTable)
+        .where(and(
+          eq(accountTable.userId, sessionUser.id),
+          eq(accountTable.providerId, 'slack'),
+        ))
+
+      if (linkedSlackIds.length === 0) {
+        return c.json({ error: 'No linked Slack account found' }, 400)
+      }
+
+      const slackIdList = linkedSlackIds.map((row) => row.slackId)
+      if (slackUserId && !slackIdList.includes(slackUserId)) {
+        return c.json({ error: 'Slack account not linked' }, 400)
+      }
+
+      const selectedSlackId = slackUserId ?? slackIdList[0]
+      const selectedTopicId = topicId ?? 'profile'
+      const url = generateGoogleAuthUrl(selectedTopicId, selectedSlackId, origin)
+      return c.json({ url })
+    },
+  )
 
   .get('/users', async (c) => {
     const sessionUser = c.get('user')

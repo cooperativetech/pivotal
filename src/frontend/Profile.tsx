@@ -13,6 +13,14 @@ interface UserProfile {
     teamId: string
     teamName?: string | null
   }>
+
+  calendarConnections: Array<{
+    slackUserId: string
+    googleAccessToken: string | null
+    googleTokenExpiryDate: number | null
+    googleConnectedAt: number | null
+  }>
+
   githubAccount: {
     accountId: string
     username: string
@@ -45,6 +53,9 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [calendarBusy, setCalendarBusy] = useState(false)
+  const [slackBusy, setSlackBusy] = useState(false)
+  const [highlightSlack, setHighlightSlack] = useState(false)
 
   useEffect(() => {
     loadProfile().catch((err) => {
@@ -87,6 +98,20 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to link Slack account')
       console.error(err)
+    }
+  }
+
+  const handleSlackDisconnect = async () => {
+    try {
+      setSlackBusy(true)
+      await authClient.unlinkAccount({ providerId: 'slack' })
+      await authClient.signOut()
+      window.location.href = '/'
+    } catch (err) {
+      setError('Failed to disconnect Slack')
+      console.error(err)
+    } finally {
+      setSlackBusy(false)
     }
   }
 
@@ -183,6 +208,76 @@ export default function Profile() {
     })
   }
 
+  const primarySlack = profile?.slackAccounts[0]
+  const calendarInfo = primarySlack
+    ? profile?.calendarConnections?.find((entry) => entry.slackUserId === primarySlack.id)
+    : undefined
+
+  const calendarConnected = !!calendarInfo?.googleAccessToken
+  const connectedAt = calendarInfo?.googleConnectedAt
+    ? new Date(calendarInfo.googleConnectedAt)
+    : null
+  const expiryDate = calendarInfo?.googleTokenExpiryDate
+    ? new Date(calendarInfo.googleTokenExpiryDate)
+    : null
+  let daysRemaining: number | null = null
+  if (connectedAt) {
+    const dayMs = 24 * 60 * 60 * 1000
+    const elapsedDays = Math.floor((Date.now() - connectedAt.getTime()) / dayMs)
+    daysRemaining = Math.max(0, 7 - elapsedDays) // for countdown in webapp
+  } else if (expiryDate) {
+    daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+  }
+
+  const handleGoogleConnect = async () => {
+    if (!primarySlack?.id) {
+      setError('You must link your Slack account first.')
+      setHighlightSlack(true)
+      setTimeout(() => setHighlightSlack(false), 1500)
+      return
+    }
+    try {
+      setCalendarBusy(true)
+      const slackId = primarySlack.id
+      const res = await api.calendar.auth_url.$get({
+        query: {
+          slackUserId: slackId,
+          origin: 'webapp',
+        },
+      })
+      if (!res.ok) throw new Error('Failed to get Google auth URL')
+      const body: unknown = await res.json()
+      if (typeof body === 'object' && body !== null) {
+        const maybeUrl = (body as { url?: unknown }).url
+        if (typeof maybeUrl === 'string') {
+          window.location.href = maybeUrl
+        }
+      }
+    } catch (err) {
+      console.error('Google connect failed:', err)
+      setError('Failed to start Google Calendar connection')
+    } finally {
+      setCalendarBusy(false)
+    }
+  }
+
+  const handleGoogleDisconnect = async () => {
+    if (!primarySlack?.id) return
+    try {
+      setCalendarBusy(true)
+      const res = await api.calendar.disconnect.$post({
+        json: { slackUserId: primarySlack.id },
+      })
+      if (!res.ok) throw new Error('Failed to disconnect calendar')
+      await loadProfile()
+    } catch (err) {
+      console.error('Google disconnect failed:', err)
+      setError('Failed to disconnect Google Calendar')
+    } finally {
+      setCalendarBusy(false)
+    }
+  }
+
   const handleGithubLinkClick = () => {
     handleGithubLink().catch((err) => {
       console.error('Github link failed:', err)
@@ -221,9 +316,88 @@ export default function Profile() {
         ) : (
           <p>No Slack accounts linked</p>
         )}
-        <button onClick={handleSlackLinkClick} className="px-6 py-3 bg-purple-800 text-white rounded font-medium hover:bg-purple-900 mt-4 cursor-pointer">
-          Link Slack Account
-        </button>
+
+        <div className={`flex flex-wrap gap-3 mt-4 ${highlightSlack ? 'animate-pulse' : ''}`}>
+          <button
+            type="button"
+            disabled
+            className={`px-4 py-2 rounded border font-medium ${
+              profile.slackAccounts.length > 0
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-red-500 text-red-500'
+            }`}
+          >
+            {profile.slackAccounts.length > 0 ? '✅ Connected!' : '❌ Not connected!'}
+          </button>
+          <button
+            onClick={profile.slackAccounts.length > 0 ? (() => { handleSlackDisconnect().catch(console.error) }) : handleSlackLinkClick}
+            disabled={slackBusy}
+            className={`px-6 py-3 rounded font-medium text-white ${
+              profile.slackAccounts.length > 0
+                ? 'bg-red-500 hover:bg-red-600 disabled:bg-red-400'
+                : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
+            }`}
+          >
+            {slackBusy ? 'Working…' : profile.slackAccounts.length > 0 ? 'Disconnect Slack' : 'Connect Slack'}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Calendar</h2>
+        {profile.slackAccounts.length === 0 ? (
+          <p className="text-sm text-gray-700">Link a Slack account first to connect your Google Calendar.</p>
+        ) : (
+          <>
+            {calendarConnected ? (
+              <p className="text-sm text-gray-700 mb-3">
+                You have {daysRemaining ?? 0} day{daysRemaining === 1 ? '' : 's'} until your calendar access expires. Access lasts 7 days.
+              </p>
+            ) : (
+              <p className="text-sm text-gray-700 mb-3">Connect your Google Calendar so scheduling can check your availability.</p>
+            )}
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled
+                className={`px-4 py-2 rounded border font-medium ${
+                  calendarConnected
+                    ? 'border-emerald-600 text-emerald-600'
+                    : 'border-red-500 text-red-500'
+                }`}
+              >
+                {calendarConnected ? '✅ Connected!' : '❌ Not connected!'}
+              </button>
+              {calendarConnected ? (
+                <>
+                  <button
+                    onClick={() => { handleGoogleConnect().catch(console.error) }}
+                    disabled={calendarBusy}
+                    className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                  >
+                    {calendarBusy ? 'Refreshing…' : 'Refresh calendar access'}
+                  </button>
+                  <button
+                    onClick={() => { handleGoogleDisconnect().catch(console.error) }}
+                    disabled={calendarBusy}
+                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400"
+                  >
+                    {calendarBusy ? 'Disconnecting…' : 'Disconnect calendar'}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { handleGoogleConnect().catch(console.error) }}
+                  disabled={calendarBusy}
+                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                >
+                  {calendarBusy ? 'Opening…' : 'Connect Google Calendar'}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">

@@ -40,6 +40,7 @@ export interface UserContext {
   googleAccessToken?: string
   googleRefreshToken?: string
   googleTokenExpiryDate?: number
+  googleConnectedAt?: number
   calendar?: CalendarEvent[]
   calendarRangeLastFetched?: CalendarRangeLastFetched
   slackTeamId?: string
@@ -51,6 +52,8 @@ export interface UserContext {
 export interface TopicUserContext {
   calendarPrompted?: boolean
   calendarManualOverrides?: CalendarEvent[]
+  // Pointer to the DM message where we showed calendar connect buttons
+  calendarPromptMessage?: { channelId: string, ts: string }
 }
 
 export interface AutoMessageDeactivation {
