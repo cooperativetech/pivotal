@@ -7,7 +7,7 @@ import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from '.
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent } from './calendar-service'
+import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -577,6 +577,17 @@ export async function processSchedulingActions(
     if (nextStep.finalizedEvent) {
       const res = await handleFinalizedEvent(topic, message, nextStep.finalizedEvent, userMap, client)
       createdMessages.push(...res)
+    }
+
+    if (nextStep.cancelEvent) {
+      try {
+        const deleted = await deleteTaggedEvent(topic.id)
+        if (!deleted) {
+          console.log('No calendar invite found to delete for topic:', topic.id)
+        }
+      } catch (error) {
+        console.error('Error deleting calendar invite:', error)
+      }
     }
 
     // Mark topic as inactive if requested
