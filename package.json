@@ -25,6 +25,7 @@
     "@js-temporal/polyfill": "0.5.1",
     "@octokit/auth-oauth-user": "6.0.0",
     "@octokit/core": "7.0.3",
+    "@octokit/request-error": "7.0.0",
     "@openai/agents": "0.0.17",
     "@openai/agents-core": "0.0.17",
     "@openrouter/ai-sdk-provider": "0.7.2",

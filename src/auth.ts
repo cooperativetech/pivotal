@@ -119,6 +119,7 @@ export function githubAppInstallationPlugin(appName: string) {
       account: {
         fields: {
           installationId: { type: 'string' },
+          repositoryId: { type: 'string' },
         },
       },
     },
