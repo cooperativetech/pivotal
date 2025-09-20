@@ -12,7 +12,7 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, generateGoogleAuthUrl, continueSchedulingWorkflow, setSuppressCalendarPrompt } from '../calendar-service'
+import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, generateGoogleAuthUrl, setSuppressCalendarPrompt } from '../calendar-service'
 import { updateUserContext } from '../calendar-service'
 
 export const localRoutes = new Hono()
@@ -86,28 +86,6 @@ export const localRoutes = new Hono()
       return c.json({ url })
     } catch (error) {
       console.error('Error generating auth url:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
-  // Mock: Connect a user's calendar (no Google call) and continue scheduling
-  .post('/calendar/mock_connect', zValidator('json', z.strictObject({
-    topicId: z.string(),
-    userId: z.string(),
-  })), async (c) => {
-    const { topicId, userId } = c.req.valid('json')
-    try {
-      const expiry = Date.now() + 60 * 60 * 1000
-      await updateUserContext(userId, {
-        googleAccessToken: 'fake-token-for-eval',
-        googleRefreshToken: 'fake-refresh-token',
-        googleTokenExpiryDate: expiry,
-        googleConnectedAt: Date.now(),
-      })
-      await continueSchedulingWorkflow(topicId, userId, mockSlackClient)
-      return c.json({ success: true })
-    } catch (error) {
-      console.error('Error in mock_connect:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })

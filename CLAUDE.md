@@ -91,3 +91,7 @@ This is a Slack bot for AI-assisted scheduling with evaluation framework.
 - Strict mode enabled with no unused locals/parameters
 - All imports must have checked side effects
 - Always use `import ... from 'package'` syntax rather than `const ... = await import('package')`, except for the one exception of `const { App } = await import('@slack/bolt')`
+
+## Frontend Conventions
+
+- Always use cursor-pointer in the className for buttons

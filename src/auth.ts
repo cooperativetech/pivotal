@@ -145,12 +145,17 @@ export const auth = betterAuth({
       clientId: process.env.PV_GITHUB_CLIENT_ID!,
       clientSecret: process.env.PV_GITHUB_CLIENT_SECRET!,
     },
+    google: {
+      prompt: 'select_account',
+      clientId: process.env.PV_GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.PV_GOOGLE_CLIENT_SECRET!,
+    },
   },
   account: {
     encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
-      trustedProviders: ['slack', 'github'],
+      trustedProviders: ['slack', 'github', 'google'],
     },
   },
   rateLimit: {
