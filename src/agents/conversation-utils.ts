@@ -38,6 +38,7 @@ export const ConversationRes = z.strictObject({
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
   finalizedEvent: CalendarEvent.optional().nullable(),
+  cancelEvent: z.boolean().optional().nullable(),
   reasoning: z.string(),
 })
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>

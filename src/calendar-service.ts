@@ -616,6 +616,30 @@ export async function tryRescheduleTaggedEvent(
 }
 
 /**
+ * Delete the calendar event previously associated with this topic, if any.
+ */
+export async function deleteTaggedEvent(topicId: string): Promise<boolean> {
+  try {
+    const calendar = buildServiceAccountCalendarClient()
+    if (!calendar) return false
+
+    const existing = await findTaggedEventForTopic(topicId)
+    if (!existing?.id) return false
+
+    await calendar.events.delete({
+      calendarId: getBotCalendarId(),
+      eventId: existing.id,
+      sendUpdates: 'all',
+    })
+
+    return true
+  } catch (err) {
+    console.error('Error deleting calendar event:', err)
+    return false
+  }
+}
+
+/**
  * Fetch calendar events for a user and store in user context
  * This caches calendar data for the LLM to use during scheduling
  */

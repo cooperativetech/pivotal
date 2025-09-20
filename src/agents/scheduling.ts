@@ -212,6 +212,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 
 5. Scheduling is done
   - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
+  - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
 
 - Miscellaneous actions needed
@@ -324,6 +325,7 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
     "end": "2025-03-12T18:30:00Z",   // ISO string
     "summary": "Weekly sync"         // Required when object is present
   },
+  "cancelEvent": true,              // OPTIONAL: Set true when the meeting is cancelled and the calendar invite should be deleted
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
@@ -341,6 +343,7 @@ IMPORTANT:
 - If there is exactly ONE scheduled meeting in this topic and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
 - If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification listing the options by day/time. If the message clearly references a specific day/time, pick that one directly.
 - To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
+- When participants agree to cancel the meeting entirely, set cancelEvent: true (and normally omit finalizedEvent) so the existing invite is removed, and clearly notify everyone of the cancellation.
 `
 
   let scheduledSection = ''
