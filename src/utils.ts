@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-import { resolve } from 'node:path'
+import path from 'node:path'
 import { eq, desc, inArray, and, sql, lt, isNotNull, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { CronJob } from 'cron'
@@ -744,7 +744,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
       // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
       // Otherwise fall back to process.cwd()
       const workingDir = process.env.INIT_CWD || process.cwd()
-      const resolvedPath = resolve(workingDir, values.output)
+      const resolvedPath = path.resolve(workingDir, values.output)
 
       await fs.writeFile(resolvedPath, jsonData)
       console.log(`Topic data written to ${resolvedPath}`)
@@ -763,7 +763,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
     // Otherwise fall back to process.cwd()
     const workingDir = process.env.INIT_CWD || process.cwd()
-    const resolvedPath = resolve(workingDir, jsonFile)
+    const resolvedPath = path.resolve(workingDir, jsonFile)
 
     const jsonData = await fs.readFile(resolvedPath, 'utf-8')
     const result = await loadTopics(jsonData)

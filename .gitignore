@@ -10,3 +10,4 @@ pv.log
 .claude-mistakes.md
 AGENTS.md
 *.pem
+.context-repos

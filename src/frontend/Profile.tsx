@@ -25,13 +25,6 @@ interface UserProfile {
     accountId: string
     username: string
     orgName: string | null
-    repositories: Array<{
-      id: string
-      name: string
-      owner: string
-      fullName: string
-      invitationId: string | null
-    }>
     linkedRepo: {
       id: string
       name: string
