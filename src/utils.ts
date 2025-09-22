@@ -143,15 +143,12 @@ export async function getStatesWithMessageTs(topicId: string): Promise<TopicStat
 
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
-  // Backward-compatible single ID
   visibleToUserId: z.string().optional(),
-  // Preferred: list of visible user IDs
-  visibleToUserIds: z.array(z.string()).optional(),
 })
 export type GetTopicReq = z.infer<typeof GetTopicReq>
 
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
-  const { lastMessageId, visibleToUserId, visibleToUserIds } = options
+  const { lastMessageId, visibleToUserId } = options
 
   const [topic] = await db.select()
     .from(topicTable)
@@ -162,25 +159,14 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
   // Build the messages query with optional channel filtering
   let messages: SlackMessage[]
 
-  const visibleIds: string[] | null = Array.isArray(visibleToUserIds)
-    ? visibleToUserIds
-    : (visibleToUserId ? [visibleToUserId] : null)
-
-  if (visibleIds && visibleIds.length > 0) {
-    // If visible user ids are provided, join with slackChannelTable and filter for any match
-    const orClauses = sql.join(
-      visibleIds.map((id) => sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([id])}::jsonb`),
-      sql` OR `,
-    )
-
-    const messagesResult = await db
-      .select({ message: slackMessageTable })
+  if (visibleToUserId) {
+    const messagesResult = await db.select({ message: slackMessageTable })
       .from(slackMessageTable)
-      .leftJoin(slackChannelTable, eq(slackMessageTable.channelId, slackChannelTable.id))
+      .innerJoin(slackChannelTable, eq(slackMessageTable.channelId, slackChannelTable.id))
       .where(
         and(
           eq(slackMessageTable.topicId, topicId),
-          sql`(${orClauses})`,
+          sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([visibleToUserId])}::jsonb`,
         ),
       )
       .orderBy(slackMessageTable.timestamp)

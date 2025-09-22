@@ -37,8 +37,7 @@ export function githubAppInstallationPlugin(appName: string) {
         }
 
         const state = generateRandomString(32)
-        const expiresAt = new Date()
-        expiresAt.setMinutes(expiresAt.getMinutes() + 10)
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
         // For data format, see https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/oauth2/state.ts
         // TODO: add errorURL
@@ -145,12 +144,22 @@ export const auth = betterAuth({
       clientId: process.env.PV_GITHUB_CLIENT_ID!,
       clientSecret: process.env.PV_GITHUB_CLIENT_SECRET!,
     },
+    google: {
+      clientId: process.env.PV_GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.PV_GOOGLE_CLIENT_SECRET!,
+      scope: [
+        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/calendar.events.readonly',
+      ],
+      accessType: 'offline', // Required to get a refresh token
+      prompt: 'consent', // Required to get a refresh token
+    },
   },
   account: {
     encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
-      trustedProviders: ['slack', 'github'],
+      trustedProviders: ['slack', 'github', 'google'],
     },
   },
   rateLimit: {

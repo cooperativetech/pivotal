@@ -321,7 +321,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Prom
     throw new Error('Failed to get final topic data')
   }
 
-  const topicData = unserializeTopicData(await topicResponse.json())
+  const topicData = unserializeTopicData((await topicResponse.json()).topicData)
   return { topicData, suggestedEvent, confirmations }
 }
 

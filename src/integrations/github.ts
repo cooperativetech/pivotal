@@ -1,12 +1,13 @@
 import { Octokit } from '@octokit/core'
 import { createOAuthUserAuth } from '@octokit/auth-oauth-user'
 import { and, eq } from 'drizzle-orm'
-import db from '../db/engine'
-import { auth } from '../auth'
-import { accountTable } from '../db/schema/auth'
 import { simpleGit } from 'simple-git'
 import fs from 'fs/promises'
 import path from 'path'
+import db from '../db/engine'
+import { auth } from '../auth'
+import { accountTable } from '../db/schema/auth'
+import type { BotRepository, GithubAccount } from '@shared/api-types'
 
 export async function getOctokit(userId: string, accountPk: string): Promise<Octokit | null> {
   try {
@@ -53,22 +54,6 @@ export function getBotOctokit(): Octokit {
     throw new Error('PV_GITHUB_BOT_ACCESS_TOKEN environment variable is not set')
   }
   return new Octokit({ auth: token })
-}
-
-interface BotRepository {
-  id: string
-  name: string
-  owner: string
-  fullName: string
-  invitationId: string | null
-}
-
-interface GithubAccount {
-  accountId: string
-  username: string
-  orgName: string | null
-  linkedRepo: BotRepository | null
-  linkableRepos: BotRepository[]
 }
 
 export async function getLinkedGithubAccount(userId: string): Promise<GithubAccount | null> {

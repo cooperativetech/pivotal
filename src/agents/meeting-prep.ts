@@ -2,7 +2,7 @@ import type { RunContext } from './agent-sdk'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames, scheduleAutoMessage, showUserCalendar } from './conversation-utils'
 import { getOrgActionItems, editOrgActionItems } from './org-context'
-import { isCalendarConnected } from '../calendar-service'
+import { isGoogleCalendarConnected } from '../integrations/google'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
@@ -219,7 +219,7 @@ ${await Promise.all(topic.state.userIds.map(async (userId: string) => {
   const userTzStr = tz ? `${userName} (${getShortTimezoneFromIANA(tz)})` : userName
 
   try {
-    const isConnected = await isCalendarConnected(userId)
+    const isConnected = await isGoogleCalendarConnected(userId)
     if (isConnected) {
       return `  ${userTzStr}: Calendar is connected`
     }

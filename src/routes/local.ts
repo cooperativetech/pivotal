@@ -12,8 +12,9 @@ import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, generateGoogleAuthUrl, continueSchedulingWorkflow, setSuppressCalendarPrompt } from '../calendar-service'
-import { updateUserContext } from '../calendar-service'
+import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, setSuppressCalendarPrompt } from '../calendar-service'
+import { getGoogleCalendar } from '../integrations/google'
+import type { CalendarEvent } from '@shared/api-types'
 
 export const localRoutes = new Hono()
   .get('/topics/:topicId', zValidator('query', GetTopicReq), async (c) => {
@@ -21,7 +22,19 @@ export const localRoutes = new Hono()
 
     try {
       const topicData = await dumpTopic(topicId, c.req.valid('query'))
-      return c.json(topicData)
+
+      const now = new Date()
+      const nowPlusOneWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const userCalendarArray = await Promise.all(topicData.users.map(
+        (user) => getGoogleCalendar(user.id, now, nowPlusOneWeek),
+      ))
+      const userCalendars: Record<string, CalendarEvent[] | null> = {}
+      topicData.users.forEach((user, index) => userCalendars[user.id] = userCalendarArray[index])
+
+      return c.json({
+        topicData,
+        userCalendars,
+      })
     } catch (error) {
       console.error('Error fetching topic data:', error)
       if (error instanceof Error) {
@@ -59,7 +72,17 @@ export const localRoutes = new Hono()
         .where(eq(slackUserTable.isBot, false))
         .orderBy(slackUserTable.updated)
 
-      return c.json({ users })
+      // Add next week's calendar for any users that have one
+      const now = new Date()
+      const nowPlusOneWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const usersWithCalendars = await Promise.all(users.map(async (user) => {
+        return {
+          ...user,
+          calendar: await getGoogleCalendar(user.id, now, nowPlusOneWeek),
+        }
+      }))
+
+      return c.json({ users: usersWithCalendars })
     } catch (error) {
       console.error('Error fetching users:', error)
       return c.json({ error: 'Internal server error' }, 500)
@@ -70,65 +93,9 @@ export const localRoutes = new Hono()
     await messageProcessingLock.clear()
     const result = await cleanupTestData()
     return c.json({
-      success: result.success,
+      sccess: result.success,
       message: `Cleared all topics and messages from database (method: ${result.method})`,
     })
-  })
-
-  // Generate Google auth URL for local inspection
-  .get('/calendar/auth_url', zValidator('query', z.strictObject({
-    topicId: z.string(),
-    userId: z.string(),
-  })), (c) => {
-    const { topicId, userId } = c.req.valid('query')
-    try {
-      const url = generateGoogleAuthUrl(topicId, userId)
-      return c.json({ url })
-    } catch (error) {
-      console.error('Error generating auth url:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
-  // Mock: Connect a user's calendar (no Google call) and continue scheduling
-  .post('/calendar/mock_connect', zValidator('json', z.strictObject({
-    topicId: z.string(),
-    userId: z.string(),
-  })), async (c) => {
-    const { topicId, userId } = c.req.valid('json')
-    try {
-      const expiry = Date.now() + 60 * 60 * 1000
-      await updateUserContext(userId, {
-        googleAccessToken: 'fake-token-for-eval',
-        googleRefreshToken: 'fake-refresh-token',
-        googleTokenExpiryDate: expiry,
-        googleConnectedAt: Date.now(),
-      })
-      await continueSchedulingWorkflow(topicId, userId, mockSlackClient)
-      return c.json({ success: true })
-    } catch (error) {
-      console.error('Error in mock_connect:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
-  // Mock: Disconnect a user's calendar tokens
-  .post('/calendar/mock_disconnect', zValidator('json', z.strictObject({
-    userId: z.string(),
-  })), async (c) => {
-    const { userId } = c.req.valid('json')
-    try {
-      await updateUserContext(userId, {
-        googleAccessToken: undefined,
-        googleRefreshToken: undefined,
-        googleTokenExpiryDate: undefined,
-        googleConnectedAt: undefined,
-      })
-      return c.json({ success: true })
-    } catch (error) {
-      console.error('Error in mock_disconnect:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
   })
 
   // Mock: "Don't ask again" to suppress prompts

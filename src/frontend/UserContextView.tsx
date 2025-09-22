@@ -121,13 +121,14 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
 }
 
 interface UserContextViewProps {
+  calendar: CalendarEvent[] | null
   context: UserContext | null | undefined
   topicContext?: TopicUserContext | null | undefined
   userTimezone: string | null
   onConnectClick?: (() => void) | null
 }
 
-export function UserContextView({ context, topicContext, userTimezone, onConnectClick }: UserContextViewProps) {
+export function UserContextView({ calendar, context, topicContext, userTimezone, onConnectClick }: UserContextViewProps) {
   const manualOverrides = topicContext?.calendarManualOverrides
   return (
     <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
@@ -140,7 +141,7 @@ export function UserContextView({ context, topicContext, userTimezone, onConnect
       {context?.slackTeamId && (
         <div>Team ID: {context.slackTeamId}</div>
       )}
-      {context?.googleAccessToken ? (
+      {calendar !== null ? (
         <div className="text-emerald-600 flex items-center gap-2">
           <span>✓ Google Calendar connected.</span>
         </div>
@@ -158,10 +159,10 @@ export function UserContextView({ context, topicContext, userTimezone, onConnect
           )}
         </div>
       )}
-      {(context?.calendar && context?.calendar.length > 0) || (manualOverrides && manualOverrides.length > 0) ? (
+      {(calendar !== null && calendar.length > 0) || (manualOverrides && manualOverrides.length > 0) ? (
         <div>
           <CalendarView
-            events={context?.calendar || []}
+            events={calendar || []}
             manualOverrides={manualOverrides}
             userTimezone={userTimezone}
           />

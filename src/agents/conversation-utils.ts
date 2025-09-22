@@ -34,7 +34,6 @@ export const ConversationRes = z.strictObject({
     userNames: z.array(z.string()),
     text: z.string(),
     includeCalendarButtons: z.boolean().optional().nullable(),
-    includeCalendarDisconnectButtons: z.boolean().optional().nullable(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
   finalizedEvent: CalendarEvent.optional().nullable(),

@@ -7,7 +7,9 @@ import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from '.
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl, isCalendarConnected, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
+import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
+import { isGoogleCalendarConnected } from './integrations/google'
+import { baseURL } from './auth'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
@@ -49,7 +51,7 @@ async function promptUserToConnectCalendar(
 
     await upsertSlackChannel(dmResult.channel.id, [userId])
 
-    const authUrl = generateGoogleAuthUrl(topicId, userId)
+    const authUrl = `${baseURL}/api/google/authorize`
     const dmResponse = await client.chat.postMessage({
       channel: dmResult.channel.id,
       text: 'To help with scheduling, you can connect your Google Calendar:',
@@ -389,7 +391,7 @@ export async function processSchedulingActions(
                 let showButtons = await shouldShowCalendarButtons(topicId, userId)
                 if (!showButtons) {
                   try {
-                    const connected = await isCalendarConnected(userId)
+                    const connected = await isGoogleCalendarConnected(userId)
                     if (connected) {
                       dmText = '✅ Your Google Calendar is already connected.'
                     } else {
@@ -402,7 +404,7 @@ export async function processSchedulingActions(
                 }
 
                 if (showButtons) {
-                  const authUrl = generateGoogleAuthUrl(topicId, userId)
+                  const authUrl = `${baseURL}/api/google/authorize`
                   blocks = [
                     { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
                     { type: 'actions', elements: [
@@ -412,24 +414,6 @@ export async function processSchedulingActions(
                     ] },
                   ]
                   await addPromptedUser(topicId, userId, message.id)
-                }
-              } else if (messageGroup.includeCalendarDisconnectButtons) {
-                try {
-                  const connected = await isCalendarConnected(userId)
-                  if (connected) {
-                    blocks = [
-                      { type: 'section', text: { type: 'mrkdwn', text: 'Disconnecting will stop me from checking your availability automatically.' } },
-                      { type: 'actions', elements: [
-                        { type: 'button', text: { type: 'plain_text', text: 'Disconnect Google Calendar' }, style: 'danger', action_id: 'calendar_disconnect' },
-                        { type: 'button', text: { type: 'plain_text', text: 'Keep it connected' }, action_id: 'cancel_calendar_disconnect' },
-                      ] },
-                    ]
-                  } else {
-                    dmText = '⏹️ Your Google Calendar is already disconnected.'
-                  }
-                } catch (error) {
-                  console.error('Failed to determine calendar connection state for disconnect prompt:', error)
-                  dmText = 'I ran into an issue checking your calendar status. Please try again in a moment.'
                 }
               }
 

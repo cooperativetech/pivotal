@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { WebClient } from '@slack/web-api'
 import { zValidator } from '@hono/zod-validator'
 import { RequestError } from '@octokit/request-error'
 import { and, eq, inArray } from 'drizzle-orm'
@@ -7,9 +6,11 @@ import { z } from 'zod'
 import db from '../db/engine'
 import { slackUserTable } from '../db/schema/main'
 import { accountTable } from '../db/schema/auth'
+import type { CalendarEvent } from '@shared/api-types'
 import { auth } from '../auth'
 import { dumpTopic, getTopics } from '../utils'
-import { getUserContext, clearUserGoogleTokens, generateGoogleAuthUrl } from '../calendar-service'
+import { getLinkedSlackAccount } from '../integrations/slack'
+import { getLinkedGoogleAccount, getGoogleCalendar } from '../integrations/google'
 import { getOctokit, getBotOctokit, getLinkedGithubAccount, getAllBotRepositories } from '../integrations/github'
 
 interface SessionVars {
@@ -41,71 +42,18 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     }
 
     try {
-      // Get linked Slack IDs from auth account table
-      const linkedSlackIds = await db
-        .select({ slackId: accountTable.accountId })
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'slack'),
-        ))
-
-      const slackIdList = linkedSlackIds.map((s) => s.slackId)
-
-      // Fetch Slack user details if we have any IDs
-      const slackRows = slackIdList.length > 0
-        ? await db
-            .select({ id: slackUserTable.id, realName: slackUserTable.realName, teamId: slackUserTable.teamId })
-            .from(slackUserTable)
-            .where(inArray(slackUserTable.id, slackIdList))
-        : []
-
-      // Ensure we return an entry per linked Slack account, even if user hasn't messaged the bot yet
-      const slackMap = new Map(slackRows.map((r) => [r.id, r]))
-      // Best-effort team name using bot token (only resolves current workspace)
-      const teamNameCache = new Map<string, string>()
-      try {
-        if (process.env.PV_SLACK_BOT_TOKEN) {
-          const client = new WebClient(process.env.PV_SLACK_BOT_TOKEN)
-          const info = await client.team.info()
-          if (info.ok && info.team?.id && info.team?.name) {
-            teamNameCache.set(info.team.id, info.team.name)
-          }
-        }
-      } catch (err) {
-        console.warn('team.info failed:', err)
+      const user = {
+        id: sessionUser.id,
+        email: sessionUser.email,
+        name: sessionUser.name,
       }
-
-      const linkedSlackInfo = slackIdList.map((id) => {
-        const row = slackMap.get(id)
-        const teamId = row?.teamId || 'unknown'
-        const teamName = teamNameCache.get(teamId) || null
-        return { id, realName: row?.realName ?? null, teamId, teamName }
-      })
-
-      const calendarConnections = await Promise.all(
-        slackIdList.map(async (id) => {
-          const context = await getUserContext(id)
-          return {
-            slackUserId: id,
-            googleAccessToken: context.googleAccessToken ?? null,
-            googleTokenExpiryDate: context.googleTokenExpiryDate ?? null,
-            googleConnectedAt: context.googleConnectedAt ?? null,
-          }
-        }),
-      )
-
-      // Get linked Github account
+      const slackAccount = await getLinkedSlackAccount(sessionUser.id)
+      const googleAccount = await getLinkedGoogleAccount(sessionUser.id)
       const githubAccount = await getLinkedGithubAccount(sessionUser.id)
-
       return c.json({
-        user: {
-          id: sessionUser.id,
-          email: sessionUser.email,
-          name: sessionUser.name,
-        },
-        slackAccounts: linkedSlackInfo,
-        calendarConnections,
+        user,
+        slackAccount,
+        googleAccount,
         githubAccount,
       })
     } catch (error) {
@@ -179,135 +127,38 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     const topicId = c.req.param('topicId')
 
     try {
-      // Get user's linked Slack accounts
-      const linkedSlackIds = await db
-        .select({ slackId: accountTable.accountId })
+      const [linkedSlackAccount] = await db.select()
         .from(accountTable)
         .where(and(
           eq(accountTable.userId, sessionUser.id),
           eq(accountTable.providerId, 'slack'),
         ))
-      const userSlackIds = new Set(linkedSlackIds.map((s) => s.slackId))
+        .limit(1)
 
       // Return only data visible to the current user's Slack accounts (messages/channels only)
-      const topicData = await dumpTopic(topicId, { visibleToUserIds: Array.from(userSlackIds) })
+      const userSlackId = linkedSlackAccount.accountId
+      const topicData = await dumpTopic(topicId, { visibleToUserId: userSlackId })
 
       // If the user has no messages visible, they can't access this topic
       if (topicData.messages.length < 1) {
         return c.json({ error: 'Forbidden' }, 403)
       }
 
-      return c.json(topicData)
+      // Get the upcoming week of the user's calendar
+      const userCalendars: Record<string, CalendarEvent[] | null> = {}
+      const now = new Date()
+      const nowPlusOneWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      userCalendars[userSlackId] = await getGoogleCalendar(userSlackId, now, nowPlusOneWeek)
+
+      return c.json({
+        topicData,
+        userCalendars,
+      })
     } catch (error) {
       console.error('Error fetching topic data:', error)
       if (error instanceof Error && error.message.includes('not found')) {
         return c.json({ error: error.message }, 404)
       }
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
-
-  .post(
-    '/calendar/disconnect',
-    zValidator('json', z.strictObject({ slackUserId: z.string() })),
-    async (c) => {
-      const sessionUser = c.get('user')
-      if (!sessionUser) {
-        return c.json({ error: 'Unauthorized' }, 401)
-      }
-
-      const { slackUserId } = c.req.valid('json')
-      const linkedSlackIds = await db
-        .select({ slackId: accountTable.accountId })
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'slack'),
-        ))
-
-      if (!linkedSlackIds.some((row) => row.slackId === slackUserId)) {
-        return c.json({ error: 'Slack account not linked' }, 400)
-      }
-
-      await clearUserGoogleTokens(slackUserId)
-      return c.json({ success: true })
-    },
-  )
-
-  .get(
-    '/calendar/auth_url',
-    zValidator('query', z.object({
-      topicId: z.string().optional(),
-      slackUserId: z.string().optional(),
-      origin: z.enum(['slack', 'webapp']).optional(),
-    })),
-    async (c) => {
-      const sessionUser = c.get('user')
-      if (!sessionUser) {
-        return c.json({ error: 'Unauthorized' }, 401)
-      }
-
-      const { topicId, slackUserId, origin = 'slack' } = c.req.valid('query')
-
-      const linkedSlackIds = await db
-        .select({ slackId: accountTable.accountId })
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'slack'),
-        ))
-
-      if (linkedSlackIds.length === 0) {
-        return c.json({ error: 'No linked Slack account found' }, 400)
-      }
-
-      const slackIdList = linkedSlackIds.map((row) => row.slackId)
-      if (slackUserId && !slackIdList.includes(slackUserId)) {
-        return c.json({ error: 'Slack account not linked' }, 400)
-      }
-
-      const selectedSlackId = slackUserId ?? slackIdList[0]
-      const selectedTopicId = topicId ?? 'profile'
-      const url = generateGoogleAuthUrl(selectedTopicId, selectedSlackId, origin)
-      return c.json({ url })
-    },
-  )
-
-  .get('/users', async (c) => {
-    const sessionUser = c.get('user')
-    if (!sessionUser) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    try {
-      // Get user's linked Slack accounts
-      const linkedSlackIds = await db
-        .select({ slackId: accountTable.accountId })
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'slack'),
-        ))
-
-      const slackIdList = linkedSlackIds.map((s) => s.slackId)
-
-      // Get Slack user details for the linked accounts
-      const users = slackIdList.length > 0
-        ? await db
-            .select({
-              id: slackUserTable.id,
-              realName: slackUserTable.realName,
-              tz: slackUserTable.tz,
-              isBot: slackUserTable.isBot,
-            })
-            .from(slackUserTable)
-            .where(inArray(slackUserTable.id, slackIdList))
-        : []
-
-      // Return users array (for compatibility with TopicCreation component)
-      return c.json({ users })
-    } catch (error) {
-      console.error('Error fetching users:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })
@@ -462,3 +313,33 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       return c.json({ error: 'Failed to disconnect repository' }, 500)
     }
   })
+
+  .get(
+    '/google/authorize',
+    zValidator('query', z.strictObject({
+      callbackURL: z.string().optional(),
+      errorCallbackURL: z.string().optional(),
+    })),
+    async (c) => {
+      const sessionUser = c.get('user')
+
+      // If not logged in, redirect to login screen
+      if (!sessionUser) {
+        return c.redirect('/login?redirectTo=googleAuthorize')
+      }
+
+      const { callbackURL, errorCallbackURL } = c.req.valid('query')
+
+      // If logged in, initiate the account linking process with linkSocialAccount,
+      // and redirect the user to google's authorization flow
+      const { url } = await auth.api.linkSocialAccount({
+        body: {
+          provider: 'google',
+          ...(callbackURL && { callbackURL }),
+          ...(errorCallbackURL && { errorCallbackURL }),
+        },
+        headers: c.req.raw.headers,
+      })
+      return c.redirect(url)
+    },
+  )
