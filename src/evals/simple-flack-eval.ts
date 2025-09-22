@@ -528,7 +528,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const baseFileName = fileName.replace(/\.json$/, '')
 
     // Extract benchmark type and gen timestamp from filename
-    const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+    const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
     if (!genMatch) {
       throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
     }

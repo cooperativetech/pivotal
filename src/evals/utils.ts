@@ -125,7 +125,7 @@ export function createResultsFolder(benchmarkFileName: string): string {
 
   // Extract benchmark type and gen timestamp from filename
   // Format: benchmark_2simusers_1start_2end_60min_gen20250915121553773 (or with hyphens: benchmark_2simusers_1-5start_2end_60min)
-  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
 
   if (!genMatch) {
     throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
@@ -135,14 +135,14 @@ export function createResultsFolder(benchmarkFileName: string): string {
 
   // Create 3-level nested folder structure: results/benchmark_type/gen_timestamp/eval_timestamp/
   const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, genTimestamp)
+  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
   const evalFolderName = `eval${evalTimestamp}`
   const evalFolderPath = join(genTimestampPath, evalFolderName)
 
   // Create folder if it doesn't exist
   if (!existsSync(evalFolderPath)) {
     mkdirSync(evalFolderPath, { recursive: true })
-    console.log(`Created results folder: ${benchmarkType}/${genTimestamp}/${evalFolderName}`)
+    console.log(`Created results folder: ${benchmarkType}/gen${genTimestamp}/${evalFolderName}`)
   }
 
   return evalFolderPath
@@ -215,7 +215,7 @@ export function createAggregatedSummary(
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')
 
   // Extract benchmark type and gen timestamp from filename
-  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
 
   if (!genMatch) {
     console.error(`Invalid benchmark filename format: ${baseFileName}. Cannot create aggregated summary.`)
@@ -250,7 +250,7 @@ export function createAggregatedSummary(
 
   // Save aggregated summary to gen timestamp folder
   const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, genTimestamp)
+  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
   const summaryFileName = `runs${timestamp}_summary.json`
   const summaryPath = join(genTimestampPath, summaryFileName)
 
