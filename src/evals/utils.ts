@@ -63,7 +63,6 @@ export const EvaluationResults = z.strictObject({
 export const SavedEvaluationResults = EvaluationResults.extend({
   evalTimestamp: z.string(),
   benchmarkFile: z.string(),
-  benchmarkType: z.string(),
   genTimestamp: z.string(),
 })
 
@@ -229,7 +228,6 @@ export function createAggregatedSummary(
   const aggregatedData = {
     summaryTimestamp: timestamp,
     benchmarkFile: baseFileName,
-    benchmarkType,
     genTimestamp,
     totalRuns: validatedResults.length,
     expectedRuns: nReps,
