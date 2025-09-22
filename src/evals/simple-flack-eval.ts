@@ -2,8 +2,8 @@
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync, writeFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder } from './utils'
+import { join } from 'path'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
@@ -57,7 +57,7 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
   }
 }
 import { BaseScheduleUser } from './sim-users'
-import { type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
+import { type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -523,7 +523,22 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       })
     }
 
-    const resultsData: EvaluationResults = {
+    // Extract filename from path for metadata extraction
+    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+    const baseFileName = fileName.replace(/\.json$/, '')
+
+    // Extract benchmark type and gen timestamp from filename
+    const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+    if (!genMatch) {
+      throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
+    }
+    const [, benchmarkType, genTimestamp] = genMatch
+
+    const resultsData: SavedEvaluationResults = {
+      evalTimestamp: formatTimestamp(),
+      benchmarkFile: baseFileName,
+      benchmarkType,
+      genTimestamp,
       suggestedEvent: result.suggestedEvent ? {
         start: result.suggestedEvent.start.toISOString(),
         end: result.suggestedEvent.end.toISOString(),
@@ -542,14 +557,11 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       },
     }
 
-    // Extract filename from path for results saving
-    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-
     // Create results folder
     const evalFolderPath = createResultsFolder(fileName)
 
     // Save evaluation results
-    const savedResults = saveEvaluationResults(fileName, evalFolderPath, resultsData)
+    const savedResults = saveEvaluationResults(evalFolderPath, resultsData)
 
     // Dump topic data to the same results folder
     console.log('\nSaving topic conversation history...')

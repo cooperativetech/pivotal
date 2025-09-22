@@ -150,41 +150,18 @@ export function createResultsFolder(benchmarkFileName: string): string {
 
 // Save evaluation results to JSON file
 export function saveEvaluationResults(
-  benchmarkFileName: string,
   evalFolderPath: string,
-  resultsData: EvaluationResults,
+  resultsData: SavedEvaluationResults,
 ): SavedEvaluationResults {
   // Validate results data structure with Zod (defensive validation at boundary)
-  const validatedResults = EvaluationResults.parse(resultsData)
-  const evalTimestamp = formatTimestamp()
-
-  // Remove .json extension from benchmark filename if present
-  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
-
-  // Extract benchmark type and gen timestamp from filename
-  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
-
-  if (!genMatch) {
-    throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
-  }
-
-  const [, benchmarkType, genTimestamp] = genMatch
-
-  // Add timestamp to the results data
-  const finalResults: SavedEvaluationResults = {
-    evalTimestamp,
-    benchmarkFile: baseFileName,
-    benchmarkType,
-    genTimestamp,
-    ...validatedResults,
-  }
+  const validatedResults = SavedEvaluationResults.parse(resultsData)
 
   // Save to summary.json
   const summaryPath = join(evalFolderPath, 'summary.json')
-  writeFileSync(summaryPath, JSON.stringify(finalResults, null, 2))
+  writeFileSync(summaryPath, JSON.stringify(validatedResults, null, 2))
   console.log(`Evaluation results saved to: ${summaryPath}`)
 
-  return finalResults
+  return validatedResults
 }
 
 // Find all benchmark files in a folder
