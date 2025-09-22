@@ -523,21 +523,16 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       })
     }
 
-    // Extract filename from path for metadata extraction
+    // Extract filename from path
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
     const baseFileName = fileName.replace(/\.json$/, '')
 
-    // Extract benchmark type and gen timestamp from filename
-    const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
-    if (!genMatch) {
-      throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
-    }
-    const [, benchmarkType, genTimestamp] = genMatch
+    // Get genTimestamp directly from benchmark data
+    const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
 
     const resultsData: SavedEvaluationResults = {
       evalTimestamp: formatTimestamp(),
       benchmarkFile: baseFileName,
-      benchmarkType,
       genTimestamp,
       suggestedEvent: result.suggestedEvent ? {
         start: result.suggestedEvent.start.toISOString(),
