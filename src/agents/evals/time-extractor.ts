@@ -76,7 +76,7 @@ Examples:
     const result = await run(timeExtractionAgent, prompt)
 
     // Debug logging to understand agent behavior
-    console.log(`🔍 Time extraction debug for: "${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
+    console.log('🔍 Time extraction:')
     console.log(`   Final output: ${JSON.stringify(result.finalOutput)}`)
 
     if (!result.finalOutput) {
