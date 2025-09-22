@@ -2,18 +2,15 @@ import { eq, sql } from 'drizzle-orm'
 import { google } from 'googleapis'
 // Enable typing for calendar API event shapes where helpful
 import type { calendar_v3 } from 'googleapis'
-import type { Context } from 'hono'
 import type { WebClient } from '@slack/web-api'
-import { z } from 'zod'
 
 import db from './db/engine'
 import { userDataTable, slackUserTable } from './db/schema/main'
-import type { UserContext, CalendarEvent, CalendarRangeLastFetched, TopicUserContext, TopicWithState } from '@shared/api-types'
+import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
-import { genFakeCalendar } from './agents'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
-import { baseURL } from './auth'
+import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -48,16 +45,6 @@ function buildServiceAccountCalendarClient() {
   return google.calendar({ version: 'v3', auth: jwt })
 }
 
-export interface GoogleAuthTokenResponse {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  scope: string
-  token_type: string
-}
-
-const GOOGLE_AUTH_REDIRECT_URI = `${baseURL}/auth/google/callback`
-
 /**
  * Get stored user context
  */
@@ -68,14 +55,6 @@ export async function getUserContext(slackUserId: string): Promise<UserContext> 
     .where(eq(userDataTable.slackUserId, slackUserId))
     .limit(1)
   return userData?.context || {}
-}
-
-/**
- * Check if a user has their calendar connected
- */
-export async function isCalendarConnected(slackUserId: string): Promise<boolean> {
-  const context = await getUserContext(slackUserId)
-  return !!context.googleAccessToken
 }
 
 /**
@@ -160,18 +139,13 @@ export async function shouldShowCalendarButtons(
   topicId: string,
   userId: string,
 ): Promise<boolean> {
-  // Fetch user context and topic data in parallel for efficiency
-  const [userContext, hasBeenPrompted] = await Promise.all([
-    getUserContext(userId),
+  const [hasBeenPrompted, isCalendarConnected, userContext] = await Promise.all([
+    isGoogleCalendarConnected(userId),
     hasUserBeenPrompted(topicId, userId),
+    getUserContext(userId),
   ])
-
-  // Only show buttons if: not already prompted, no calendar, and hasn't suppressed prompts
-  return !hasBeenPrompted &&
-         !userContext.googleAccessToken &&
-         !userContext.suppressCalendarPrompt
+  return !hasBeenPrompted && !isCalendarConnected && !userContext.suppressCalendarPrompt
 }
-
 
 /**
  * Continue scheduling workflow after calendar connection for specific topic
@@ -202,224 +176,6 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
   } catch (error) {
     console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
   }
-}
-
-export async function clearUserGoogleTokens(slackUserId: string): Promise<void> {
-  await updateUserContext(slackUserId, {
-    googleAccessToken: undefined,
-    googleRefreshToken: undefined,
-    googleTokenExpiryDate: undefined,
-    googleConnectedAt: undefined,
-    calendar: undefined,
-    calendarRangeLastFetched: undefined,
-  })
-}
-
-/**
- * Generate Google OAuth URL for a specific Slack user and topic
- * Includes state parameter to link back to the Slack user and topic after auth
- */
-export function generateGoogleAuthUrl(
-  topicId: string,
-  slackUserId: string,
-  origin: 'slack' | 'webapp' = 'slack',
-): string {
-  const scope = [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events.readonly',
-  ].join(' ')
-
-  const params = new URLSearchParams({
-    client_id: process.env.PV_GOOGLE_CLIENT_ID!,
-    redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
-    response_type: 'code',
-    scope,
-    state: `origin:${origin}:slack:${slackUserId}:topic:${topicId}`,
-    access_type: 'offline',
-    prompt: 'consent', // Force consent to ensure we get refresh token
-  })
-
-  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
-}
-
-export const GoogleAuthCallbackReq = z.strictObject({
-  code: z.string().optional(),
-  state: z.string(),
-  error: z.string().optional(),
-  error_description: z.string().optional(),
-  error_uri: z.string().optional(),
-  scope: z.string(),
-})
-export type GoogleAuthCallbackReq = z.infer<typeof GoogleAuthCallbackReq>
-
-/**
- * Generate OAuth URL for bot authorization (one-time admin step).
- */
-export async function handleGoogleAuthCallback(
-  c: Context,
-  queryParams: GoogleAuthCallbackReq,
-  slackClient: WebClient,
-): Promise<Response> {
-    const { code, state, error, error_description } = queryParams
-
-    if (error || !code) {
-      console.error(`OAuth error: ${error} | ${error_description}`)
-      return c.html(`
-        <html>
-          <body>
-            <h2>Calendar Connection Failed</h2>
-            <p>Error: ${error} | ${error_description}</p>
-            <p>You can close this window and try again in Slack.</p>
-          </body>
-        </html>
-      `)
-    }
-
-    try {
-      const { origin } = await fetchAndStoreGoogleAuthTokens(code, state, slackClient)
-
-      if (origin === 'webapp') {
-        const redirectTarget = `${baseURL}/`
-        return c.html(`
-          <html>
-            <head>
-              <meta http-equiv="refresh" content="1;url=${redirectTarget}">
-            </head>
-            <body>
-              <h2>Calendar Connected Successfully!</h2>
-              <p>Your Google Calendar has been connected to the scheduling bot.</p>
-              <p>You will be redirected shortly. If not, <a href="${redirectTarget}">click here</a>.</p>
-              <script>
-                setTimeout(function () {
-                  if (window.location.href !== '${redirectTarget}') {
-                    window.location.replace('${redirectTarget}')
-                  }
-                }, 500)
-              </script>
-            </body>
-          </html>
-        `)
-      }
-
-      return c.html(`
-        <html>
-          <body>
-            <h2>Calendar Connected Successfully!</h2>
-            <p>Your Google Calendar has been connected to the scheduling bot.</p>
-            <p>You can close this window and return to Slack.</p>
-          </body>
-        </html>
-      `)
-
-    } catch (tokenError) {
-      console.error('Error processing OAuth callback:', tokenError)
-      return c.html(`
-        <html>
-          <body>
-            <h2>Calendar Connection Failed</h2>
-            <p>There was an error connecting your calendar. Please try again.</p>
-          </body>
-        </html>
-      `)
-    }
-}
-
-/**
- * Exchange OAuth authorization code for access and refresh tokens, and store in user context
- */
-function parseOAuthState(state: string): { origin: 'slack' | 'webapp', slackUserId: string, topicId: string } {
-  const parts = state.split(':')
-  if (parts.length % 2 !== 0) {
-    throw new Error(`Invalid state parameter: ${state}`)
-  }
-  let origin: 'slack' | 'webapp' = 'slack'
-  let slackUserId: string | null = null
-  let topicId: string | null = null
-
-  for (let i = 0; i < parts.length; i += 2) {
-    const key = parts[i]
-    const value = parts[i + 1]
-    if (!value) {
-      throw new Error(`Invalid state parameter: ${state}`)
-    }
-    if (key === 'origin') {
-      if (value === 'slack' || value === 'webapp') {
-        origin = value
-      } else {
-        throw new Error(`Unknown origin in state parameter: ${state}`)
-      }
-    } else if (key === 'slack') {
-      slackUserId = value
-    } else if (key === 'topic') {
-      topicId = value
-    }
-  }
-
-  if (!slackUserId || !topicId) {
-    throw new Error(`Invalid state parameter: ${state}`)
-  }
-
-  return { origin, slackUserId, topicId }
-}
-
-export async function fetchAndStoreGoogleAuthTokens(
-  code: string,
-  state: string,
-  slackClient: WebClient,
-): Promise<{ origin: 'slack' | 'webapp', slackUserId: string, topicId: string }> {
-    const { origin, slackUserId, topicId } = parseOAuthState(state)
-
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      client_id: process.env.PV_GOOGLE_CLIENT_ID!,
-      client_secret: process.env.PV_GOOGLE_CLIENT_SECRET!,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: GOOGLE_AUTH_REDIRECT_URI,
-    }),
-  })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Failed to exchange code for tokens: ${error}`)
-  }
-  const tokens = await response.json() as GoogleAuthTokenResponse
-
-  // Give a 5 second buffer for refreshing auth token
-  const expiryDate = Date.now() + (tokens.expires_in - 5) * 1000
-
-  await updateUserContext(slackUserId, {
-    googleAccessToken: tokens.access_token,
-    googleRefreshToken: tokens.refresh_token,
-    googleTokenExpiryDate: expiryDate,
-    googleConnectedAt: Date.now(),
-    suppressCalendarPrompt: false,
-  })
-
-  // Update the original DM (if we stored a pointer) to show success and remove buttons
-  try {
-    const topic = await getTopicWithState(topicId)
-    const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
-    if (pointer?.channelId && pointer?.ts) {
-      await slackClient.chat.update({
-        channel: pointer.channelId,
-        ts: pointer.ts,
-        text: '✅ Calendar connected.',
-        blocks: [],
-      })
-    }
-  } catch (e) {
-    console.warn('Failed to update calendar prompt message after OAuth:', e)
-  }
-
-  // Continue scheduling workflow after successful token storage
-  await continueSchedulingWorkflow(topicId, slackUserId, slackClient)
-
-  return { origin, slackUserId, topicId }
 }
 
 /**
@@ -640,139 +396,6 @@ export async function deleteTaggedEvent(topicId: string): Promise<boolean> {
 }
 
 /**
- * Fetch calendar events for a user and store in user context
- * This caches calendar data for the LLM to use during scheduling
- */
-export async function fetchAndStoreUserCalendar(slackUserId: string, startTime: Date, endTime: Date): Promise<UserContext> {
-  try {
-    const userContext = await getUserContext(slackUserId)
-
-    if (!userContext.googleAccessToken) {
-      throw new Error(`No google auth token found for user ${slackUserId}`)
-    }
-
-    // Generate fake calendars if we're testing / evaluating
-    if (userContext.googleAccessToken === 'fake-token-for-eval') {
-      return genAndStoreFakeUserCalendar(slackUserId, startTime, endTime)
-    }
-
-    // Create OAuth2 client
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.PV_GOOGLE_CLIENT_ID,
-      process.env.PV_GOOGLE_CLIENT_SECRET,
-      GOOGLE_AUTH_REDIRECT_URI,
-    )
-
-    oauth2Client.setCredentials({
-      access_token: userContext.googleAccessToken,
-      refresh_token: userContext.googleRefreshToken,
-      expiry_date: userContext.googleTokenExpiryDate,
-    })
-
-    // Create calendar client
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
-
-    // Fetch events
-    const response = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: startTime.toISOString(),
-      timeMax: endTime.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-    })
-
-    if (!response.data.items) {
-      console.error(`No calendar events found for user ${slackUserId}`)
-      return {}
-    }
-
-    // Convert to structured format for storage
-    const calendarEvents: CalendarEvent[] = []
-
-    for (const event of response.data.items) {
-      if (!event.start || !event.end) continue
-
-      // Handle both dateTime (specific time) and date (all-day) events
-      const startTime = event.start.dateTime || event.start.date
-      const endTime = event.end.dateTime || event.end.date
-
-      if (!startTime || !endTime) continue
-
-      // Skip all-day events for now
-      if (event.start.dateTime && event.end.dateTime) {
-        // Extract participant emails from attendees
-        const participantEmails: string[] = []
-        if (event.attendees) {
-          for (const attendee of event.attendees) {
-            if (attendee.email) {
-              participantEmails.push(attendee.email)
-            }
-          }
-        }
-
-        const calendarEvent: CalendarEvent = {
-          start: new Date(startTime).toISOString(),
-          end: new Date(endTime).toISOString(),
-          summary: event.summary || 'Busy',
-        }
-
-        // Only add participants if there are any
-        if (participantEmails.length > 0) {
-          calendarEvent.participantEmails = participantEmails
-        }
-
-        calendarEvents.push(calendarEvent)
-      }
-    }
-
-    // Update the fetch range tracking
-    const updatedRangeLastFetched: CalendarRangeLastFetched = {
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      fetchedAt: new Date().toISOString(),
-    }
-
-    // Store structured calendar data
-    const calendarData = {
-      calendar: calendarEvents,  // Store as structured array
-      calendarRangeLastFetched: updatedRangeLastFetched,
-    }
-
-    // Update google auth credentials in case they were refreshed
-    const googleAuthData = (
-      oauth2Client.credentials.access_token
-      ? {
-        googleAccessToken: oauth2Client.credentials.access_token,
-        googleTokenExpiryDate: oauth2Client.credentials.expiry_date || undefined,
-      } : {}
-    )
-
-    const newContext = await updateUserContext(slackUserId, { ...calendarData, ...googleAuthData })
-    console.log(`Stored ${calendarEvents.length} calendar events for user ${slackUserId}`)
-
-    return newContext
-
-  } catch (error) {
-    console.error(`Error fetching calendar for user ${slackUserId}:`, error)
-
-    // Check for invalid_grant error (expired or revoked tokens)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    if (errorMessage.includes('invalid_grant')) {
-      console.warn(`Invalid grant detected for user ${slackUserId}, clearing Google auth tokens`)
-
-      // Clear the invalid tokens
-      await updateUserContext(slackUserId, {
-        googleAccessToken: undefined,
-        googleRefreshToken: undefined,
-        googleTokenExpiryDate: undefined,
-      })
-    }
-
-    return {}
-  }
-}
-
-/**
  * Helper function to check if two calendar events overlap
  */
 export function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
@@ -783,38 +406,25 @@ export function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boo
   return start1 < end2 && end1 > start2
 }
 
-
 /**
  * Get structured calendar data from userContext and topic.perUserContext
  * Returns calendar events in structured format
  */
 export async function getUserCalendarStructured(slackUserId: string, topic: TopicWithState, startTime: Date, endTime: Date): Promise<CalendarEvent[] | null> {
   try {
-    let context = await getUserContext(slackUserId)
-
-    // Check if the requested range is within the last fetched range, and was fetched within the last 15 minutes
-    const bufferTime = 15 * 60 * 1000
-    const needsFetch = !context.calendarRangeLastFetched ||
-      new Date(context.calendarRangeLastFetched.startTime) > startTime ||
-      new Date(context.calendarRangeLastFetched.endTime) < endTime ||
-      (Date.now() - new Date(context.calendarRangeLastFetched.fetchedAt).getTime()) > bufferTime
-
-    if (needsFetch && context.googleAccessToken) {
-      context = await fetchAndStoreUserCalendar(slackUserId, startTime, endTime)
-    }
-
+    const calendar = await getGoogleCalendar(slackUserId, startTime, endTime)
     const topicContext = topic.state.perUserContext[slackUserId]
 
     // If there's no calendar info for the user, return null to indicate this
-    if (!context.calendar && !topicContext?.calendarManualOverrides) {
+    if (calendar === null && !topicContext?.calendarManualOverrides) {
       return null
     }
 
     let calEvents: CalendarEvent[] =  []
 
     // Filter events to only include those that overlap with the requested time range
-    if (context.calendar) {
-      calEvents = context.calendar.filter((event) => {
+    if (calendar !== null) {
+      calEvents = calendar.filter((event) => {
         const eventStart = new Date(event.start)
         const eventEnd = new Date(event.end)
         return eventStart < endTime && eventEnd > startTime
@@ -839,87 +449,4 @@ export async function getUserCalendarStructured(slackUserId: string, topic: Topi
   }
 
   return null
-}
-
-/**
- * Generate and store fake calendar events for a user
- * Used for testing and development when real calendar data isn't available
- */
-export async function genAndStoreFakeUserCalendar(
-  slackUserId: string,
-  startTime: Date,
-  endTime: Date,
-): Promise<UserContext> {
-  try {
-    const currentContext = await getUserContext(slackUserId)
-
-    // Get all existing calendar events
-    const existingEvents = currentContext.calendar || []
-
-    // Check if this range has already been fetched
-    if (currentContext.calendarRangeLastFetched &&
-        new Date(currentContext.calendarRangeLastFetched.startTime) <= startTime &&
-        new Date(currentContext.calendarRangeLastFetched.endTime) >= endTime) {
-      // Range already fetched, just update the fetch timestamp
-      const updatedRangeLastFetched: CalendarRangeLastFetched = {
-        startTime: currentContext.calendarRangeLastFetched.startTime,
-        endTime: currentContext.calendarRangeLastFetched.endTime,
-        fetchedAt: new Date().toISOString(),
-      }
-
-      const calendarData = {
-        calendarRangeLastFetched: updatedRangeLastFetched,
-      }
-
-      const newContext = await updateUserContext(slackUserId, calendarData)
-      console.log(`Range already fetched for user ${slackUserId}, updated timestamp only`)
-      return newContext
-    }
-
-    // Range not fetched, generate fake events
-    // Get user's timezone from Slack
-    const [slackUser] = await db
-      .select()
-      .from(slackUserTable)
-      .where(eq(slackUserTable.id, slackUserId))
-      .limit(1)
-
-    const generatedEvents = await genFakeCalendar(
-      slackUser?.tz || 'UTC',
-      startTime,
-      endTime,
-    )
-
-    // Filter generated events to exclude any that overlap with existing events
-    const nonConflictingEvents = generatedEvents.filter((genEvent) => {
-      return !existingEvents.some((existingEvent) => eventsOverlap(genEvent, existingEvent))
-    })
-
-    // Combine existing events with new non-conflicting events
-    const allEvents = [...existingEvents, ...nonConflictingEvents]
-
-    // Sort events by start time
-    allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-
-    // Update the fetch range tracking for fake data
-    const updatedRangeLastFetched: CalendarRangeLastFetched = {
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      fetchedAt: new Date().toISOString(),
-    }
-
-    // Store the combined calendar data
-    const calendarData = {
-      calendar: allEvents,
-      calendarRangeLastFetched: updatedRangeLastFetched,
-    }
-
-    const newContext = await updateUserContext(slackUserId, calendarData)
-    console.log(`Stored ${allEvents.length} total calendar events for user ${slackUserId} (${existingEvents.length} existing, ${nonConflictingEvents.length} new non-conflicting)`)
-
-    return newContext
-  } catch (error) {
-    console.error(`Error generating fake calendar for user ${slackUserId}:`, error)
-    return {}
-  }
 }

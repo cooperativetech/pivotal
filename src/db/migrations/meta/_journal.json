@@ -162,6 +162,13 @@
       "when": 1758241023027,
       "tag": "0022_add_repository_id_to_account_table",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1758565058206,
+      "tag": "0023_remove_google_calendar_props_from_user_context",
+      "breakpoints": true
     }
   ]
 }

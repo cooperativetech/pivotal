@@ -27,22 +27,7 @@ export const CalendarEvent = z.strictObject({
 })
 export type CalendarEvent = z.infer<typeof CalendarEvent>
 
-/**
- * CalendarRangeLastFetched tracks the last fetched time range from the calendar
- */
-export interface CalendarRangeLastFetched {
-  startTime: string // ISO timestamp for start of fetched range
-  endTime: string   // ISO timestamp for end of fetched range
-  fetchedAt: string // ISO timestamp for when this range was fetched
-}
-
 export interface UserContext {
-  googleAccessToken?: string
-  googleRefreshToken?: string
-  googleTokenExpiryDate?: number
-  googleConnectedAt?: number
-  calendar?: CalendarEvent[]
-  calendarRangeLastFetched?: CalendarRangeLastFetched
   slackTeamId?: string
   slackUserName?: string
   slackDisplayName?: string
@@ -54,6 +39,40 @@ export interface TopicUserContext {
   calendarManualOverrides?: CalendarEvent[]
   // Pointer to the DM message where we showed calendar connect buttons
   calendarPromptMessage?: { channelId: string, ts: string }
+}
+
+export interface BotRepository {
+  id: string
+  name: string
+  owner: string
+  fullName: string
+  invitationId: string | null
+}
+
+export interface GithubAccount {
+  accountId: string
+  username: string
+  orgName: string | null
+  linkedRepo: BotRepository | null
+  linkableRepos: BotRepository[]
+}
+
+export interface SlackAccount {
+  id: string
+  realName: string | null
+  teamId: string
+  teamName?: string | null
+}
+
+export interface UserProfile {
+  user: {
+    id: string
+    email: string
+    name: string
+  }
+  slackAccount: SlackAccount | null
+  googleAccount: { accountId: string } | null
+  githubAccount: GithubAccount | null
 }
 
 export interface AutoMessageDeactivation {
@@ -72,7 +91,7 @@ export interface TopicData {
 }
 
 type TopicWithStateRes = InferResponseType<typeof local_api.topics['$get'], 200>['topics'][number]
-export type TopicDataRes = InferResponseType<typeof local_api.topics[':topicId']['$get'], 200>
+export type TopicDataRes = InferResponseType<typeof local_api.topics[':topicId']['$get'], 200>['topicData']
 
 export function unserializeTopicWithState(topic: TopicWithStateRes): TopicWithState {
   return {

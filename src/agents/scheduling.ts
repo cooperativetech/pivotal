@@ -7,7 +7,8 @@ import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/ut
 import { CalendarEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
-import { getUserCalendarStructured, isCalendarConnected, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
+import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
+import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
 import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 
@@ -223,7 +224,6 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Can use updateUserNames tool if users need to be added/removed (use exact names from User Directory)
   - At the beginning of a scheduling topic, proactively send every participant listed under “Users involved” whose status is “No calendar connected” a private messagesToUsers entry with includeCalendarButtons: true (do this exactly once per participant per topic). Skip only if the participant previously pressed “Don’t ask this again” (opted out).
   - When a user (even with typos like “clander” or “calender”) later asks to connect their Google Calendar, include a messagesToUsers entry for that specific user with includeCalendarButtons: true so the handler can show the buttons.
-  - When a user asks to disconnect their Google Calendar, include includeCalendarDisconnectButtons: true for that user so the handler can show the disconnect buttons
   - If someone asks whether their calendar is connected, consult the “Calendar Information” section and answer directly (✅ Connected / ❌ Not connected), optionally reminding them how to connect if needed.
 
 ## Important Guidelines
@@ -399,7 +399,7 @@ ${await Promise.all(topic.state.userIds.map(async (userId) => {
   const hasManualOverrides = topicContext?.calendarManualOverrides && topicContext.calendarManualOverrides.length > 0
 
   try {
-    const isConnected = await isCalendarConnected(userId)
+    const isConnected = await isGoogleCalendarConnected(userId)
     if (isConnected) {
       return `  ${userTzStr}: Calendar is connected${hasManualOverrides ? ', and refined from conversation' : ''}`
     }

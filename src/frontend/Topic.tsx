@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { api, local_api } from '@shared/api-client'
-import type { TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
+import { api, local_api, authClient } from '@shared/api-client'
+import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
+import type { UserProfile } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 import { useLocalMode } from './LocalModeContext'
@@ -16,6 +17,8 @@ function Topic() {
   const { topicId } = useParams<{ topicId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const [topicData, setTopicData] = useState<TopicData | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userCalendars, setUserCalendars] = useState<Record<string, CalendarEvent[] | null>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isLocalMode = useLocalMode()
@@ -49,26 +52,27 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(unserializeTopicData(data))
+        setTopicData(unserializeTopicData(data.topicData))
+        setUserCalendars(data.userCalendars)
 
         // Only read query params on initial load
         if (initialLoadRef.current) {
           initialLoadRef.current = false
           // Check for messageId in query params
           const messageIdParam = searchParams.get('messageId')
-          if (messageIdParam && data.messages.length > 0) {
+          if (messageIdParam && data.topicData.messages.length > 0) {
             // Sort messages to find the position of the specified message
-            const sorted = [...data.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
+            const sorted = [...data.topicData.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
             const position = sorted.findIndex((m) => m.id === messageIdParam)
             if (position !== -1) {
               setTimelinePosition(position)
             } else {
               // Default to showing all messages if messageId not found
-              setTimelinePosition(data.messages.length - 1)
+              setTimelinePosition(data.topicData.messages.length - 1)
             }
-          } else if (data.messages.length > 0) {
+          } else if (data.topicData.messages.length > 0) {
             // Default: Initialize timeline to show all messages
-            setTimelinePosition(data.messages.length - 1)
+            setTimelinePosition(data.topicData.messages.length - 1)
           }
         }
       } catch (err) {
@@ -80,6 +84,34 @@ function Topic() {
 
     fetchTopicData().catch(console.error)
   }, [topicId, apiClient, searchParams])
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const session = await authClient.getSession()
+        if (!session.data?.session?.token) {
+          if (!isLocalMode) {
+            setError('Not authenticated')
+          }
+          return
+        }
+
+        const response = await api.profile.$get()
+
+        if (response.ok) {
+          const profileData = await response.json()
+          setProfile(profileData)
+        } else {
+          setError('Failed to load profile')
+        }
+      } catch (err) {
+        setError('Error loading profile')
+        console.error(err)
+      }
+    }
+
+    loadProfile().catch(console.error)
+  }, [isLocalMode])
 
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
@@ -373,6 +405,11 @@ function Topic() {
     const isDM = isDMChannel(channelId)
     const currentUserId = isDM ? getCurrentUserId(channelId) : null
 
+    const signOutAndRedirect = async (url: string) => {
+      await authClient.signOut()
+      window.location.href = url
+    }
+
     const onNotNow = () => {
       setHiddenBlocks((prev) => new Set(prev).add(msg.id))
     }
@@ -388,17 +425,6 @@ function Topic() {
       }
     }
 
-    const onDisconnectCalendar = async () => {
-      if (!currentUserId) return
-      try {
-        await local_api.calendar.mock_disconnect.$post({ json: { userId: currentUserId } })
-      } catch (e) {
-        console.warn('mock_disconnect failed', e)
-      } finally {
-        setHiddenBlocks((prev) => new Set(prev).add(msg.id))
-      }
-    }
-
     return (
       <div className="mt-2 flex gap-2 flex-wrap">
         {actions.elements.map((el, idx: number) => {
@@ -407,9 +433,7 @@ function Topic() {
             return (
               <a
                 key={idx}
-                href={el.url}
-                target="_blank"
-                rel="noreferrer"
+                onClick={() => { signOutAndRedirect(el.url as string).catch(console.error) }}
                 className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-white text-blue-700 border border-blue-300 hover:bg-blue-50"
               >
                 {label}
@@ -432,28 +456,6 @@ function Topic() {
               <button
                 key={idx}
                 onClick={() => { onDontAskAgain().catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
-              >
-                {label}
-              </button>
-            )
-          }
-          if (el.action_id === 'calendar_disconnect') {
-            return (
-              <button
-                key={idx}
-                onClick={() => { onDisconnectCalendar().catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-red-600 text-white border border-red-700 hover:bg-red-700"
-              >
-                {label}
-              </button>
-            )
-          }
-          if (el.action_id === 'cancel_calendar_disconnect') {
-            return (
-              <button
-                key={idx}
-                onClick={onNotNow}
                 className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
               >
                 {label}
@@ -610,6 +612,7 @@ function Topic() {
               const isDM = isDMChannel(channel.channelId)
               const userId = isDM ? getCurrentUserId(channel.channelId) : null
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
+              const userCalendar = userId ? userCalendars[userId] || null : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
               const topicUserContext = userId ? topicState.perUserContext[userId] : null
 
@@ -664,37 +667,17 @@ function Topic() {
                   {isExpanded && isDM && (
                     <div className="mb-2 -mx-2 px-2">
                       <UserContextView
+                        calendar={userCalendar}
                         context={userData?.context}
                         topicContext={topicUserContext}
                         userTimezone={user?.tz || null}
-                        onConnectClick={userId && topicId ? (() => {
-                          if (isLocalMode) {
-                            local_api.calendar.auth_url.$get({ query: { topicId, userId } })
-                              .then(async (res) => {
-                                if (!res.ok) throw new Error('Failed to get auth URL')
-                                const body: unknown = await res.json()
-                                if (typeof body === 'object' && body !== null) {
-                                  const maybeUrl = (body as { url?: unknown }).url
-                                  if (typeof maybeUrl === 'string') window.location.href = maybeUrl
-                                }
-                              })
-                              .catch((err) => console.error('Error getting local auth URL:', err))
-                          } else {
-                            api.calendar.auth_url.$get({
-                              query: {
-                                topicId,
-                                slackUserId: userId,
-                                origin: 'webapp',
-                              },
-                            }).then(async (res) => {
-                              if (!res.ok) throw new Error('Failed to get auth URL')
-                              const body: unknown = await res.json()
-                              if (typeof body === 'object' && body !== null) {
-                                const maybeUrl = (body as { url?: unknown }).url
-                                if (typeof maybeUrl === 'string') window.location.href = maybeUrl
-                              }
-                            }).catch((err) => console.error('Error getting auth URL:', err))
-                          }
+                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.id === userId ? (() => {
+                          const currentPath = window.location.pathname + window.location.search
+                          const params = new URLSearchParams({
+                            callbackURL: currentPath,
+                            errorCallbackURL: currentPath,
+                          })
+                          window.location.href = `/api/google/authorize?${params.toString()}`
                         }) : null}
                       />
                     </div>

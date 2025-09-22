@@ -1,54 +1,15 @@
 import { useState, useEffect } from 'react'
+import type { UserProfile } from '@shared/api-types'
 import { api, authClient } from '@shared/api-client'
-
-interface UserProfile {
-  user: {
-    id: string
-    email: string
-    name: string
-  }
-  slackAccounts: Array<{
-    id: string
-    realName: string | null
-    teamId: string
-    teamName?: string | null
-  }>
-
-  calendarConnections: Array<{
-    slackUserId: string
-    googleAccessToken: string | null
-    googleTokenExpiryDate: number | null
-    googleConnectedAt: number | null
-  }>
-
-  githubAccount: {
-    accountId: string
-    username: string
-    orgName: string | null
-    linkedRepo: {
-      id: string
-      name: string
-      owner: string
-      fullName: string
-      invitationId: string | null
-    } | null
-    linkableRepos: Array<{
-      id: string
-      name: string
-      owner: string
-      fullName: string
-      invitationId: string | null
-    }>
-  } | null
-}
 
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [calendarBusy, setCalendarBusy] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
   const [slackBusy, setSlackBusy] = useState(false)
-  const [highlightSlack, setHighlightSlack] = useState(false)
+  const [githubBusy, setGithubBusy] = useState(false)
+  const [githubRepoBusy, setGithubRepoBusy] = useState<string | null>(null)
 
   useEffect(() => {
     loadProfile().catch((err) => {
@@ -81,16 +42,15 @@ export default function Profile() {
     }
   }
 
-  const handleSlackLink = async () => {
+  const handleSlackConnect = async () => {
     try {
-      await authClient.linkSocial({
-        provider: 'slack',
-      })
-      // Reload profile after successful link (await the OAuth completion)
-      await loadProfile()
+      setSlackBusy(true)
+      await authClient.linkSocial({ provider: 'slack' })
     } catch (err) {
       setError('Failed to link Slack account')
       console.error(err)
+    } finally {
+      setSlackBusy(false)
     }
   }
 
@@ -103,13 +63,43 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to disconnect Slack')
       console.error(err)
-    } finally {
       setSlackBusy(false)
     }
   }
 
-  const handleGithubLink = async () => {
+  const handleGoogleConnect = () => {
     try {
+      setGoogleBusy(true)
+      // Use api route here instead of linkSocial so that the codepath is
+      // identical between this button and the button sent via slack
+      const params = new URLSearchParams({
+        callbackURL: '/profile',
+        errorCallbackURL: '/profile',
+      })
+      window.location.href = `/api/google/authorize?${params.toString()}`
+    } catch (err) {
+      setError('Failed to link Google account')
+      console.error(err)
+      setGoogleBusy(false)
+    }
+  }
+
+  const handleGoogleDisconnect = async () => {
+    try {
+      setGoogleBusy(true)
+      await authClient.unlinkAccount({ providerId: 'google' })
+      await loadProfile()
+    } catch (err) {
+      setError('Failed to unlink Google account')
+      console.error(err)
+    } finally {
+      setGoogleBusy(false)
+    }
+  }
+
+  const handleGithubConnect = async () => {
+    try {
+      setGithubBusy(true)
       const response = await authClient.githubApp.initInstall()
 
       if (response.error) {
@@ -123,31 +113,34 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to link Github account')
       console.error(err)
+      setGithubBusy(false)
     }
   }
 
-  const handleGithubUnlink = async (accountId: string) => {
+  const handleGithubDisconnect = async (accountId: string) => {
     try {
+      setGithubBusy(true)
       await authClient.unlinkAccount({
         providerId: 'github',
         accountId,
       })
-      // Reload profile after successful unlink
       await loadProfile()
     } catch (err) {
       setError('Failed to unlink Github account')
       console.error(err)
+    } finally {
+      setGithubBusy(false)
     }
   }
 
-  const handleConnectRepository = async (repoId: string) => {
+  const handleRepositoryConnect = async (repoId: string) => {
     try {
+      setGithubRepoBusy(repoId)
       const response = await api.github['connect-repo'].$post({
         json: { repoId },
       })
 
       if (response.ok) {
-        // Reload profile to show updated repository status
         await loadProfile()
       } else {
         const errorData = await response.json()
@@ -156,11 +149,14 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to connect repository')
       console.error(err)
+    } finally {
+      setGithubRepoBusy(null)
     }
   }
 
-  const handleDisconnectRepository = async (repoId: string) => {
+  const handleRepositoryDisconnect = async (repoId: string) => {
     try {
+      setGithubRepoBusy(repoId)
       const response = await api.github['disconnect-repo'].$post({
         json: { repoId },
       })
@@ -175,6 +171,8 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to disconnect repository')
       console.error(err)
+    } finally {
+      setGithubRepoBusy(null)
     }
   }
 
@@ -194,85 +192,17 @@ export default function Profile() {
     })
   }
 
-  const handleSlackLinkClick = () => {
-    handleSlackLink().catch((err) => {
+  const handleSlackConnectClick = () => {
+    handleSlackConnect().catch((err) => {
       console.error('Slack link failed:', err)
       setError('Failed to link Slack account')
     })
   }
 
-  const primarySlack = profile?.slackAccounts[0]
-  const calendarInfo = primarySlack
-    ? profile?.calendarConnections?.find((entry) => entry.slackUserId === primarySlack.id)
-    : undefined
+  const calendarConnected = !!profile?.googleAccount
 
-  const calendarConnected = !!calendarInfo?.googleAccessToken
-  const connectedAt = calendarInfo?.googleConnectedAt
-    ? new Date(calendarInfo.googleConnectedAt)
-    : null
-  const expiryDate = calendarInfo?.googleTokenExpiryDate
-    ? new Date(calendarInfo.googleTokenExpiryDate)
-    : null
-  let daysRemaining: number | null = null
-  if (connectedAt) {
-    const dayMs = 24 * 60 * 60 * 1000
-    const elapsedDays = Math.floor((Date.now() - connectedAt.getTime()) / dayMs)
-    daysRemaining = Math.max(0, 7 - elapsedDays) // for countdown in webapp
-  } else if (expiryDate) {
-    daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
-  }
-
-  const handleGoogleConnect = async () => {
-    if (!primarySlack?.id) {
-      setError('You must link your Slack account first.')
-      setHighlightSlack(true)
-      setTimeout(() => setHighlightSlack(false), 1500)
-      return
-    }
-    try {
-      setCalendarBusy(true)
-      const slackId = primarySlack.id
-      const res = await api.calendar.auth_url.$get({
-        query: {
-          slackUserId: slackId,
-          origin: 'webapp',
-        },
-      })
-      if (!res.ok) throw new Error('Failed to get Google auth URL')
-      const body: unknown = await res.json()
-      if (typeof body === 'object' && body !== null) {
-        const maybeUrl = (body as { url?: unknown }).url
-        if (typeof maybeUrl === 'string') {
-          window.location.href = maybeUrl
-        }
-      }
-    } catch (err) {
-      console.error('Google connect failed:', err)
-      setError('Failed to start Google Calendar connection')
-    } finally {
-      setCalendarBusy(false)
-    }
-  }
-
-  const handleGoogleDisconnect = async () => {
-    if (!primarySlack?.id) return
-    try {
-      setCalendarBusy(true)
-      const res = await api.calendar.disconnect.$post({
-        json: { slackUserId: primarySlack.id },
-      })
-      if (!res.ok) throw new Error('Failed to disconnect calendar')
-      await loadProfile()
-    } catch (err) {
-      console.error('Google disconnect failed:', err)
-      setError('Failed to disconnect Google Calendar')
-    } finally {
-      setCalendarBusy(false)
-    }
-  }
-
-  const handleGithubLinkClick = () => {
-    handleGithubLink().catch((err) => {
+  const handleGithubConnectClick = () => {
+    handleGithubConnect().catch((err) => {
       console.error('Github link failed:', err)
       setError('Failed to link Github account')
     })
@@ -297,58 +227,47 @@ export default function Profile() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Slack Accounts</h2>
-        {profile.slackAccounts.length > 0 ? (
-          <ul className="list-none p-0 my-4">
-            {profile.slackAccounts.map((account) => (
-              <li key={account.id} className="py-2 border-b border-gray-100">
-                <strong>{account.realName || account.id}</strong> (Team: {account.teamName || account.teamId})
-              </li>
-            ))}
-          </ul>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Slack Account</h2>
+        {profile.slackAccount ? (
+          <div className="py-2 border-b border-gray-100">
+            <strong>{profile.slackAccount.realName || profile.slackAccount.id}</strong> (Team: {profile.slackAccount.teamName || profile.slackAccount.teamId})
+          </div>
         ) : (
-          <p>No Slack accounts linked</p>
+          <p>No Slack account linked</p>
         )}
 
-        <div className={`flex flex-wrap gap-3 mt-4 ${highlightSlack ? 'animate-pulse' : ''}`}>
+        <div className="flex flex-wrap gap-3 mt-4">
           <button
             type="button"
             disabled
             className={`px-4 py-2 rounded border font-medium ${
-              profile.slackAccounts.length > 0
+              profile.slackAccount
                 ? 'border-emerald-600 text-emerald-600'
                 : 'border-red-500 text-red-500'
             }`}
           >
-            {profile.slackAccounts.length > 0 ? '✅ Connected!' : '❌ Not connected!'}
+            {profile.slackAccount ? '✅ Connected!' : '❌ Not connected!'}
           </button>
           <button
-            onClick={profile.slackAccounts.length > 0 ? (() => { handleSlackDisconnect().catch(console.error) }) : handleSlackLinkClick}
+            onClick={profile.slackAccount ? (() => { handleSlackDisconnect().catch(console.error) }) : handleSlackConnectClick}
             disabled={slackBusy}
-            className={`px-6 py-3 rounded font-medium text-white ${
-              profile.slackAccounts.length > 0
+            className={`px-6 py-3 rounded font-medium text-white cursor-pointer disabled:cursor-default ${
+              profile.slackAccount
                 ? 'bg-red-500 hover:bg-red-600 disabled:bg-red-400'
                 : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
             }`}
           >
-            {slackBusy ? 'Working…' : profile.slackAccounts.length > 0 ? 'Disconnect Slack' : 'Connect Slack'}
+            {slackBusy ? 'Working…' : profile.slackAccount ? 'Disconnect Slack' : 'Connect Slack'}
           </button>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Calendar</h2>
-        {profile.slackAccounts.length === 0 ? (
-          <p className="text-sm text-gray-700">Link a Slack account first to connect your Google Calendar.</p>
+        {!profile.slackAccount ? (
+          <p className="text-sm text-gray-700">Connect a Slack account first to connect your Google Calendar.</p>
         ) : (
           <>
-            {calendarConnected ? (
-              <p className="text-sm text-gray-700 mb-3">
-                You have {daysRemaining ?? 0} day{daysRemaining === 1 ? '' : 's'} until your calendar access expires. Access lasts 7 days.
-              </p>
-            ) : (
-              <p className="text-sm text-gray-700 mb-3">Connect your Google Calendar so scheduling can check your availability.</p>
-            )}
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
@@ -364,27 +283,20 @@ export default function Profile() {
               {calendarConnected ? (
                 <>
                   <button
-                    onClick={() => { handleGoogleConnect().catch(console.error) }}
-                    disabled={calendarBusy}
-                    className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
-                  >
-                    {calendarBusy ? 'Refreshing…' : 'Refresh calendar access'}
-                  </button>
-                  <button
                     onClick={() => { handleGoogleDisconnect().catch(console.error) }}
-                    disabled={calendarBusy}
-                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400"
+                    disabled={googleBusy}
+                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
                   >
-                    {calendarBusy ? 'Disconnecting…' : 'Disconnect calendar'}
+                    {googleBusy ? 'Disconnecting…' : 'Disconnect calendar'}
                   </button>
                 </>
               ) : (
                 <button
-                  onClick={() => { handleGoogleConnect().catch(console.error) }}
-                  disabled={calendarBusy}
-                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                  onClick={handleGoogleConnect}
+                  disabled={googleBusy}
+                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
                 >
-                  {calendarBusy ? 'Opening…' : 'Connect Google Calendar'}
+                  {googleBusy ? 'Opening…' : 'Connect Google Calendar'}
                 </button>
               )}
             </div>
@@ -404,14 +316,15 @@ export default function Profile() {
               </div>
               <button
                 onClick={() => {
-                  handleGithubUnlink(profile.githubAccount!.accountId).catch((err) => {
+                  handleGithubDisconnect(profile.githubAccount!.accountId).catch((err) => {
                     console.error('Github unlink failed:', err)
                     setError('Failed to unlink Github account')
                   })
                 }}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm cursor-pointer"
+                disabled={githubBusy}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-red-400 text-sm cursor-pointer disabled:cursor-default"
               >
-                Unlink
+                {githubBusy ? 'Disconnecting…' : 'Disconnect'}
               </button>
             </div>
 
@@ -433,14 +346,15 @@ export default function Profile() {
                   <span className="text-sm font-mono text-green-900">{profile.githubAccount.linkedRepo.fullName}</span>
                   <button
                     onClick={() => {
-                      handleDisconnectRepository(profile.githubAccount!.linkedRepo!.id).catch((err) => {
+                      handleRepositoryDisconnect(profile.githubAccount!.linkedRepo!.id).catch((err) => {
                         console.error('Disconnect repository failed:', err)
                         setError('Failed to disconnect repository')
                       })
                     }}
-                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 cursor-pointer"
+                    disabled={githubRepoBusy !== null}
+                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
                   >
-                    Disconnect
+                    {githubRepoBusy ? 'Disconnecting…' : 'Disconnect'}
                   </button>
                 </div>
               </div>
@@ -458,14 +372,15 @@ export default function Profile() {
                       </div>
                       <button
                         onClick={() => {
-                          handleConnectRepository(repo.id).catch((err) => {
+                          handleRepositoryConnect(repo.id).catch((err) => {
                             console.error('Connect repository failed:', err)
                             setError('Failed to connect repository')
                           })
                         }}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 cursor-pointer"
+                        disabled={githubRepoBusy !== null}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
                       >
-                        Connect
+                        {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
                       </button>
                     </li>
                   ))}
@@ -478,8 +393,8 @@ export default function Profile() {
         ) : (
           <>
             <p>No Github account linked</p>
-            <button onClick={handleGithubLinkClick} className="px-6 py-3 bg-gray-800 text-white rounded font-medium hover:bg-gray-900 mt-4 cursor-pointer">
-              Link Github Account
+            <button onClick={handleGithubConnectClick} disabled={githubBusy} className="px-6 py-3 bg-gray-800 text-white rounded font-medium hover:bg-gray-900 disabled:bg-gray-600 mt-4 cursor-pointer disabled:cursor-default">
+              {githubBusy ? 'Connecting…' : 'Connect Github Account'}
             </button>
           </>
         )}

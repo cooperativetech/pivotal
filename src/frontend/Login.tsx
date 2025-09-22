@@ -1,15 +1,19 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { authClient } from '@shared/api-client'
 
 export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [searchParams] = useSearchParams()
 
   const handleSlackSignIn = async () => {
     setError('')
     setLoading(true)
     try {
-      await authClient.signIn.social({ provider: 'slack' })
+      const redirectTo = searchParams.get('redirectTo')
+      const callbackURL = redirectTo === 'googleAuthorize' ? '/api/google/authorize' : undefined
+      await authClient.signIn.social({ provider: 'slack', callbackURL })
     } catch (err) {
       setError('Failed to continue with Slack')
       console.error(err)

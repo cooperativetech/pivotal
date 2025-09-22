@@ -3,7 +3,7 @@ const { App } = await import('@slack/bolt')
 import type { WebClient } from '@slack/web-api'
 
 import { handleSlackMessage } from './slack-message-handler'
-import { clearUserGoogleTokens, setSuppressCalendarPrompt } from './calendar-service'
+import { setSuppressCalendarPrompt } from './calendar-service'
 
 export async function connectSlackClient(): Promise<WebClient> {
   const slackApp = new App({
@@ -94,49 +94,6 @@ export async function connectSlackClient(): Promise<WebClient> {
       console.warn('Failed to clear buttons after calendar_not_now:', e)
     }
   })
-
-  slackApp.action('calendar_disconnect', async ({ ack, body, client }) => {
-    await ack()
-    try {
-      const userId = body.user.id
-      await clearUserGoogleTokens(userId)
-
-      type ActionBodyLike = {
-        channel?: { id?: string }
-        container?: { channel_id?: string, message_ts?: string }
-        message?: { ts?: string }
-      }
-      const a = body as unknown as ActionBodyLike
-      const channelId = a.channel?.id || a.container?.channel_id
-      const ts = a.message?.ts || a.container?.message_ts
-      if (channelId && ts) {
-        await client.chat.update({ channel: channelId, ts, text: '⏹️ Google Calendar disconnected.', blocks: [] })
-      }
-    } catch (error) {
-      console.error('Error handling calendar_disconnect action:', error)
-    }
-  })
-
-  slackApp.action('cancel_calendar_disconnect', async ({ ack, body, client }) => {
-    await ack()
-    try {
-      type ActionBodyLike = {
-        channel?: { id?: string }
-        container?: { channel_id?: string, message_ts?: string }
-        message?: { ts?: string }
-      }
-      const a = body as unknown as ActionBodyLike
-      const channelId = a.channel?.id || a.container?.channel_id
-      const ts = a.message?.ts || a.container?.message_ts
-      if (channelId && ts) {
-        await client.chat.update({ channel: channelId, ts, text: '👌 Keeping your Google Calendar connected.', blocks: [] })
-      }
-    } catch (error) {
-      console.error('Error handling cancel_calendar_disconnect action:', error)
-    }
-  })
-
-  // Note: "Connect Google Calendar" button is now a direct URL link, no action handler needed
 
   await slackApp.start()
   slackApp.logger.info('Slack bot is running')

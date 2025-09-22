@@ -11,11 +11,12 @@ interface Profile {
     email: string
     name: string
   }
-  slackAccounts: Array<{
+  slackAccount: {
     id: string
     realName: string | null
     teamId: string
-  }>
+    teamName?: string | null
+  } | null
 }
 
 function Home() {
@@ -107,7 +108,7 @@ function Home() {
 
         {topics.length === 0 ? (
           <div className="text-center py-8">
-            {profile && profile.slackAccounts.length === 0 ? (
+            {profile && !profile.slackAccount ? (
               <div>
                 <div className="text-gray-500 mb-4">
                   Connect your Slack account to see your topics
