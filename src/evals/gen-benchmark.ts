@@ -98,6 +98,10 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 
   // Export simUsers and benchmark parameters to JSON file
   const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
+
+  // Generate timestamp for this benchmark
+  const timestamp = formatTimestamp()
+
   const benchmark = {
     startTime,
     startTimeOffset,
@@ -105,6 +109,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     endTimeOffset,
     meetingLength,
     nSimUsers,
+    genTimestamp: timestamp,
   }
 
   const exportData = {
@@ -114,7 +119,6 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
 
   // Create folder name and filename with benchmark parameters
   const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-  const timestamp = formatTimestamp()
   const filename = `${folderName}_gen${timestamp}.json`
   const folderPath = join(__dirname, 'data', folderName)
 

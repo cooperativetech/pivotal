@@ -31,6 +31,7 @@ export const BenchmarkData = z.strictObject({
   endTimeOffset: z.number(),
   meetingLength: z.number(),
   nSimUsers: z.number(),
+  genTimestamp: z.string(),
 })
 
 export const BenchmarkFileData = z.strictObject({
