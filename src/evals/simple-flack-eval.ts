@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'fs'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary } from './utils'
+import { readFileSync, writeFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder } from './utils'
+import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
@@ -542,7 +544,20 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Extract filename from path for results saving
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-    const savedResults = saveEvaluationResults(fileName, resultsData)
+
+    // Create results folder
+    const evalFolderPath = createResultsFolder(fileName)
+
+    // Save evaluation results
+    const savedResults = saveEvaluationResults(fileName, evalFolderPath, resultsData)
+
+    // Dump topic data to the same results folder
+    console.log('\nSaving topic conversation history...')
+    const topicId = result.topicData.topic.id
+    const topicData = await dumpTopic(topicId)
+    const topicPath = join(evalFolderPath, 'topic.json')
+    writeFileSync(topicPath, JSON.stringify(topicData, null, 2))
+    console.log(`Topic conversation history saved to: ${topicPath}`)
 
     console.log('\n✅ Evaluation completed successfully')
     return savedResults

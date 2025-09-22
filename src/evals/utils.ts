@@ -116,13 +116,8 @@ export function findBenchmarkFile(filename: string): string {
   throw new Error(`Benchmark file not found: ${filename}. Tried:\n  - ${directPath}\n  - ${join(__dirname, 'data', folderMatch?.[1] || 'unknown', `${baseFilename}.json`)}`)
 }
 
-// Save evaluation results to JSON file
-export function saveEvaluationResults(
-  benchmarkFileName: string,
-  resultsData: EvaluationResults,
-): SavedEvaluationResults {
-  // Validate results data structure with Zod (defensive validation at boundary)
-  const validatedResults = EvaluationResults.parse(resultsData)
+// Create results folder and return the path
+export function createResultsFolder(benchmarkFileName: string): string {
   const evalTimestamp = formatTimestamp()
 
   // Remove .json extension from benchmark filename if present
@@ -149,6 +144,31 @@ export function saveEvaluationResults(
     mkdirSync(evalFolderPath, { recursive: true })
     console.log(`Created results folder: ${benchmarkType}/${genTimestamp}/${evalFolderName}`)
   }
+
+  return evalFolderPath
+}
+
+// Save evaluation results to JSON file
+export function saveEvaluationResults(
+  benchmarkFileName: string,
+  evalFolderPath: string,
+  resultsData: EvaluationResults,
+): SavedEvaluationResults {
+  // Validate results data structure with Zod (defensive validation at boundary)
+  const validatedResults = EvaluationResults.parse(resultsData)
+  const evalTimestamp = formatTimestamp()
+
+  // Remove .json extension from benchmark filename if present
+  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
+
+  // Extract benchmark type and gen timestamp from filename
+  const genMatch = baseFileName.match(/^(.+)_(gen\d{17})$/)
+
+  if (!genMatch) {
+    throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
+  }
+
+  const [, benchmarkType, genTimestamp] = genMatch
 
   // Add timestamp to the results data
   const finalResults: SavedEvaluationResults = {
