@@ -1,6 +1,6 @@
 {
   "loadUpToId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
-  "expectedResult": "Pivotal should gather calendar dates on January 2nd only",
+  "expectedBehavior": "Pivotal should gather calendar dates on January 2nd only",
   "topic": {
     "id": "d57d27d0-6aa8-4389-9e71-e7f320644523",
     "botUserId": "UTESTBOT",

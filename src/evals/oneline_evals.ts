@@ -6,6 +6,7 @@ import { join, dirname } from 'path'
 import { local_api } from '../shared/api-client'
 import { loadTopics } from '../utils'
 import { clearDatabase } from './utils'
+import { checkBehaviorExpected } from '../agents/evals'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -60,16 +61,16 @@ async function runOnelineEvals(): Promise<void> {
     const rawData = readFileSync(filePath, 'utf-8')
     const topicData = JSON.parse(rawData)
 
-    // Extract and store loadUpToId and expectedResult fields
+    // Extract and store loadUpToId and expectedBehavior fields
     const loadUpToId = topicData.loadUpToId
-    const expectedResult = topicData.expectedResult
+    const expectedBehavior = topicData.expectedBehavior
 
     console.log(`loadUpToId: ${loadUpToId}`)
-    console.log(`expectedResult: ${expectedResult}`)
+    console.log(`expectedBehavior: ${expectedBehavior}`)
 
     // Delete these fields from the loaded dictionary
     delete topicData.loadUpToId
-    delete topicData.expectedResult
+    delete topicData.expectedBehavior
 
     // Find the message that belongs to loadUpToId
     const messages = topicData.messages || []
@@ -131,7 +132,7 @@ async function runOnelineEvals(): Promise<void> {
         throw error
       }
 
-      console.log(`Expected result: ${expectedResult}`)
+      console.log(`Expected behavior: ${expectedBehavior}`)
 
       // Resend the original message (regardless of whether we loaded filtered data)
       console.log('\nResending original message...')
@@ -159,8 +160,25 @@ async function runOnelineEvals(): Promise<void> {
         for (const resMessage of messageData.resMessages) {
           console.log(`Bot: ${resMessage.text}`)
         }
+
+        // Check if bot behavior matches expected behavior
+        console.log('\n--- Behavior Check ---')
+        try {
+          const behaviorMatches = await checkBehaviorExpected(messageData.resMessages, expectedBehavior)
+          console.log(`Expected behavior: "${expectedBehavior}"`)
+          console.log(`Behavior matches: ${behaviorMatches ? '✅ YES' : '❌ NO'}`)
+
+          if (behaviorMatches) {
+            console.log('🎉 Bot behavior aligns with expectations!')
+          } else {
+            console.log('⚠️  Bot behavior does not match expectations')
+          }
+        } catch (error) {
+          console.error('Error checking behavior:', error)
+        }
       } else {
         console.log('⚠️ Bot did not reply to the resent message')
+        console.log('❌ Cannot check behavior - no bot responses to evaluate')
       }
       
     } else {
