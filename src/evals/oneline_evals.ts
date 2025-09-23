@@ -77,9 +77,9 @@ async function runOnelineEvals(): Promise<void> {
       console.log(`Message ID: ${targetMessage.id}`)
       console.log(`Message Text: ${targetMessage.text}`)
       console.log(`Message User: ${targetMessage.userId}`)
-      console.log(`Message Timestamp: ${targetMessage.createdAt}`)
+      console.log(`Message Timestamp: ${targetMessage.timestamp}`)
 
-      const targetTimestamp = new Date(targetMessage.createdAt)
+      const targetTimestamp = new Date(targetMessage.timestamp)
       console.log(`Target timestamp: ${targetTimestamp.toISOString()}`)
 
       // Filter states: remove entries with createdAt after target message timestamp
@@ -96,7 +96,7 @@ async function runOnelineEvals(): Promise<void> {
       const originalMessagesCount = topicData.messages?.length || 0
       if (topicData.messages) {
         topicData.messages = topicData.messages.filter((message: any) => {
-          const messageTimestamp = new Date(message.createdAt)
+          const messageTimestamp = new Date(message.timestamp)
           return messageTimestamp < targetTimestamp
         })
       }
