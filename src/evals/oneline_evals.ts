@@ -121,6 +121,8 @@ async function runOnelineEvals(): Promise<void> {
       throw error
     }
 
+      let newTopicId: string | null = null
+
       // Only load into database if there are messages to work with
       if (filteredMessagesCount > 0) {
         // Load filtered topic data into database
@@ -128,47 +130,46 @@ async function runOnelineEvals(): Promise<void> {
         try {
           const filteredJsonContent = JSON.stringify(topicData, null, 2)
           const result = await loadTopics(filteredJsonContent)
-          const newTopicId = result.topicIds[0]
+          newTopicId = result.topicIds[0]
           console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
-          console.log(`Expected result: ${expectedResult}`)
-
-          // Resend the original message
-          console.log('\nResending original message...')
-          console.log(`User: ${targetMessage.userId}`)
-          console.log(`Message: ${targetMessage.text}`)
-
-          const messageRes = await local_api.message.$post({
-            json: {
-              userId: targetMessage.userId,
-              text: targetMessage.text,
-              topicId: newTopicId
-            },
-          })
-
-          if (!messageRes.ok) {
-            throw new Error(`Failed to send message: ${messageRes.statusText}`)
-          }
-
-          const messageData = await messageRes.json()
-          console.log(`Message sent successfully. Topic ID: ${messageData.topicId}`)
-
-          // Check if bot replied
-          if (messageData.resMessages && Array.isArray(messageData.resMessages) && messageData.resMessages.length > 0) {
-            console.log('\n--- Bot Responses ---')
-            for (const resMessage of messageData.resMessages) {
-              console.log(`Bot: ${resMessage.text}`)
-            }
-          } else {
-            console.log('⚠️ Bot did not reply to the resent message')
-          }
-
         } catch (error) {
           console.error('Failed to load topic into database:', error)
           throw error
         }
       } else {
         console.log('\n⚠️  No messages remaining after filtering. Skipping database load.')
-        console.log(`Expected result: ${expectedResult}`)
+      }
+
+      console.log(`Expected result: ${expectedResult}`)
+
+      // Resend the original message (regardless of whether we loaded filtered data)
+      console.log('\nResending original message...')
+      console.log(`User: ${targetMessage.userId}`)
+      console.log(`Message: ${targetMessage.text}`)
+
+      const messageRes = await local_api.message.$post({
+        json: {
+          userId: targetMessage.userId,
+          text: targetMessage.text,
+          topicId: newTopicId || undefined
+        },
+      })
+
+      if (!messageRes.ok) {
+        throw new Error(`Failed to send message: ${messageRes.statusText}`)
+      }
+
+      const messageData = await messageRes.json()
+      console.log(`Message sent successfully. Topic ID: ${messageData.topicId}`)
+
+      // Check if bot replied
+      if (messageData.resMessages && Array.isArray(messageData.resMessages) && messageData.resMessages.length > 0) {
+        console.log('\n--- Bot Responses ---')
+        for (const resMessage of messageData.resMessages) {
+          console.log(`Bot: ${resMessage.text}`)
+        }
+      } else {
+        console.log('⚠️ Bot did not reply to the resent message')
       }
       
     } else {
