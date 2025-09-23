@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
 import { z } from 'zod'
 import type { SimpleCalendarEvent } from './sim-users'
+import { local_api } from '../shared/api-client'
 
 // Zod schemas for runtime validation
 const SerializedCalendarEvent = z.strictObject({
@@ -314,4 +315,19 @@ export function formatCalendarEvents(calendar: SimpleCalendarEvent[]): string {
   }).join(', ')
 
   return calendarText || 'Free all day'
+}
+
+// Clear database before starting evaluation
+export async function clearDatabase(): Promise<void> {
+  console.log('Clearing database...')
+  try {
+    const result = await local_api.clear_test_data.$post()
+    if (result.ok) {
+      const data = await result.json()
+      console.log(`Database cleared: ${data.message}`)
+    }
+  } catch (error) {
+    console.error('Warning: Could not clear database:', error)
+    throw error
+  }
 }
