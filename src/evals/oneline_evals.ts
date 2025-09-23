@@ -133,9 +133,7 @@ async function runOnelineEvals(): Promise<void> {
         console.error('Failed to load topic into database:', error)
         throw error
       }
-
-      console.log('\nFull target message object:')
-      console.log(JSON.stringify(targetMessage, null, 2))
+      
     } else {
       console.log(`\n⚠️  Warning: Could not find message with ID: ${loadUpToId}`)
       console.log(`Available message IDs: ${messages.map((m: any) => m.id).join(', ')}`)
