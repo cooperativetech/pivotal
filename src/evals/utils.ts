@@ -232,7 +232,7 @@ export function createAggregatedSummary(
     totalRuns: validatedResults.length,
     expectedRuns: nReps,
     aggregatedResults: {
-      successRate: validatedResults.filter((r) => r.suggestedEvent !== null).length / validatedResults.length,
+      successRate: validatedResults.filter((r) => r.evaluationSummary.evaluationSucceeded).length / validatedResults.length,
       confirmationRate: validatedResults.filter((r) => r.allSimUsersConfirmed === true).length / validatedResults.length,
       averageConfirmedSimUsers: validatedResults.reduce((sum, r) => sum + r.confirmedSimUsers.length, 0) / validatedResults.length,
       feasibilityRate: validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / validatedResults.length,
@@ -240,7 +240,7 @@ export function createAggregatedSummary(
     individualResults: validatedResults.map((result, index) => ({
       runNumber: index + 1,
       evalTimestamp: result.evalTimestamp,
-      success: result.suggestedEvent !== null,
+      success: result.evaluationSummary.evaluationSucceeded,
       confirmed: result.allSimUsersConfirmed,
       confirmedCount: result.confirmedSimUsers.length,
       feasible: result.evaluationSummary.allCanAttend,
