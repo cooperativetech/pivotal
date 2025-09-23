@@ -118,20 +118,26 @@ async function runOnelineEvals(): Promise<void> {
         }
       } catch (error) {
         console.error('Warning: Could not clear database:', error)
-        throw error
-      }
+      throw error
+    }
 
-      // Load filtered topic data into database
-      console.log('\nLoading filtered topic data into database...')
-      try {
-        const filteredJsonContent = JSON.stringify(topicData, null, 2)
-        const result = await loadTopics(filteredJsonContent)
-        const newTopicId = result.topicIds[0]
-        console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
+      // Only load into database if there are messages to work with
+      if (filteredMessagesCount > 0) {
+        // Load filtered topic data into database
+        console.log('\nLoading filtered topic data into database...')
+        try {
+          const filteredJsonContent = JSON.stringify(topicData, null, 2)
+          const result = await loadTopics(filteredJsonContent)
+          const newTopicId = result.topicIds[0]
+          console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
+          console.log(`Expected result: ${expectedResult}`)
+        } catch (error) {
+          console.error('Failed to load topic into database:', error)
+          throw error
+        }
+      } else {
+        console.log('\n⚠️  No messages remaining after filtering. Skipping database load.')
         console.log(`Expected result: ${expectedResult}`)
-      } catch (error) {
-        console.error('Failed to load topic into database:', error)
-        throw error
       }
       
     } else {
