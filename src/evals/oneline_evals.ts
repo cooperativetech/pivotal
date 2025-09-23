@@ -131,6 +131,37 @@ async function runOnelineEvals(): Promise<void> {
           const newTopicId = result.topicIds[0]
           console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
           console.log(`Expected result: ${expectedResult}`)
+
+          // Resend the original message
+          console.log('\nResending original message...')
+          console.log(`User: ${targetMessage.userId}`)
+          console.log(`Message: ${targetMessage.text}`)
+
+          const messageRes = await local_api.message.$post({
+            json: {
+              userId: targetMessage.userId,
+              text: targetMessage.text,
+              topicId: newTopicId
+            },
+          })
+
+          if (!messageRes.ok) {
+            throw new Error(`Failed to send message: ${messageRes.statusText}`)
+          }
+
+          const messageData = await messageRes.json()
+          console.log(`Message sent successfully. Topic ID: ${messageData.topicId}`)
+
+          // Check if bot replied
+          if (messageData.resMessages && Array.isArray(messageData.resMessages) && messageData.resMessages.length > 0) {
+            console.log('\n--- Bot Responses ---')
+            for (const resMessage of messageData.resMessages) {
+              console.log(`Bot: ${resMessage.text}`)
+            }
+          } else {
+            console.log('⚠️ Bot did not reply to the resent message')
+          }
+
         } catch (error) {
           console.error('Failed to load topic into database:', error)
           throw error
