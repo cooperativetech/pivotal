@@ -14,6 +14,12 @@ pnpm run eval
 # Run evaluation with specific parameters
 pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
 pnpm run eval --benchmarkFolder=benchmark_3simusers_1start_2end_60min --nReps=3
+
+# Generate one-liner test cases
+pnpm run oneliners
+
+# Run one-liner evaluation on specific file
+pnpm run oneliners --filename=benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json
 ```
 
 ## Benchmark Generation (`gen-benchmark.ts`)
@@ -169,3 +175,40 @@ The evaluation framework uses:
 - **File organization**: Structured results with timestamps and metadata
 
 For debugging, all tools provide detailed console output showing agent interactions, calendar conflicts, and scheduling decisions.
+
+## One-liner Evaluation (`oneline_evals.ts`)
+
+Evaluates bot behavior on single-turn conversations by replaying specific messages from topic dumps.
+
+### Usage
+
+```bash
+# Run evaluation on all files in oneliners directory
+pnpm run oneliners
+
+# Run evaluation on a specific file
+pnpm run oneliners --filename=benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json
+
+# Show help
+pnpm run oneliners --help
+```
+
+### Parameters
+
+- `--filename` / `-f`: Specific topic JSON filename to evaluate (must be in `src/evals/data/oneliners/`)
+- `--help` / `-h`: Show help message and exit
+
+### Features
+
+- **Message replay**: Loads topic context up to a specific message, then resends that message
+- **Behavior validation**: Compares bot responses against expected behavior using AI evaluation
+- **Batch processing**: Evaluates all files in oneliners directory when no filename specified
+- **Statistical summary**: Success rates and behavior match statistics across all files
+- **Database isolation**: Clears database before each evaluation for consistent results
+
+### Expected File Format
+
+JSON files in `src/evals/data/oneliners/` should contain:
+- `loadUpToId`: Message ID to replay (conversation context loaded up to this point)
+- `expectedBehavior`: Expected bot behavior description for evaluation
+- Standard topic dump format with messages, states, etc.
