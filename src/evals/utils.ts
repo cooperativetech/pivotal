@@ -44,6 +44,7 @@ const EvaluationSummary = z.strictObject({
   confirmedCount: z.number(),
   hasSuggestedEvent: z.boolean(),
   allCanAttend: z.boolean(),
+  withinTimeRange: z.boolean(),
   evaluationSucceeded: z.boolean(),
 })
 
@@ -236,6 +237,7 @@ export function createAggregatedSummary(
       confirmationRate: validatedResults.filter((r) => r.allSimUsersConfirmed === true).length / validatedResults.length,
       averageConfirmedSimUsers: validatedResults.reduce((sum, r) => sum + r.confirmedSimUsers.length, 0) / validatedResults.length,
       feasibilityRate: validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length / validatedResults.length,
+      timeConstraintsRate: validatedResults.filter((r) => r.evaluationSummary.withinTimeRange === true).length / validatedResults.length,
     },
     individualResults: validatedResults.map((result, index) => ({
       runNumber: index + 1,
@@ -244,6 +246,7 @@ export function createAggregatedSummary(
       confirmed: result.allSimUsersConfirmed,
       confirmedCount: result.confirmedSimUsers.length,
       feasible: result.evaluationSummary.allCanAttend,
+      withinTimeRange: result.evaluationSummary.withinTimeRange,
     })),
   }
 
@@ -263,9 +266,10 @@ export function createAggregatedSummary(
 
   // Print summary statistics
   console.log('\n📈 Summary Statistics:')
-  console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.suggestedEvent !== null).length}/${validatedResults.length})`)
+  console.log(`  Success Rate: ${(aggregatedData.aggregatedResults.successRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.evaluationSummary.evaluationSucceeded).length}/${validatedResults.length})`)
   console.log(`  Confirmation Rate: ${(aggregatedData.aggregatedResults.confirmationRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.allSimUsersConfirmed === true).length}/${validatedResults.length})`)
   console.log(`  Feasibility Rate: ${(aggregatedData.aggregatedResults.feasibilityRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.evaluationSummary.allCanAttend === true).length}/${validatedResults.length})`)
+  console.log(`  Time Constraints Rate: ${(aggregatedData.aggregatedResults.timeConstraintsRate * 100).toFixed(1)}% (${validatedResults.filter((r) => r.evaluationSummary.withinTimeRange === true).length}/${validatedResults.length})`)
   console.log(`  Average Confirmed SimUsers: ${aggregatedData.aggregatedResults.averageConfirmedSimUsers.toFixed(1)}`)
 }
 

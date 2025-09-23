@@ -452,6 +452,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Check feasibility using evalPossibility
     let maxSharedFreeTime = 0
+    let withinTimeRange = false
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
 
@@ -462,7 +463,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       const meetingStart = result.suggestedEvent.start
       const meetingEnd = result.suggestedEvent.end
 
-      const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
+      withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
       console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
 
       if (!withinTimeRange) {
@@ -548,6 +549,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
         allCanAttend: result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false,
+        withinTimeRange,
         evaluationSucceeded,
       },
     }
