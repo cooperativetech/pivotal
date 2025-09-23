@@ -3,6 +3,8 @@ import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'fs'
 import { join, dirname } from 'path'
+import { local_api } from '../shared/api-client'
+import { loadTopics } from '../utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -105,6 +107,32 @@ async function runOnelineEvals(): Promise<void> {
       console.log(`\nFiltering results:`)
       console.log(`States: ${originalStatesCount} -> ${filteredStatesCount} (removed ${originalStatesCount - filteredStatesCount})`)
       console.log(`Messages: ${originalMessagesCount} -> ${filteredMessagesCount} (removed ${originalMessagesCount - filteredMessagesCount})`)
+
+      // Clear database before loading
+      console.log('\nClearing database...')
+      try {
+        const clearResult = await local_api.clear_test_data.$post()
+        if (clearResult.ok) {
+          const clearData = await clearResult.json()
+          console.log(`Database cleared: ${clearData.message}`)
+        }
+      } catch (error) {
+        console.error('Warning: Could not clear database:', error)
+        throw error
+      }
+
+      // Load filtered topic data into database
+      console.log('\nLoading filtered topic data into database...')
+      try {
+        const filteredJsonContent = JSON.stringify(topicData, null, 2)
+        const result = await loadTopics(filteredJsonContent)
+        const newTopicId = result.topicIds[0]
+        console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
+        console.log(`Expected result: ${expectedResult}`)
+      } catch (error) {
+        console.error('Failed to load topic into database:', error)
+        throw error
+      }
 
       console.log('\nFull target message object:')
       console.log(JSON.stringify(targetMessage, null, 2))
