@@ -43,7 +43,7 @@ function parseArguments(): { filename: string | null } {
 }
 
 // Single evaluation function
-async function runOnelineEval(filename: string): Promise<void> {
+async function runOnelineEval(filename: string): Promise<boolean> {
   try {
     console.log(`Processing file: ${filename}`)
 
@@ -166,17 +166,22 @@ async function runOnelineEval(filename: string): Promise<void> {
           } else {
             console.log('⚠️  Bot behavior does not match expectations')
           }
+
+          return behaviorMatches
         } catch (error) {
           console.error('Error checking behavior:', error)
+          return false
         }
       } else {
         console.log('⚠️ Bot did not reply to the resent message')
         console.log('❌ Cannot check behavior - no bot responses to evaluate')
+        return false
       }
-      
+
     } else {
       console.log(`\n⚠️  Warning: Could not find message with ID: ${loadUpToId}`)
       console.log(`Available message IDs: ${messages.map((m: any) => m.id).join(', ')}`)
+      return false
     }
 
   } catch (error) {
@@ -214,8 +219,9 @@ async function runOnelineEvals(): Promise<void> {
       console.log(`Found ${jsonFiles.length} files in oneliners directory`)
       console.log(`Running evaluation on all files...`)
 
-      let successCount = 0
-      let failureCount = 0
+      let behaviorMatchCount = 0
+      let behaviorMismatchCount = 0
+      let errorCount = 0
 
       for (let i = 0; i < jsonFiles.length; i++) {
         const file = jsonFiles[i]
@@ -224,12 +230,17 @@ async function runOnelineEvals(): Promise<void> {
         console.log(`${'='.repeat(80)}`)
 
         try {
-          await runOnelineEval(file)
-          successCount++
-          console.log(`✅ Successfully processed: ${file}`)
+          const behaviorMatches = await runOnelineEval(file)
+          if (behaviorMatches) {
+            behaviorMatchCount++
+            console.log(`✅ Behavior matched expectations: ${file}`)
+          } else {
+            behaviorMismatchCount++
+            console.log(`❌ Behavior did not match expectations: ${file}`)
+          }
         } catch (error) {
-          failureCount++
-          console.error(`❌ Failed to process: ${file}`)
+          errorCount++
+          console.error(`💥 Script execution failed: ${file}`)
           console.error(`Error: ${error}`)
         }
       }
@@ -238,14 +249,19 @@ async function runOnelineEvals(): Promise<void> {
       console.log('BATCH PROCESSING SUMMARY')
       console.log(`${'='.repeat(80)}`)
       console.log(`Total files: ${jsonFiles.length}`)
-      console.log(`Successful: ${successCount}`)
-      console.log(`Failed: ${failureCount}`)
-      console.log(`Success rate: ${((successCount / jsonFiles.length) * 100).toFixed(1)}%`)
+      console.log(`Behavior matches: ${behaviorMatchCount}`)
+      console.log(`Behavior mismatches: ${behaviorMismatchCount}`)
+      console.log(`Script errors: ${errorCount}`)
+      console.log(`Behavior match rate: ${((behaviorMatchCount / jsonFiles.length) * 100).toFixed(1)}%`)
 
-      if (failureCount > 0) {
-        console.log(`\n⚠️  ${failureCount} file(s) failed processing. Check logs above for details.`)
+      if (behaviorMatchCount === jsonFiles.length) {
+        console.log('\n🎉 All evaluations passed! Bot behavior matched expectations in every case.')
+      } else if (errorCount > 0) {
+        console.log(`\n💥 ${errorCount} file(s) had script execution errors.`)
+        console.log(`⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches.`)
+        console.log('Check logs above for details.')
       } else {
-        console.log('\n🎉 All files processed successfully!')
+        console.log(`\n⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches. Check logs above for details.`)
       }
     }
   } catch (error) {
