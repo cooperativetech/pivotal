@@ -111,24 +111,21 @@ async function runOnelineEvals(): Promise<void> {
 
       // Clear database before loading
       await clearDatabase()
-
+      
+      // Load the filtered topic data into the database and get new topic ID
       let newTopicId: string | null = null
-
-      // Only load into database if there are messages to work with
-      if (filteredMessagesCount > 0) {
-        // Load filtered topic data into database
-        console.log('\nLoading filtered topic data into database...')
-        try {
-          const filteredJsonContent = JSON.stringify(topicData, null, 2)
-          const result = await loadTopics(filteredJsonContent)
-          newTopicId = result.topicIds[0]
-          console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
-        } catch (error) {
-          console.error('Failed to load topic into database:', error)
-          throw error
-        }
-      } else {
-        console.log('\n⚠️  No messages remaining after filtering. Skipping database load.')
+      console.log('\nLoading filtered topic data into database...')
+      try {
+        const filteredJsonContent = JSON.stringify(topicData, null, 2)
+        const result = await loadTopics(filteredJsonContent)
+        newTopicId = result.topicIds[0]
+        console.log(`Successfully loaded filtered topic into database. New topic ID: ${newTopicId}`)
+      } catch (error) {
+        console.error('Failed to load topic into database:', error)
+        throw error
+      }
+      if (filteredMessagesCount == 0) {
+        newTopicId = null
       }
 
       console.log(`Expected result: ${expectedResult}`)
