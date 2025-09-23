@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { local_api } from '../shared/api-client'
 import { loadTopics } from '../utils'
@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Parse command line arguments
-function parseArguments(): { filename: string } {
+function parseArguments(): { filename: string | null } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -32,26 +32,19 @@ function parseArguments(): { filename: string } {
     console.log('Usage: tsx src/evals/oneline_evals.ts [options]')
     console.log('\nOptions:')
     console.log('  -f, --filename     Topic JSON filename (e.g., benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json)')
+    console.log('                     If not specified, runs evaluation on all files in oneliners directory')
     console.log('  -h, --help         Show this help message')
     process.exit(0)
   }
 
-  if (!values.filename) {
-    console.error('Error: --filename is required')
-    console.log('Use --help for usage information')
-    process.exit(1)
-  }
-
   return {
-    filename: values.filename,
+    filename: values.filename || null,
   }
 }
 
-// Main function
-async function runOnelineEvals(): Promise<void> {
+// Single evaluation function
+async function runOnelineEval(filename: string): Promise<void> {
   try {
-    const { filename } = parseArguments()
-
     console.log(`Processing file: ${filename}`)
 
     // Load JSON file from oneliners directory
@@ -188,6 +181,75 @@ async function runOnelineEvals(): Promise<void> {
 
   } catch (error) {
     console.error('\n❌ Oneline evaluation failed:', error)
+    throw error
+  }
+}
+
+// Main function that handles both single file and batch processing
+async function runOnelineEvals(): Promise<void> {
+  try {
+    const { filename } = parseArguments()
+
+    if (filename) {
+      // Run evaluation on specific file
+      console.log(`Running evaluation on single file: ${filename}`)
+      await runOnelineEval(filename)
+    } else {
+      // Run evaluation on all files in oneliners directory
+      const onelinersDirPath = join(__dirname, 'data', 'oneliners')
+
+      if (!existsSync(onelinersDirPath)) {
+        console.error(`Oneliners directory not found: ${onelinersDirPath}`)
+        process.exit(1)
+      }
+
+      const files = readdirSync(onelinersDirPath)
+      const jsonFiles = files.filter(file => file.endsWith('.json'))
+
+      if (jsonFiles.length === 0) {
+        console.log('No JSON files found in oneliners directory')
+        return
+      }
+
+      console.log(`Found ${jsonFiles.length} files in oneliners directory`)
+      console.log(`Running evaluation on all files...`)
+
+      let successCount = 0
+      let failureCount = 0
+
+      for (let i = 0; i < jsonFiles.length; i++) {
+        const file = jsonFiles[i]
+        console.log(`\n${'='.repeat(80)}`)
+        console.log(`Processing file ${i + 1}/${jsonFiles.length}: ${file}`)
+        console.log(`${'='.repeat(80)}`)
+
+        try {
+          await runOnelineEval(file)
+          successCount++
+          console.log(`✅ Successfully processed: ${file}`)
+        } catch (error) {
+          failureCount++
+          console.error(`❌ Failed to process: ${file}`)
+          console.error(`Error: ${error}`)
+        }
+      }
+
+      console.log(`\n${'='.repeat(80)}`)
+      console.log('BATCH PROCESSING SUMMARY')
+      console.log(`${'='.repeat(80)}`)
+      console.log(`Total files: ${jsonFiles.length}`)
+      console.log(`Successful: ${successCount}`)
+      console.log(`Failed: ${failureCount}`)
+      console.log(`Success rate: ${((successCount / jsonFiles.length) * 100).toFixed(1)}%`)
+
+      if (failureCount > 0) {
+        console.log(`\n⚠️  ${failureCount} file(s) failed processing. Check logs above for details.`)
+      } else {
+        console.log('\n🎉 All files processed successfully!')
+      }
+    }
+  } catch (error) {
+    console.error('\n❌ Oneline evaluations failed:', error)
     process.exit(1)
   }
 }
