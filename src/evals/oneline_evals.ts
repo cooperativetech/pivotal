@@ -5,6 +5,7 @@ import { readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { local_api } from '../shared/api-client'
 import { loadTopics } from '../utils'
+import { clearDatabase } from './utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -109,17 +110,7 @@ async function runOnelineEvals(): Promise<void> {
       console.log(`Messages: ${originalMessagesCount} -> ${filteredMessagesCount} (removed ${originalMessagesCount - filteredMessagesCount})`)
 
       // Clear database before loading
-      console.log('\nClearing database...')
-      try {
-        const clearResult = await local_api.clear_test_data.$post()
-        if (clearResult.ok) {
-          const clearData = await clearResult.json()
-          console.log(`Database cleared: ${clearData.message}`)
-        }
-      } catch (error) {
-        console.error('Warning: Could not clear database:', error)
-      throw error
-    }
+      await clearDatabase()
 
       let newTopicId: string | null = null
 

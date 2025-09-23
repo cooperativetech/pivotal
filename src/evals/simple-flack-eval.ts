@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
@@ -162,20 +162,6 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
   return suggestedEvent
 }
 
-// Clear database before starting evaluation
-async function clearDatabase(): Promise<void> {
-  console.log('Clearing database...')
-  try {
-    const result = await local_api.clear_test_data.$post()
-    if (result.ok) {
-      const data = await result.json()
-      console.log(`Database cleared: ${data.message}`)
-    }
-  } catch (error) {
-    console.error('Warning: Could not clear database:', error)
-    throw error
-  }
-}
 
 // Simulate a strict turn-based scheduling conversation
 async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
