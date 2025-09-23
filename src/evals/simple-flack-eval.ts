@@ -562,7 +562,10 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nSaving topic conversation history...')
     const topicId = result.topicData.topic.id
     const topicData = await dumpTopic(topicId)
-    const topicPath = join(evalFolderPath, 'topic.json')
+
+    // Create topic filename with full benchmark info: benchmarkType_gen<timestamp>_eval<timestamp>_topic.json
+    const topicFileName = `${baseFileName}_eval${resultsData.evalTimestamp}_topic.json`
+    const topicPath = join(evalFolderPath, topicFileName)
     writeFileSync(topicPath, JSON.stringify(topicData, null, 2))
     console.log(`Topic conversation history saved to: ${topicPath}`)
 
