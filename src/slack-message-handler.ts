@@ -8,6 +8,8 @@ import { and, desc, eq, ne, or, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
 import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
+import type { CalendarActionResult } from './calendar-service'
+import { upsertMeetingArtifact } from './meeting-artifacts'
 import { baseURL } from './auth'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
@@ -562,13 +564,13 @@ async function handleFinalizedEvent(
   const end = new Date(finalizedEvent.end)
 
   let actionWord: 'created' | 'updated' = 'created'
-  let calendarResult: { htmlLink?: string, meetLink?: string } | null = null
+  let calendarResult: CalendarActionResult | null = null
 
   try {
     const res = await tryRescheduleTaggedEvent(topic.id, finalizedEvent.start, finalizedEvent.end)
     if (res.success) {
       actionWord = 'updated'
-      calendarResult = { htmlLink: res.htmlLink, meetLink: res.meetLink }
+      calendarResult = res
     }
   } catch (e) {
     console.warn('Reschedule attempt failed:', e)
@@ -635,6 +637,24 @@ async function handleFinalizedEvent(
         raw: calendarResponse.message,
       }).returning()
       createdMessages.push(createdMessage)
+
+      if (calendarResult.event && calendarResult.calendarId) {
+        const originThreadTs = threadTs ?? calendarResponse.ts
+        try {
+          await upsertMeetingArtifact({
+            topicId: topic.id,
+            calendarId: calendarResult.calendarId,
+            event: calendarResult.event,
+            startTime: start,
+            endTime: end,
+            summary: finalizedEvent.summary ?? topic.state.summary ?? null,
+            originChannelId: targetChannel,
+            originThreadTs,
+          })
+        } catch (error) {
+          console.error('Failed to upsert meeting artifact:', error)
+        }
+      }
     }
   } else {
     console.log('No calendar invite created - missing credentials or organizer')

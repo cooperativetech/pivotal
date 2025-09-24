@@ -10,6 +10,7 @@ import { readFileSync } from 'fs'
 import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
 import { startAutoMessageCron } from './utils'
+import { startMeetingSummaryCron } from './meeting-summary-worker'
 import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
 
@@ -68,4 +69,5 @@ if (isDevEnv()) {
 }
 
 startAutoMessageCron(slackClient)
+startMeetingSummaryCron(slackClient)
 console.log(`Webserver running on port ${PORT}...`)

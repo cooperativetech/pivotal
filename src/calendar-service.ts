@@ -182,10 +182,18 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
  * Create a Google Calendar event from the bot account and return links.
  * Uses env-provided bot refresh token. Optionally suppresses emails (Slack-only mode).
  */
+export interface CalendarActionResult {
+  htmlLink?: string
+  meetLink?: string
+  eventId?: string
+  calendarId?: string
+  event?: calendar_v3.Schema$Event
+}
+
 export async function createCalendarInviteFromBot(
   topic: TopicWithState,
   finalizedEvent: { start: string, end: string, summary?: string | null },
-): Promise<{ htmlLink?: string, meetLink?: string, eventId?: string, calendarId?: string } | null> {
+): Promise<CalendarActionResult | null> {
   try {
     const calendar = buildServiceAccountCalendarClient()
     if (!calendar) {
@@ -237,7 +245,13 @@ export async function createCalendarInviteFromBot(
       meetLink = meeting.uri || meeting.label || undefined
     }
 
-    return { htmlLink: event.htmlLink || undefined, meetLink, eventId: event.id || undefined, calendarId: getBotCalendarId() }
+    return {
+      htmlLink: event.htmlLink || undefined,
+      meetLink,
+      eventId: event.id || undefined,
+      calendarId: getBotCalendarId(),
+      event,
+    }
   } catch (error) {
     console.error('Error creating calendar invite from bot:', error)
     return null
@@ -341,7 +355,7 @@ export async function tryRescheduleTaggedEvent(
   topicId: string,
   newStartISO: string,
   newEndISO: string,
-): Promise<{ success: boolean, meetLink?: string, htmlLink?: string }>{
+): Promise<CalendarActionResult & { success: boolean }>{
   try {
     const calendar = buildServiceAccountCalendarClient()
     if (!calendar) return { success: false }
@@ -360,11 +374,18 @@ export async function tryRescheduleTaggedEvent(
     })
 
     const updated = patchRes.data
-    const entryPoints = updated.conferenceData?.entryPoints
+    const entryPoints = updated.conferenceData?.entryPoints || existing.conferenceData?.entryPoints
     const meeting = entryPoints?.find((e) => e.entryPointType === 'video') || entryPoints?.[0]
     const meetLink = meeting?.uri || meeting?.label || undefined
 
-    return { success: true, meetLink, htmlLink: updated.htmlLink || undefined }
+    return {
+      success: true,
+      meetLink,
+      htmlLink: updated.htmlLink || existing.htmlLink || undefined,
+      event: updated ?? existing,
+      eventId: updated.id || existing.id,
+      calendarId: getBotCalendarId(),
+    }
   } catch (err) {
     console.error('Error rescheduling calendar event:', err)
     return { success: false }

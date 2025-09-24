@@ -7,6 +7,7 @@ import {
   uuid,
   boolean,
   unique,
+  integer,
 } from 'drizzle-orm/pg-core'
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivation } from '@shared/api-types'
@@ -98,3 +99,34 @@ export const autoMessageTable = pgTable('auto_message', {
 })
 export type AutoMessageInsert = InferInsertModel<typeof autoMessageTable>
 export type AutoMessage = InferSelectModel<typeof autoMessageTable>
+
+export const meetingArtifactTable = pgTable('meeting_artifact', {
+  id: uuid().primaryKey().defaultRandom(),
+  topicId: uuid().notNull().references(() => topicTable.id, { onDelete: 'cascade' }),
+  calendarEventId: text().notNull(),
+  calendarId: text().notNull(),
+  meetingCode: text(),
+  meetingUri: text(),
+  summary: text(),
+  startTime: timestamp({ withTimezone: true }).notNull(),
+  endTime: timestamp({ withTimezone: true }).notNull(),
+  conferenceRecord: text(),
+  transcriptUri: text(),
+  transcriptDocumentId: text(),
+  transcriptFetchedAt: timestamp({ withTimezone: true }),
+  transcriptLastCheckedAt: timestamp({ withTimezone: true }),
+  transcriptAttemptCount: integer().notNull().default(0),
+  geminiSummary: text(),
+  geminiModel: text(),
+  summaryPostedAt: timestamp({ withTimezone: true }),
+  summarySlackChannelId: text(),
+  summarySlackTs: text(),
+  originChannelId: text(),
+  originThreadTs: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => ({
+  calendarEventUnique: unique('meeting_artifact_calendar_event_unique').on(table.calendarEventId),
+}))
+export type MeetingArtifactInsert = InferInsertModel<typeof meetingArtifactTable>
+export type MeetingArtifact = InferSelectModel<typeof meetingArtifactTable>

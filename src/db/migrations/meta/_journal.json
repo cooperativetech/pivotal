@@ -169,6 +169,13 @@
       "when": 1758565058206,
       "tag": "0023_remove_google_calendar_props_from_user_context",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1758720076940,
+      "tag": "0024_add_meeting_artifact_table",
+      "breakpoints": true
     }
   ]
 }
