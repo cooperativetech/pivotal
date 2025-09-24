@@ -162,6 +162,13 @@
       "when": 1758241023027,
       "tag": "0022_add_repository_id_to_account_table",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1758720076940,
+      "tag": "0023_furry_talon",
+      "breakpoints": true
     }
   ]
 }
