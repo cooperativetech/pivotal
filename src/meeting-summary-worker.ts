@@ -295,7 +295,10 @@ async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient
             allowFileDiscovery: false,
           },
           fields: 'id',
+          supportsAllDrives: true,
+          sendNotificationEmail: false,
         })
+        console.log(`[MeetingSummaryWorker] Set sharing to anyone-with-link for doc ${docId}`)
       } catch (error) {
         console.warn(`[MeetingSummaryWorker] Failed to update sharing for doc ${docId}:`, error)
       }
