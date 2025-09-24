@@ -1,7 +1,7 @@
 import { CronJob } from 'cron'
 import type { WebClient } from '@slack/web-api'
 import { google } from 'googleapis'
-import type { calendar_v3, docs_v1 } from 'googleapis'
+import type { calendar_v3, docs_v1, drive_v3 } from 'googleapis'
 
 import type { MeetingArtifact } from './db/schema/main'
 import {
@@ -17,7 +17,7 @@ const CALENDAR_SCOPES = [
 
 const DOC_SCOPES = [
   'https://www.googleapis.com/auth/documents.readonly',
-  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/drive',
 ]
 
 const DEFAULT_FETCH_LIMIT = 5
@@ -62,6 +62,15 @@ function getDocsClient(): docs_v1.Docs | null {
   if (!auth) return null
   cachedDocsClient = google.docs({ version: 'v1', auth })
   return cachedDocsClient
+}
+
+let cachedDriveClient: drive_v3.Drive | null = null
+function getDriveClient(): drive_v3.Drive | null {
+  if (cachedDriveClient) return cachedDriveClient
+  const auth = buildServiceAccountJwt(DOC_SCOPES)
+  if (!auth) return null
+  cachedDriveClient = google.drive({ version: 'v3', auth })
+  return cachedDriveClient
 }
 
 function extractDocIdFromAttachment(attachment: calendar_v3.Schema$EventAttachment | undefined): { docId: string | null, link: string | null } {
@@ -273,6 +282,25 @@ async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient
     transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
     geminiSummary: text,
   })
+
+  if (docId) {
+    const driveClient = getDriveClient()
+    if (driveClient) {
+      try {
+        await driveClient.permissions.create({
+          fileId: docId,
+          requestBody: {
+            type: 'anyone',
+            role: 'reader',
+            allowFileDiscovery: false,
+          },
+          fields: 'id',
+        })
+      } catch (error) {
+        console.warn(`[MeetingSummaryWorker] Failed to update sharing for doc ${docId}:`, error)
+      }
+    }
+  }
 
   const message = buildSummaryMessage(text, link, artifact)
 
