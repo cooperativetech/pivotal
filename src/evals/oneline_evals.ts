@@ -87,7 +87,7 @@ async function runRepeatedOnelineEval(filename: string, nReps: number): Promise<
     } catch (error) {
       errorCount++
       console.error(`💥 Script execution failed${nReps === 1 ? `: ${filename}` : ''}`)
-      console.error(`Error: ${error}`)
+      console.error(`Error: ${String(error)}`)
     }
   }
 
@@ -122,10 +122,9 @@ async function runOnelineEval(filename: string): Promise<boolean | null> {
     console.log(`Loading file from: ${filePath}`)
 
     const rawData = readFileSync(filePath, 'utf-8')
-    const parsedData = JSON.parse(rawData)
 
-    // Validate data structure with Zod
-    const topicDataOnelineEvals = DumpedTopicDataOnelineEvals.parse(parsedData)
+    // Parse and validate JSON data with Zod in one step
+    const topicDataOnelineEvals = DumpedTopicDataOnelineEvals.parse(JSON.parse(rawData))
 
     // Extract and store loadUpToId and expectedBehavior fields
     const loadUpToId = topicDataOnelineEvals.loadUpToId
@@ -174,20 +173,20 @@ async function runOnelineEval(filename: string): Promise<boolean | null> {
       })
       const filteredMessagesCount = topicData.messages.length
 
-      console.log(`\nFiltering results:`)
+      console.log('\nFiltering results:')
       console.log(`States: ${originalStatesCount} -> ${filteredStatesCount} (removed ${originalStatesCount - filteredStatesCount})`)
       console.log(`Messages: ${originalMessagesCount} -> ${filteredMessagesCount} (removed ${originalMessagesCount - filteredMessagesCount})`)
 
       // Clear database before loading
       await clearDatabase()
-      
+
       // Load the filtered topic data into the database and get new topic ID
       console.log('\nLoading filtered topic data into database...')
       let newTopicId: string | null = null
 
       try {
         const filteredJsonContent = JSON.stringify(topicData, null, 2)
-        let result = await loadTopics(filteredJsonContent)
+        const result = await loadTopics(filteredJsonContent)
 
         if (filteredMessagesCount > 0 && result?.topicIds?.length > 0) {
           newTopicId = result.topicIds[0]
@@ -211,7 +210,7 @@ async function runOnelineEval(filename: string): Promise<boolean | null> {
         json: {
           userId: targetMessage.userId,
           text: targetMessage.text,
-          topicId: newTopicId || undefined
+          topicId: newTopicId || undefined,
         },
       })
 
@@ -299,7 +298,7 @@ async function runOnelineEvals(): Promise<void> {
       }
 
       const files = readdirSync(onelinersDirPath)
-      const jsonFiles = files.filter(file => file.endsWith('.json'))
+      const jsonFiles = files.filter((file) => file.endsWith('.json'))
 
       if (jsonFiles.length === 0) {
         console.log('No JSON files found in oneliners directory')
@@ -307,7 +306,7 @@ async function runOnelineEvals(): Promise<void> {
       }
 
       console.log(`Found ${jsonFiles.length} files in oneliners directory`)
-      console.log(`Running evaluation on all files...`)
+      console.log('Running evaluation on all files...')
       if (nReps > 1) {
         console.log(`Each file will be repeated ${nReps} times`)
       }

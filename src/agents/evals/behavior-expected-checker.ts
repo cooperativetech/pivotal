@@ -32,6 +32,8 @@ const BotMessageSchema = z.object({
 
 type BotMessage = z.infer<typeof BotMessageSchema>
 
+export { BotMessageSchema }
+
 export async function checkBehaviorExpected(botMessages: BotMessage[], expectedBehavior: string): Promise<boolean> {
   // Format bot messages into a single string
   const formattedMessages = botMessages.map((message) => {

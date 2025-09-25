@@ -94,7 +94,7 @@ async function dumpTopicToResults(topicId: string, userId: string): Promise<void
   console.log('\n--- Dumping Topic Data ---')
 
   // Wait a moment to ensure all processing is complete
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Dump the topic data
   const topicData = await dumpTopic(topicId, { visibleToUserId: userId })
@@ -121,10 +121,10 @@ async function dumpTopicToResults(topicId: string, userId: string): Promise<void
   console.log('\n--- Conversation Summary ---')
   console.log(`Topic ID: ${topicData.topic.id}`)
   console.log(`Workflow Type: ${topicData.topic.workflowType}`)
-  console.log(`Messages:`)
+  console.log('Messages:')
 
   topicData.messages.forEach((msg, index) => {
-    const user = topicData.users.find(u => u.id === msg.userId)
+    const user = topicData.users.find((u) => u.id === msg.userId)
     const userName = user?.realName || msg.userId
     const timestamp = new Date(msg.timestamp).toLocaleString()
     console.log(`  ${index + 1}. [${timestamp}] ${userName}: "${msg.text}"`)
@@ -158,5 +158,5 @@ async function runDumpTopicTest(): Promise<void> {
 // Run the test if called directly
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   process.on('SIGINT', () => process.nextTick(() => process.exit(1)))
-  runDumpTopicTest()
+  void runDumpTopicTest()
 }
