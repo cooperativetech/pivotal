@@ -693,6 +693,19 @@ async function getOrCreateTopic(
     throw new Error(`Channel ${message.channelId} not found in database`)
   }
 
+  // If this message is part of an existing thread, reuse that thread's topic directly
+  if (message.threadTs) {
+    const [threadRoot] = await db
+      .select()
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.rawTs, message.threadTs))
+      .limit(1)
+
+    if (threadRoot) {
+      return threadRoot.topicId
+    }
+  }
+
   const isDirectMessage = channel.userIds.length === 1
   const isBotMentioned = message.text.includes(`<@${botUserId}>`)
 

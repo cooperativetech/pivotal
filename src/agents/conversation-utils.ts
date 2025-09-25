@@ -232,23 +232,67 @@ export const showUserCalendar = tool({
       return `No calendar events found for ${userName} between ${formatTimestampWithTimezone(startTimeDate, userTz)} and ${formatTimestampWithTimezone(endTimeDate, userTz)}`
     }
 
-    // Format calendar events as plain text
-    const formattedEvents = calendarEvents.map((event: CalendarEvent) => {
-      const eventStart = new Date(event.start)
-      const eventEnd = new Date(event.end)
-      const freeStatus = event.free ? ' [Free]' : ''
+    // Format calendar events grouped by local day with explicit indices for easier referencing
+    const sortedEvents = [...calendarEvents].sort((a, b) =>
+      new Date(a.start).getTime() - new Date(b.start).getTime(),
+    )
 
-      // Replace emails with names where possible
-      const participants = event.participantEmails?.length
-        ? ` (with: ${event.participantEmails.map((email) =>
-            emailToName.get(email.toLowerCase()) || email,
-          ).join(', ')})`
-        : ''
+    const dateFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTz,
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    const timeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTz,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    const timezoneAbbr = getShortTimezoneFromIANA(userTz)
 
-      return `• ${formatTimestampWithTimezone(eventStart, userTz)} - ${formatTimestampWithTimezone(eventEnd, userTz)}: ${event.summary}${freeStatus}${participants}`
-    }).join('\n')
+    const groupedByDay = new Map<string, CalendarEvent[]>()
+    const orderedDayLabels: string[] = []
 
-    return `Calendar for ${userName} (${getShortTimezoneFromIANA(userTz)}):\n${formattedEvents}`
+    for (const event of sortedEvents) {
+      const startDate = new Date(event.start)
+      const dayLabel = dateFormatter.format(startDate)
+
+      if (!groupedByDay.has(dayLabel)) {
+        groupedByDay.set(dayLabel, [])
+        orderedDayLabels.push(dayLabel)
+      }
+
+      groupedByDay.get(dayLabel)!.push(event)
+    }
+
+    const lines: string[] = [`Calendar for ${userName} (${timezoneAbbr}):`]
+    let eventIndex = 1
+
+    for (const dayLabel of orderedDayLabels) {
+      lines.push(`${dayLabel}:`)
+
+      const eventsForDay = groupedByDay.get(dayLabel) || []
+      for (const event of eventsForDay) {
+        const eventStart = new Date(event.start)
+        const eventEnd = new Date(event.end)
+        const freeStatus = event.free ? ' [Free]' : ''
+
+        const timeRange = `${timeFormatter.format(eventStart)} - ${timeFormatter.format(eventEnd)} (${timezoneAbbr})`
+
+        const participants = event.participantEmails?.length
+          ? ` (with: ${event.participantEmails.map((email) =>
+              emailToName.get(email.toLowerCase()) || email,
+            ).join(', ')})`
+          : ''
+
+        lines.push(`  [${eventIndex}] ${timeRange}: ${event.summary}${freeStatus}${participants}`)
+        eventIndex += 1
+      }
+    }
+
+    return lines.join('\n')
   },
 })
 
