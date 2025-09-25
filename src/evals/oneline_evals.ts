@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { local_api } from '../shared/api-client'
 import { loadTopics } from '../utils'
-import { clearDatabase, TopicDataOnelineEvals } from './utils'
+import { clearDatabase, DumpedTopicDataOnelineEvals } from './utils'
 import { checkBehaviorExpected } from '../agents/evals'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -55,7 +55,7 @@ async function runOnelineEval(filename: string): Promise<boolean> {
     const parsedData = JSON.parse(rawData)
 
     // Validate data structure with Zod
-    const topicDataOnelineEvals = TopicDataOnelineEvals.parse(parsedData)
+    const topicDataOnelineEvals = DumpedTopicDataOnelineEvals.parse(parsedData)
 
     // Extract and store loadUpToId and expectedBehavior fields
     const loadUpToId = topicDataOnelineEvals.loadUpToId
