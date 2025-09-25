@@ -188,7 +188,7 @@ From there, you need to copy over the ```.json``` file to ```src/evals/data/onel
 
 ### Usage
 
-You can use command line arguments to run all tests at once or run only the test in a specific file.
+You can use command line arguments to run all tests at once or run only the test in a specific file. Optionally, you can specify to repeat each file a number of times.
 
 ```bash
 # Run evaluation on all files in oneliners directory
@@ -197,6 +197,12 @@ pnpm run oneliners
 # Run evaluation on a specific file
 pnpm run oneliners --filename=benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json
 
+# Run with multiple repetitions for statistical reliability
+pnpm run oneliners --nReps=5
+
+# Run specific file with repetitions
+pnpm run oneliners --filename=test.json --nReps=3
+
 # Show help
 pnpm run oneliners --help
 ```
@@ -204,15 +210,33 @@ pnpm run oneliners --help
 ### Parameters
 
 - `--filename` / `-f`: Specific topic JSON filename to evaluate (must be in `src/evals/data/oneliners/`)
+- `--nReps` / `-n`: Number of times to repeat each test (default: 1)
 - `--help` / `-h`: Show help message and exit
 
 ### Features
 
 - **Message replay**: Loads topic context up to a specific message, then resends that message
 - **Behavior validation**: Compares bot responses against expected behavior using AI evaluation
+- **Repetition testing**: Run each test multiple times with `--nReps` for statistical reliability
 - **Batch processing**: Evaluates all files in oneliners directory when no filename specified
-- **Statistical summary**: Success rates and behavior match statistics across all files
+- **File-level statistics**: Categorizes files as having only successes, failures, errors, or no expected behavior
 - **Database isolation**: Clears database before each evaluation for consistent results
+
+### Repetition Analysis
+
+When using `--nReps > 1`, the tool provides detailed statistics:
+
+- **Single file mode**: Shows repetition summary with success rate across all runs
+- **Batch mode**: Categorizes each file based on outcomes across all repetitions:
+  - Files with only successes (all repetitions passed)
+  - Files with failures (at least one repetition failed)
+  - Files without expected behavior (all repetitions skipped)
+  - Files with errors (script execution failed)
+
+This is useful for identifying:
+- **Consistent reliability**: Files that always pass or always fail
+- **Intermittent issues**: Files that sometimes fail (non-deterministic behavior)
+- **Test coverage**: Files missing expected behavior specifications
 
 ### Expected File Format
 
