@@ -87,6 +87,7 @@ const SlackMessage = z.strictObject({
   timestamp: z.string(),
   rawTs: z.string(),
   threadTs: z.string().nullable(),
+  autoMessageId: z.string().optional(),
   raw: z.record(z.unknown()),
 })
 
