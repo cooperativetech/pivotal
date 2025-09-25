@@ -15,8 +15,11 @@ const behaviorExpectedCheckAgent = new Agent({
     - Determine if the bot's behavior aligns with, contradicts, or is unrelated to the expectations
     - Consider partial matches - if the bot does what's expected but also does additional things, that may still count as matching
     - Focus on the core intent and requirements in the expected behavior
+    - Provide clear reasoning for your decision
 
-    Respond with exactly "TRUE" if the bot's behavior matches the expected behavior, "FALSE" otherwise.`,
+    Respond in this exact format:
+    REASON: [Detailed explanation of why the behavior matches or doesn't match]
+    RESULT: TRUE/FALSE`,
 })
 
 interface BotMessage {
@@ -48,13 +51,29 @@ export async function checkBehaviorExpected(botMessages: BotMessage[], expectedB
     - Only return FALSE if the bot clearly contradicts the expected behavior or fails to meet the core requirement
 
     Response format:
-    - If the bot's behavior matches the expected behavior: Return "TRUE"
-    - If the bot's behavior does not match the expected behavior: Return "FALSE"`
+    REASON: [Detailed explanation of why the behavior matches or doesn't match]
+    RESULT: TRUE/FALSE`
 
   try {
     const result = await run(behaviorExpectedCheckAgent, prompt)
-    const response = result.finalOutput?.trim().toUpperCase()
-    return response === 'TRUE'
+    const response = result.finalOutput?.trim()
+
+    if (!response) {
+      console.log('🤖 No response from behavior checker')
+      return false
+    }
+
+    // Parse REASON and RESULT from response
+    const reasonMatch = response.match(/REASON:\s*(.+?)(?=RESULT:|$)/s)
+    const resultMatch = response.match(/RESULT:\s*(TRUE|FALSE)/i)
+
+    const reason = reasonMatch?.[1]?.trim() || 'No reason provided'
+    const resultValue = resultMatch?.[1]?.trim().toUpperCase()
+
+    // Output the reasoning to console
+    console.log(`🤖 Behavior Analysis Reason: ${reason}`)
+
+    return resultValue === 'TRUE'
   } catch (error) {
     console.error('Error checking behavior expectation with Agent:', error)
     return false
