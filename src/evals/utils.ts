@@ -120,7 +120,7 @@ const DumpedUser = z.strictObject({
   tz: z.string().optional(),
   isBot: z.boolean().optional(),
   deleted: z.boolean().optional(),
-  updated: z.number().optional(),
+  updated: z.string().optional(),
   raw: z.record(z.unknown()).optional(),
 })
 
