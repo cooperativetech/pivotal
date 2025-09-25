@@ -14,6 +14,12 @@ pnpm run eval
 # Run evaluation with specific parameters
 pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
 pnpm run eval --benchmarkFolder=benchmark_3simusers_1start_2end_60min --nReps=3
+
+# Generate one-liner test cases
+pnpm run oneliners
+
+# Run one-liner evaluation on specific file
+pnpm run oneliners --filename=benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json
 ```
 
 ## Benchmark Generation (`gen-benchmark.ts`)
@@ -169,3 +175,74 @@ The evaluation framework uses:
 - **File organization**: Structured results with timestamps and metadata
 
 For debugging, all tools provide detailed console output showing agent interactions, calendar conflicts, and scheduling decisions.
+
+## One-liner Evaluation (`oneline_evals.ts`)
+
+Evaluates bot behavior on single-turn conversations by replaying specific messages from topic dumps.
+
+### Preparation
+
+This evaluation method relies on having dumped a topic that contains the conversation that you want to use as a test. Dump topic is automatically called during evaluation simulations, generating a ```.json``` file. Alternately, with the topic id, you can call ```pnpm dump topic <topicId> -o <filename.json>```, in which case the dumpTopic data gets saved to a file with the specified name. In the web app, when you are on a topic page, you can read the topic id out of the URL (the string after ```topic/``` and before ```?message=```).
+
+From there, you need to copy over the ```.json``` file to ```src/evals/data/oneliners```. You need to manually add two additional fields to the file. First, ```loadUpToId``` which contains the final user-sent message ID that you want to resend to the agent for the test. The script will automatically load all of the information from the database that occured up to the point in time when the message was initially sent, restoring the database state, and then finally resends the message to the agent. Usually, you will want this message to be the one in response to which Pivotal generated unexpected behavior. The message ID can be found in the json file by scrolling down to the message of interest (labeled "Id"), or else is also listed in the web app.
+
+Second, to automatically evaluate Pivotal behavior, you can optionally also include a textual behavior of what you expect Pivotal to do in a new ```expectedBehavior``` field.
+
+### Usage
+
+You can use command line arguments to run all tests at once or run only the test in a specific file. Optionally, you can specify to repeat each file a number of times.
+
+```bash
+# Run evaluation on all files in oneliners directory
+pnpm run oneliners
+
+# Run evaluation on a specific file
+pnpm run oneliners --filename=benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json
+
+# Run with multiple repetitions for statistical reliability
+pnpm run oneliners --nReps=5
+
+# Run specific file with repetitions
+pnpm run oneliners --filename=test.json --nReps=3
+
+# Show help
+pnpm run oneliners --help
+```
+
+### Parameters
+
+- `--filename` / `-f`: Specific topic JSON filename to evaluate (must be in `src/evals/data/oneliners/`)
+- `--nReps` / `-n`: Number of times to repeat each test (default: 1)
+- `--help` / `-h`: Show help message and exit
+
+### Features
+
+- **Message replay**: Loads topic context up to a specific message, then resends that message
+- **Behavior validation**: Compares bot responses against expected behavior using AI evaluation
+- **Repetition testing**: Run each test multiple times with `--nReps` for statistical reliability
+- **Batch processing**: Evaluates all files in oneliners directory when no filename specified
+- **File-level statistics**: Categorizes files as having only successes, failures, errors, or no expected behavior
+- **Database isolation**: Clears database before each evaluation for consistent results
+
+### Repetition Analysis
+
+When using `--nReps > 1`, the tool provides detailed statistics:
+
+- **Single file mode**: Shows repetition summary with success rate across all runs
+- **Batch mode**: Categorizes each file based on outcomes across all repetitions:
+  - Files with only successes (all repetitions passed)
+  - Files with failures (at least one repetition failed)
+  - Files without expected behavior (all repetitions skipped)
+  - Files with errors (script execution failed)
+
+This is useful for identifying:
+- **Consistent reliability**: Files that always pass or always fail
+- **Intermittent issues**: Files that sometimes fail (non-deterministic behavior)
+- **Test coverage**: Files missing expected behavior specifications
+
+### Expected File Format
+
+JSON files in `src/evals/data/oneliners/` should contain:
+- `loadUpToId`: Message ID to replay (conversation context loaded up to this point)
+- `expectedBehavior`: Expected bot behavior description for evaluation
+- Standard topic dump format with messages, states, etc.

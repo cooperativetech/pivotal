@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'fs'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary } from './utils'
+import { readFileSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
+import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
@@ -55,7 +57,7 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
   }
 }
 import { BaseScheduleUser } from './sim-users'
-import { type EvaluationResults, type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
+import { type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -160,20 +162,6 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
   return suggestedEvent
 }
 
-// Clear database before starting evaluation
-async function clearDatabase(): Promise<void> {
-  console.log('Clearing database...')
-  try {
-    const result = await local_api.clear_test_data.$post()
-    if (result.ok) {
-      const data = await result.json()
-      console.log(`Database cleared: ${data.message}`)
-    }
-  } catch (error) {
-    console.error('Warning: Could not clear database:', error)
-    throw error
-  }
-}
 
 // Simulate a strict turn-based scheduling conversation
 async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
@@ -450,6 +438,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Check feasibility using evalPossibility
     let maxSharedFreeTime = 0
+    let withinTimeRange = false
     if (result.suggestedEvent) {
       console.log('\nFeasibility Check:')
 
@@ -460,7 +449,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       const meetingStart = result.suggestedEvent.start
       const meetingEnd = result.suggestedEvent.end
 
-      const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
+      withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
       console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
 
       if (!withinTimeRange) {
@@ -480,9 +469,37 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
 
-      const hasCommonFreeTime = maxSharedFreeTime > 0
-      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes` : 'No common free time available'}`)
+      const hasCommonFreeTime = maxSharedFreeTime > benchmarkData.benchmark.meetingLength
+      console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${maxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)` : `Insufficient shared free time: ${maxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)`}`)
     }
+
+    // Overall evaluation judgment
+    console.log('\n--- Overall Evaluation Judgment ---')
+    const hasSufficientFreeTime = maxSharedFreeTime > benchmarkData.benchmark.meetingLength
+    const meetingWasFound = result.suggestedEvent !== null
+    const allUsersCanAttend = result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false
+
+    let evaluationSucceeded = false
+    let evaluationReason = ''
+
+    if (hasSufficientFreeTime && meetingWasFound && allUsersCanAttend) {
+      evaluationSucceeded = true
+      evaluationReason = 'SUCCESS: Meeting found when users had sufficient shared free time and all users can attend'
+    } else if (!hasSufficientFreeTime && !meetingWasFound) {
+      evaluationSucceeded = true
+      evaluationReason = 'SUCCESS: No meeting found when there was insufficient shared free time'
+    } else if (hasSufficientFreeTime && (!meetingWasFound || !allUsersCanAttend)) {
+      evaluationSucceeded = false
+      evaluationReason = `FAILURE: Sufficient shared free time (${maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min) but ${!meetingWasFound ? 'no meeting suggested' : 'not all users can attend suggested meeting'}`
+    } else if (!hasSufficientFreeTime && meetingWasFound) {
+      evaluationSucceeded = false
+      evaluationReason = `FAILURE: Meeting suggested when insufficient shared free time (${maxSharedFreeTime} min <= ${benchmarkData.benchmark.meetingLength} min)`
+    } else {
+      evaluationSucceeded = false
+      evaluationReason = 'FAILURE: Unexpected evaluation state'
+    }
+
+    console.log(`${evaluationSucceeded ? '✅' : '❌'} ${evaluationReason}`)
 
     // Save evaluation results
     console.log('\nSaving evaluation results...')
@@ -493,7 +510,17 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       })
     }
 
-    const resultsData: EvaluationResults = {
+    // Extract filename from path
+    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
+    const baseFileName = fileName.replace(/\.json$/, '')
+
+    // Get genTimestamp directly from benchmark data
+    const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
+
+    const resultsData: SavedEvaluationResults = {
+      evalTimestamp: formatTimestamp(),
+      benchmarkFile: baseFileName,
+      genTimestamp,
       suggestedEvent: result.suggestedEvent ? {
         start: result.suggestedEvent.start.toISOString(),
         end: result.suggestedEvent.end.toISOString(),
@@ -508,12 +535,27 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvent: result.suggestedEvent !== null,
         allCanAttend: result.suggestedEvent ? simUsers.every((simUser) => simUser.evalPossibility(result.suggestedEvent!)) : false,
+        withinTimeRange,
+        evaluationSucceeded,
       },
     }
 
-    // Extract filename from path for results saving
-    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-    const savedResults = saveEvaluationResults(fileName, resultsData)
+    // Create results folder
+    const evalFolderPath = createResultsFolder(fileName)
+
+    // Save evaluation results
+    const savedResults = saveEvaluationResults(evalFolderPath, resultsData)
+
+    // Dump topic data to the same results folder
+    console.log('\nSaving topic conversation history...')
+    const topicId = result.topicData.topic.id
+    const topicData = await dumpTopic(topicId)
+
+    // Create topic filename with full benchmark info: benchmarkType_gen<timestamp>_eval<timestamp>_topic.json
+    const topicFileName = `${baseFileName}_eval${resultsData.evalTimestamp}_topic.json`
+    const topicPath = join(evalFolderPath, topicFileName)
+    writeFileSync(topicPath, JSON.stringify(topicData, null, 2))
+    console.log(`Topic conversation history saved to: ${topicPath}`)
 
     console.log('\n✅ Evaluation completed successfully')
     return savedResults
