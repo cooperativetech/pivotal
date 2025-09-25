@@ -87,7 +87,7 @@ const SlackMessage = z.strictObject({
   timestamp: z.string(),
   rawTs: z.string(),
   threadTs: z.string().nullable(),
-  autoMessageId: z.string().optional(),
+  autoMessageId: z.string().nullable().optional(),
   raw: z.record(z.unknown()),
 })
 
@@ -112,11 +112,26 @@ const Topic = z.strictObject({
   createdAt: z.string(),
 })
 
+const User = z.strictObject({
+  id: z.string(),
+  teamId: z.string(),
+  realName: z.string(),
+  email: z.string().nullable(),
+})
+
+const Channel = z.strictObject({
+  id: z.string(),
+  userIds: z.array(z.string()),
+})
+
 // Standard topic data structure (without eval-specific fields)
 export const TopicData = z.strictObject({
   topic: Topic,
   states: z.array(TopicState),
   messages: z.array(SlackMessage),
+  users: z.array(User),
+  userData: z.array(z.unknown()),
+  channels: z.array(Channel),
 })
 
 // Oneline evaluation topic data (includes eval-specific fields)
@@ -126,6 +141,9 @@ export const TopicDataOnelineEvals = z.strictObject({
   topic: Topic,
   states: z.array(TopicState),
   messages: z.array(SlackMessage),
+  users: z.array(User),
+  userData: z.array(z.unknown()),
+  channels: z.array(Channel),
 })
 
 // Type exports for topic data
