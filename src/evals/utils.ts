@@ -142,7 +142,7 @@ export const DumpedTopicData = z.strictObject({
 // Oneline evaluation dumped topic data (includes eval-specific fields)
 export const DumpedTopicDataOnelineEvals = z.strictObject({
   loadUpToId: z.string(),
-  expectedBehavior: z.string(),
+  expectedBehavior: z.string().optional(),
   topic: DumpedTopic,
   states: z.array(DumpedTopicState),
   messages: z.array(DumpedSlackMessage),
