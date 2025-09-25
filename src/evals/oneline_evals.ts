@@ -43,7 +43,7 @@ function parseArguments(): { filename: string | null } {
 }
 
 // Single evaluation function
-async function runOnelineEval(filename: string): Promise<boolean> {
+async function runOnelineEval(filename: string): Promise<boolean | null> {
   try {
     console.log(`Processing file: ${filename}`)
 
@@ -62,7 +62,7 @@ async function runOnelineEval(filename: string): Promise<boolean> {
     const expectedBehavior = topicDataOnelineEvals.expectedBehavior
 
     console.log(`loadUpToId: ${loadUpToId}`)
-    console.log(`expectedBehavior: ${expectedBehavior}`)
+    console.log(`expectedBehavior: ${expectedBehavior || 'Not provided - skipping behavior check'}`)
 
     // Create standard topic data without eval-specific fields
     const topicData = {
@@ -130,7 +130,7 @@ async function runOnelineEval(filename: string): Promise<boolean> {
         throw error
       }
 
-      console.log(`Expected behavior: ${expectedBehavior}`)
+      console.log(`Expected behavior: ${expectedBehavior || 'Not provided'}`)
 
       // Resend the original message (regardless of whether we loaded filtered data)
       console.log('\nResending original message...')
@@ -159,28 +159,39 @@ async function runOnelineEval(filename: string): Promise<boolean> {
           console.log(`Bot: ${resMessage.text}`)
         }
 
-        // Check if bot behavior matches expected behavior
-        console.log('\n--- Behavior Check ---')
-        try {
-          const behaviorMatches = await checkBehaviorExpected(messageData.resMessages, expectedBehavior)
-          console.log(`Expected behavior: "${expectedBehavior}"`)
-          console.log(`Behavior matches: ${behaviorMatches ? '✅ YES' : '❌ NO'}`)
+        // Check if bot behavior matches expected behavior (only if expectedBehavior is provided)
+        if (expectedBehavior) {
+          console.log('\n--- Behavior Check ---')
+          try {
+            const behaviorMatches = await checkBehaviorExpected(messageData.resMessages, expectedBehavior)
+            console.log(`Expected behavior: "${expectedBehavior}"`)
+            console.log(`Behavior matches: ${behaviorMatches ? '✅ YES' : '❌ NO'}`)
 
-          if (behaviorMatches) {
-            console.log('🎉 Bot behavior aligns with expectations!')
-          } else {
-            console.log('⚠️  Bot behavior does not match expectations')
+            if (behaviorMatches) {
+              console.log('🎉 Bot behavior aligns with expectations!')
+            } else {
+              console.log('⚠️  Bot behavior does not match expectations')
+            }
+
+            return behaviorMatches
+          } catch (error) {
+            console.error('Error checking behavior:', error)
+            return false
           }
-
-          return behaviorMatches
-        } catch (error) {
-          console.error('Error checking behavior:', error)
-          return false
+        } else {
+          console.log('\n--- Behavior Check Skipped ---')
+          console.log('🔄 No expected behavior provided - returning null')
+          return null
         }
       } else {
         console.log('⚠️ Bot did not reply to the resent message')
-        console.log('❌ Cannot check behavior - no bot responses to evaluate')
-        return false
+        if (expectedBehavior) {
+          console.log('❌ Cannot check behavior - no bot responses to evaluate')
+          return false
+        } else {
+          console.log('🔄 No expected behavior provided - returning null')
+          return null
+        }
       }
 
     } else {
@@ -226,6 +237,7 @@ async function runOnelineEvals(): Promise<void> {
 
       let behaviorMatchCount = 0
       let behaviorMismatchCount = 0
+      let skippedCount = 0
       let errorCount = 0
 
       for (let i = 0; i < jsonFiles.length; i++) {
@@ -236,7 +248,10 @@ async function runOnelineEvals(): Promise<void> {
 
         try {
           const behaviorMatches = await runOnelineEval(file)
-          if (behaviorMatches) {
+          if (behaviorMatches === null) {
+            skippedCount++
+            console.log(`🔄 Skipped (no expected behavior): ${file}`)
+          } else if (behaviorMatches) {
             behaviorMatchCount++
             console.log(`✅ Behavior matched expectations: ${file}`)
           } else {
@@ -256,17 +271,31 @@ async function runOnelineEvals(): Promise<void> {
       console.log(`Total files: ${jsonFiles.length}`)
       console.log(`Behavior matches: ${behaviorMatchCount}`)
       console.log(`Behavior mismatches: ${behaviorMismatchCount}`)
+      console.log(`Skipped (no expected behavior): ${skippedCount}`)
       console.log(`Script errors: ${errorCount}`)
-      console.log(`Behavior match rate: ${((behaviorMatchCount / jsonFiles.length) * 100).toFixed(1)}%`)
 
-      if (behaviorMatchCount === jsonFiles.length) {
-        console.log('\n🎉 All evaluations passed! Bot behavior matched expectations in every case.')
+      const evaluatedFiles = jsonFiles.length - skippedCount
+      if (evaluatedFiles > 0) {
+        console.log(`Behavior match rate (excluding skipped): ${((behaviorMatchCount / evaluatedFiles) * 100).toFixed(1)}%`)
+      }
+
+      if (evaluatedFiles === 0) {
+        console.log('\n🔄 No files had expected behavior specified - all were skipped.')
+      } else if (behaviorMatchCount === evaluatedFiles) {
+        console.log('\n🎉 All evaluated files passed! Bot behavior matched expectations in every case.')
       } else if (errorCount > 0) {
         console.log(`\n💥 ${errorCount} file(s) had script execution errors.`)
         console.log(`⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches.`)
+        if (skippedCount > 0) {
+          console.log(`🔄 ${skippedCount} file(s) were skipped (no expected behavior).`)
+        }
         console.log('Check logs above for details.')
       } else {
-        console.log(`\n⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches. Check logs above for details.`)
+        console.log(`\n⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches.`)
+        if (skippedCount > 0) {
+          console.log(`🔄 ${skippedCount} file(s) were skipped (no expected behavior).`)
+        }
+        console.log('Check logs above for details.')
       }
     }
   } catch (error) {
