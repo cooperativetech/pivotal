@@ -69,6 +69,9 @@ async function runOnelineEval(filename: string): Promise<boolean> {
       topic: topicDataOnelineEvals.topic,
       states: [...topicDataOnelineEvals.states],
       messages: [...topicDataOnelineEvals.messages],
+      users: [...topicDataOnelineEvals.users],
+      userData: [...topicDataOnelineEvals.userData],
+      channels: [...topicDataOnelineEvals.channels],
     }
 
     // Find the message that belongs to loadUpToId
