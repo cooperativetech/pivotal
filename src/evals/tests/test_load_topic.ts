@@ -21,7 +21,7 @@ interface TopicData {
     userIds: string[]
     summary: string
     isActive: boolean
-    perUserContext: Record<string, any>
+    perUserContext: Record<string, unknown>
     createdByMessageId: string
     createdAt: string
     createdByMessageRawTs: string
@@ -35,7 +35,7 @@ interface TopicData {
     timestamp: string
     rawTs: string
     threadTs: string | null
-    raw: Record<string, any>
+    raw: Record<string, unknown>
     autoMessageId: string | null
   }>
   users: Array<{
@@ -47,9 +47,9 @@ interface TopicData {
     isBot: boolean
     deleted: boolean
     updated: string
-    raw: Record<string, any>
+    raw: Record<string, unknown>
   }>
-  userData: any[]
+  userData: unknown[]
   channels: Array<{
     id: string
     userIds: string[]
@@ -70,12 +70,12 @@ async function clearDatabase(): Promise<void> {
   }
 }
 
-async function loadTopicData(jsonFilePath: string): Promise<TopicData> {
+function loadTopicData(jsonFilePath: string): TopicData {
   console.log(`Loading topic data from: ${jsonFilePath}`)
 
   try {
     const jsonContent = readFileSync(jsonFilePath, 'utf8')
-    const topicData: TopicData = JSON.parse(jsonContent)
+    const topicData = JSON.parse(jsonContent) as TopicData
 
     console.log(`Loaded topic: ${topicData.topic.id}`)
     console.log(`- ${topicData.messages.length} messages`)
@@ -84,7 +84,7 @@ async function loadTopicData(jsonFilePath: string): Promise<TopicData> {
 
     return topicData
   } catch (error) {
-    throw new Error(`Failed to load topic data: ${error}`)
+    throw new Error(`Failed to load topic data: ${String(error)}`)
   }
 }
 
@@ -99,7 +99,7 @@ async function loadTopicIntoDatabase(jsonContent: string): Promise<string> {
 
     return newTopicId
   } catch (error) {
-    throw new Error(`Failed to load topic into database: ${error}`)
+    throw new Error(`Failed to load topic into database: ${String(error)}`)
   }
 }
 
@@ -116,7 +116,7 @@ async function continueConversation(userId: string, newTopicId: string): Promise
     json: {
       userId,
       text: followUpMessage,
-      topicId: newTopicId
+      topicId: newTopicId,
     },
   })
 
@@ -154,7 +154,7 @@ async function runLoadTopicTest(): Promise<void> {
     const newTopicId = await loadTopicIntoDatabase(jsonContent)
 
     // Step 4: Continue the conversation from where it left off
-    const mainUserId = topicData.users.find(u => !u.isBot)?.id
+    const mainUserId = topicData.users.find((u) => !u.isBot)?.id
     if (!mainUserId) {
       throw new Error('No non-bot user found in topic data')
     }
@@ -172,5 +172,5 @@ async function runLoadTopicTest(): Promise<void> {
 // Run the test if called directly
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   process.on('SIGINT', () => process.nextTick(() => process.exit(1)))
-  runLoadTopicTest()
+  void runLoadTopicTest()
 }
