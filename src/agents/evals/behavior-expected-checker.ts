@@ -12,9 +12,10 @@ const behaviorExpectedCheckAgent = new Agent({
     Your task is to:
     - Carefully analyze the bot's messages to understand what actions it took
     - Compare the bot's actual behavior with the expected behavior description
-    - Determine if the bot's behavior aligns with, contradicts, or is unrelated to the expectations
-    - Consider partial matches - if the bot does what's expected but also does additional things, that may still count as matching
-    - Focus on the core intent and requirements in the expected behavior
+    - Pay special attention to scope constraints like "only", "just", "exclusively", "solely" when they limit the range of an action
+    - When the expected behavior specifies a limited scope (e.g., "gather dates on January 2nd only"), the bot must not exceed that scope
+    - Example: "gather calendar dates on January 2nd only" means the bot should ONLY gather dates for January 2nd, not January 2nd AND 3rd
+    - Focus on precise compliance with scope limitations and behavioral requirements
     - Provide clear reasoning for your decision
 
     Respond in this exact format:
@@ -46,9 +47,10 @@ export async function checkBehaviorExpected(botMessages: BotMessage[], expectedB
     Instructions:
     - Examine what the bot actually did based on its messages
     - Compare this with the expected behavior description
-    - Consider if the bot's actions align with the expectations
-    - Partial matches count as TRUE if the core expectation is met (even if the bot does additional things)
-    - Only return FALSE if the bot clearly contradicts the expected behavior or fails to meet the core requirement
+    - Pay close attention to scope constraints like "only January 2nd", "just Monday", "exclusively morning", etc.
+    - If the expected behavior specifies a limited scope (like "January 2nd only"), the bot must not exceed that scope
+    - For example: if expected is "gather dates on January 2nd only" but bot gathers dates for "January 2nd and 3rd", this is FALSE
+    - Only return TRUE if the bot's behavior exactly matches the scope and requirements specified
 
     Response format:
     REASON: [Detailed explanation of why the behavior matches or doesn't match]
