@@ -454,12 +454,10 @@ export async function processSchedulingActions(
       }
     }
 
-    let groupMessageForFinalizedEvent: string | undefined
-
     // Send group message if needed
     if (nextStep.groupMessage) {
       if (nextStep.finalizedEvent) {
-        groupMessageForFinalizedEvent = nextStep.groupMessage
+        console.log('Skipping groupMessage because finalizedEvent will send canonical calendar update')
       } else if (topic.state.userIds && topic.state.userIds.length > 0) {
         try {
           // Open a conversation with multiple users (MPIM)
@@ -562,14 +560,7 @@ export async function processSchedulingActions(
 
     // Handle finalized event - prefer reschedule of bot-owned; else create (bot or leader)
     if (nextStep.finalizedEvent) {
-      const res = await handleFinalizedEvent(
-        topic,
-        message,
-        nextStep.finalizedEvent,
-        userMap,
-        client,
-        groupMessageForFinalizedEvent,
-      )
+      const res = await handleFinalizedEvent(topic, message, nextStep.finalizedEvent, userMap, client)
       createdMessages.push(...res)
     }
 
@@ -602,7 +593,6 @@ async function handleFinalizedEvent(
   finalizedEvent: FinalizedEvent,
   userMap: Map<string, SlackUser>,
   client: WebClient,
-  prefaceMessage?: string,
 ): Promise<SlackMessage[]> {
   const createdMessages: SlackMessage[] = []
   const start = new Date(finalizedEvent.start)
@@ -664,24 +654,10 @@ async function handleFinalizedEvent(
       threadTs = message.rawTs
     }
 
-    const sanitizedPreface = prefaceMessage
-      ? prefaceMessage
-        .split('\n')
-        .map((line) => line.trimEnd())
-        .filter((line) => line.trim().length > 0)
-        .filter((line) => !/https?:\/\/meet\.google\.com/i.test(line))
-        .join('\n')
-        .trim()
-      : undefined
-
-    const finalMessageText = sanitizedPreface
-      ? `${sanitizedPreface}\n\n${calendarMessage}`
-      : calendarMessage
-
     const calendarResponse = await client.chat.postMessage({
       channel: targetChannel,
       ...(threadTs ? { thread_ts: threadTs } : {}),
-      text: finalMessageText,
+      text: calendarMessage,
     })
 
     if (calendarResponse.ok && calendarResponse.ts) {
@@ -689,7 +665,7 @@ async function handleFinalizedEvent(
         topicId: topic.id,
         channelId: targetChannel,
         userId: topic.botUserId,
-        text: finalMessageText,
+        text: calendarMessage,
         timestamp: tsToDate(calendarResponse.ts),
         rawTs: calendarResponse.ts,
         threadTs: threadTs ?? null,
