@@ -77,8 +77,8 @@ export type EvaluationResults = z.infer<typeof EvaluationResults>
 export type SavedEvaluationResults = z.infer<typeof SavedEvaluationResults>
 export type HistoryMessage = z.infer<typeof HistoryMessage>
 
-// Zod schemas for topic data structure used in oneline evals
-const SlackMessage = z.strictObject({
+// Zod schemas for dumped topic data structure used in oneline evals
+const DumpedSlackMessage = z.strictObject({
   id: z.string(),
   topicId: z.string(),
   userId: z.string(),
@@ -91,66 +91,69 @@ const SlackMessage = z.strictObject({
   raw: z.record(z.unknown()),
 })
 
-const PerUserContext = z.record(z.record(z.unknown()))
+const DumpedPerUserContext = z.record(z.record(z.unknown()))
 
-const TopicState = z.strictObject({
+const DumpedTopicState = z.strictObject({
   id: z.string(),
   topicId: z.string(),
   userIds: z.array(z.string()),
   summary: z.string(),
   isActive: z.boolean(),
-  perUserContext: PerUserContext,
+  perUserContext: DumpedPerUserContext,
   createdByMessageId: z.string(),
   createdAt: z.string(),
   createdByMessageRawTs: z.string(),
 })
 
-const Topic = z.strictObject({
+const DumpedTopic = z.strictObject({
   id: z.string(),
   botUserId: z.string(),
   workflowType: z.string(),
   createdAt: z.string(),
 })
 
-const User = z.strictObject({
+const DumpedUser = z.strictObject({
   id: z.string(),
   teamId: z.string(),
   realName: z.string(),
   email: z.string().nullable(),
 })
 
-const Channel = z.strictObject({
+const DumpedChannel = z.strictObject({
   id: z.string(),
   userIds: z.array(z.string()),
 })
 
-// Standard topic data structure (without eval-specific fields)
-export const TopicData = z.strictObject({
-  topic: Topic,
-  states: z.array(TopicState),
-  messages: z.array(SlackMessage),
-  users: z.array(User),
+// Standard dumped topic data structure (without eval-specific fields)
+export const DumpedTopicData = z.strictObject({
+  topic: DumpedTopic,
+  states: z.array(DumpedTopicState),
+  messages: z.array(DumpedSlackMessage),
+  users: z.array(DumpedUser),
   userData: z.array(z.unknown()),
-  channels: z.array(Channel),
+  channels: z.array(DumpedChannel),
 })
 
-// Oneline evaluation topic data (includes eval-specific fields)
-export const TopicDataOnelineEvals = z.strictObject({
+// Oneline evaluation dumped topic data (includes eval-specific fields)
+export const DumpedTopicDataOnelineEvals = z.strictObject({
   loadUpToId: z.string(),
   expectedBehavior: z.string(),
-  topic: Topic,
-  states: z.array(TopicState),
-  messages: z.array(SlackMessage),
-  users: z.array(User),
+  topic: DumpedTopic,
+  states: z.array(DumpedTopicState),
+  messages: z.array(DumpedSlackMessage),
+  users: z.array(DumpedUser),
   userData: z.array(z.unknown()),
-  channels: z.array(Channel),
+  channels: z.array(DumpedChannel),
 })
 
-// Type exports for topic data
-export type TopicData = z.infer<typeof TopicData>
-export type TopicDataOnelineEvals = z.infer<typeof TopicDataOnelineEvals>
-export type SlackMessage = z.infer<typeof SlackMessage>
-export type TopicState = z.infer<typeof TopicState>
+// Type exports for dumped topic data
+export type DumpedTopicData = z.infer<typeof DumpedTopicData>
+export type DumpedTopicDataOnelineEvals = z.infer<typeof DumpedTopicDataOnelineEvals>
+export type DumpedSlackMessage = z.infer<typeof DumpedSlackMessage>
+export type DumpedTopicState = z.infer<typeof DumpedTopicState>
+export type DumpedTopic = z.infer<typeof DumpedTopic>
+export type DumpedUser = z.infer<typeof DumpedUser>
+export type DumpedChannel = z.infer<typeof DumpedChannel>
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
