@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { local_api } from '../shared/api-client'
 import { loadTopics } from '../utils'
-import { clearDatabase } from './utils'
+import { clearDatabase, TopicDataOnelineEvals } from './utils'
 import { checkBehaviorExpected } from '../agents/evals'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -52,22 +52,28 @@ async function runOnelineEval(filename: string): Promise<boolean> {
     console.log(`Loading file from: ${filePath}`)
 
     const rawData = readFileSync(filePath, 'utf-8')
-    const topicData = JSON.parse(rawData)
+    const parsedData = JSON.parse(rawData)
+
+    // Validate data structure with Zod
+    const topicDataOnelineEvals = TopicDataOnelineEvals.parse(parsedData)
 
     // Extract and store loadUpToId and expectedBehavior fields
-    const loadUpToId = topicData.loadUpToId
-    const expectedBehavior = topicData.expectedBehavior
+    const loadUpToId = topicDataOnelineEvals.loadUpToId
+    const expectedBehavior = topicDataOnelineEvals.expectedBehavior
 
     console.log(`loadUpToId: ${loadUpToId}`)
     console.log(`expectedBehavior: ${expectedBehavior}`)
 
-    // Delete these fields from the loaded dictionary
-    delete topicData.loadUpToId
-    delete topicData.expectedBehavior
+    // Create standard topic data without eval-specific fields
+    const topicData = {
+      topic: topicDataOnelineEvals.topic,
+      states: [...topicDataOnelineEvals.states],
+      messages: [...topicDataOnelineEvals.messages],
+    }
 
     // Find the message that belongs to loadUpToId
-    const messages = topicData.messages || []
-    const targetMessage = messages.find((message: any) => message.id === loadUpToId)
+    const messages = topicData.messages
+    const targetMessage = messages.find((message) => message.id === loadUpToId)
 
     if (targetMessage) {
       console.log('\nFound target message:')
@@ -80,24 +86,20 @@ async function runOnelineEval(filename: string): Promise<boolean> {
       console.log(`Target timestamp: ${targetTimestamp.toISOString()}`)
 
       // Filter states: remove entries with createdAt after target message timestamp
-      const originalStatesCount = topicData.states?.length || 0
-      if (topicData.states) {
-        topicData.states = topicData.states.filter((state: any) => {
-          const stateTimestamp = new Date(state.createdAt)
-          return stateTimestamp < targetTimestamp
-        })
-      }
-      const filteredStatesCount = topicData.states?.length || 0
+      const originalStatesCount = topicData.states.length
+      topicData.states = topicData.states.filter((state) => {
+        const stateTimestamp = new Date(state.createdAt)
+        return stateTimestamp < targetTimestamp
+      })
+      const filteredStatesCount = topicData.states.length
 
       // Filter messages: remove entries with timestamp at or after target message timestamp (including the target message itself)
-      const originalMessagesCount = topicData.messages?.length || 0
-      if (topicData.messages) {
-        topicData.messages = topicData.messages.filter((message: any) => {
-          const messageTimestamp = new Date(message.timestamp)
-          return messageTimestamp < targetTimestamp
-        })
-      }
-      const filteredMessagesCount = topicData.messages?.length || 0
+      const originalMessagesCount = topicData.messages.length
+      topicData.messages = topicData.messages.filter((message) => {
+        const messageTimestamp = new Date(message.timestamp)
+        return messageTimestamp < targetTimestamp
+      })
+      const filteredMessagesCount = topicData.messages.length
 
       console.log(`\nFiltering results:`)
       console.log(`States: ${originalStatesCount} -> ${filteredStatesCount} (removed ${originalStatesCount - filteredStatesCount})`)
@@ -180,7 +182,7 @@ async function runOnelineEval(filename: string): Promise<boolean> {
 
     } else {
       console.log(`\n⚠️  Warning: Could not find message with ID: ${loadUpToId}`)
-      console.log(`Available message IDs: ${messages.map((m: any) => m.id).join(', ')}`)
+      console.log(`Available message IDs: ${messages.map((m) => m.id).join(', ')}`)
       return false
     }
 
