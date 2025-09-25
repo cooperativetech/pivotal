@@ -139,7 +139,7 @@ export async function shouldShowCalendarButtons(
   topicId: string,
   userId: string,
 ): Promise<boolean> {
-  const [hasBeenPrompted, isCalendarConnected, userContext] = await Promise.all([
+  const [isCalendarConnected, hasBeenPrompted, userContext] = await Promise.all([
     isGoogleCalendarConnected(userId),
     hasUserBeenPrompted(topicId, userId),
     getUserContext(userId),
