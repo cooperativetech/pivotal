@@ -147,7 +147,7 @@ async function runLoadTopicTest(): Promise<void> {
 
     // Step 2: Load topic data from JSON file
     const jsonFilePath = join(__dirname, '../results/tests/dump_topic_test_20250918172340511.json')
-    const topicData = await loadTopicData(jsonFilePath)
+    const topicData = loadTopicData(jsonFilePath)
     const jsonContent = readFileSync(jsonFilePath, 'utf8')
 
     // Step 3: Load topic, users, and messages into database (loadTopics handles everything)
