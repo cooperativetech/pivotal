@@ -182,7 +182,7 @@ Evaluates bot behavior on single-turn conversations by replaying specific messag
 
 ### Preparation
 
-This evaluation method relies on having dumped a topic that contains the conversation that you want to use as a test. Dump topic is automatically called during evaluation simulations, generating a ```.json``` file. Alternately, with the topic id, you can call ```pnpm dump topic --topicId``` to dump the relevant topic to a ```.json``` manually.
+This evaluation method relies on having dumped a topic that contains the conversation that you want to use as a test. Dump topic is automatically called during evaluation simulations, generating a ```.json``` file. Alternately, with the topic id, you can call ```pnpm dump topic <topicId> -o <filename.json>```, in which case the dumpTopic data gets saved to a file with the specified name. In the web app, when you are on a topic page, you can read the topic id out of the URL (the string after ```topic/``` and before ```?message=```).
 
 From there, you need to copy over the ```.json``` file to ```src/evals/data/oneliners```. You need to manually add two additional fields to the file. First, ```loadUpToId``` which contains the final user-sent message ID that you want to resend to the agent for the test. The script will automatically load all of the information from the database that occured up to the point in time when the message was initially sent, restoring the database state, and then finally resends the message to the agent. Usually, you will want this message to be the one in response to which Pivotal generated unexpected behavior. The message ID can be found in the json file by scrolling down to the message of interest (labeled "Id"), or else is also listed in the web app.
 
