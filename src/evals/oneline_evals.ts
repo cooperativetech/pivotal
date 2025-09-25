@@ -12,13 +12,18 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Parse command line arguments
-function parseArguments(): { filename: string | null } {
+function parseArguments(): { filename: string | null; nReps: number } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
       filename: {
         type: 'string',
         short: 'f',
+      },
+      nReps: {
+        type: 'string',
+        short: 'n',
+        default: '1',
       },
       help: {
         type: 'boolean',
@@ -33,13 +38,78 @@ function parseArguments(): { filename: string | null } {
     console.log('\nOptions:')
     console.log('  -f, --filename     Topic JSON filename (e.g., benchmark_2simusers_1start_2end_60min_gen20250922201028577_eval20250923135910404_topic.json)')
     console.log('                     If not specified, runs evaluation on all files in oneliners directory')
+    console.log('  -n, --nReps        Number of times to repeat each test (default: 1)')
     console.log('  -h, --help         Show this help message')
     process.exit(0)
   }
 
+  const nReps = parseInt(values.nReps, 10)
+  if (isNaN(nReps) || nReps < 1) {
+    console.error('Error: nReps must be a positive integer')
+    process.exit(1)
+  }
+
   return {
     filename: values.filename || null,
+    nReps,
   }
+}
+
+// Run a single file evaluation with repetitions
+async function runRepeatedOnelineEval(filename: string, nReps: number): Promise<{
+  behaviorMatchCount: number
+  behaviorMismatchCount: number
+  skippedCount: number
+  errorCount: number
+}> {
+  let behaviorMatchCount = 0
+  let behaviorMismatchCount = 0
+  let skippedCount = 0
+  let errorCount = 0
+
+  for (let rep = 1; rep <= nReps; rep++) {
+    if (nReps > 1) {
+      console.log(`\n--- Repetition ${rep}/${nReps} ---`)
+    }
+
+    try {
+      const behaviorMatches = await runOnelineEval(filename)
+      if (behaviorMatches === null) {
+        skippedCount++
+        console.log(`🔄 Skipped (no expected behavior)${nReps === 1 ? `: ${filename}` : ''}`)
+      } else if (behaviorMatches) {
+        behaviorMatchCount++
+        console.log(`✅ Behavior matched expectations${nReps === 1 ? `: ${filename}` : ''}`)
+      } else {
+        behaviorMismatchCount++
+        console.log(`❌ Behavior did not match expectations${nReps === 1 ? `: ${filename}` : ''}`)
+      }
+    } catch (error) {
+      errorCount++
+      console.error(`💥 Script execution failed${nReps === 1 ? `: ${filename}` : ''}`)
+      console.error(`Error: ${error}`)
+    }
+  }
+
+  // Show repetition summary if multiple reps
+  if (nReps > 1) {
+    console.log(`\n${'='.repeat(60)}`)
+    console.log('REPETITION SUMMARY')
+    console.log(`${'='.repeat(60)}`)
+    console.log(`File: ${filename}`)
+    console.log(`Total repetitions: ${nReps}`)
+    console.log(`Behavior matches: ${behaviorMatchCount}`)
+    console.log(`Behavior mismatches: ${behaviorMismatchCount}`)
+    console.log(`Skipped (no expected behavior): ${skippedCount}`)
+    console.log(`Script errors: ${errorCount}`)
+
+    const evaluatedReps = nReps - skippedCount
+    if (evaluatedReps > 0) {
+      console.log(`Success rate (excluding skipped): ${((behaviorMatchCount / evaluatedReps) * 100).toFixed(1)}%`)
+    }
+  }
+
+  return { behaviorMatchCount, behaviorMismatchCount, skippedCount, errorCount }
 }
 
 // Single evaluation function
@@ -209,12 +279,16 @@ async function runOnelineEval(filename: string): Promise<boolean | null> {
 // Main function that handles both single file and batch processing
 async function runOnelineEvals(): Promise<void> {
   try {
-    const { filename } = parseArguments()
+    const { filename, nReps } = parseArguments()
 
     if (filename) {
       // Run evaluation on specific file
       console.log(`Running evaluation on single file: ${filename}`)
-      await runOnelineEval(filename)
+      if (nReps > 1) {
+        console.log(`Repeating ${nReps} times...\n`)
+      }
+
+      await runRepeatedOnelineEval(filename, nReps)
     } else {
       // Run evaluation on all files in oneliners directory
       const onelinersDirPath = join(__dirname, 'data', 'oneliners')
@@ -234,11 +308,14 @@ async function runOnelineEvals(): Promise<void> {
 
       console.log(`Found ${jsonFiles.length} files in oneliners directory`)
       console.log(`Running evaluation on all files...`)
+      if (nReps > 1) {
+        console.log(`Each file will be repeated ${nReps} times`)
+      }
 
-      let behaviorMatchCount = 0
-      let behaviorMismatchCount = 0
-      let skippedCount = 0
-      let errorCount = 0
+      let filesWithOnlySuccesses = 0
+      let filesWithFailures = 0
+      let filesWithoutExpectedBehavior = 0
+      let filesWithErrors = 0
 
       for (let i = 0; i < jsonFiles.length; i++) {
         const file = jsonFiles[i]
@@ -246,22 +323,20 @@ async function runOnelineEvals(): Promise<void> {
         console.log(`Processing file ${i + 1}/${jsonFiles.length}: ${file}`)
         console.log(`${'='.repeat(80)}`)
 
-        try {
-          const behaviorMatches = await runOnelineEval(file)
-          if (behaviorMatches === null) {
-            skippedCount++
-            console.log(`🔄 Skipped (no expected behavior): ${file}`)
-          } else if (behaviorMatches) {
-            behaviorMatchCount++
-            console.log(`✅ Behavior matched expectations: ${file}`)
-          } else {
-            behaviorMismatchCount++
-            console.log(`❌ Behavior did not match expectations: ${file}`)
-          }
-        } catch (error) {
-          errorCount++
-          console.error(`💥 Script execution failed: ${file}`)
-          console.error(`Error: ${error}`)
+        const fileResults = await runRepeatedOnelineEval(file, nReps)
+
+        // Categorize file outcomes
+        if (fileResults.errorCount > 0) {
+          filesWithErrors++
+        } else if (fileResults.skippedCount === nReps) {
+          // All reps were skipped (no expected behavior)
+          filesWithoutExpectedBehavior++
+        } else if (fileResults.behaviorMismatchCount > 0) {
+          // At least one failure
+          filesWithFailures++
+        } else {
+          // All evaluations succeeded
+          filesWithOnlySuccesses++
         }
       }
 
@@ -269,31 +344,34 @@ async function runOnelineEvals(): Promise<void> {
       console.log('BATCH PROCESSING SUMMARY')
       console.log(`${'='.repeat(80)}`)
       console.log(`Total files: ${jsonFiles.length}`)
-      console.log(`Behavior matches: ${behaviorMatchCount}`)
-      console.log(`Behavior mismatches: ${behaviorMismatchCount}`)
-      console.log(`Skipped (no expected behavior): ${skippedCount}`)
-      console.log(`Script errors: ${errorCount}`)
+      if (nReps > 1) {
+        console.log(`Repetitions per file: ${nReps}`)
+      }
+      console.log(`Files with only successes: ${filesWithOnlySuccesses}`)
+      console.log(`Files with failures: ${filesWithFailures}`)
+      console.log(`Files without expected behavior: ${filesWithoutExpectedBehavior}`)
+      console.log(`Files with errors: ${filesWithErrors}`)
 
-      const evaluatedFiles = jsonFiles.length - skippedCount
-      if (evaluatedFiles > 0) {
-        console.log(`Behavior match rate (excluding skipped): ${((behaviorMatchCount / evaluatedFiles) * 100).toFixed(1)}%`)
+      const evaluableFiles = jsonFiles.length - filesWithoutExpectedBehavior
+      if (evaluableFiles > 0) {
+        console.log(`Success rate (files): ${((filesWithOnlySuccesses / evaluableFiles) * 100).toFixed(1)}%`)
       }
 
-      if (evaluatedFiles === 0) {
+      if (evaluableFiles === 0) {
         console.log('\n🔄 No files had expected behavior specified - all were skipped.')
-      } else if (behaviorMatchCount === evaluatedFiles) {
-        console.log('\n🎉 All evaluated files passed! Bot behavior matched expectations in every case.')
-      } else if (errorCount > 0) {
-        console.log(`\n💥 ${errorCount} file(s) had script execution errors.`)
-        console.log(`⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches.`)
-        if (skippedCount > 0) {
-          console.log(`🔄 ${skippedCount} file(s) were skipped (no expected behavior).`)
+      } else if (filesWithOnlySuccesses === evaluableFiles) {
+        console.log('\n🎉 All evaluable files passed! Bot behavior matched expectations in every case.')
+      } else if (filesWithErrors > 0) {
+        console.log(`\n💥 ${filesWithErrors} file(s) had script execution errors.`)
+        console.log(`⚠️  ${filesWithFailures} file(s) had behavior failures.`)
+        if (filesWithoutExpectedBehavior > 0) {
+          console.log(`🔄 ${filesWithoutExpectedBehavior} file(s) were skipped (no expected behavior).`)
         }
         console.log('Check logs above for details.')
       } else {
-        console.log(`\n⚠️  ${behaviorMismatchCount} file(s) had behavior mismatches.`)
-        if (skippedCount > 0) {
-          console.log(`🔄 ${skippedCount} file(s) were skipped (no expected behavior).`)
+        console.log(`\n⚠️  ${filesWithFailures} file(s) had behavior failures.`)
+        if (filesWithoutExpectedBehavior > 0) {
+          console.log(`🔄 ${filesWithoutExpectedBehavior} file(s) were skipped (no expected behavior).`)
         }
         console.log('Check logs above for details.')
       }
