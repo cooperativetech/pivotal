@@ -1,4 +1,5 @@
 import { Agent, run } from '../agent-sdk'
+import { z } from 'zod'
 
 const behaviorExpectedCheckAgent = new Agent({
   name: 'BehaviorExpectedCheckAgent',
@@ -23,16 +24,17 @@ const behaviorExpectedCheckAgent = new Agent({
     RESULT: TRUE/FALSE`,
 })
 
-interface BotMessage {
-  text: string
-  channelId?: string
-  userId?: string
-  [key: string]: any
-}
+const BotMessageSchema = z.object({
+  text: z.string(),
+  channelId: z.string().optional(),
+  userId: z.string().optional(),
+}).catchall(z.unknown())
+
+type BotMessage = z.infer<typeof BotMessageSchema>
 
 export async function checkBehaviorExpected(botMessages: BotMessage[], expectedBehavior: string): Promise<boolean> {
   // Format bot messages into a single string
-  const formattedMessages = botMessages.map(message => {
+  const formattedMessages = botMessages.map((message) => {
     const recipient = message.userId || message.channelId || 'unknown'
     return `To ${recipient}: ${message.text}`
   }).join('\n')
