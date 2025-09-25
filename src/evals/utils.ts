@@ -117,6 +117,11 @@ const DumpedUser = z.strictObject({
   teamId: z.string(),
   realName: z.string(),
   email: z.string().nullable(),
+  tz: z.string().optional(),
+  isBot: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  updated: z.number().optional(),
+  raw: z.record(z.unknown()).optional(),
 })
 
 const DumpedChannel = z.strictObject({
