@@ -202,7 +202,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     json: {
       userId: firstSimUser.name,
       text: initialMessage,
-      ignoreExistingTopics: topicRouting,
+      ignoreExistingTopics: !topicRouting,
     },
   })
   if (!initMessageRes.ok) {
@@ -264,7 +264,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             json: {
               userId: simUser.name,
               text: reply,
-              ignoreExistingTopics: topicRouting,
+              ignoreExistingTopics: !topicRouting,
               ...(topicRouting ? {} : { topicId: topicId }),
             },
           })
