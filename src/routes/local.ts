@@ -190,8 +190,9 @@ export const localRoutes = new Hono()
     userId: z.string(),
     text: z.string(),
     topicId: z.string().optional(),
+    ignoreExistingTopics: z.boolean().optional(),
   })), async (c) => {
-    const { userId, text, topicId } = c.req.valid('json')
+    const { userId, text, topicId, ignoreExistingTopics = true } = c.req.valid('json')
 
     try {
       // Get botUserId from the topic if topicId is provided, otherwise use default
@@ -221,7 +222,7 @@ export const localRoutes = new Hono()
         botUserId,
         mockSlackClient,
         topicId || null,
-        true, // if topicId is null, create a new topic rather than routing to existing ones
+        ignoreExistingTopics,
       )
       if (!result) {
         throw new Error('Failed to process message')
