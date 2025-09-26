@@ -199,7 +199,11 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
   // Send initial message through local API
   const initMessageRes = await local_api.message.$post({
-    json: { userId: firstSimUser.name, text: initialMessage, ignoreExistingTopics: topicRouting },
+    json: {
+      userId: firstSimUser.name,
+      text: initialMessage,
+      ignoreExistingTopics: topicRouting,
+    },
   })
   if (!initMessageRes.ok) {
     throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
@@ -257,7 +261,12 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
           // Send reply through local API
           const replyRes = await local_api.message.$post({
-            json: { userId: simUser.name, text: reply , topicId: topicId, ignoreExistingTopics: topicRouting },
+            json: {
+              userId: simUser.name,
+              text: reply,
+              ignoreExistingTopics: topicRouting,
+              ...(topicRouting ? {} : { topicId: topicId })
+            },
           })
 
           if (replyRes.ok) {
