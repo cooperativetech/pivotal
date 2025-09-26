@@ -456,9 +456,8 @@ export async function processSchedulingActions(
 
     // Send group message if needed
     if (nextStep.groupMessage) {
-      if (nextStep.finalizedEvent) {
-        console.log('Skipping groupMessage because finalizedEvent will send canonical calendar update')
-      } else if (topic.state.userIds && topic.state.userIds.length > 0) {
+      // Create or open an MPIM (multi-party instant message) with all topic users
+      if (topic.state.userIds && topic.state.userIds.length > 0) {
         try {
           // Open a conversation with multiple users (MPIM)
           const mpimResult = await client.conversations.open({

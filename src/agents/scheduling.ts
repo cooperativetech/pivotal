@@ -208,13 +208,15 @@ Based on the current state, determine what tools to call (if any) and generate t
 
 4. Ready to confirm the consensus time
   - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
-  - Only use when you have identified a time that works for all participants
+  - Only use when you have identified a time that works for all participants and still need explicit confirmation from them
   - Return replyMessage with confirmation
+  - Keep confirmations concise and avoid implying that a calendar invite has already been sent
 
 5. Scheduling is done
   - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
   - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
+  - Pair the finalizedEvent with a short groupMessage confirming the plan (e.g., "Locked in Tue 1pm (EST). Invite is on the way."), but do not include calendar links or restate the full invite details yourself.
 
 - Miscellaneous actions needed
   - Sometimes you need to ask for clarification, provide updates, or handle edge cases
@@ -240,6 +242,8 @@ Based on the current state, determine what tools to call (if any) and generate t
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Use the updateSummary tool whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
+- CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
+- ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
 - Never defer actions to a future response - everything mentioned in replyMessage must be actioned in the same response
