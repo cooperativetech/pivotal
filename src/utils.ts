@@ -61,13 +61,23 @@ export async function getTopicWithState(topicId: string): Promise<TopicWithState
   }
 }
 
-export async function getTopics(botUserId: string | null = null, onlyActive: boolean = false): Promise<TopicWithState[]> {
+export async function getTopics(
+  botUserId: string | null = null,
+  onlyActive: boolean = false,
+  topicIds?: string[],
+): Promise<TopicWithState[]> {
   const filters = []
   if (botUserId) {
     filters.push(eq(topicTable.botUserId, botUserId))
   }
   if (onlyActive) {
     filters.push(eq(topicStateTable.isActive, true))
+  }
+  if (topicIds) {
+    if (topicIds.length === 0) {
+      return []
+    }
+    filters.push(inArray(topicTable.id, topicIds))
   }
 
   const latestStateSubquery = db
