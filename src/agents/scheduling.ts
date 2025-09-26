@@ -340,8 +340,8 @@ IMPORTANT:
   const rescheduleAddendum = `
 
 ## Rescheduling Behavior (Important)
-- If there is exactly ONE scheduled meeting in this topic and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
-- If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification listing the options by day/time. If the message clearly references a specific day/time, pick that one directly.
+- If there is exactly ONE scheduled meeting in this topic (see the numbered list under "Current Scheduled Events") and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
+- If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification referring to the numbered entries (e.g., "[1]" or "[2]") and showing the day/time. If the message clearly references a specific day/time, pick that one directly.
 - To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
 - When participants agree to cancel the meeting entirely, set cancelEvent: true (and normally omit finalizedEvent) so the existing invite is removed, and clearly notify everyone of the cancellation.
 `
@@ -350,27 +350,24 @@ IMPORTANT:
   try {
     const scheduledEvents = await listBotScheduledEvents(topic.id)
     if (scheduledEvents.length > 0) {
-      const formatted = scheduledEvents
+      const scheduledDisplay = scheduledEvents
         .filter((event) => !event.free)
-        .map((event) => {
+        .map((event, index) => {
           if (!event.start || !event.end) return null
           const start = new Date(event.start)
           const end = new Date(event.end)
           const startStr = formatTimestampWithTimezone(start, callingUserTimezone)
-          const isSameDay = start.toDateString() === end.toDateString()
-          const endStr = isSameDay
-            ? end.toLocaleString('en-US', { timeZone: callingUserTimezone || 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })
-            : formatTimestampWithTimezone(end, callingUserTimezone)
+          const endStr = formatTimestampWithTimezone(end, callingUserTimezone)
           const title = event.summary ? ` — ${event.summary}` : ''
           const participants = event.participantEmails?.length
             ? ` (with: ${event.participantEmails.join(', ')})`
             : ''
-          return `  - ${startStr} to ${endStr}${title}${participants}`
+          return `  [${index + 1}] ${startStr} to ${endStr}${title}${participants}`
         })
         .filter((line): line is string => Boolean(line))
 
-      if (formatted.length > 0) {
-        scheduledSection = `\nCurrent Scheduled Events (via calendar):\n${formatted.join('\n')}`
+      if (scheduledDisplay.length > 0) {
+        scheduledSection = `\nCurrent Scheduled Events (via calendar):\n${scheduledDisplay.join('\n')}`
       }
     }
   } catch (error) {

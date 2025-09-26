@@ -4,7 +4,7 @@ import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, ne, or, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
 import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
@@ -699,8 +699,55 @@ async function getOrCreateTopic(
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
-  // Step 1: Query all of this bot's active topics from the DB
-  const topics = ignoreExistingTopics ? [] : await getTopics(botUserId, true)
+  // Step 1: Gather active topics and augment with any topics that have recent activity in this channel/thread
+  let topics: TopicWithState[] = []
+  if (!ignoreExistingTopics) {
+    const activeTopics = await getTopics(botUserId, true)
+    const activeTopicIds = new Set(activeTopics.map((topic) => topic.id))
+
+    const recentChannelMessages = await db
+      .select({ topicId: slackMessageTable.topicId })
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.channelId, message.channelId))
+      .orderBy(desc(slackMessageTable.timestamp))
+      .limit(50)
+
+    const recentTopicIds = new Set<string>()
+    for (const row of recentChannelMessages) {
+      if (!activeTopicIds.has(row.topicId)) {
+        recentTopicIds.add(row.topicId)
+      }
+    }
+
+    if (message.threadTs) {
+      const recentThreadMessages = await db
+        .select({ topicId: slackMessageTable.topicId })
+        .from(slackMessageTable)
+        .where(
+          and(
+            eq(slackMessageTable.channelId, message.channelId),
+            or(
+              eq(slackMessageTable.threadTs, message.threadTs),
+              eq(slackMessageTable.rawTs, message.threadTs),
+            ),
+          ),
+        )
+        .orderBy(desc(slackMessageTable.timestamp))
+        .limit(50)
+
+      for (const row of recentThreadMessages) {
+        if (!activeTopicIds.has(row.topicId)) {
+          recentTopicIds.add(row.topicId)
+        }
+      }
+    }
+
+    const additionalTopics = recentTopicIds.size > 0
+      ? await getTopics(botUserId, false, Array.from(recentTopicIds))
+      : []
+
+    topics = [...activeTopics, ...additionalTopics.filter((topic) => !activeTopicIds.has(topic.id))]
+  }
 
   // Step 2: Call analyzeTopicRelevance
   const analysis = await analyzeTopicRelevance(topics, message, userMap, botUserId)
