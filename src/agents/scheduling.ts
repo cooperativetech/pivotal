@@ -224,8 +224,6 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
   - Optionally return groupMessage for updates to all users in shared channel
   - Can use updateUserNames tool if users need to be added/removed (use exact names from User Directory)
-  - At the beginning of a scheduling topic, proactively send every participant listed under “Users involved” whose status is “No calendar connected” a private messagesToUsers entry with includeCalendarButtons: true (do this exactly once per participant per topic). Skip only if the participant previously pressed “Don’t ask this again” (opted out).
-  - When a user (even with typos like “clander” or “calender”) later asks to connect their Google Calendar, include a messagesToUsers entry for that specific user with includeCalendarButtons: true so the handler can show the buttons.
   - If someone asks whether their calendar is connected, consult the “Calendar Information” section and answer directly (✅ Connected / ❌ Not connected), optionally reminding them how to connect if needed.
 
 ## Important Guidelines

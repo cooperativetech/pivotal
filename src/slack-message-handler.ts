@@ -8,7 +8,6 @@ import { and, desc, eq, ne, or, sql } from 'drizzle-orm'
 import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
 import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
-import { isGoogleCalendarConnected } from './integrations/google'
 import { baseURL } from './auth'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
@@ -51,7 +50,6 @@ async function promptUserToConnectCalendar(
 
     await upsertSlackChannel(dmResult.channel.id, [userId])
 
-    const authUrl = `${baseURL}/api/google/authorize`
     const dmResponse = await client.chat.postMessage({
       channel: dmResult.channel.id,
       text: 'To help with scheduling, you can connect your Google Calendar:',
@@ -60,7 +58,7 @@ async function promptUserToConnectCalendar(
         {
           type: 'actions',
           elements: [
-            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: authUrl },
+            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize` },
             { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
             { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
           ],
@@ -70,6 +68,11 @@ async function promptUserToConnectCalendar(
 
     if (dmResponse.ok && dmResponse.ts) {
       await addPromptedUser(topicId, userId, messageId)
+      try {
+        await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmResult.channel.id, ts: dmResponse.ts } }, messageId)
+      } catch (error) {
+        console.warn('Failed to store calendarPromptMessage pointer:', error)
+      }
     }
   } catch (error) {
     console.error(`Error prompting user ${userId} to connect calendar:`, error)
@@ -234,6 +237,7 @@ export async function processSchedulingActions(
     let topic = await getTopicWithState(topicId)
 
     await promptUnconnectedCalendars(topic, message, client)
+    topic = await getTopicWithState(topicId)
 
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
@@ -345,6 +349,9 @@ export async function processSchedulingActions(
     // Get the updated topic details, which may have changed userIds for example
     topic = await getTopicWithState(topicId)
 
+    // Re-run calendar prompts in case new participants were added during this turn
+    await promptUnconnectedCalendars(topic, message, client)
+
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
       // Create name to ID mapping
@@ -383,45 +390,10 @@ export async function processSchedulingActions(
               // Only include the actual user, not the bot
               await upsertSlackChannel(dmChannel.channel.id, [userId])
 
-              let blocks = undefined
-              let dmText = messageGroup.text
-
-              // Check if AI requested calendar buttons for this message
-              if (messageGroup.includeCalendarButtons) {
-                let showButtons = await shouldShowCalendarButtons(topicId, userId)
-                if (!showButtons) {
-                  try {
-                    const connected = await isGoogleCalendarConnected(userId)
-                    if (connected) {
-                      dmText = '✅ Your Google Calendar is already connected.'
-                    } else {
-                      // Explicit ask overrides suppression/prior prompts
-                      showButtons = true
-                    }
-                  } catch {
-                    showButtons = true
-                  }
-                }
-
-                if (showButtons) {
-                  const authUrl = `${baseURL}/api/google/authorize`
-                  blocks = [
-                    { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
-                    { type: 'actions', elements: [
-                      { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: authUrl },
-                      { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
-                      { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
-                    ] },
-                  ]
-                  await addPromptedUser(topicId, userId, message.id)
-                }
-              }
-
-              // Send the message with optional blocks
+              // Send the message
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
-                text: dmText,
-                ...(blocks && { blocks }),
+                text: messageGroup.text,
               })
 
               // Save the bot's DM to the database immediately
@@ -437,14 +409,6 @@ export async function processSchedulingActions(
                   raw: dmResponse.message,
                 }).returning()
                 createdMessages.push(createdMessage)
-
-                if (blocks && messageGroup.includeCalendarButtons) {
-                  try {
-                    await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmChannel.channel.id, ts: dmResponse.ts } }, message.id)
-                  } catch (e) {
-                    console.warn('Failed to store calendarPromptMessage pointer:', e)
-                  }
-                }
               }
             }
           } catch (dmError) {
