@@ -498,12 +498,15 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     let evaluationSucceeded = false
     let evaluationReason = ''
 
-    if (hasSufficientFreeTime && meetingWasFound && allUsersCanAttend) {
+    if (hasSufficientFreeTime && meetingWasFound && allUsersCanAttend && withinTimeRange) {
       evaluationSucceeded = true
-      evaluationReason = 'SUCCESS: Meeting found when users had sufficient shared free time and all users can attend'
+      evaluationReason = 'SUCCESS: Meeting found when users had sufficient shared free time, all users can attend, and meeting is within time constraints'
     } else if (!hasSufficientFreeTime && !meetingWasFound) {
       evaluationSucceeded = true
       evaluationReason = 'SUCCESS: No meeting found when there was insufficient shared free time'
+    } else if (hasSufficientFreeTime && meetingWasFound && allUsersCanAttend && !withinTimeRange) {
+      evaluationSucceeded = false
+      evaluationReason = 'FAILURE: Meeting found but falls outside the specified time constraints'
     } else if (hasSufficientFreeTime && (!meetingWasFound || !allUsersCanAttend)) {
       evaluationSucceeded = false
       evaluationReason = `FAILURE: Sufficient shared free time (${maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min) but ${!meetingWasFound ? 'no meeting suggested' : 'not all users can attend suggested meeting'}`

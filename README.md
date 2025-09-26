@@ -56,7 +56,7 @@ pnpm run eval --help                           # Show all options
 pnpm run eval -f benchmark_file.json          # Run specific benchmark file
 pnpm run eval -d benchmark_folder             # Run all files in folder
 pnpm run eval -r 5                            # Run 5 repetitions per case
-pnpm run eval --topicRouting                  # Enable topic routing (default: false)
+pnpm run eval --topicRouting                  # Enable topic routing (flag only, default: false)
 ```
 
 
