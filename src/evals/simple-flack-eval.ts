@@ -8,7 +8,7 @@ import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
 // Parse command line arguments for benchmark file or folder
-function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number } {
+function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number; topicRouting: boolean } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -25,6 +25,11 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
         short: 'r',
         default: '1',
       },
+      topicRouting: {
+        type: 'boolean',
+        short: 't',
+        default: false,
+      },
       help: {
         type: 'boolean',
         short: 'h',
@@ -39,6 +44,7 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
     console.log('  -f, --benchmarkFile     Specific benchmark file (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773.json)')
     console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1start_2end_60min)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
+    console.log('  -t, --topicRouting      Enable topic routing (default: false)')
     console.log('  -h, --help              Show this help message')
     console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1start_2end_60min')
     process.exit(0)
@@ -54,6 +60,7 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
     benchmarkFile: values.benchmarkFile || null,
     benchmarkFolder: values.benchmarkFolder || null,
     nReps: parseInt(values.nReps, 10),
+    topicRouting: values.topicRouting || false,
   }
 }
 import { BaseScheduleUser } from './sim-users'
@@ -164,7 +171,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -192,7 +199,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Prom
 
   // Send initial message through local API
   const initMessageRes = await local_api.message.$post({
-    json: { userId: firstSimUser.name, text: initialMessage },
+    json: { userId: firstSimUser.name, text: initialMessage, ignoreExistingTopics: topicRouting },
   })
   if (!initMessageRes.ok) {
     throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
@@ -250,7 +257,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[]): Prom
 
           // Send reply through local API
           const replyRes = await local_api.message.$post({
-            json: { userId: simUser.name, text: reply , topicId: topicId },
+            json: { userId: simUser.name, text: reply , topicId: topicId, ignoreExistingTopics: topicRouting },
           })
 
           if (replyRes.ok) {
@@ -319,14 +326,14 @@ async function runSimpleEvaluation(): Promise<void> {
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkFile, benchmarkFolder, nReps } = parseArguments()
+    const { benchmarkFile, benchmarkFolder, nReps, topicRouting } = parseArguments()
 
     // Step 2: Determine what to run based on arguments
     if (benchmarkFile) {
       // Run specific file
       console.log(`Using benchmark file: ${benchmarkFile}`)
       console.log(`Running ${nReps} repetition(s) per case`)
-      await runRepeatedEvaluation(benchmarkFile, false, nReps)
+      await runRepeatedEvaluation(benchmarkFile, false, nReps, topicRouting)
     } else {
       // Run folder (either specified or default)
       const folderName = benchmarkFolder || 'benchmark_2simusers_1start_2end_60min'
@@ -339,7 +346,7 @@ async function runSimpleEvaluation(): Promise<void> {
         console.log(`\n${'='.repeat(80)}`)
         console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
         console.log(`${'='.repeat(80)}`)
-        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps)
+        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps, topicRouting)
       }
 
       console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
@@ -351,7 +358,7 @@ async function runSimpleEvaluation(): Promise<void> {
 }
 
 // Wrapper function to run repeated evaluations
-async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number): Promise<void> {
+async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number, topicRouting: boolean): Promise<void> {
   const allResults: SavedEvaluationResults[] = []
 
   for (let rep = 1; rep <= nReps; rep++) {
@@ -359,7 +366,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
       console.log(`\n--- Repetition ${rep}/${nReps} ---`)
     }
     try {
-      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath)
+      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath, topicRouting)
       if (result) {
         allResults.push(result)
       }
@@ -381,7 +388,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
 }
 
 // Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false): Promise<SavedEvaluationResults | null> {
+async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false, topicRouting = false): Promise<SavedEvaluationResults | null> {
   try {
     // Step 1: Clear database
     await clearDatabase()
@@ -409,7 +416,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers)
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
 
     if (result.suggestedEvent) {
