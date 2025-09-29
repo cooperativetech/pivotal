@@ -1,0 +1,152 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T05:00:00.000Z",
+    "startTimeOffset": 1,
+    "endTime": "2025-01-03T05:00:00.000Z",
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "nGroups": 2,
+    "userGroupMapping": {
+      "Alice": 0,
+      "Bob": 0,
+      "Diana": 1,
+      "Charlie": 1
+    },
+    "genTimestamp": "20250929153840920"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Content Planning Session - Q1 Construction Tech Trends"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Interview: CEO of SmartBuild Solutions"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Construction Industry Research - Sustainable Materials"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Sponsor Meeting - BuildTech Innovations"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Episode Post-Production Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T12:30:00.000Z",
+          "summary": "Safety briefing and equipment check"
+        },
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Emergency generator maintenance - ICU wing"
+        },
+        {
+          "start": "2025-01-02T16:15:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Electrical panel inspection - Operating Room 3"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Weekly maintenance meeting"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "UPS system installation - Radiology department"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Architecture Review - Workout Tracking Feature"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Deep Work - API Integration"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "1:1 with Engineering Manager"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Sprint Planning - Nutrition Module"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Code Review & Bug Fixes"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Prosthetic Design Review - Horror Film Project"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Body Preparation - TV Series Shoot"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Special Effects Consultation - Zombie Makeup"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Mortuary Equipment Maintenance"
+        },
+        {
+          "start": "2025-01-02T23:00:00.000Z",
+          "end": "2025-01-03T00:00:00.000Z",
+          "summary": "Industry Networking Event - Horror Convention Prep"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
