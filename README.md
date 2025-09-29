@@ -50,6 +50,15 @@ You can then visit the website in your browser at https://localhost:5173. While 
 pnpm run eval
 ```
 
+The eval command supports several options:
+```
+pnpm run eval --help                           # Show all options
+pnpm run eval -f benchmark_file.json          # Run specific benchmark file
+pnpm run eval -d benchmark_folder             # Run all files in folder
+pnpm run eval -r 5                            # Run 5 repetitions per case
+pnpm run eval --topicRouting                  # Enable topic routing (flag only, default: false)
+```
+
 
 To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
