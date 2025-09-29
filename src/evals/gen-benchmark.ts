@@ -153,6 +153,14 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   // Export simUsers and benchmark parameters to JSON file
   const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
 
+  // Create dictionary mapping each sim user to their group index
+  const userGroupMapping: Record<string, number> = {}
+  userGroups.forEach((group, groupIndex) => {
+    group.forEach((userName) => {
+      userGroupMapping[userName] = groupIndex
+    })
+  })
+
   // Generate timestamp for this benchmark
   const timestamp = formatTimestamp()
 
@@ -164,6 +172,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     meetingLength,
     nSimUsers,
     nGroups,
+    userGroupMapping,
     genTimestamp: timestamp,
   }
 
