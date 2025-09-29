@@ -429,6 +429,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Validate benchmark data structure with Zod
     const benchmarkData = BenchmarkFileData.parse(parsedData)
     const benchmarkSimUsers = benchmarkData.simUsers
+    const userGroupMapping = benchmarkData.benchmark.userGroupMapping
 
     console.log('Loading simUsers from benchmark data...')
     const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
@@ -442,7 +443,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers, topicRouting)
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting, userGroupMapping)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
 
     if (result.suggestedEvent) {

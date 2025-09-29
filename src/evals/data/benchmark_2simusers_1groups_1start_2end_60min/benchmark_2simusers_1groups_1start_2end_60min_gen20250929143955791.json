@@ -1,0 +1,79 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T05:00:00.000Z",
+    "startTimeOffset": 1,
+    "endTime": "2025-01-03T05:00:00.000Z",
+    "endTimeOffset": 2,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "nGroups": 1,
+    "userGroupMapping": {
+      "Alice": 0,
+      "Bob": 0
+    },
+    "genTimestamp": "20250929143955791"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 12:00 AM and Friday, January 3 at 12:00 AM with Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Puppet head sculpting - new woodland creature series"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:45:00.000Z",
+          "summary": "Video call with children's theater director - Spring show planning"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "String mechanism testing and adjustment"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Client consultation - custom wedding puppet commission"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Fabric dyeing experiment - natural indigo techniques"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Farm Partnership Meeting - Corn Maze Design Review"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Puzzle Mechanism Testing - Harvest Theme"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Site Visit - Apple Orchard Escape Room Location"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Agricultural Safety Compliance Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
