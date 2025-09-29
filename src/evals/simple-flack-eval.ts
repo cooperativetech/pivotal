@@ -295,6 +295,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             json: {
               userId: simUser.name,
               text: reply,
+<<<<<<< HEAD
               ignoreExistingTopics: !topicRouting,
               ...(topicRouting ? {} : topicIds[userGroup] ? { topicId: topicIds[userGroup] } : {}),
             },
