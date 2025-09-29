@@ -187,32 +187,54 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
   // Start conversation: First simUser sends initial message through API
   console.log('\n--- Starting Conversation ---')
-  const firstSimUser = simUsers[0]
-  const initialMessage = await firstSimUser.sendInitialMessage()
+  // Send initial messages from all simUsers with goals
+  let topicId: string | undefined
+  let suggestedEvent: any = null
 
-  if (!initialMessage) {
-    console.log(`${firstSimUser.name} has no initial message to send`)
-    throw new Error('First simUser must have an initial message to start conversation')
+  for (const simUser of simUsers) {
+    if (simUser.goal && simUser.goal.trim() !== '') {
+      const initialMessage = await simUser.sendInitialMessage()
+
+      if (!initialMessage) {
+        console.log(`${simUser.name} has a goal but no initial message to send`)
+        continue
+      }
+
+      console.log(`${simUser.name}: ${initialMessage}`)
+
+      // Send initial message through local API
+      const initMessageRes = await local_api.message.$post({
+        json: {
+          userId: simUser.name,
+          text: initialMessage,
+          ignoreExistingTopics: !topicRouting,
+          ...(topicId && !topicRouting ? { topicId: topicId } : {}),
+        },
+      })
+      if (!initMessageRes.ok) {
+        throw new Error(`Failed to process initial message from ${simUser.name}: ${initMessageRes.statusText}`)
+      }
+
+      const initResData = await initMessageRes.json()
+
+      // Store topicId from the first message
+      if (!topicId) {
+        topicId = initResData.topicId
+        console.log(`Created topic: ${topicId}`)
+      }
+
+      // Process bot responses for this initial message and extract suggested event
+      const newSuggestedEvent = await processBotMessages(initResData, simUsers)
+      if (newSuggestedEvent && !suggestedEvent) {
+        suggestedEvent = newSuggestedEvent
+        console.log(`  → Initial bot suggestion: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
+      }
+    }
   }
 
-  console.log(`${firstSimUser.name}: ${initialMessage}`)
-
-  // Send initial message through local API
-  const initMessageRes = await local_api.message.$post({
-    json: {
-      userId: firstSimUser.name,
-      text: initialMessage,
-      ignoreExistingTopics: !topicRouting,
-    },
-  })
-  if (!initMessageRes.ok) {
-    throw new Error(`Failed to process initial message: ${initMessageRes.statusText}`)
+  if (!topicId) {
+    throw new Error('No simUser with a goal was able to start a conversation')
   }
-
-  const initResData = await initMessageRes.json()
-  const topicId = initResData.topicId
-
-  console.log(`Created topic: ${topicId}`)
 
   // Initialize confirmation tracking for all simUsers
   const confirmations: Record<string, boolean> = {}
@@ -223,11 +245,6 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   }
   resetConfirmations()
 
-  // Process initial bot responses
-  let suggestedEvent = await processBotMessages(initResData, simUsers)
-  if (suggestedEvent) {
-    console.log(`  → Initial bot suggestion: ${suggestedEvent.start.toISOString()} - ${suggestedEvent.end.toISOString()} (${suggestedEvent.summary})`)
-  }
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -318,7 +335,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   // Get final topic data
   const topicResponse = await local_api.topics[':topicId'].$get({
     param: { topicId },
-    query: { visibleToUserId: firstSimUser.name },
+    query: { visibleToUserId: simUsers[0].name },
   })
 
   if (!topicResponse.ok) {
