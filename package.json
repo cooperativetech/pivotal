@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@better-auth/utils": "0.3.0",
+    "@google-apps/meet": "^0.7.0",
     "@hono/node-server": "1.18.1",
     "@hono/zod-validator": "0.7.2",
     "@js-temporal/polyfill": "0.5.1",

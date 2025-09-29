@@ -3,6 +3,7 @@ import { google } from 'googleapis'
 // Enable typing for calendar API event shapes where helpful
 import type { calendar_v3 } from 'googleapis'
 import type { WebClient } from '@slack/web-api'
+import { v2beta } from '@google-apps/meet'
 
 import db from './db/engine'
 import { userDataTable, slackUserTable } from './db/schema/main'
@@ -19,6 +20,8 @@ function getBotCalendarId(): string {
 const SERVICE_ACCOUNT_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/meetings.space.created',
+  'https://www.googleapis.com/auth/meetings.space.settings',
 ]
 
 function buildServiceAccountCalendarClient() {
@@ -43,6 +46,139 @@ function buildServiceAccountCalendarClient() {
   })
 
   return google.calendar({ version: 'v3', auth: jwt })
+}
+
+function buildServiceAccountJWT() {
+  const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
+  const privateKey = process.env.PV_GOOGLE_SERVICE_ACCOUNT_KEY
+  const subject = process.env.PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT
+
+  if (!clientEmail || !privateKey || !subject) {
+    console.warn('[Calendar] Missing service account credentials for Meet API')
+    return null
+  }
+
+  const normalizedKey = privateKey.includes('\\n')
+    ? privateKey.replace(/\\n/g, '\n')
+    : privateKey
+
+  return new google.auth.JWT({
+    email: clientEmail,
+    key: normalizedKey,
+    subject,
+    scopes: SERVICE_ACCOUNT_SCOPES,
+  })
+}
+
+/**
+ * Create a Google Meet space with moderation enabled
+ * Returns the space name and meeting URI/code
+ */
+async function createMeetSpace(): Promise<{ spaceName: string, meetingUri: string, meetingCode: string } | null> {
+  try {
+    const jwt = buildServiceAccountJWT()
+    if (!jwt) {
+      console.warn('[Calendar] Could not build JWT client, skipping Meet space creation')
+      return null
+    }
+
+    await jwt.authorize()
+    const accessToken = jwt.credentials.access_token
+
+    if (!accessToken) {
+      console.warn('[Calendar] Could not get access token for Meet API')
+      return null
+    }
+
+    const response = await fetch('https://meet.googleapis.com/v2/spaces', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        config: {
+          accessType: 'OPEN',
+          entryPointAccess: 'ALL',
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to create Meet space: ${response.status} ${errorText}`)
+    }
+
+    const space = await response.json() as {
+      name: string
+      meetingUri: string
+      meetingCode: string
+    }
+
+    console.log('[Calendar] Created Meet space:', {
+      name: space.name,
+      meetingUri: space.meetingUri,
+      meetingCode: space.meetingCode,
+    })
+
+    return {
+      spaceName: space.name,
+      meetingUri: space.meetingUri,
+      meetingCode: space.meetingCode,
+    }
+  } catch (error) {
+    console.error('[Calendar] Error creating Meet space:', error)
+    return null
+  }
+}
+
+/**
+ * Add co-hosts to a Google Meet space using the gRPC client library
+ * Returns true if all co-hosts were added successfully
+ */
+async function addCoHostsToMeetSpace(spaceName: string, emails: string[]): Promise<boolean> {
+  try {
+    if (emails.length === 0) return true
+
+    const jwt = buildServiceAccountJWT()
+    if (!jwt) {
+      console.warn('[Calendar] Could not build JWT client, skipping co-host assignment')
+      return false
+    }
+
+    console.log('[Calendar] Adding co-hosts to space:', spaceName, 'emails:', emails)
+
+    // Create Meet API client with service account auth (v2beta for members API)
+    const meetClient = new v2beta.SpacesServiceClient({
+      authClient: jwt,
+    })
+
+    // Add each email as a co-host
+    const results = await Promise.allSettled(
+      emails.map(async (email) => {
+        return await meetClient.createMember({
+          parent: spaceName,
+          member: {
+            role: 'COHOST',
+            user: email,
+          },
+        })
+      }),
+    )
+
+    const failures = results.filter((r) => r.status === 'rejected')
+    if (failures.length > 0) {
+      console.warn(
+        `[Calendar] Failed to add ${failures.length}/${emails.length} co-hosts:`,
+        failures.map((f) => (f.status === 'rejected' ? String(f.reason) : null)),
+      )
+    }
+
+    return failures.length === 0
+  } catch (error) {
+    console.error('[Calendar] Error adding co-hosts to Meet space:', error)
+    return false
+  }
 }
 
 /**
@@ -211,29 +347,60 @@ export async function createCalendarInviteFromBot(
     const requestId = `pivotal-${topic.id}-${Date.now()}`
     const summary = finalizedEvent.summary || topic.state.summary || 'Meeting'
 
-    const insertRes = await calendar.events.insert({
-      calendarId: getBotCalendarId(),
-      requestBody: {
-        summary,
-        start: { dateTime: new Date(finalizedEvent.start).toISOString() },
-        end: { dateTime: new Date(finalizedEvent.end).toISOString() },
-        attendees,
-        // Tag event so we can recover it later by topic id
-        extendedProperties: {
-          private: {
-            pv_topic_id: topic.id,
-            pv_request_id: requestId,
-          },
-        },
-        conferenceData: {
-          createRequest: {
-            requestId,
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
+    // Create Meet space first if we have attendees (so we can add co-hosts)
+    let meetSpace: { spaceName: string, meetingUri: string, meetingCode: string } | null = null
+    if (attendees.length > 0) {
+      meetSpace = await createMeetSpace()
+      if (meetSpace) {
+        // Add all attendees as co-hosts
+        const attendeeEmails = attendees.map((a) => a.email)
+        await addCoHostsToMeetSpace(meetSpace.spaceName, attendeeEmails)
+      }
+    }
+
+    // Create calendar event, linking to the Meet space if we created one
+    const requestBody: calendar_v3.Schema$Event = {
+      summary,
+      start: { dateTime: new Date(finalizedEvent.start).toISOString() },
+      end: { dateTime: new Date(finalizedEvent.end).toISOString() },
+      attendees,
+      extendedProperties: {
+        private: {
+          pv_topic_id: topic.id,
+          pv_request_id: requestId,
         },
       },
+    }
+
+    // If we created a Meet space, link it to the calendar event
+    if (meetSpace) {
+      requestBody.conferenceData = {
+        conferenceId: meetSpace.meetingCode,
+        entryPoints: [
+          {
+            entryPointType: 'video',
+            uri: meetSpace.meetingUri,
+            label: meetSpace.meetingUri,
+          },
+        ],
+        conferenceSolution: {
+          key: { type: 'hangoutsMeet' },
+        },
+      }
+    } else {
+      // Fallback to Calendar-created Meet if space creation failed
+      requestBody.conferenceData = {
+        createRequest: {
+          requestId,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      }
+    }
+
+    const insertRes = await calendar.events.insert({
+      calendarId: getBotCalendarId(),
+      requestBody,
       conferenceDataVersion: 1,
-      // Always email calendar invites to attendees
       sendUpdates: 'all',
     })
 
