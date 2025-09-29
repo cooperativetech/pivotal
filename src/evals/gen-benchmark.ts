@@ -48,7 +48,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   } else {
     // Initialize empty groups
     userGroups = Array.from({ length: nGroups }, () => [])
-    let remainingUsers = [...simUserNames]
+    const remainingUsers = [...simUserNames]
 
     // First two passes: give each group two users using nested loop
     for (let pass = 0; pass < 2; pass++) {
