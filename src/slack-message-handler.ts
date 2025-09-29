@@ -291,8 +291,14 @@ export async function processSchedulingActions(
       topic,
       previousMessages,
       userMap,
+      client,
     )
     console.log('Next workflow step:', nextStep)
+
+    // Auto-mark calendar-support topics as inactive (these are short-lived queries)
+    if (topic.workflowType === 'calendar-support' && nextStep.markTopicInactive !== true) {
+      nextStep.markTopicInactive = true
+    }
 
     // Check if the current message sender will receive any DMs
     let senderWillReceiveDM = false
@@ -353,6 +359,77 @@ export async function processSchedulingActions(
 
     // Re-run calendar prompts in case new participants were added during this turn
     await promptUnconnectedCalendars(topic, message, client)
+
+    // Handle promptCalendarButtons if requested
+    if (nextStep.promptCalendarButtons) {
+      const { userName, contextMessage } = nextStep.promptCalendarButtons
+
+      // Determine target userId
+      let targetUserId: string | null = null
+      if (userName === null) {
+        // Send to requesting user
+        targetUserId = message.userId
+      } else {
+        // Map userName to userId
+        const nameToIdMap = new Map<string, string>()
+        userMap.forEach((user, id) => {
+          if (user.realName) {
+            nameToIdMap.set(user.realName, id)
+          }
+        })
+        targetUserId = nameToIdMap.get(userName) || null
+      }
+
+      if (targetUserId) {
+        try {
+          // Open DM with target user
+          const dmResult = await client.conversations.open({ users: targetUserId })
+
+          if (dmResult.ok && dmResult.channel?.id) {
+            await upsertSlackChannel(dmResult.channel.id, [targetUserId])
+
+            // If contextMessage is provided, send it first
+            if (contextMessage) {
+              await client.chat.postMessage({
+                channel: dmResult.channel.id,
+                text: contextMessage,
+              })
+            }
+
+            // Send calendar connection buttons
+            const buttonsResponse = await client.chat.postMessage({
+              channel: dmResult.channel.id,
+              text: 'To help with scheduling, you can connect your Google Calendar:',
+              blocks: [
+                { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
+                {
+                  type: 'actions',
+                  elements: [
+                    { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize` },
+                    { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
+                    { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
+                  ],
+                },
+              ],
+            })
+
+            // Track that we prompted this user
+            if (buttonsResponse.ok && buttonsResponse.ts) {
+              await addPromptedUser(topic.id, targetUserId, message.id)
+              try {
+                await updateTopicUserContext(topic.id, targetUserId, { calendarPromptMessage: { channelId: dmResult.channel.id, ts: buttonsResponse.ts } }, message.id)
+              } catch (error) {
+                console.warn('Failed to store calendarPromptMessage pointer:', error)
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to send calendar buttons to ${targetUserId}:`, error)
+        }
+      } else {
+        console.error(`Could not find userId for userName: ${userName}`)
+      }
+    }
 
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {

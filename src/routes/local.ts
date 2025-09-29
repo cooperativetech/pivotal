@@ -177,6 +177,7 @@ export const localRoutes = new Hono()
         topicWithState,
         previousMessages,
         userMap,
+        mockSlackClient,
       )
 
       return c.json(result)

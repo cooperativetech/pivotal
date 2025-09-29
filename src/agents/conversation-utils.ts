@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { RRuleTemporal } from 'rrule-temporal'
 import { toText } from 'rrule-temporal/totext'
 import { Temporal } from '@js-temporal/polyfill'
+import type { WebClient } from '@slack/web-api'
 
 import type { RunContext } from './agent-sdk'
 import { Agent, Runner, tool } from './agent-sdk'
@@ -26,6 +27,7 @@ export interface ConversationContext {
   topic: TopicWithState,
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
+  slackClient?: WebClient,
 }
 export const ConversationRes = z.strictObject({
   replyMessage: z.string().optional().nullable(),
@@ -37,6 +39,10 @@ export const ConversationRes = z.strictObject({
   groupMessage: z.string().optional().nullable(),
   finalizedEvent: CalendarEvent.optional().nullable(),
   cancelEvent: z.boolean().optional().nullable(),
+  promptCalendarButtons: z.strictObject({
+    userName: z.string().nullable().describe('null = requesting user, otherwise exact name from User Directory'),
+    contextMessage: z.string().nullable().describe('Optional context message explaining who is asking and why'),
+  }).optional().nullable(),
   reasoning: z.string(),
 })
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
@@ -49,6 +55,7 @@ export async function runConversationAgent(
   topic: TopicWithState,
   previousMessages: SlackMessage[],
   userMap: Map<string, SlackUser>,
+  slackClient?: WebClient,
 ): Promise<ConversationRes> {
   // Get timezone information for the calling user
   const callingUser = userMap.get(message.userId)
@@ -81,7 +88,7 @@ Based on the conversation history and current message, determine the next step i
     const result = await runner.run(
       agent,
       userPrompt,
-      { context: { message, topic, userMap, callingUserTimezone } },
+      { context: { message, topic, userMap, callingUserTimezone, slackClient } },
     )
     if (!result.finalOutput) {
       throw new Error('No finalOutput generated')

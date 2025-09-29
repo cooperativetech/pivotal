@@ -63,7 +63,14 @@ Given a list of existing topics and a new message, determine:
 When suggesting a new topic, also classify its workflow type:
 - "scheduling": The topic involves planning, organizing, or scheduling meetings, events, or activities (e.g., "plan lunch", "schedule meeting", "organize team event")
 - "meeting-prep": The topic involves preparing for an upcoming meeting by gathering updates, creating agendas, or collecting input from participants (e.g., "prepare agenda for tomorrow's standup", "gather updates for the quarterly review", "compile discussion topics for the team meeting")
-- "other": All other topics that don't involve scheduling or meeting preparation
+- "calendar-support": The topic is specifically about Google Calendar administration, connection status, or querying availability (e.g., "is my calendar connected?", "connect my calendar", "what's my availability tomorrow?", "is Parker free at 3pm?", "stop asking me about calendar"). These are informational queries about calendar access or availability, NOT scheduling actions.
+- "other": All other topics that don't involve scheduling, meeting preparation, or calendar support
+
+IMPORTANT DISTINCTION:
+- "what's my availability tomorrow?" → "calendar-support" (information query)
+- "schedule lunch tomorrow" → "scheduling" (action to create event)
+- "when are we both free?" → "calendar-support" if purely informational, "scheduling" if implies booking
+- "is my calendar connected?" → "calendar-support" (administrative query)
 
 ## Response Format
 You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
@@ -72,7 +79,7 @@ The JSON structure must be:
 {
   "relevantTopicId": "topic-id-2",           // Include only if message is relevant to existing topic
   "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated
-  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", or "other"
+  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", "calendar-support", or "other"
   "confidence": 0.85,                        // Confidence level between 0 and 1
   "reasoning": "Brief explanation"           // One sentence explaining the decision
 }
