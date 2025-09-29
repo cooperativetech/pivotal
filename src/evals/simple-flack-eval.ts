@@ -42,11 +42,11 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
     console.log('Usage: pnpm run eval [options]')
     console.log('\nOptions:')
     console.log('  -f, --benchmarkFile     Specific benchmark file (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773.json)')
-    console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1start_2end_60min)')
+    console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1groups_1start_2end_60min)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
     console.log('  -t, --topicRouting      Enable topic routing (default: false)')
     console.log('  -h, --help              Show this help message')
-    console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1start_2end_60min')
+    console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1groups_1start_2end_60min')
     process.exit(0)
   }
 
@@ -412,7 +412,7 @@ async function runSimpleEvaluation(): Promise<void> {
       await runRepeatedEvaluation(benchmarkFile, false, nReps, topicRouting)
     } else {
       // Run folder (either specified or default)
-      const folderName = benchmarkFolder || 'benchmark_2simusers_1start_2end_60min'
+      const folderName = benchmarkFolder || 'benchmark_2simusers_1groups_1start_2end_60min'
       console.log(`Using benchmark folder: ${folderName}`)
       const benchmarkFiles = findAllBenchmarkFiles(folderName)
       console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
