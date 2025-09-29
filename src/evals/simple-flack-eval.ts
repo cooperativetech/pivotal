@@ -171,7 +171,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<string, number>): Promise<{ topicData: TopicData; suggestedEvent: SimpleCalendarEvent | null; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -429,6 +429,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Validate benchmark data structure with Zod
     const benchmarkData = BenchmarkFileData.parse(parsedData)
     const benchmarkSimUsers = benchmarkData.simUsers
+    const nGroups = benchmarkData.benchmark.nGroups
     const userGroupMapping = benchmarkData.benchmark.userGroupMapping
 
     console.log('Loading simUsers from benchmark data...')
@@ -443,7 +444,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers, topicRouting, userGroupMapping)
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, userGroupMapping)
     console.log(`\nConversation completed with ${result.topicData.messages.length} messages`)
 
     if (result.suggestedEvent) {
