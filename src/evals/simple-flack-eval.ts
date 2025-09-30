@@ -101,6 +101,7 @@ async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Ma
   if (userIds.length < 1) {
     throw new Error('Eval requires at least 1 test user')
   }
+
   return userSimUserMap
 }
 
@@ -149,7 +150,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
       }
 
       const { userIds } = await channelRes.json()
-      
+
       // Only send message to simUsers whose names match the channel userIds
       for (const simUser of simUsers) {
         if (userIds.includes(simUser.name)) {
@@ -168,11 +169,13 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
   return suggestedEvent
 }
 
+
 // Simulate a strict turn-based scheduling conversation
 async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<string, number>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
+
   if (simUsers.length === 0) {
     throw new Error('No simUsers provided for conversation')
   }
@@ -250,6 +253,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   }
   resetConfirmations()
 
+
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
   let roundCount = 0
@@ -257,7 +261,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   while (roundCount < maxRounds) {
     roundCount++
     console.log(`\n--- Round ${roundCount} ---`)
-    
+
     let anySimUserSpoke = false
 
     // Each simUser replies to messages in their buffer
