@@ -35,8 +35,8 @@ export async function generateReply(userName: string, goal: string, calendar: Si
     ? history.map((h) => `${h.sender === 'bot' ? 'Bot' : userName}: ${h.message}`).join('\n')
     : 'No previous conversation'
 
-  const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\n\n` : ''
-  const prompt = `You are ${userName}. ${goalContext}Your calendar: ${calendarText}
+  const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\nDo NOT accept any meetings outside of this timeframe.\n\n` : ''
+  const prompt = `You are ${userName}. You are engaged in a scheduling conversation mediated by a bot named Pivotal. ${goalContext}Your calendar: ${calendarText}
 
 Conversation history:
 ${historyText}
@@ -45,7 +45,7 @@ Current messages to respond to: ${messageBuffer.join(' | ')}
 
 Respond naturally to: "${latestMessage}"
 
-Generate only the reply text, nothing else.`
+Do NOT offer to schedule an appointment when you have a meeting, but only during free slots. Generate only the reply text, nothing else.`
 
   try {
     const result = await run(generateReplyAgent, prompt)

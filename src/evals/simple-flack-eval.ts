@@ -550,7 +550,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         : 0
       groupMaxSharedFreeTimes.push(groupMaxSharedFreeTime)
 
-      const hasCommonFreeTime = groupMaxSharedFreeTime > benchmarkData.benchmark.meetingLength
+      const hasCommonFreeTime = groupMaxSharedFreeTime >= benchmarkData.benchmark.meetingLength
       console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)` : `Insufficient shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)`}`)
 
       if (suggestedEvent) {
