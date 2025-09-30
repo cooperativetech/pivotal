@@ -32,6 +32,8 @@ export const BenchmarkData = z.strictObject({
   endTimeOffset: z.number(),
   meetingLength: z.number(),
   nSimUsers: z.number(),
+  nGroups: z.number(),
+  userGroupMapping: z.record(z.number()),
   genTimestamp: z.string(),
 })
 
@@ -43,18 +45,18 @@ export const BenchmarkFileData = z.strictObject({
 const EvaluationSummary = z.strictObject({
   totalSimUsers: z.number(),
   confirmedCount: z.number(),
-  hasSuggestedEvent: z.boolean(),
+  hasSuggestedEvents: z.boolean(),
   allCanAttend: z.boolean(),
   withinTimeRange: z.boolean(),
   evaluationSucceeded: z.boolean(),
 })
 
 export const EvaluationResults = z.strictObject({
-  suggestedEvent: z.strictObject({
+  suggestedEvents: z.array(z.strictObject({
     start: z.string(),
     end: z.string(),
     summary: z.string(),
-  }).nullable(),
+  }).nullable()),
   confirmedSimUsers: z.array(z.string()),
   allSimUsersConfirmed: z.boolean(),
   canAttend: z.record(z.boolean()),
