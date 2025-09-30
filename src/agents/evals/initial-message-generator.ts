@@ -3,7 +3,7 @@ import { Agent, run } from '../agent-sdk'
 const sendInitialMessageAgent = new Agent({
   name: 'SendInitialMessageAgent',
   // model: 'google/gemini-2.5-flash',
-  model: 'anthropic/claude-sonnet-4.5', // fallback if gemini doesn't work well
+  model: 'anthropic/claude-sonnet-4', // fallback if gemini doesn't work well
   modelSettings: {
     temperature: 0.7,
   },

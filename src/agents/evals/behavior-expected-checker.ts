@@ -4,7 +4,7 @@ import { z } from 'zod'
 const behaviorExpectedCheckAgent = new Agent({
   name: 'BehaviorExpectedCheckAgent',
   model: 'google/gemini-2.5-flash',
-  // model: 'anthropic/claude-sonnet-4.5', // fallback if gemini doesn't work well
+  // model: 'anthropic/claude-sonnet-4', // fallback if gemini doesn't work well
   modelSettings: {
     temperature: 0.1, // Low temperature for consistent evaluation
   },

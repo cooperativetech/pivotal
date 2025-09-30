@@ -27,7 +27,7 @@ type AnalyzeTopicRes = z.infer<typeof AnalyzeTopicRes>
 
 const topicAnalysisAgent = new Agent({
   name: 'topicAnalysisAgent',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0, // Reduce temperature for consistency
