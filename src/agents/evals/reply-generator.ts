@@ -45,7 +45,8 @@ Current messages to respond to: ${messageBuffer.join(' | ')}
 
 Respond naturally to: "${latestMessage}"
 
-Do NOT offer to schedule an appointment when you have a meeting, but DO accept meetings close to scheduled slots that don't overlap. Generate only the reply text, nothing else.`
+Do NOT offer to schedule an appointment when there is a calendar conflict. However, DO accept meetings that are adjacent to existing appointments without time overlap (i.e., a meeting can
+start immediately when another ends, or end immediately before another starts). Generate only the reply text, nothing else.`
 
   try {
     const result = await run(generateReplyAgent, prompt)
