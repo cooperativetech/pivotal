@@ -176,6 +176,13 @@
       "when": 1758720076940,
       "tag": "0024_add_meeting_artifact_table",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1759254276545,
+      "tag": "0025_add_organization_member_and_invitation_tables",
+      "breakpoints": true
     }
   ]
 }

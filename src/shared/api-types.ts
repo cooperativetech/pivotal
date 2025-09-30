@@ -57,11 +57,10 @@ export interface GithubAccount {
   linkableRepos: BotRepository[]
 }
 
-export interface SlackAccount {
+export interface ProfileOrg {
   id: string
-  realName: string | null
-  teamId: string
-  teamName?: string | null
+  name: string
+  slackTeamId: string
 }
 
 export interface UserProfile {
@@ -70,9 +69,10 @@ export interface UserProfile {
     email: string
     name: string
   }
-  slackAccount: SlackAccount | null
+  slackAccount: { accountId: string } | null
   googleAccount: { accountId: string } | null
   githubAccount: GithubAccount | null
+  organization: ProfileOrg
 }
 
 export interface AutoMessageDeactivation {

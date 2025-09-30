@@ -1,27 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router'
-import type { TopicWithState } from '@shared/api-types'
+import type { TopicWithState, UserProfile } from '@shared/api-types'
 import { unserializeTopicWithState } from '@shared/api-types'
 import { useAuth } from './auth-context'
 import { api, authClient } from '@shared/api-client'
 
-interface Profile {
-  user: {
-    id: string
-    email: string
-    name: string
-  }
-  slackAccount: {
-    id: string
-    realName: string | null
-    teamId: string
-    teamName?: string | null
-  } | null
-}
-
 function Home() {
   const [topics, setTopics] = useState<TopicWithState[]>([])
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [userNameMap, setUserNameMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

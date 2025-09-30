@@ -1,6 +1,7 @@
 import { hc } from 'hono/client'
 import { createAuthClient } from 'better-auth/client'
 import type { BetterAuthClientPlugin } from 'better-auth/client'
+import { organizationClient } from 'better-auth/client/plugins'
 import type { AppType } from '../server'
 import type { githubAppInstallationPlugin } from '../auth'
 
@@ -27,6 +28,7 @@ function githubAppInstallationPluginClient() {
 
 export const authClient = createAuthClient({
   plugins: [
+    organizationClient(),
     githubAppInstallationPluginClient(),
   ],
 })
