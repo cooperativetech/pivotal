@@ -230,7 +230,7 @@ export default function Profile() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Slack Account</h2>
         {profile.slackAccount ? (
           <div className="py-2 border-b border-gray-100">
-            <strong>{profile.slackAccount.realName || profile.slackAccount.id}</strong> (Team: {profile.slackAccount.teamName || profile.slackAccount.teamId})
+            Team: {profile.organization.name }
           </div>
         ) : (
           <p>No Slack account linked</p>
@@ -399,6 +399,15 @@ export default function Profile() {
           </>
         )}
       </div>
+
+      {profile.organization && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Organization</h2>
+          <div className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 inline-block">
+            <span className="font-medium text-gray-900">{profile.organization.name}</span>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

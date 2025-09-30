@@ -671,7 +671,7 @@ function Topic() {
                         context={userData?.context}
                         topicContext={topicUserContext}
                         userTimezone={user?.tz || null}
-                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.id === userId ? (() => {
+                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.accountId === userId ? (() => {
                           const currentPath = window.location.pathname + window.location.search
                           const params = new URLSearchParams({
                             callbackURL: currentPath,
