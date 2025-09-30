@@ -7,7 +7,8 @@ import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/ut
 import { CalendarEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
-import { getUserCalendarStructured, isCalendarConnected, updateTopicUserContext } from '../calendar-service'
+import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
+import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
 import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 
@@ -207,11 +208,15 @@ Based on the current state, determine what tools to call (if any) and generate t
 
 4. Ready to confirm the consensus time
   - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
-  - Only use when you have identified a time that works for all participants
+  - Only use when you have identified a time that works for all participants and still need explicit confirmation from them
   - Return replyMessage with confirmation
+  - Keep confirmations concise and avoid implying that a calendar invite has already been sent
 
 5. Scheduling is done
   - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
+  - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
+  - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
+  - Pair the finalizedEvent with a short groupMessage confirming the plan (e.g., "Locked in Tue 1pm (EST). Invite is on the way."), but do not include calendar links or restate the full invite details yourself.
 
 - Miscellaneous actions needed
   - Sometimes you need to ask for clarification, provide updates, or handle edge cases
@@ -219,6 +224,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Optionally return messagesToUsers for private 1-1 clarifications (sent as DMs)
   - Optionally return groupMessage for updates to all users in shared channel
   - Can use updateUserNames tool if users need to be added/removed (use exact names from User Directory)
+  - If someone asks whether their calendar is connected, consult the “Calendar Information” section and answer directly (✅ Connected / ❌ Not connected), optionally reminding them how to connect if needed.
 
 ## Important Guidelines
 - BE EXTREMELY CONCISE - keep all messages brief and to the point (1-2 sentences max unless proposing times)
@@ -234,6 +240,8 @@ Based on the current state, determine what tools to call (if any) and generate t
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Use the updateSummary tool whenever new information clarifies or changes the meeting details
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
+- CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
+- ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
 - Never defer actions to a future response - everything mentioned in replyMessage must be actioned in the same response
@@ -313,6 +321,13 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
+  // CRITICAL: If you confirm an exact meeting time in groupMessage, ALSO include a matching finalizedEvent in the same response
+  "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
+    "start": "2025-03-12T18:00:00Z", // ISO string
+    "end": "2025-03-12T18:30:00Z",   // ISO string
+    "summary": "Weekly sync"         // Required when object is present
+  },
+  "cancelEvent": true,              // OPTIONAL: Set true when the meeting is cancelled and the calendar invite should be deleted
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
@@ -322,6 +337,44 @@ IMPORTANT:
 - Do not include any text before or after the JSON`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
+
+  // Additional concise rules to make rescheduling smooth
+  const rescheduleAddendum = `
+
+## Rescheduling Behavior (Important)
+- If there is exactly ONE scheduled meeting in this topic (see the numbered list under "Current Scheduled Events") and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
+- If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification referring to the numbered entries (e.g., "[1]" or "[2]") and showing the day/time. If the message clearly references a specific day/time, pick that one directly.
+- To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
+- When participants agree to cancel the meeting entirely, set cancelEvent: true (and normally omit finalizedEvent) so the existing invite is removed, and clearly notify everyone of the cancellation.
+`
+
+  let scheduledSection = ''
+  try {
+    const scheduledEvents = await listBotScheduledEvents(topic.id)
+    if (scheduledEvents.length > 0) {
+      const scheduledDisplay = scheduledEvents
+        .filter((event) => !event.free)
+        .map((event, index) => {
+          if (!event.start || !event.end) return null
+          const start = new Date(event.start)
+          const end = new Date(event.end)
+          const startStr = formatTimestampWithTimezone(start, callingUserTimezone)
+          const endStr = formatTimestampWithTimezone(end, callingUserTimezone)
+          const title = event.summary ? ` — ${event.summary}` : ''
+          const participants = event.participantEmails?.length
+            ? ` (with: ${event.participantEmails.join(', ')})`
+            : ''
+          return `  [${index + 1}] ${startStr} to ${endStr}${title}${participants}`
+        })
+        .filter((line): line is string => Boolean(line))
+
+      if (scheduledDisplay.length > 0) {
+        scheduledSection = `\nCurrent Scheduled Events (via calendar):\n${scheduledDisplay.join('\n')}`
+      }
+    }
+  } catch (error) {
+    console.error('Failed to list scheduled events for topic', topic.id, error)
+  }
 
   const userMapAndTopicInfo = `
 ${userMap && userMap.size > 0 ? `User Directory:
@@ -345,7 +398,7 @@ ${await Promise.all(topic.state.userIds.map(async (userId) => {
   const hasManualOverrides = topicContext?.calendarManualOverrides && topicContext.calendarManualOverrides.length > 0
 
   try {
-    const isConnected = await isCalendarConnected(userId)
+    const isConnected = await isGoogleCalendarConnected(userId)
     if (isConnected) {
       return `  ${userTzStr}: Calendar is connected${hasManualOverrides ? ', and refined from conversation' : ''}`
     }
@@ -359,11 +412,11 @@ ${await Promise.all(topic.state.userIds.map(async (userId) => {
   return `  ${userTzStr}: No calendar connected`
 })).then((results) => results.join('\n'))}
 Created: ${formatTimestampWithTimezone(topic.createdAt, callingUserTimezone)}
-Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}`
+Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTimezone)}${scheduledSection}`
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 
-  return mainPrompt + userMapAndTopicInfo
+  return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
 }
 
 export const schedulingAgent = new ConversationAgent({

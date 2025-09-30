@@ -8,7 +8,7 @@ import Topic from './Topic.tsx'
 import TopicCreation from './TopicCreation.tsx'
 import Login from './Login.tsx'
 import Profile from './Profile.tsx'
-import { AuthProvider } from './AuthContext.tsx'
+import { AuthProvider } from './AuthProvider.tsx'
 import ProtectedRoute from './ProtectedRoute.tsx'
 import LocalHome from './LocalHome.tsx'
 
@@ -39,7 +39,7 @@ createRoot(document.getElementById('root')!).render(
 
           {/* Local/testing routes - only available in development */}
           {import.meta.env.DEV && (
-            <Route path="/local">
+            <Route path="/local" element={<App />}>
               <Route index element={<LocalHome />} />
               <Route path="topics" element={<LocalHome />} />
               <Route path="topic/:topicId" element={<Topic />} />

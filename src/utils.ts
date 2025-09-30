@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import path from 'node:path'
 import { eq, desc, inArray, and, sql, lt, isNotNull, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { CronJob } from 'cron'
@@ -11,7 +12,6 @@ import db from './db/engine'
 import type {
   SlackMessage,
   SlackUser,
-  SlackMessageInsert,
   TopicInsert,
   SlackUserInsert,
   SlackChannelInsert,
@@ -34,7 +34,7 @@ import { getShortTimezoneFromIANA } from '@shared/utils'
 import type { SlackAPIMessage } from './slack-message-handler'
 import { handleSlackMessage } from './slack-message-handler'
 import { getOrCreateChannelForUsers } from './local-helpers'
-import type { AutoMessageDeactivation, TopicWithState } from '@shared/api-types'
+import type { AutoMessageDeactivation, TopicWithState, TopicStateWithMessageTs } from '@shared/api-types'
 import type { WebClient } from '@slack/web-api'
 
 export function tsToDate(ts: string): Date {
@@ -61,13 +61,23 @@ export async function getTopicWithState(topicId: string): Promise<TopicWithState
   }
 }
 
-export async function getTopics(botUserId: string | null = null, onlyActive: boolean = false): Promise<TopicWithState[]> {
+export async function getTopics(
+  botUserId: string | null = null,
+  onlyActive: boolean = false,
+  topicIds?: string[],
+): Promise<TopicWithState[]> {
   const filters = []
   if (botUserId) {
     filters.push(eq(topicTable.botUserId, botUserId))
   }
   if (onlyActive) {
     filters.push(eq(topicStateTable.isActive, true))
+  }
+  if (topicIds) {
+    if (topicIds.length === 0) {
+      return []
+    }
+    filters.push(inArray(topicTable.id, topicIds))
   }
 
   const latestStateSubquery = db
@@ -123,43 +133,50 @@ export async function updateTopicState(
   }
 }
 
+export async function getStatesWithMessageTs(topicId: string): Promise<TopicStateWithMessageTs[]> {
+  // Fetch all states for this topic in chronological order with the rawTs from their creating message
+  const statesWithMessageTs = await db
+    .select({
+      state: topicStateTable,
+      createdByMessageRawTs: slackMessageTable.rawTs,
+    })
+    .from(topicStateTable)
+    .innerJoin(slackMessageTable, eq(topicStateTable.createdByMessageId, slackMessageTable.id))
+    .where(eq(topicStateTable.topicId, topicId))
+    .orderBy(topicStateTable.createdAt)
+
+  return statesWithMessageTs.map(({ state, createdByMessageRawTs }) => ({
+    ...state,
+    createdByMessageRawTs,
+  }))
+}
+
 export const GetTopicReq = z.strictObject({
   lastMessageId: z.string().optional(),
-  // Backward-compatible single ID
   visibleToUserId: z.string().optional(),
-  // Preferred: list of visible user IDs
-  visibleToUserIds: z.array(z.string()).optional(),
-  beforeRawTs: z.string().optional(),
 })
 export type GetTopicReq = z.infer<typeof GetTopicReq>
 
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
-  const { lastMessageId, visibleToUserId, visibleToUserIds, beforeRawTs } = options
+  const { lastMessageId, visibleToUserId } = options
 
-  const topic = await getTopicWithState(topicId)
+  const [topic] = await db.select()
+    .from(topicTable)
+    .where(eq(topicTable.id, topicId))
+
+  let states = await getStatesWithMessageTs(topicId)
 
   // Build the messages query with optional channel filtering
   let messages: SlackMessage[]
 
-  const visibleIds: string[] | null = Array.isArray(visibleToUserIds)
-    ? visibleToUserIds
-    : (visibleToUserId ? [visibleToUserId] : null)
-
-  if (visibleIds && visibleIds.length > 0) {
-    // If visible user ids are provided, join with slackChannelTable and filter for any match
-    const orClauses = sql.join(
-      visibleIds.map((id) => sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([id])}::jsonb`),
-      sql` OR `,
-    )
-
-    const messagesResult = await db
-      .select({ message: slackMessageTable })
+  if (visibleToUserId) {
+    const messagesResult = await db.select({ message: slackMessageTable })
       .from(slackMessageTable)
-      .leftJoin(slackChannelTable, eq(slackMessageTable.channelId, slackChannelTable.id))
+      .innerJoin(slackChannelTable, eq(slackMessageTable.channelId, slackChannelTable.id))
       .where(
         and(
           eq(slackMessageTable.topicId, topicId),
-          sql`(${orClauses})`,
+          sql`${slackChannelTable.userIds}::jsonb @> ${JSON.stringify([visibleToUserId])}::jsonb`,
         ),
       )
       .orderBy(slackMessageTable.timestamp)
@@ -180,33 +197,38 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
     if (!targetMessage) {
       throw new Error(`Message with id ${lastMessageId} not found in topic ${topicId}`)
     }
-    // Filter to only include messages up to and including the target message's timestamp
+    // Filter to only include messages and states up to and including the target message's timestamp
     messages = messages.filter((msg) =>
       Number(msg.rawTs) <= Number(targetMessage.rawTs),
     )
-  }
-
-  // If beforeRawTs is provided, filter messages before that raw timestamp
-  if (beforeRawTs) {
-    messages = messages.filter((msg) =>
-      Number(msg.rawTs) < Number(beforeRawTs),
+    states = states.filter((state) =>
+      Number(state.createdByMessageRawTs) <= Number(targetMessage.rawTs),
     )
   }
 
-  // Fetch users that are referenced in the topic
-  const users = topic.state.userIds.length > 0
+  // Collect all unique userIds from all topic states
+  const allUserIds = new Set<string>()
+  for (const state of states) {
+    for (const userId of state.userIds) {
+      allUserIds.add(userId)
+    }
+  }
+  const userIdsArray = Array.from(allUserIds)
+
+  // Fetch users that are referenced in any topic state
+  const users = userIdsArray.length > 0
     ? await db
         .select()
         .from(slackUserTable)
-        .where(inArray(slackUserTable.id, topic.state.userIds))
+        .where(inArray(slackUserTable.id, userIdsArray))
     : []
 
-  // Fetch userData for users referenced in the topic
-  const userData = topic.state.userIds.length > 0
+  // Fetch userData for users referenced in any topic state
+  const userData = userIdsArray.length > 0
     ? await db
         .select()
         .from(userDataTable)
-        .where(inArray(userDataTable.slackUserId, topic.state.userIds))
+        .where(inArray(userDataTable.slackUserId, userIdsArray))
     : []
 
   // Fetch unique channel IDs from messages
@@ -220,6 +242,7 @@ export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Pro
 
   const result: TopicData = {
     topic,
+    states,
     messages,
     users,
     userData,
@@ -304,18 +327,29 @@ export async function loadTopics(jsonData: string): Promise<{ topicIds: string[]
       .values(topicData)
       .returning()
 
-    // Insert messages with new topic ID
-    if (data.messages.length > 0) {
-      const messagesWithNewTopicId = data.messages.map((msg) => {
-        const msgData: SlackMessageInsert = { ...msg }
-        delete msgData.id
-        return {
-          ...msgData,
-          topicId: insertedTopic.id,
-        }
-      })
+    // Create a map from old message IDs to new message IDs
+    const messageIdMap = new Map<string, string>()
 
-      await db.insert(slackMessageTable).values(messagesWithNewTopicId)
+    // Insert messages with new IDs
+    if (data.messages.length > 0) {
+      for (const msg of data.messages) {
+        const { id: oldId, ...msgData } = msg
+        const [insertedMsg] = await db.insert(slackMessageTable)
+          .values({ ...msgData, topicId: insertedTopic.id })
+          .returning()
+        messageIdMap.set(oldId, insertedMsg.id)
+      }
+    }
+
+    // Insert topic states with new IDs and mapped message references
+    if (data.states && data.states.length > 0) {
+      for (const state of data.states) {
+        const stateData: TopicStateInsert = { ...state }
+        delete stateData.id
+        stateData.createdByMessageId = messageIdMap.get(stateData.createdByMessageId)!
+        await db.insert(topicStateTable)
+          .values({ ...stateData, topicId: insertedTopic.id })
+      }
     }
 
     topicIds.push(insertedTopic.id)
@@ -703,8 +737,13 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     const topicData = await dumpTopic(topicId, { lastMessageId: messageId })
     const jsonData = JSON.stringify(topicData, null, 2)
     if (values.output) {
-      await fs.writeFile(values.output, jsonData)
-      console.log(`Topic data written to ${values.output}`)
+      // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
+      // Otherwise fall back to process.cwd()
+      const workingDir = process.env.INIT_CWD || process.cwd()
+      const resolvedPath = path.resolve(workingDir, values.output)
+
+      await fs.writeFile(resolvedPath, jsonData)
+      console.log(`Topic data written to ${resolvedPath}`)
     } else {
       console.log(jsonData)
     }
@@ -717,7 +756,12 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
       process.exit(1)
     }
 
-    const jsonData = await fs.readFile(jsonFile, 'utf-8')
+    // Use INIT_CWD if available (set by pnpm/npm when running scripts from subdirectories)
+    // Otherwise fall back to process.cwd()
+    const workingDir = process.env.INIT_CWD || process.cwd()
+    const resolvedPath = path.resolve(workingDir, jsonFile)
+
+    const jsonData = await fs.readFile(resolvedPath, 'utf-8')
     const result = await loadTopics(jsonData)
     if (result.topicIds.length === 1) {
       console.log(`Topic loaded with new ID: ${result.topicIds[0]}`)

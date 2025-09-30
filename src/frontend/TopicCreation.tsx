@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
-import { api, local_api } from '@shared/api-client'
-import type { UserContext } from '@shared/api-types'
+import { local_api } from '@shared/api-client'
+import type { UserContext, CalendarEvent } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 import { useLocalMode } from './LocalModeContext'
@@ -12,11 +12,11 @@ interface User {
   tz: string | null
   isBot: boolean
   context?: UserContext | null
+  calendar: CalendarEvent[] | null
 }
 
 function TopicCreation() {
   const isLocalMode = useLocalMode()
-  const apiClient = isLocalMode ? local_api : api
   const [users, setUsers] = useState<User[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [message, setMessage] = useState<string>('')
@@ -28,7 +28,7 @@ function TopicCreation() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await apiClient.users.$get({ query: {} })
+        const response = await local_api.users.$get({ query: {} })
         if (!response.ok) {
           throw new Error('Failed to fetch users')
         }
@@ -54,7 +54,7 @@ function TopicCreation() {
     }
 
     fetchUsers().catch(console.error)
-  }, [apiClient])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -151,6 +151,7 @@ function TopicCreation() {
                 return (
                   <div className="mt-2">
                     <UserContextView
+                      calendar={selectedUser.calendar}
                       context={selectedUser.context}
                       userTimezone={selectedUser.tz}
                     />
@@ -176,7 +177,7 @@ function TopicCreation() {
             <button
               type="submit"
               disabled={!selectedUserId || !message.trim() || sending}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {sending ? 'Sending...' : 'Send Message'}
             </button>

@@ -1,15 +1,16 @@
+// Environment variables must be exported by the shell/CI; no .env loader
+
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { zValidator } from '@hono/zod-validator'
 import { createServer } from 'node:https'
 import { readFileSync } from 'fs'
 
 import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
-import { GoogleAuthCallbackReq, handleGoogleAuthCallback } from './calendar-service'
 import { startAutoMessageCron } from './utils'
+import { startMeetingSummaryCron } from './meeting-summary-worker'
 import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
 
@@ -34,17 +35,8 @@ const app = new Hono()
     const logEntry = `[${new Date().toISOString()}] ${message}`
     console.log(logEntry)
   }))
-
-  .get('/healthcheck', (c) => {
-    return c.text('okay')
-  })
-
-  .get('/auth/google/callback', zValidator('query', GoogleAuthCallbackReq), async (c) => {
-    return handleGoogleAuthCallback(c, c.req.valid('query'), slackClient)
-  })
-
+  .get('/healthcheck', (c) => c.text('okay'))
   .route('/api', apiRoutes)
-
   // Only serve local_api if we're running the server locally
   .route('/local_api', isLocalEnv() ? localRoutes : new Hono())
 
@@ -77,4 +69,5 @@ if (isDevEnv()) {
 }
 
 startAutoMessageCron(slackClient)
+startMeetingSummaryCron(slackClient)
 console.log(`Webserver running on port ${PORT}...`)

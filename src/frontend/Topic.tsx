@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { api, local_api } from '@shared/api-client'
-import type { TopicData, SlackMessage, SlackChannel } from '@shared/api-types'
+import { api, local_api, authClient } from '@shared/api-client'
+import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
+import type { UserProfile } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 import { useLocalMode } from './LocalModeContext'
@@ -16,6 +17,8 @@ function Topic() {
   const { topicId } = useParams<{ topicId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const [topicData, setTopicData] = useState<TopicData | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userCalendars, setUserCalendars] = useState<Record<string, CalendarEvent[] | null>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isLocalMode = useLocalMode()
@@ -28,6 +31,8 @@ function Topic() {
   const [chatInputs, setChatInputs] = useState<Map<string, string>>(new Map())
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
   const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
+  const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
+  const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
@@ -47,26 +52,27 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(unserializeTopicData(data))
+        setTopicData(unserializeTopicData(data.topicData))
+        setUserCalendars(data.userCalendars)
 
         // Only read query params on initial load
         if (initialLoadRef.current) {
           initialLoadRef.current = false
           // Check for messageId in query params
           const messageIdParam = searchParams.get('messageId')
-          if (messageIdParam && data.messages.length > 0) {
+          if (messageIdParam && data.topicData.messages.length > 0) {
             // Sort messages to find the position of the specified message
-            const sorted = [...data.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
+            const sorted = [...data.topicData.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
             const position = sorted.findIndex((m) => m.id === messageIdParam)
             if (position !== -1) {
               setTimelinePosition(position)
             } else {
               // Default to showing all messages if messageId not found
-              setTimelinePosition(data.messages.length - 1)
+              setTimelinePosition(data.topicData.messages.length - 1)
             }
-          } else if (data.messages.length > 0) {
+          } else if (data.topicData.messages.length > 0) {
             // Default: Initialize timeline to show all messages
-            setTimelinePosition(data.messages.length - 1)
+            setTimelinePosition(data.topicData.messages.length - 1)
           }
         }
       } catch (err) {
@@ -78,6 +84,34 @@ function Topic() {
 
     fetchTopicData().catch(console.error)
   }, [topicId, apiClient, searchParams])
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const session = await authClient.getSession()
+        if (!session.data?.session?.token) {
+          if (!isLocalMode) {
+            setError('Not authenticated')
+          }
+          return
+        }
+
+        const response = await api.profile.$get()
+
+        if (response.ok) {
+          const profileData = await response.json()
+          setProfile(profileData)
+        } else {
+          setError('Failed to load profile')
+        }
+      } catch (err) {
+        setError('Error loading profile')
+        console.error(err)
+      }
+    }
+
+    loadProfile().catch(console.error)
+  }, [isLocalMode])
 
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
@@ -92,6 +126,36 @@ function Topic() {
       ? sortedMessages.slice(0, timelinePosition + 1).map((m) => m.id)
       : sortedMessages.map((m) => m.id),
   )
+
+  // Update topicState based on current timeline position
+  useEffect(() => {
+    if (!topicData?.states || sortedMessages.length === 0) {
+      setTopicState(null)
+      return
+    }
+
+    // Get the current message's rawTs based on timeline position
+    const currentMessageRawTs = timelinePosition !== null && sortedMessages[timelinePosition]
+      ? sortedMessages[timelinePosition].rawTs
+      : sortedMessages[sortedMessages.length - 1]?.rawTs
+
+    if (!currentMessageRawTs) {
+      setTopicState(null)
+      return
+    }
+
+    // Find the newest state where createdByMessageRawTs <= currentMessageRawTs
+    const applicableStates = topicData.states.filter(
+      (state) => Number(state.createdByMessageRawTs) <= Number(currentMessageRawTs),
+    )
+
+    // Get the newest applicable state (states are already in chronological order)
+    setTopicState(
+      applicableStates.length > 0
+        ? applicableStates[applicableStates.length - 1]
+        : null,
+    )
+  }, [timelinePosition, sortedMessages, topicData?.states])
 
   // Update URL query parameter when timeline position changes (debounced)
   useEffect(() => {
@@ -234,7 +298,7 @@ function Topic() {
     )
   }
 
-  if (error || !topicData) {
+  if (error || !topicData || !topicState) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-red-500">Error: {error || 'Topic not found'}</div>
@@ -317,6 +381,91 @@ function Topic() {
       }
       return next
     })
+  }
+
+  // Render Slack-like action buttons (local only)
+  const renderActionButtons = (msg: SlackMessage, channelId: string) => {
+    if (!isLocalMode || hiddenBlocks.has(msg.id)) return null
+    type SlackText = { type?: string; text?: string }
+    type SlackActionElement = { url?: string; action_id?: string; text?: SlackText }
+    type SlackActionsBlock = { type: 'actions'; elements: SlackActionElement[] }
+
+    const raw: unknown = msg.raw
+    const hasBlocks = typeof raw === 'object' && raw !== null && Object.prototype.hasOwnProperty.call(Object(raw), 'blocks')
+    const rawBlocks = hasBlocks ? (raw as { blocks?: unknown }).blocks : undefined
+    if (!Array.isArray(rawBlocks)) return null
+
+    const actions = rawBlocks.find((b): b is SlackActionsBlock => {
+      if (typeof b !== 'object' || b === null) return false
+      const block = b as Partial<SlackActionsBlock>
+      return block.type === 'actions' && Array.isArray(block.elements)
+    })
+    if (!actions) return null
+
+    const isDM = isDMChannel(channelId)
+    const currentUserId = isDM ? getCurrentUserId(channelId) : null
+
+    const signOutAndRedirect = async (url: string) => {
+      await authClient.signOut()
+      window.location.href = url
+    }
+
+    const onNotNow = () => {
+      setHiddenBlocks((prev) => new Set(prev).add(msg.id))
+    }
+
+    const onDontAskAgain = async () => {
+      if (!currentUserId) return
+      try {
+        await local_api.calendar.dont_ask_again.$post({ json: { userId: currentUserId } })
+      } catch (e) {
+        console.warn('dont_ask_again failed', e)
+      } finally {
+        setHiddenBlocks((prev) => new Set(prev).add(msg.id))
+      }
+    }
+
+    return (
+      <div className="mt-2 flex gap-2 flex-wrap">
+        {actions.elements.map((el, idx: number) => {
+          const label = el.text?.text || 'Button'
+          if (typeof el.url === 'string') {
+            return (
+              <a
+                key={idx}
+                onClick={() => { signOutAndRedirect(el.url as string).catch(console.error) }}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-white text-blue-700 border border-blue-300 hover:bg-blue-50"
+              >
+                {label}
+              </a>
+            )
+          }
+          if (el.action_id === 'calendar_not_now') {
+            return (
+              <button
+                key={idx}
+                onClick={onNotNow}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+              >
+                {label}
+              </button>
+            )
+          }
+          if (el.action_id === 'dont_ask_calendar_again') {
+            return (
+              <button
+                key={idx}
+                onClick={() => { onDontAskAgain().catch(console.error) }}
+                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+              >
+                {label}
+              </button>
+            )
+          }
+          return null
+        })}
+      </div>
+    )
   }
 
   // Handle sending a message
@@ -420,13 +569,13 @@ function Topic() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 p-4 flex flex-col">
+    <div className="h-full min-h-0 bg-gray-50 p-4 flex flex-col overflow-hidden">
       <div className="flex-shrink-0">
         <div className="flex items-center gap-3 mb-1">
           <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
             ← Back to Topics
           </Link>
-          <h1 className="text-xl font-bold">{topicData.topic.state.summary}</h1>
+          <h1 className="text-xl font-bold">{topicState.summary}</h1>
         </div>
         <div className="flex items-center gap-2 mb-2">
           <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
@@ -434,15 +583,15 @@ function Topic() {
           </span>
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicData.topic.state.isActive
+              topicState.isActive
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
             }`}
           >
-            {topicData.topic.state.isActive ? 'Active' : 'Inactive'}
+            {topicState.isActive ? 'Active' : 'Inactive'}
           </span>
           <span className="text-sm text-gray-600">
-            Updated: {new Date(topicData.topic.state.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+            Updated: {new Date(topicState.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
           </span>
           {sortedMessages.length > 0 && timelinePosition !== null && (
             <span className="text-sm text-gray-600">
@@ -457,19 +606,20 @@ function Topic() {
           <div className="text-gray-500">No conversations found for this topic</div>
         </div>
         ) : (
-        <div className="flex-1 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
+        <div className="flex-1 min-h-0 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
             {channelGroups.map((channel) => {
               const isExpanded = expandedContexts.has(channel.channelId)
               const isDM = isDMChannel(channel.channelId)
               const userId = isDM ? getCurrentUserId(channel.channelId) : null
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
+              const userCalendar = userId ? userCalendars[userId] || null : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicData.topic.state.perUserContext[userId] : null
+              const topicUserContext = userId ? topicState.perUserContext[userId] : null
 
               return (
                 <div
                   key={channel.channelId}
-                  className="bg-white rounded-lg shadow-md p-2 overflow-y-auto flex flex-col"
+                  className="bg-white rounded-lg shadow-md p-2 flex flex-col min-h-0"
                 >
                   <div
                     className={`flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between -m-2 p-2 mb-0 rounded-t-lg ${
@@ -517,9 +667,18 @@ function Topic() {
                   {isExpanded && isDM && (
                     <div className="mb-2 -mx-2 px-2">
                       <UserContextView
+                        calendar={userCalendar}
                         context={userData?.context}
                         topicContext={topicUserContext}
                         userTimezone={user?.tz || null}
+                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.id === userId ? (() => {
+                          const currentPath = window.location.pathname + window.location.search
+                          const params = new URLSearchParams({
+                            callbackURL: currentPath,
+                            errorCallbackURL: currentPath,
+                          })
+                          window.location.href = `/api/google/authorize?${params.toString()}`
+                        }) : null}
                       />
                     </div>
                   )}
@@ -570,6 +729,7 @@ function Topic() {
                             </div>
                             <div className="text-sm whitespace-pre-wrap break-words">
                               {msg.text}
+                              {renderActionButtons(msg, channel.channelId)}
                             </div>
                             <div
                               className={`text-xs mt-1 ${
@@ -618,7 +778,7 @@ function Topic() {
                             <button
                               onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
                               disabled={testingMessageId === msg.id}
-                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hover:cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                               {testingMessageId === msg.id ? 'Testing...' : 'Test LLM Response'}
                             </button>
@@ -656,7 +816,7 @@ function Topic() {
                       <button
                         onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
-                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                       >
                         {sendingChannels.has(channel.channelId) ? '...' : 'Send'}
                       </button>

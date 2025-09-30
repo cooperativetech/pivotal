@@ -1,7 +1,8 @@
 import type { RunContext } from './agent-sdk'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames, scheduleAutoMessage, showUserCalendar } from './conversation-utils'
-import { isCalendarConnected } from '../calendar-service'
+import { getOrgActionItems, editOrgActionItems } from './org-context'
+import { isGoogleCalendarConnected } from '../integrations/google'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
@@ -114,7 +115,7 @@ This helps identify the specific meeting details (date, time, participants).
   - You would just be acknowledging or confirming what was already said
 
 ## CRITICAL TOOL USAGE
-You have access to FOUR tools, but you can ONLY USE ONE per response:
+You have access to SIX tools, but you can ONLY USE ONE per response:
 
 1. **updateUserNames**: Updates the list of users involved in the meeting
    - USE THIS when you need to add/remove users from the topic
@@ -150,6 +151,23 @@ You have access to FOUR tools, but you can ONLY USE ONE per response:
      * autoMessageText: Text to send (e.g., "Send meeting prep summary in a DM to each user now")
      * sendTime: ISO 8601 datetime string for 1 hour before the meeting
      * startNewTopic: Set to false (continue in current topic)
+
+5. **getOrgActionItems**: Retrieves the current organizational action items
+   - USE THIS when:
+     * Users ask about current action items
+     * You need to review action items for agenda preparation
+     * Creating meeting agendas that should reference existing action items
+   - Returns the current action items from the organization's git repository
+   - Call with a single argument 'a' (any string): getOrgActionItems("a")
+
+6. **editOrgActionItems**: Updates the organizational action items
+   - USE THIS when:
+     * New action items are identified during meeting prep
+     * Existing action items need to be updated based on user input
+     * Meeting outcomes include changes to action items
+   - Parameters:
+     * updates: A string describing the changes to make (e.g., several bullet points of the form "- Add: (Jane Doe) Review Q4 budget proposal")
+   - Automatically commits and pushes changes to the git repository
 
 ## Response Format
 CRITICAL: When calling a tool:
@@ -201,7 +219,7 @@ ${await Promise.all(topic.state.userIds.map(async (userId: string) => {
   const userTzStr = tz ? `${userName} (${getShortTimezoneFromIANA(tz)})` : userName
 
   try {
-    const isConnected = await isCalendarConnected(userId)
+    const isConnected = await isGoogleCalendarConnected(userId)
     if (isConnected) {
       return `  ${userTzStr}: Calendar is connected`
     }
@@ -226,7 +244,7 @@ export const meetingPrepAgent = new ConversationAgent({
     temperature: 0.7,
     parallelToolCalls: false, // Only allow one tool call at a time
   },
-  tools: [updateUserNames, updateSummary, showUserCalendar, scheduleAutoMessage],
+  tools: [updateUserNames, updateSummary, showUserCalendar, scheduleAutoMessage, getOrgActionItems, editOrgActionItems],
   outputType: ConversationRes,
   instructions: meetingPrepInstructions,
 })

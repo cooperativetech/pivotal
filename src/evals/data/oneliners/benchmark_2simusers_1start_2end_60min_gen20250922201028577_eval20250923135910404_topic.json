@@ -1,0 +1,976 @@
+{
+  "loadUpToId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+  "expectedBehavior": "Pivotal should gather calendar dates on January 2nd only",
+  "topic": {
+    "id": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "createdAt": "2025-09-23T11:57:49.801Z"
+  },
+  "states": [
+    {
+      "id": "e51f49c3-d3af-4223-89c1-ac4d97fd4de7",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:49.804Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "ff611caa-5a1c-4a80-bea2-88616d7f3e5f",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Alice": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:49.818Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "214773d5-53ec-4daf-9479-930441d17f5d",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true
+        },
+        "Alice": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:49.829Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "eccfab5a-eaa9-4913-9ecc-160b285788ee",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true
+        },
+        "Alice": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:56.452Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "6b08928b-7ae3-4312-bf2a-f77d0cb003a8",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          }
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:56.458Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "d18fcc46-708a-4638-ae66-2c6c09ca6481",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          }
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:56.465Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "f1d80355-7e12-4699-a6fd-c0fadfb1f219",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          }
+        }
+      },
+      "createdByMessageId": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "createdAt": "2025-09-23T11:57:56.469Z",
+      "createdByMessageRawTs": "1758628666.063"
+    },
+    {
+      "id": "ef862a74-fe9d-4802-9ec4-ea9a02bdba56",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T15:30:00Z",
+              "free": false,
+              "start": "2025-01-02T05:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:00:00Z",
+              "free": true,
+              "start": "2025-01-02T15:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:00:00Z",
+              "free": false,
+              "start": "2025-01-02T16:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:30:00Z",
+              "free": true,
+              "start": "2025-01-02T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T22:00:00Z",
+              "free": false,
+              "start": "2025-01-02T19:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-03T02:30:00Z",
+              "free": true,
+              "start": "2025-01-02T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T05:00:00Z",
+              "free": false,
+              "start": "2025-01-03T02:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-04T04:59:59Z",
+              "free": true,
+              "start": "2025-01-03T05:00:00Z",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "cab03088-3539-4667-8a03-e5ac480220cf",
+      "createdAt": "2025-09-23T11:58:12.923Z",
+      "createdByMessageRawTs": "1758628684.084"
+    },
+    {
+      "id": "62439305-1c38-434e-84b0-24ae6b0b8606",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Emergency vet shift and continuing education - completely packed"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T15:30:00Z",
+              "free": false,
+              "start": "2025-01-02T05:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:00:00Z",
+              "free": true,
+              "start": "2025-01-02T15:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:00:00Z",
+              "free": false,
+              "start": "2025-01-02T16:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:30:00Z",
+              "free": true,
+              "start": "2025-01-02T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T22:00:00Z",
+              "free": false,
+              "start": "2025-01-02T19:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-03T02:30:00Z",
+              "free": true,
+              "start": "2025-01-02T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T05:00:00Z",
+              "free": false,
+              "start": "2025-01-03T02:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-04T04:59:59Z",
+              "free": true,
+              "start": "2025-01-03T05:00:00Z",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "8d880f87-1766-47b5-8f8e-2b97eeb6b7b3",
+      "createdAt": "2025-09-23T11:58:26.631Z",
+      "createdByMessageRawTs": "1758628701.823"
+    },
+    {
+      "id": "facfea6e-cfa4-4bde-8a82-571a8e0a9ed5",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": false,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Emergency vet shift and continuing education - completely packed"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T15:30:00Z",
+              "free": false,
+              "start": "2025-01-02T05:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:00:00Z",
+              "free": true,
+              "start": "2025-01-02T15:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:00:00Z",
+              "free": false,
+              "start": "2025-01-02T16:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:30:00Z",
+              "free": true,
+              "start": "2025-01-02T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T22:00:00Z",
+              "free": false,
+              "start": "2025-01-02T19:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-03T02:30:00Z",
+              "free": true,
+              "start": "2025-01-02T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T05:00:00Z",
+              "free": false,
+              "start": "2025-01-03T02:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-04T04:59:59Z",
+              "free": true,
+              "start": "2025-01-03T05:00:00Z",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "f7cf49a7-336f-41d4-ae99-27f0349d6915",
+      "createdAt": "2025-09-23T11:58:52.203Z",
+      "createdByMessageRawTs": "1758628721.584"
+    },
+    {
+      "id": "a26513c2-0647-41e5-95b0-ee25523f60f1",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": false,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Emergency vet shift and continuing education - completely packed"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T15:30:00Z",
+              "free": false,
+              "start": "2025-01-02T05:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:00:00Z",
+              "free": true,
+              "start": "2025-01-02T15:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:00:00Z",
+              "free": false,
+              "start": "2025-01-02T16:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:30:00Z",
+              "free": true,
+              "start": "2025-01-02T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T22:00:00Z",
+              "free": false,
+              "start": "2025-01-02T19:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-03T02:30:00Z",
+              "free": true,
+              "start": "2025-01-02T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T05:00:00Z",
+              "free": false,
+              "start": "2025-01-03T02:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-04T04:59:59Z",
+              "free": true,
+              "start": "2025-01-03T05:00:00Z",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "7ae1852e-aa6c-4664-bfc0-a7e3bb47c729",
+      "createdAt": "2025-09-23T11:59:02.250Z",
+      "createdByMessageRawTs": "1758628737.054"
+    },
+    {
+      "id": "b91ed265-8018-4622-bab7-9649bb0044de",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ],
+      "summary": "Schedule 1-hour meeting between Alice and Bob for January 2-3",
+      "isActive": false,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.467",
+            "channelId": "D1758628669823"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Emergency vet shift and continuing education - completely packed"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1758628676.455",
+            "channelId": "D1758628666059"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T15:30:00Z",
+              "free": false,
+              "start": "2025-01-02T05:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:00:00Z",
+              "free": true,
+              "start": "2025-01-02T15:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:00:00Z",
+              "free": false,
+              "start": "2025-01-02T16:00:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:30:00Z",
+              "free": true,
+              "start": "2025-01-02T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T22:00:00Z",
+              "free": false,
+              "start": "2025-01-02T19:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-03T02:30:00Z",
+              "free": true,
+              "start": "2025-01-02T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T05:00:00Z",
+              "free": false,
+              "start": "2025-01-03T02:30:00Z",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-04T04:59:59Z",
+              "free": true,
+              "start": "2025-01-03T05:00:00Z",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "f7eaac46-619c-4d29-a67c-c9d4172db7f9",
+      "createdAt": "2025-09-23T11:59:10.385Z",
+      "createdByMessageRawTs": "1758628745.589"
+    }
+  ],
+  "messages": [
+    {
+      "id": "1d018872-f89e-412e-82c1-b671cc3aa36e",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Alice",
+      "channelId": "D1758628666059",
+      "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Bob sometime between Thursday, January 2nd at 12:00 AM and Friday, January 3rd at 12:00 AM. Can you help me find a time that works for both of us?",
+      "timestamp": "2025-09-23T11:57:46.063Z",
+      "rawTs": "1758628666.063",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628666.063",
+        "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Bob sometime between Thursday, January 2nd at 12:00 AM and Friday, January 3rd at 12:00 AM. Can you help me find a time that works for both of us?",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1758628666059",
+        "event_ts": "1758628666.063",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "461e3c0f-c9d6-4d13-9b39-b0a79bf1dd0e",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "D1758628666059",
+      "text": "I'll help you schedule that meeting with Bob for January 2-3. Let me reach out to both of you to check availability since neither of you have calendars connected.",
+      "timestamp": "2025-09-23T11:57:56.438Z",
+      "rawTs": "1758628676.438",
+      "threadTs": "1758628666.063",
+      "raw": {
+        "ts": "1758628676.438",
+        "text": "I'll help you schedule that meeting with Bob for January 2-3. Let me reach out to both of you to check availability since neither of you have calendars connected.",
+        "type": "message",
+        "user": "",
+        "channel": "D1758628666059",
+        "event_ts": "1758628676.438",
+        "thread_ts": "1758628666.063",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "3c199fab-86ad-4922-b7fb-eee572272207",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "D1758628666059",
+      "text": "What times work best for you on January 2-3 for a 1-hour meeting with Bob?",
+      "timestamp": "2025-09-23T11:57:56.455Z",
+      "rawTs": "1758628676.455",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628676.455",
+        "text": "What times work best for you on January 2-3 for a 1-hour meeting with Bob?",
+        "type": "message",
+        "user": "",
+        "blocks": [
+          {
+            "text": {
+              "text": "To help with scheduling, you can connect your Google Calendar:",
+              "type": "mrkdwn"
+            },
+            "type": "section"
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=955377993112-us5g8m15dothum4p5aiujfgk0j7jagh8.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Flocalhost%3A5173%2Fauth%2Fgoogle%2Fcallback&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.events.readonly&state=origin%3Aslack%3Aslack%3AAlice%3Atopic%3Ad57d27d0-6aa8-4389-9e71-e7f320644523&access_type=offline&prompt=consent",
+                "text": {
+                  "text": "Connect Google Calendar",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "style": "primary"
+              },
+              {
+                "text": {
+                  "text": "Not now",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "action_id": "calendar_not_now"
+              },
+              {
+                "text": {
+                  "text": "Don't ask this again",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "action_id": "dont_ask_calendar_again"
+              }
+            ]
+          }
+        ],
+        "channel": "D1758628666059",
+        "event_ts": "1758628676.455",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "03e6d2b5-80db-4762-918a-9116d0c3141c",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "D1758628669823",
+      "text": "Alice would like to schedule a 1-hour meeting with you sometime between January 2-3. What times work best for you?",
+      "timestamp": "2025-09-23T11:57:56.467Z",
+      "rawTs": "1758628676.467",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628676.467",
+        "text": "Alice would like to schedule a 1-hour meeting with you sometime between January 2-3. What times work best for you?",
+        "type": "message",
+        "user": "",
+        "blocks": [
+          {
+            "text": {
+              "text": "To help with scheduling, you can connect your Google Calendar:",
+              "type": "mrkdwn"
+            },
+            "type": "section"
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=955377993112-us5g8m15dothum4p5aiujfgk0j7jagh8.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Flocalhost%3A5173%2Fauth%2Fgoogle%2Fcallback&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.events.readonly&state=origin%3Aslack%3Aslack%3ABob%3Atopic%3Ad57d27d0-6aa8-4389-9e71-e7f320644523&access_type=offline&prompt=consent",
+                "text": {
+                  "text": "Connect Google Calendar",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "style": "primary"
+              },
+              {
+                "text": {
+                  "text": "Not now",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "action_id": "calendar_not_now"
+              },
+              {
+                "text": {
+                  "text": "Don't ask this again",
+                  "type": "plain_text"
+                },
+                "type": "button",
+                "action_id": "dont_ask_calendar_again"
+              }
+            ]
+          }
+        ],
+        "channel": "D1758628669823",
+        "event_ts": "1758628676.467",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "cab03088-3539-4667-8a03-e5ac480220cf",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Alice",
+      "channelId": "D1758628666059",
+      "text": "Looking at my schedule for January 2nd, I have availability from 10:30-11:00 AM, 12:00-2:30 PM, 5:00-7:00 PM, or after 9:30 PM. For January 3rd, I'm completely free all day. What works best for Bob?",
+      "timestamp": "2025-09-23T11:58:04.084Z",
+      "rawTs": "1758628684.084",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628684.084",
+        "text": "Looking at my schedule for January 2nd, I have availability from 10:30-11:00 AM, 12:00-2:30 PM, 5:00-7:00 PM, or after 9:30 PM. For January 3rd, I'm completely free all day. What works best for Bob?",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1758628666059",
+        "event_ts": "1758628684.084",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "8d880f87-1766-47b5-8f8e-2b97eeb6b7b3",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Bob",
+      "channelId": "D1758628669823",
+      "text": "Hi Alice! January 2nd is completely packed with my emergency vet shift and continuing education. Would January 3rd work better for you? I should have much more flexibility that day.",
+      "timestamp": "2025-09-23T11:58:21.823Z",
+      "rawTs": "1758628701.823",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628701.823",
+        "text": "Hi Alice! January 2nd is completely packed with my emergency vet shift and continuing education. Would January 3rd work better for you? I should have much more flexibility that day.",
+        "type": "message",
+        "user": "Bob",
+        "channel": "D1758628669823",
+        "event_ts": "1758628701.823",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "d84987c5-dbcc-451d-aa5c-7d2d2d0dae71",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "D1758628669823",
+      "text": "Perfect! Since Alice is completely free on January 3rd and you prefer that day, here are some good 1-hour options:\n\n• 10:00-11:00 AM (EST)\n• 2:00-3:00 PM (EST)\n• 4:00-5:00 PM (EST)\n\nWhich time works best for you?",
+      "timestamp": "2025-09-23T11:58:37.232Z",
+      "rawTs": "1758628717.232",
+      "threadTs": "1758628701.823",
+      "raw": {
+        "ts": "1758628717.232",
+        "text": "Perfect! Since Alice is completely free on January 3rd and you prefer that day, here are some good 1-hour options:\n\n• 10:00-11:00 AM (EST)\n• 2:00-3:00 PM (EST)\n• 4:00-5:00 PM (EST)\n\nWhich time works best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1758628669823",
+        "event_ts": "1758628717.232",
+        "thread_ts": "1758628701.823",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f7cf49a7-336f-41d4-ae99-27f0349d6915",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Bob",
+      "channelId": "D1758628669823",
+      "text": "The 2:00-3:00 PM slot works perfectly for me! That gives me time to decompress from my shift and be fully present for our meeting.",
+      "timestamp": "2025-09-23T11:58:41.584Z",
+      "rawTs": "1758628721.584",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628721.584",
+        "text": "The 2:00-3:00 PM slot works perfectly for me! That gives me time to decompress from my shift and be fully present for our meeting.",
+        "type": "message",
+        "user": "Bob",
+        "channel": "D1758628669823",
+        "event_ts": "1758628721.584",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "6a3ad4db-7eea-47db-ae4b-901aadb0c435",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "C1758628730919",
+      "text": "Great news! I've confirmed that January 3rd from 2:00-3:00 PM (EDT) works for both Alice and Bob. This meeting time is now scheduled.",
+      "timestamp": "2025-09-23T11:58:50.929Z",
+      "rawTs": "1758628730.929",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628730.929",
+        "text": "Great news! I've confirmed that January 3rd from 2:00-3:00 PM (EDT) works for both Alice and Bob. This meeting time is now scheduled.",
+        "type": "message",
+        "user": "",
+        "channel": "C1758628730919",
+        "event_ts": "1758628730.929",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "fa4c97be-8353-46f6-99d8-0e01b3d606b6",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "UTESTBOT",
+      "channelId": "C1758628730919",
+      "text": "Calendar event created for “Meeting between Alice and Bob”! 📅\nWhen: Jan 3, 2025, 2:00 PM (EDT) to 3:00 PM\nGoogle Meet link: https://meet.google.com/eux-okfn-nuv",
+      "timestamp": "2025-09-23T11:58:52.200Z",
+      "rawTs": "1758628732.2",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628732.2",
+        "text": "Calendar event created for “Meeting between Alice and Bob”! 📅\nWhen: Jan 3, 2025, 2:00 PM (EDT) to 3:00 PM\nGoogle Meet link: https://meet.google.com/eux-okfn-nuv",
+        "type": "message",
+        "user": "",
+        "channel": "C1758628730919",
+        "event_ts": "1758628732.2",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "7ae1852e-aa6c-4664-bfc0-a7e3bb47c729",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Alice",
+      "channelId": "D1758628666059",
+      "text": "Perfect! Thank you for setting that up. I have the meeting with Bob confirmed for January 3rd at 2:00 PM and I've noted the Google Meet link.",
+      "timestamp": "2025-09-23T11:58:57.054Z",
+      "rawTs": "1758628737.054",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628737.054",
+        "text": "Perfect! Thank you for setting that up. I have the meeting with Bob confirmed for January 3rd at 2:00 PM and I've noted the Google Meet link.",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1758628666059",
+        "event_ts": "1758628737.054",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f7eaac46-619c-4d29-a67c-c9d4172db7f9",
+      "topicId": "d57d27d0-6aa8-4389-9e71-e7f320644523",
+      "userId": "Bob",
+      "channelId": "D1758628669823",
+      "text": "Perfect! I've got it on my calendar. Looking forward to meeting with Alice on Friday afternoon. Thanks for setting up the Google Meet link too - that makes it easy!",
+      "timestamp": "2025-09-23T11:59:05.589Z",
+      "rawTs": "1758628745.589",
+      "threadTs": null,
+      "raw": {
+        "ts": "1758628745.589",
+        "text": "Perfect! I've got it on my calendar. Looking forward to meeting with Alice on Friday afternoon. Thanks for setting up the Google Meet link too - that makes it easy!",
+        "type": "message",
+        "user": "Bob",
+        "channel": "D1758628669823",
+        "event_ts": "1758628745.589",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Alice",
+      "teamId": "T123456",
+      "realName": "Alice",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-09-23T11:57:42.000Z",
+      "raw": {
+        "id": "Alice",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1758628662,
+        "real_name": "Alice"
+      }
+    },
+    {
+      "id": "Bob",
+      "teamId": "T123456",
+      "realName": "Bob",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-09-23T11:57:42.000Z",
+      "raw": {
+        "id": "Bob",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1758628662,
+        "real_name": "Bob"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "D1758628666059",
+      "userIds": [
+        "Alice"
+      ]
+    },
+    {
+      "id": "D1758628669823",
+      "userIds": [
+        "Bob"
+      ]
+    },
+    {
+      "id": "C1758628730919",
+      "userIds": [
+        "Alice",
+        "Bob"
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { readFileSync } from 'fs'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
@@ -16,13 +16,15 @@ export default defineConfig({
     },
   },
   server: {
-    https: {
-      cert: readFileSync(path.resolve(__dirname, '.cert/cert.pem')),
-      key: readFileSync(path.resolve(__dirname, '.cert/key.pem')),
-    },
+    ...(command === 'serve' && {
+      https: {
+        cert: readFileSync(path.resolve(__dirname, '.cert/cert.pem')),
+        key: readFileSync(path.resolve(__dirname, '.cert/key.pem')),
+      },
+    }),
     proxy: {
       '/local_api': 'http://localhost:3001',
       '/api': 'http://localhost:3001',
     },
   },
-})
+}))

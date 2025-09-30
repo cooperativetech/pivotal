@@ -4,62 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-- `pnpm run lint` - Run ESLint and TypeScript type checking
+- `pnpm run lint` - Run TypeScript type checking and ESLint with cache
 - `pnpm run dkgen --name migration_name` - Generate Drizzle migration after schema changes
-
-## Environment Variables
-
-Required for development:
-- `PV_DB_URL` - PostgreSQL connection string (e.g., `postgresql://localhost:5432/pivotal`)
-- `PV_OPENROUTER_API_KEY` - OpenRouter API key for LLM interactions
-- `PV_GOOGLE_CLIENT_ID` - Google OAuth client ID for calendar integration
-- `PV_GOOGLE_CLIENT_SECRET` - Google OAuth client secret
-
-Additional for production:
-- `PV_SLACK_BOT_TOKEN` - Slack bot user OAuth token
-- `PV_SLACK_APP_TOKEN` - Slack app-level token for socket mode
 
 ## Architecture Overview
 
-This is a Slack bot for AI-assisted scheduling with evaluation framework.
+### Application Structure
 
-**Core Components:**
+The application is a Slack bot with an integrated web interface that facilitates scheduling and meeting preparation workflows:
 
-1. **Slack Integration** (`src/slack-bot.ts`, `src/slack-message-handler.ts`)
-   - Real Slack bot using Bolt framework in socket mode
-   - Flack server (`src/flack-server.ts`) for local development/testing
-   - Message handling with topic tracking and thread organization
+- **Backend**: Hono-based HTTP server (`src/server.ts`) with multiple deployment modes (local, dev, prod)
+- **Slack Integration**: Slack Bolt SDK for websocket-based message handling and interactive components
+- **Frontend**: React + Vite SPA with React Router for user authentication and topic management
+- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
+- **Authentication**: Better-auth library with GitHub, Google, and Slack OAuth providers
 
-2. **AI Processing** (`src/anthropic-api.ts`)
-   - Uses OpenRouter AI SDK provider for LLM interactions
-   - Analyzes message relevance to existing topics
-   - Generates scheduling responses based on conversation context
+### Key Components
 
-3. **Calendar Integration** (`src/calendar-service.ts`)
-   - Google Calendar OAuth flow
-   - Fetches and analyzes user availability
-   - Stores tokens in user_data table
+**Server & API** (`src/server.ts`, `src/routes/`)
+- Main Hono server handles both API routes and static file serving
+- `/api` routes: Protected endpoints for user profile, topics, calendar, GitHub repos
+- `/local_api` routes: Development-only endpoints for simulating Slack interactions
+- Environment-based configuration (local uses port 3001, dev/prod use 3009)
 
-4. **Database** (PostgreSQL with Drizzle ORM)
-   - `topic` - Conversation topics with workflow types (scheduling/other)
-   - `slack_message` - All messages linked to topics
-   - `slack_user` - Slack user profiles
-   - `slack_channel` - Channel membership tracking
-   - `user_data` - User context including calendar tokens
-   - `llm_response` - Cached LLM responses
+**Slack Bot** (`src/slack-bot.ts`, `src/slack-message-handler.ts`)
+- WebSocket connection via Slack Bolt for real-time messaging
+- Message handler processes conversations and manages topic states
+- Interactive components for calendar preferences and user actions
+- Auto-message cron for scheduled reminders and prompts
 
-5. **Evaluation Framework** (`src/evals/`)
-   - Benchmark data generation for scheduling scenarios
-   - LLM persona agents that simulate users in conversations
-   - Scoring algorithms to evaluate scheduling performance
-   - End-to-end evaluation via flack-eval
+**Agent System** (`src/agents/`)
+- Workflow-specific agents mapped by type (scheduling, meeting-prep)
+- AI-powered conversation handling with OpenRouter/OpenAI models
+- Langfuse integration for LLM observability and tracing
+- Organization context tools for GitHub integration (action items, commit summaries)
 
-**Request Flow:**
-1. Slack message received → Analyzed for topic relevance
-2. New topic created or message added to existing topic
-3. For scheduling topics → Calendar data fetched if available
-4. LLM generates contextual response considering full conversation
-5. Response sent back to Slack thread
+**Database Schema** (`src/db/schema/`)
+- `main.ts`: Core application tables (topics, messages, users, calendars)
+- `auth.ts`: Better-auth tables (users, sessions, accounts, verifications)
+- Topic state management with per-user context tracking
+- Slack message storage with full raw payload preservation
+
+**Integrations** (`src/integrations/`)
+- **GitHub**: OAuth flow for app installation, repository access via Octokit
+- **Google**: Calendar API integration with service account support
+- **Slack**: OAuth installation flow and user account linking
+
+**Calendar Service** (`src/calendar-service.ts`)
+- User calendar fetching via Google OAuth
+- Bot-created events using service account impersonation
+- Automatic Google Meet link generation
+- Calendar preference management
 
 ## Important ESLint Rules
 
@@ -80,14 +75,15 @@ This is a Slack bot for AI-assisted scheduling with evaluation framework.
 ## Database Conventions
 
 - Drizzle uses snake_case naming for database columns
-- All tables use UUID primary keys except Slack-specific tables (use Slack IDs)
+- All tables use UUID primary keys except auth tables and Slack-specific tables (use Slack IDs)
 - Timestamps include timezone information
 - JSON columns store structured data (user arrays, raw Slack payloads)
 
 ## TypeScript Conventions
 
 - Path alias `@shared/*` maps to `src/shared/*`
-- Use `.ts` file extensions in imports (required for tsx)
-- Strict mode enabled with no unused locals/parameters
-- All imports must have checked side effects
 - Always use `import ... from 'package'` syntax rather than `const ... = await import('package')`, except for the one exception of `const { App } = await import('@slack/bolt')`
+
+## Frontend Conventions
+
+- Always use `cursor-pointer` and `disabled:cursor-default` in the className for buttons

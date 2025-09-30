@@ -148,6 +148,34 @@
       "when": 1757152963618,
       "tag": "0020_add_topic_state_table",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1758062925648,
+      "tag": "0021_add_installation_id_to_account_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1758241023027,
+      "tag": "0022_add_repository_id_to_account_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1758565058206,
+      "tag": "0023_remove_google_calendar_props_from_user_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1758720076940,
+      "tag": "0024_add_meeting_artifact_table",
+      "breakpoints": true
     }
   ]
 }

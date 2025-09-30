@@ -4,12 +4,18 @@ import db from './db/engine'
 import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
-import { and, eq, ne, sql } from 'drizzle-orm'
-import { tsToDate, getTopicWithState, getTopics, updateTopicState } from './utils'
-import { shouldShowCalendarButtons, addPromptedUser, generateGoogleAuthUrl } from './calendar-service'
+import { and, desc, eq, ne, or, sql } from 'drizzle-orm'
+import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
+import type { TopicWithState, CalendarEvent } from '@shared/api-types'
+import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
+import type { CalendarActionResult } from './calendar-service'
+import { upsertMeetingArtifact } from './meeting-artifacts'
+import { baseURL } from './auth'
 
 export type SlackAPIUser = NonNullable<UsersListResponse['members']>[number]
 export type SlackAPIMessage = GenericMessageEvent | BotMessageEvent
+
+type FinalizedEvent = Pick<CalendarEvent, 'start' | 'end' | 'summary'> & Partial<Omit<CalendarEvent, 'start' | 'end' | 'summary'>>
 
 // Helper function to create or update slackChannel record
 async function upsertSlackChannel(channelId: string, userIds: string[]): Promise<void> {
@@ -27,6 +33,67 @@ async function upsertSlackChannel(channelId: string, userIds: string[]): Promise
       })
   } catch (error) {
     console.error('Error upserting slackChannel:', error)
+  }
+}
+
+async function promptUserToConnectCalendar(
+  topicId: string,
+  userId: string,
+  messageId: string,
+  client: WebClient,
+): Promise<void> {
+  try {
+    if (userId === 'USLACKBOT') return
+    const shouldPrompt = await shouldShowCalendarButtons(topicId, userId)
+    if (!shouldPrompt) return
+
+    const dmResult = await client.conversations.open({ users: userId })
+    if (!dmResult.ok || !dmResult.channel?.id) return
+
+    await upsertSlackChannel(dmResult.channel.id, [userId])
+
+    const dmResponse = await client.chat.postMessage({
+      channel: dmResult.channel.id,
+      text: 'To help with scheduling, you can connect your Google Calendar:',
+      blocks: [
+        { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize` },
+            { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
+            { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
+          ],
+        },
+      ],
+    })
+
+    if (dmResponse.ok && dmResponse.ts) {
+      await addPromptedUser(topicId, userId, messageId)
+      try {
+        await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmResult.channel.id, ts: dmResponse.ts } }, messageId)
+      } catch (error) {
+        console.warn('Failed to store calendarPromptMessage pointer:', error)
+      }
+    }
+  } catch (error) {
+    console.error(`Error prompting user ${userId} to connect calendar:`, error)
+  }
+}
+
+async function promptUnconnectedCalendars(
+  topic: TopicWithState,
+  message: SlackMessage,
+  client: WebClient,
+): Promise<void> {
+  if (topic.workflowType !== 'scheduling') return
+
+  const participants = new Set<string>(topic.state.userIds)
+  participants.add(message.userId)
+  participants.delete(topic.botUserId)
+
+  for (const userId of participants) {
+    await promptUserToConnectCalendar(topic.id, userId, message.id, client)
   }
 }
 
@@ -171,6 +238,9 @@ export async function processSchedulingActions(
     // Get the topic details
     let topic = await getTopicWithState(topicId)
 
+    await promptUnconnectedCalendars(topic, message, client)
+    topic = await getTopicWithState(topicId)
+
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
@@ -281,6 +351,9 @@ export async function processSchedulingActions(
     // Get the updated topic details, which may have changed userIds for example
     topic = await getTopicWithState(topicId)
 
+    // Re-run calendar prompts in case new participants were added during this turn
+    await promptUnconnectedCalendars(topic, message, client)
+
     // Send individual messages if needed
     if (nextStep.messagesToUsers && nextStep.messagesToUsers.length > 0) {
       // Create name to ID mapping
@@ -319,68 +392,10 @@ export async function processSchedulingActions(
               // Only include the actual user, not the bot
               await upsertSlackChannel(dmChannel.channel.id, [userId])
 
-              let blocks = undefined
-
-              // Check if AI requested calendar buttons for this message
-              if (messageGroup.includeCalendarButtons) {
-                // Check if this user should get calendar connection buttons
-                const shouldShow = await shouldShowCalendarButtons(topicId, userId)
-
-                if (shouldShow) {
-                  // Generate OAuth URL for direct linking
-                  const authUrl = generateGoogleAuthUrl(topicId, userId)
-
-                  // Add calendar connection buttons using Block Kit format
-                  blocks = [
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: 'To help with scheduling, you can connect your Google Calendar:',
-                      },
-                    },
-                    {
-                      type: 'actions',
-                      elements: [
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'Connect Google Calendar',
-                          },
-                          style: 'primary',
-                          url: authUrl, // Direct URL link for seamless UX
-                        },
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'Not now',
-                          },
-                          action_id: 'calendar_not_now',
-                        },
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: "Don't ask this again",
-                          },
-                          action_id: 'dont_ask_calendar_again',
-                        },
-                      ],
-                    },
-                  ]
-
-                  // Record that we've prompted this user for calendar connection
-                  await addPromptedUser(topicId, userId, message.id)
-                }
-              }
-
-              // Send the message with optional blocks
+              // Send the message
               const dmResponse = await client.chat.postMessage({
                 channel: dmChannel.channel.id,
                 text: messageGroup.text,
-                ...(blocks && { blocks }),
               })
 
               // Save the bot's DM to the database immediately
@@ -508,6 +523,23 @@ export async function processSchedulingActions(
       }
     }
 
+    // Handle finalized event - prefer reschedule of bot-owned; else create (bot or leader)
+    if (nextStep.finalizedEvent) {
+      const res = await handleFinalizedEvent(topic, message, nextStep.finalizedEvent, userMap, client)
+      createdMessages.push(...res)
+    }
+
+    if (nextStep.cancelEvent) {
+      try {
+        const deleted = await deleteTaggedEvent(topic.id)
+        if (!deleted) {
+          console.log('No calendar invite found to delete for topic:', topic.id)
+        }
+      } catch (error) {
+        console.error('Error deleting calendar invite:', error)
+      }
+    }
+
     // Mark topic as inactive if requested
     if (nextStep.markTopicInactive) {
       await updateTopicState(topic, { isActive: false }, message.id)
@@ -516,6 +548,118 @@ export async function processSchedulingActions(
   } catch (error) {
     console.error('Error processing topic actions:', error)
   }
+  return createdMessages
+}
+
+// Extracted helper to keep processSchedulingActions tight and focused
+async function handleFinalizedEvent(
+  topic: TopicWithState,
+  message: SlackMessage,
+  finalizedEvent: FinalizedEvent,
+  userMap: Map<string, SlackUser>,
+  client: WebClient,
+): Promise<SlackMessage[]> {
+  const createdMessages: SlackMessage[] = []
+  const start = new Date(finalizedEvent.start)
+  const end = new Date(finalizedEvent.end)
+
+  let actionWord: 'created' | 'updated' = 'created'
+  let calendarResult: CalendarActionResult | null = null
+
+  try {
+    const res = await tryRescheduleTaggedEvent(topic.id, finalizedEvent.start, finalizedEvent.end)
+    if (res.success) {
+      actionWord = 'updated'
+      calendarResult = res
+    }
+  } catch (e) {
+    console.warn('Reschedule attempt failed:', e)
+  }
+
+  if (!calendarResult) {
+    calendarResult = await createCalendarInviteFromBot(topic, finalizedEvent)
+  }
+
+  if (calendarResult) {
+    const tz = userMap.get(message.userId)?.tz || 'UTC'
+    const startStr = formatTimestampWithTimezone(start, tz)
+    const isSameDay = start.toDateString() === end.toDateString()
+    const endStr = isSameDay
+      ? end.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true })
+      : formatTimestampWithTimezone(end, tz)
+
+    const summary = finalizedEvent.summary?.trim()
+    const header = summary ? `Calendar event ${actionWord} for “${summary}”! 📅` : `Calendar event ${actionWord}! 📅`
+    let calendarMessage = `${header}\nWhen: ${startStr} to ${endStr}`
+    if (calendarResult.meetLink) calendarMessage += `\nGoogle Meet link: ${calendarResult.meetLink}`
+
+    let targetChannel: string | null = null
+    let threadTs: string | undefined
+
+    if (topic.state.userIds && topic.state.userIds.length > 0) {
+      try {
+        const mpimResult = await client.conversations.open({
+          users: topic.state.userIds.join(','),
+        })
+
+        if (mpimResult.ok && mpimResult.channel?.id) {
+          targetChannel = mpimResult.channel.id
+          threadTs = undefined
+          await upsertSlackChannel(mpimResult.channel.id, [...topic.state.userIds])
+        } else if (mpimResult.error) {
+          console.error('Failed to open MPIM for finalized event:', mpimResult.error)
+        }
+      } catch (mpimError) {
+        console.error('Error creating MPIM for finalized event:', mpimError)
+      }
+    }
+
+    if (!targetChannel) {
+      targetChannel = message.channelId
+      threadTs = message.rawTs
+    }
+
+    const calendarResponse = await client.chat.postMessage({
+      channel: targetChannel,
+      ...(threadTs ? { thread_ts: threadTs } : {}),
+      text: calendarMessage,
+    })
+
+    if (calendarResponse.ok && calendarResponse.ts) {
+      const [createdMessage] = await db.insert(slackMessageTable).values({
+        topicId: topic.id,
+        channelId: targetChannel,
+        userId: topic.botUserId,
+        text: calendarMessage,
+        timestamp: tsToDate(calendarResponse.ts),
+        rawTs: calendarResponse.ts,
+        threadTs: threadTs ?? null,
+        raw: calendarResponse.message,
+      }).returning()
+      createdMessages.push(createdMessage)
+
+      if (calendarResult.event && calendarResult.calendarId) {
+        const originThreadTs = threadTs ?? calendarResponse.ts
+        try {
+          await upsertMeetingArtifact({
+            topicId: topic.id,
+            calendarId: calendarResult.calendarId,
+            event: calendarResult.event,
+            startTime: start,
+            endTime: end,
+            summary: finalizedEvent.summary ?? topic.state.summary ?? null,
+            originChannelId: targetChannel,
+            originThreadTs,
+          })
+        } catch (error) {
+          console.error('Failed to upsert meeting artifact:', error)
+        }
+      }
+    }
+  } else {
+    console.log('No calendar invite created - missing credentials or organizer')
+  }
+
   return createdMessages
 }
 
@@ -539,8 +683,55 @@ async function getOrCreateTopic(
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
-  // Step 1: Query all of this bot's active topics from the DB
-  const topics = ignoreExistingTopics ? [] : await getTopics(botUserId, true)
+  // Step 1: Gather active topics and augment with any topics that have recent activity in this channel/thread
+  let topics: TopicWithState[] = []
+  if (!ignoreExistingTopics) {
+    const activeTopics = await getTopics(botUserId, true)
+    const activeTopicIds = new Set(activeTopics.map((topic) => topic.id))
+
+    const recentChannelMessages = await db
+      .select({ topicId: slackMessageTable.topicId })
+      .from(slackMessageTable)
+      .where(eq(slackMessageTable.channelId, message.channelId))
+      .orderBy(desc(slackMessageTable.timestamp))
+      .limit(50)
+
+    const recentTopicIds = new Set<string>()
+    for (const row of recentChannelMessages) {
+      if (!activeTopicIds.has(row.topicId)) {
+        recentTopicIds.add(row.topicId)
+      }
+    }
+
+    if (message.threadTs) {
+      const recentThreadMessages = await db
+        .select({ topicId: slackMessageTable.topicId })
+        .from(slackMessageTable)
+        .where(
+          and(
+            eq(slackMessageTable.channelId, message.channelId),
+            or(
+              eq(slackMessageTable.threadTs, message.threadTs),
+              eq(slackMessageTable.rawTs, message.threadTs),
+            ),
+          ),
+        )
+        .orderBy(desc(slackMessageTable.timestamp))
+        .limit(50)
+
+      for (const row of recentThreadMessages) {
+        if (!activeTopicIds.has(row.topicId)) {
+          recentTopicIds.add(row.topicId)
+        }
+      }
+    }
+
+    const additionalTopics = recentTopicIds.size > 0
+      ? await getTopics(botUserId, false, Array.from(recentTopicIds))
+      : []
+
+    topics = [...activeTopics, ...additionalTopics.filter((topic) => !activeTopicIds.has(topic.id))]
+  }
 
   // Step 2: Call analyzeTopicRelevance
   const analysis = await analyzeTopicRelevance(topics, message, userMap, botUserId)

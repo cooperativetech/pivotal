@@ -2,6 +2,7 @@ node_modules
 dist
 package-lock.json
 eval-results
+src/evals/results/
 pv.log
 .DS_Store
 .env
@@ -9,3 +10,4 @@ pv.log
 .claude-mistakes.md
 AGENTS.md
 *.pem
+.context-repos

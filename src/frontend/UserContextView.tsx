@@ -121,12 +121,14 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
 }
 
 interface UserContextViewProps {
+  calendar: CalendarEvent[] | null
   context: UserContext | null | undefined
   topicContext?: TopicUserContext | null | undefined
   userTimezone: string | null
+  onConnectClick?: (() => void) | null
 }
 
-export function UserContextView({ context, topicContext, userTimezone }: UserContextViewProps) {
+export function UserContextView({ calendar, context, topicContext, userTimezone, onConnectClick }: UserContextViewProps) {
   const manualOverrides = topicContext?.calendarManualOverrides
   return (
     <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
@@ -139,13 +141,28 @@ export function UserContextView({ context, topicContext, userTimezone }: UserCon
       {context?.slackTeamId && (
         <div>Team ID: {context.slackTeamId}</div>
       )}
-      {!context?.googleAccessToken && (
-        <div className="text-amber-600">⚠ Google Calendar not connected</div>
+      {calendar !== null ? (
+        <div className="text-emerald-600 flex items-center gap-2">
+          <span>✓ Google Calendar connected.</span>
+        </div>
+      ) : (
+        <div className="text-amber-600 flex items-center gap-2">
+          <span>⚠ Google Calendar not connected.</span>
+          {onConnectClick && (
+            <button
+              type="button"
+              onClick={onConnectClick}
+              className="text-amber-700 underline hover:text-amber-800 cursor-pointer"
+            >
+              Click to connect
+            </button>
+          )}
+        </div>
       )}
-      {(context?.calendar && context?.calendar.length > 0) || (manualOverrides && manualOverrides.length > 0) ? (
+      {(calendar !== null && calendar.length > 0) || (manualOverrides && manualOverrides.length > 0) ? (
         <div>
           <CalendarView
-            events={context?.calendar || []}
+            events={calendar || []}
             manualOverrides={manualOverrides}
             userTimezone={userTimezone}
           />

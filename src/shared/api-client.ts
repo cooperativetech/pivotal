@@ -1,10 +1,32 @@
 import { hc } from 'hono/client'
+import { createAuthClient } from 'better-auth/client'
+import type { BetterAuthClientPlugin } from 'better-auth/client'
 import type { AppType } from '../server'
+import type { githubAppInstallationPlugin } from '../auth'
 
-// Use relative URL when running through Vite to use proxy
-// Use direct URL when running outside of Vite (e.g., in server or flack-eval)
-const isViteDev = import.meta.env ?? false
-const API_BASE_URL = isViteDev ? '/' : 'http://localhost:3001'
+// Use relative URL when running frontend code
+// Use direct URL to local server when running outside frontend code (e.g. in evals)
+const isFrontend = import.meta.env ?? false
+const apiBaseURL = isFrontend ? '/' : 'http://localhost:3001'
 
-const appType = hc<AppType>(API_BASE_URL)
+// Hono API client
+const appType = hc<AppType>(apiBaseURL)
 export const { api, local_api } = appType
+
+// Better Auth client
+
+function githubAppInstallationPluginClient() {
+  return {
+    id: 'github-app-installation',
+    $InferServerPlugin: {} as ReturnType<typeof githubAppInstallationPlugin>,
+    pathMethods: {
+      '/github-app/init-install': 'POST',
+    },
+  } satisfies BetterAuthClientPlugin
+}
+
+export const authClient = createAuthClient({
+  plugins: [
+    githubAppInstallationPluginClient(),
+  ],
+})

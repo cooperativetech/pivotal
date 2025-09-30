@@ -19,7 +19,7 @@ import {
 } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { getUserCalendarStructured } from '../calendar-service'
-import type { CalendarEvent } from '@shared/api-types'
+import { CalendarEvent } from '@shared/api-types'
 
 export interface ConversationContext {
   message: SlackMessage,
@@ -27,21 +27,20 @@ export interface ConversationContext {
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
-
 export const ConversationRes = z.strictObject({
   replyMessage: z.string().optional().nullable(),
   markTopicInactive: z.boolean().optional().nullable(),
   messagesToUsers: z.array(z.strictObject({
     userNames: z.array(z.string()),
     text: z.string(),
-    includeCalendarButtons: z.boolean().optional().nullable(),
   })).optional().nullable(),
   groupMessage: z.string().optional().nullable(),
+  finalizedEvent: CalendarEvent.optional().nullable(),
+  cancelEvent: z.boolean().optional().nullable(),
   reasoning: z.string(),
 })
-export type ConversationRes = z.infer<typeof ConversationRes>
-
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
+export type ConversationRes = z.infer<typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
 
 export async function runConversationAgent(
@@ -51,31 +50,6 @@ export async function runConversationAgent(
   previousMessages: SlackMessage[],
   userMap: Map<string, SlackUser>,
 ): Promise<ConversationRes> {
-  // If user is explicitly asking for calendar connection, send link immediately
-  const userRequestingCalendar = message.text.toLowerCase().includes('calendar') &&
-    (message.text.toLowerCase().includes('link') ||
-     message.text.toLowerCase().includes('connect') ||
-     message.text.toLowerCase().includes('send me'))
-
-  if (userRequestingCalendar) {
-    const userName = userMap.get(message.userId)?.realName
-    if (!userName) {
-      throw new Error(`User ${message.userId} has no realName in userMap`)
-    }
-
-    return {
-      replyMessage: '',
-      messagesToUsers: [
-        {
-          userNames: [userName],
-          text: 'Here are your Google Calendar connection options. Connecting will allow me to check your availability automatically when scheduling.',
-          includeCalendarButtons: true,
-        },
-      ],
-      reasoning: 'User explicitly requested calendar connection - showing fancy buttons',
-    }
-  }
-
   // Get timezone information for the calling user
   const callingUser = userMap.get(message.userId)
   const callingUserTimezone = callingUser?.tz || 'UTC'
@@ -257,23 +231,67 @@ export const showUserCalendar = tool({
       return `No calendar events found for ${userName} between ${formatTimestampWithTimezone(startTimeDate, userTz)} and ${formatTimestampWithTimezone(endTimeDate, userTz)}`
     }
 
-    // Format calendar events as plain text
-    const formattedEvents = calendarEvents.map((event: CalendarEvent) => {
-      const eventStart = new Date(event.start)
-      const eventEnd = new Date(event.end)
-      const freeStatus = event.free ? ' [Free]' : ''
+    // Format calendar events grouped by local day with explicit indices for easier referencing
+    const sortedEvents = [...calendarEvents].sort((a, b) =>
+      new Date(a.start).getTime() - new Date(b.start).getTime(),
+    )
 
-      // Replace emails with names where possible
-      const participants = event.participantEmails?.length
-        ? ` (with: ${event.participantEmails.map((email) =>
-            emailToName.get(email.toLowerCase()) || email,
-          ).join(', ')})`
-        : ''
+    const dateFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTz,
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    const timeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTz,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    const timezoneAbbr = getShortTimezoneFromIANA(userTz)
 
-      return `• ${formatTimestampWithTimezone(eventStart, userTz)} - ${formatTimestampWithTimezone(eventEnd, userTz)}: ${event.summary}${freeStatus}${participants}`
-    }).join('\n')
+    const groupedByDay = new Map<string, CalendarEvent[]>()
+    const orderedDayLabels: string[] = []
 
-    return `Calendar for ${userName} (${getShortTimezoneFromIANA(userTz)}):\n${formattedEvents}`
+    for (const event of sortedEvents) {
+      const startDate = new Date(event.start)
+      const dayLabel = dateFormatter.format(startDate)
+
+      if (!groupedByDay.has(dayLabel)) {
+        groupedByDay.set(dayLabel, [])
+        orderedDayLabels.push(dayLabel)
+      }
+
+      groupedByDay.get(dayLabel)!.push(event)
+    }
+
+    const lines: string[] = [`Calendar for ${userName} (${timezoneAbbr}):`]
+    let eventIndex = 1
+
+    for (const dayLabel of orderedDayLabels) {
+      lines.push(`${dayLabel}:`)
+
+      const eventsForDay = groupedByDay.get(dayLabel) || []
+      for (const event of eventsForDay) {
+        const eventStart = new Date(event.start)
+        const eventEnd = new Date(event.end)
+        const freeStatus = event.free ? ' [Free]' : ''
+
+        const timeRange = `${timeFormatter.format(eventStart)} - ${timeFormatter.format(eventEnd)} (${timezoneAbbr})`
+
+        const participants = event.participantEmails?.length
+          ? ` (with: ${event.participantEmails.map((email) =>
+              emailToName.get(email.toLowerCase()) || email,
+            ).join(', ')})`
+          : ''
+
+        lines.push(`  [${eventIndex}] ${timeRange}: ${event.summary}${freeStatus}${participants}`)
+        eventIndex += 1
+      }
+    }
+
+    return lines.join('\n')
   },
 })
 
