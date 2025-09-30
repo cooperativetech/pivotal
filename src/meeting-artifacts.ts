@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt } from 'drizzle-orm'
+import { and, asc, eq, isNull, lt, gte } from 'drizzle-orm'
 import type { calendar_v3 } from 'googleapis'
 
 import db from './db/engine'
@@ -116,12 +116,15 @@ export async function deleteMeetingArtifactByEvent(calendarId: string, eventId: 
 
 export async function getPendingMeetingSummaries(limit: number = 10): Promise<MeetingArtifact[]> {
   const now = new Date()
+  const bufferMinutes = 30
+  const cutoffTime = new Date(now.getTime() - bufferMinutes * 60 * 1000)
   const rows = await db
     .select()
     .from(meetingArtifactTable)
     .where(and(
       isNull(meetingArtifactTable.summaryPostedAt),
       lt(meetingArtifactTable.endTime, now),
+      gte(meetingArtifactTable.endTime, cutoffTime),
     ))
     .orderBy(asc(meetingArtifactTable.endTime))
     .limit(limit)

@@ -351,7 +351,7 @@ export async function runMeetingSummaryWorkerOnce(slackClient: WebClient): Promi
 }
 
 export function startMeetingSummaryCron(slackClient: WebClient): void {
-  const job = new CronJob('45 * * * * *', () => {
+  const job = new CronJob('0 */5 * * * *', () => {
     void checkMeetingSummaries(slackClient)
   })
   job.start()
