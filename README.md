@@ -20,7 +20,17 @@ mkcert -install
 pnpm run cert
 ```
 
+For linux, 
+```
+sudo apt install mkcert
+mkcert -install
+pnpm run cert
+```
+
+If running on WSL, you also need to trust this in the Windows partition. First, copy the files (which are generated in ```pivotal/.cert```) over to the Windows partition. Then, double-click to open the certification, and install it to ```Trusted Root Certification Authorities```.
+
 Set the following env vars to their proper values (e.g. in your `~/.zshrc` or `~/.bashrc`). Note: the app and tooling do not load a `.env` file automatically.
+
 ```
 export PV_DB_URL=...
 export PV_OPENROUTER_API_KEY=...
@@ -102,6 +112,64 @@ pnpm run dkmig
 ### Calendar Invites
 
 - When a time is finalized, the bot uses the Google service account configured via `PV_GOOGLE_SERVICE_ACCOUNT_EMAIL`, `PV_GOOGLE_SERVICE_ACCOUNT_KEY`, and `PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT` to create a calendar event, adds topic users with emails as attendees, includes a Google Meet link, and posts the links in Slack. Implementation: see `createCalendarInviteFromBot` in `src/calendar-service.ts` and its trigger in `processSchedulingActions` in `src/slack-message-handler.ts`.
+
+### Linux
+
+Follow Steps 1-3 of the installation instructions for PostgreSQL 16 listed on this page: https://neon.com/postgresql/postgresql-getting-started/install-postgresql-linux
+Alternate, possibly simpler, instructions: https://help.ubuntu.com/community/PostgreSQL
+
+Next, create a database user that has the same username as yours:
+
+```
+sudo -u postgres createuser --superuser $USER
+```
+
+Don't create a password for this user. If a password is set, set it null by accessing the postgres console and setting it to null:
+
+```
+postgres psql
+ALTER USER <username> PASSWORD NULL;
+```
+
+Finally, you may need to edit the configuration file `pg_hba.conf` to ensure that users don't need passwords. Find the file (usually in `/etc/postgresql/16/main/pg_hba.conf`):
+
+`sudo find /etc -name pg_hba.conf 2>/dev/null`
+
+Edit it:
+
+`sudo nano /etc/postgresql/16/main/pg_hba.conf`
+
+Look for lines like:
+
+`local all all peer host all all 127.0.0.1/32 scram-sha-256`
+`host all all 127.0.0.1/32 scram-sha-256`
+
+Change the authentication method from `scram-sha-256` to `trust` for local connections:
+
+`host all all 127.0.0.1/32 trust`
+
+Restart PostgreSQL:
+
+`sudo systemctl restart postgresql`
+
+The remaining steps are the same as for MacOS.
+
+You probably also add the following to your ~/.bashrc
+
+```
+export PV_DB_URL='postgresql://localhost:5432/pivotal'
+```
+
+Run drizzle-kit migrations (`PV_DB_URL` env var must be set):
+```
+pnpm run dkmig
+```
+
+If you change `db/schema.ts`, you can use drizzle-kit to automatically generate and run corresponding migrations:
+```
+pnpm run dkgen
+pnpm run dkmig
+```
 
 ### Linux
 
