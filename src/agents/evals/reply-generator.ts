@@ -45,7 +45,7 @@ Current messages to respond to: ${messageBuffer.join(' | ')}
 
 Respond naturally to: "${latestMessage}"
 
-Do NOT offer to schedule an appointment when you have a meeting, but only during free slots. Generate only the reply text, nothing else.`
+Do NOT offer to schedule an appointment when you have a meeting, but DO accept meetings close to scheduled slots that don't overlap. Generate only the reply text, nothing else.`
 
   try {
     const result = await run(generateReplyAgent, prompt)
