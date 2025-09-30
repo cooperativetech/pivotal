@@ -535,7 +535,14 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     const benchmark = benchmarkData.benchmark
     const benchmarkStartTime = new Date(benchmark.startTime)
     const benchmarkEndTime = new Date(benchmark.endTime)
-    const groupMaxSharedFreeTimes: number[] = []
+    const groupFeasibilityResults: Array<{
+      groupIndex: number
+      maxSharedFreeTime: number
+      hasSufficientTime: boolean
+      hasSuggestedEvent: boolean
+      allUsersCanAttend: boolean
+      withinTimeRange: boolean
+    }> = []
 
     result.suggestedEvents.forEach((suggestedEvent, groupIndex) => {
       console.log(`\nFeasibility Check for Group ${groupIndex}:`)
@@ -548,10 +555,12 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       const groupMaxSharedFreeTime = commonFreeSlots.length > 0
         ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
-      groupMaxSharedFreeTimes.push(groupMaxSharedFreeTime)
 
       const hasCommonFreeTime = groupMaxSharedFreeTime >= benchmarkData.benchmark.meetingLength
       console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)` : `Insufficient shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)`}`)
+
+      let groupWithinTimeRange = true
+      let groupUsersCanAttend = true
 
       if (suggestedEvent) {
         // Check if meeting falls within benchmark time constraints
@@ -561,6 +570,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         const withinTimeRange = meetingStart >= benchmarkStartTime && meetingEnd <= benchmarkEndTime
         if (!withinTimeRange) {
           allWithinTimeRange = false
+          groupWithinTimeRange = false
         }
         console.log(`  ${withinTimeRange ? '✅' : '❌'} Time constraints: ${withinTimeRange ? 'Within benchmark range' : 'Outside benchmark range'}`)
 
@@ -573,68 +583,77 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         groupUsers.forEach((simUser) => {
           const canAttend = simUser.evalPossibility(suggestedEvent)
           console.log(`  ${canAttend ? '✅' : '❌'} ${simUser.name}: ${canAttend ? 'Available' : 'Calendar conflict'}`)
+          if (!canAttend) {
+            groupUsersCanAttend = false
+          }
         })
       } else {
         console.log(`  ❌ No meeting suggested for group ${groupIndex}`)
       }
-    })
 
-    // Overall max shared free time across all groups
-    const maxSharedFreeTime = Math.max(...groupMaxSharedFreeTimes)
+      groupFeasibilityResults.push({
+        groupIndex,
+        maxSharedFreeTime: groupMaxSharedFreeTime,
+        hasSufficientTime: hasCommonFreeTime,
+        hasSuggestedEvent: suggestedEvent !== null,
+        allUsersCanAttend: groupUsersCanAttend,
+        withinTimeRange: groupWithinTimeRange,
+      })
+    })
 
     // Overall evaluation judgment
     console.log('\n--- Overall Evaluation Judgment ---')
-    const hasSufficientFreeTime = maxSharedFreeTime > benchmarkData.benchmark.meetingLength
-    const meetingsWereFound = result.suggestedEvents.some((event) => event !== null)
 
-    // Check if all users can attend their respective group meetings
-    let allUsersCanAttend = true
-    result.suggestedEvents.forEach((suggestedEvent, groupIndex) => {
-      if (suggestedEvent) {
-        const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
-        const groupCanAttend = groupUsers.every((simUser) => simUser.evalPossibility(suggestedEvent))
-        if (!groupCanAttend) {
-          allUsersCanAttend = false
-        }
-      }
-    })
+    // Analyze results by group - find the failing groups to determine the evaluation reason
 
     let evaluationSucceeded = false
     let evaluationReason = ''
 
-    if (hasSufficientFreeTime && meetingsWereFound && allUsersCanAttend && allWithinTimeRange) {
+    // Check if all groups that should have meetings do have them and are feasible
+    const failingGroups = groupFeasibilityResults.filter(group => {
+      if (!group.hasSuggestedEvent && group.hasSufficientTime) {
+        return true // Should have had a meeting but didn't
+      }
+      if (group.hasSuggestedEvent && (!group.hasSufficientTime || !group.allUsersCanAttend || !group.withinTimeRange)) {
+        return true // Has meeting but shouldn't due to constraints
+      }
+      return false
+    })
+
+    if (failingGroups.length === 0) {
+      // All groups are correctly handled
       evaluationSucceeded = true
-      evaluationReason = 'SUCCESS: Meetings found when users had sufficient shared free time, all users can attend, and meetings are within time constraints'
-    } else if (!hasSufficientFreeTime && !meetingsWereFound) {
-      evaluationSucceeded = true
-      evaluationReason = 'SUCCESS: No meetings found when there was insufficient shared free time'
-    } else if (hasSufficientFreeTime && meetingsWereFound && allUsersCanAttend && !allWithinTimeRange) {
-      evaluationSucceeded = false
-      evaluationReason = 'FAILURE: Meetings found but some fall outside the specified time constraints'
-    } else if (hasSufficientFreeTime && (!meetingsWereFound || !allUsersCanAttend)) {
-      evaluationSucceeded = false
-      evaluationReason = `FAILURE: Sufficient shared free time (${maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min) but ${!meetingsWereFound ? 'no meetings suggested' : 'not all users can attend suggested meetings'}`
-    } else if (!hasSufficientFreeTime && meetingsWereFound) {
-      evaluationSucceeded = false
-      evaluationReason = `FAILURE: Meetings suggested when insufficient shared free time (${maxSharedFreeTime} min <= ${benchmarkData.benchmark.meetingLength} min)`
+      evaluationReason = 'SUCCESS: All groups correctly handled - meetings found when feasible, none when infeasible'
     } else {
+      // There are failing groups - determine the primary failure reason
+      const groupsWithInsufficientTime = failingGroups.filter(g => g.hasSuggestedEvent && !g.hasSufficientTime)
+      const groupsWithConflicts = failingGroups.filter(g => g.hasSuggestedEvent && g.hasSufficientTime && !g.allUsersCanAttend)
+      const groupsWithTimeRangeIssues = failingGroups.filter(g => g.hasSuggestedEvent && !g.withinTimeRange)
+      const groupsWithMissedOpportunities = failingGroups.filter(g => !g.hasSuggestedEvent && g.hasSufficientTime)
+
       evaluationSucceeded = false
-      evaluationReason = 'FAILURE: Unexpected evaluation state'
+
+      if (groupsWithInsufficientTime.length > 0) {
+        const failingGroup = groupsWithInsufficientTime[0]
+        evaluationReason = `FAILURE: Meeting suggested for group ${failingGroup.groupIndex} when insufficient shared free time (${failingGroup.maxSharedFreeTime} min <= ${benchmarkData.benchmark.meetingLength} min)`
+      } else if (groupsWithConflicts.length > 0) {
+        const failingGroup = groupsWithConflicts[0]
+        evaluationReason = `FAILURE: Sufficient shared free time for group ${failingGroup.groupIndex} (${failingGroup.maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min) but not all users can attend suggested meeting`
+      } else if (groupsWithTimeRangeIssues.length > 0) {
+        const failingGroup = groupsWithTimeRangeIssues[0]
+        evaluationReason = `FAILURE: Meeting suggested for group ${failingGroup.groupIndex} falls outside the specified time constraints`
+      } else if (groupsWithMissedOpportunities.length > 0) {
+        const failingGroup = groupsWithMissedOpportunities[0]
+        evaluationReason = `FAILURE: No meeting suggested for group ${failingGroup.groupIndex} despite sufficient shared free time (${failingGroup.maxSharedFreeTime} min > ${benchmarkData.benchmark.meetingLength} min)`
+      } else {
+        evaluationReason = 'FAILURE: Unexpected evaluation state'
+      }
     }
 
     console.log(`${evaluationSucceeded ? '✅' : '❌'} ${evaluationReason}`)
 
     // Save evaluation results
     console.log('\nSaving evaluation results...')
-    const canAttendResults: Record<string, boolean> = {}
-    result.suggestedEvents.forEach((suggestedEvent, groupIndex) => {
-      if (suggestedEvent) {
-        const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
-        groupUsers.forEach((simUser) => {
-          canAttendResults[simUser.name] = simUser.evalPossibility(suggestedEvent)
-        })
-      }
-    })
 
     // Extract filename from path
     const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
@@ -642,6 +661,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Get genTimestamp directly from benchmark data
     const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
+
+    const allUsersCanAttend = groupFeasibilityResults.every(g => !g.hasSuggestedEvent || g.allUsersCanAttend)
 
     const resultsData: SavedEvaluationResults = {
       evalTimestamp: formatTimestamp(),
@@ -654,8 +675,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       } : null),
       confirmedSimUsers: confirmedSimUsers.map(([name]) => name),
       allSimUsersConfirmed,
-      canAttend: canAttendResults,
-      maxSharedFreeTime,
+      maxSharedFreeTimes: groupFeasibilityResults.map(g => g.maxSharedFreeTime),
+      allCanAttends: groupFeasibilityResults.map(g => g.allUsersCanAttend),
       evaluationSummary: {
         totalSimUsers: simUsers.length,
         confirmedCount: confirmedSimUsers.length,

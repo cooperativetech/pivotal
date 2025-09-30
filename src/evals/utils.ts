@@ -59,8 +59,8 @@ export const EvaluationResults = z.strictObject({
   }).nullable()),
   confirmedSimUsers: z.array(z.string()),
   allSimUsersConfirmed: z.boolean(),
-  canAttend: z.record(z.boolean()),
-  maxSharedFreeTime: z.number(),
+  maxSharedFreeTimes: z.array(z.number()),
+  allCanAttends: z.array(z.boolean()),
   evaluationSummary: EvaluationSummary,
 })
 
