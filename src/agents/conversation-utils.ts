@@ -76,30 +76,49 @@ Based on the conversation history and current message, determine the next step i
 
   console.log(`User prompt: ${userPrompt}`)
 
-  try {
-    const runner = new Runner({ groupId: `topic-${topic.id}` })
-    const result = await runner.run(
-      agent,
-      userPrompt,
-      { context: { message, topic, userMap, callingUserTimezone } },
-    )
-    if (!result.finalOutput) {
-      throw new Error('No finalOutput generated')
-    }
-    return result.finalOutput
-  } catch (error) {
-    console.error('=== ERROR IN runConversationAgent ===')
-    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Full error object:', JSON.stringify(error, null, 2))
-    console.error('=================================')
+  const MAX_ATTEMPTS = 2
+  const retryReminder = `\n\nIMPORTANT: Your previous response was not valid JSON. You must now return ONLY a JSON object that exactly matches the required schema, including the reasoning field. Do not include any extra text before or after the JSON.`
 
-    // Return a safe default response
-    return {
-      replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
-      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const promptToUse = attempt === 0 ? userPrompt : `${userPrompt}${retryReminder}`
+
+    try {
+      const runner = new Runner({ groupId: `topic-${topic.id}` })
+      const result = await runner.run(
+        agent,
+        promptToUse,
+        { context: { message, topic, userMap, callingUserTimezone } },
+      )
+      if (!result.finalOutput) {
+        throw new Error('No finalOutput generated')
+      }
+      return result.finalOutput
+    } catch (error) {
+      const isInvalidOutput = error instanceof Error && error.message.includes('Invalid output type')
+
+      if (isInvalidOutput && attempt === 0) {
+        console.warn('Retrying conversation agent due to invalid output type (missing/invalid JSON).')
+        continue
+      }
+
+      console.error('=== ERROR IN runConversationAgent ===')
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+      console.error('Error message:', error instanceof Error ? error.message : String(error))
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('Full error object:', JSON.stringify(error, null, 2))
+      console.error('=================================')
+
+      return {
+        replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+        reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      }
     }
+  }
+
+  // Fallback (should not reach here due to return in loop)
+  return {
+    replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+    reasoning: 'Error occurred: retry limit reached',
   }
 }
 

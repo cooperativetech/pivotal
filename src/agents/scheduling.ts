@@ -271,7 +271,7 @@ Based on the current state, determine what tools to call (if any) and generate t
     * Example: "I'm busy 2-3pm" → ONLY create: 2pm-3pm (busy). Do NOT add any free events.
 
 ## CRITICAL TOOL USAGE
-You have access to FOUR tools, but you can ONLY USE ONE per response:
+You have access to FOUR tools and can call multiple tools in sequence within the same turn. After a tool completes, you'll immediately get another chance to act—keep calling whichever tools you still need until you're ready to send the final JSON response. Only return JSON once all necessary tool calls for this turn are finished; never stop mid-sequence with an empty reply.
 
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
@@ -332,6 +332,7 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
 }
 
 IMPORTANT:
+- Any time you are not calling a tool, you MUST return well-formed JSON that exactly matches the schema above. Do not return plain text or partial structures. Always include the reasoning field, even if replyMessage is an empty string.
 - When calling tools: Output NOTHING - just call the tool
 - When not calling tools: Return ONLY the JSON object above
 - Do not include any text before or after the JSON`
