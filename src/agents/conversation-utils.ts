@@ -77,7 +77,7 @@ Based on the conversation history and current message, determine the next step i
   console.log(`User prompt: ${userPrompt}`)
 
   const MAX_ATTEMPTS = 2
-  const retryReminder = `\n\nIMPORTANT: Your previous response was not valid JSON. You must now return ONLY a JSON object that exactly matches the required schema, including the reasoning field. Do not include any extra text before or after the JSON.`
+  const retryReminder = '\n\nIMPORTANT: Your previous response was not valid JSON. You must now return ONLY a JSON object that exactly matches the required schema, including the reasoning field. Do not include any extra text before or after the JSON.'
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const promptToUse = attempt === 0 ? userPrompt : `${userPrompt}${retryReminder}`
