@@ -15,7 +15,129 @@ import { formatTimestamp } from './utils'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, nGroups: number) {
+
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number) {
+  // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
+  const referenceDate = new Date('2025-01-01T05:00:00Z')
+  const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
+  const endTime = new Date(referenceDate.getTime() + endTimeOffset * 24 * 60 * 60 * 1000)
+
+  // Possible simUser names (one for each letter of the alphabet)
+  const possibleSimUserNames = [
+    'Alice', 'Bob', 'Charlie', 'Diana', 'Edward', 'Fiona', 'George', 'Helen',
+    'Ian', 'Julia', 'Kevin', 'Laura', 'Michael', 'Nina', 'Oliver', 'Patricia',
+    'Quinn', 'Rachel', 'Samuel', 'Teresa', 'Ulrich', 'Victoria', 'William', 'Xara',
+    'Yasmin', 'Zachary',
+  ]
+
+  // Subsample the first nSimUsers names
+  const simUserNames = possibleSimUserNames.slice(0, nSimUsers)
+
+  // Generate fake calendars for all simUsers
+  const calendarEvents = await Promise.all(
+    simUserNames.map(() => genFakeCalendar('America/New_York', startTime, endTime)),
+  )
+
+  // Validate and trim calendar events to ensure they fall within the specified date range
+  const validatedCalendarEvents = calendarEvents.map((events, simUserIndex) => {
+    const originalLength = events.length
+    const filteredEvents = events.filter((event) => {
+      const eventStart = new Date(event.start)
+      const eventEnd = new Date(event.end)
+      return eventStart >= startTime && eventEnd <= endTime
+    })
+
+    if (filteredEvents.length < originalLength) {
+      const simUserName = simUserNames[simUserIndex]
+      const trimmedCount = originalLength - filteredEvents.length
+      console.warn(`⚠️  Warning: ${simUserName} had ${trimmedCount} event(s) outside the date range ${startTime.toISOString()} to ${endTime.toISOString()}. Events trimmed from ${originalLength} to ${filteredEvents.length}.`)
+    }
+
+    return filteredEvents
+  })
+
+  // Create simUsers list
+  const simUsers: BaseScheduleUser[] = simUserNames.map((name, index) => {
+    const calendar = convertCalendarEventsToUserProfile(validatedCalendarEvents[index])
+
+    // Only the first simUser gets the scheduling goal
+    let goal = ''
+    if (index === 0) {
+      const otherSimUserNames = simUserNames.filter((_, i) => i !== index)
+      const startTimeStr = startTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York',
+      })
+      const endTimeStr = endTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York',
+      })
+
+      // Format meeting length appropriately
+      const meetingLengthStr = meetingLength >= 60
+        ? `${meetingLength / 60}-hour`
+        : `${meetingLength}-minute`
+
+      goal = `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherSimUserNames.join(', ')}`
+    }
+
+    return new BaseScheduleUser(name, goal, calendar)
+  })
+
+  console.log('Created simUsers:')
+  simUsers.forEach((simUser) => console.log(`${simUser.name}: ${simUser.calendar.length} events`))
+
+  // Export simUsers and benchmark parameters to JSON file
+  const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
+
+  // Generate timestamp for this benchmark
+  const timestamp = formatTimestamp()
+
+  const benchmark = {
+    startTime,
+    startTimeOffset,
+    endTime,
+    endTimeOffset,
+    meetingLength,
+    nSimUsers,
+    genTimestamp: timestamp,
+  }
+
+  const exportData = {
+    benchmark,
+    simUsers: exportedSimUsers,
+  }
+
+  // Create folder name and filename with benchmark parameters
+  const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+  const filename = `${folderName}_gen${timestamp}.json`
+  const folderPath = join(__dirname, 'data', folderName)
+
+  // Create folder if it doesn't exist
+  if (!existsSync(folderPath)) {
+    await mkdir(folderPath, { recursive: true })
+    console.log(`Created folder: ${folderName}`)
+  }
+
+  const filePath = join(folderPath, filename)
+  await writeFile(filePath, JSON.stringify(exportData, null, 2))
+  console.log(`Agents saved to ${filePath}`)
+
+  return simUsers
+}
+
+
+async function createMultiGroupBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, nGroups: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
@@ -274,7 +396,14 @@ async function generateMultipleBenchmarks() {
 
   for (let i = 1; i <= nCases; i++) {
     console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
-    await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups)
+
+    if (nGroups === 1) {
+      // Use single-group function
+      await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers)
+    } else {
+      // Use multi-group function
+      await createMultiGroupBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups)
+    }
   }
 
   console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
