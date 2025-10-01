@@ -182,21 +182,19 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
 export async function clearCalendarPromptMessages(slackUserId: string, slackClient: WebClient): Promise<void> {
   try {
     const topics = await getTopics(null, true)
-    const relevantTopics = topics.filter((topic) => Boolean(topic.state.perUserContext[slackUserId]?.calendarPromptMessage))
-
-    for (const topic of relevantTopics) {
-      const promptPointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
-      if (!promptPointer) continue
+    for (const topic of topics) {
+      const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
+      if (!pointer) continue
 
       try {
         await slackClient.chat.update({
-          channel: promptPointer.channelId,
-          ts: promptPointer.ts,
+          channel: pointer.channelId,
+          ts: pointer.ts,
           text: '✅ Calendar connected. All set!',
           blocks: [],
         })
       } catch (updateError) {
-        console.warn(`Failed to clear calendar prompt buttons for user ${slackUserId} in channel ${promptPointer.channelId}`, updateError)
+        console.warn(`Failed to clear calendar prompt buttons for user ${slackUserId} in channel ${pointer.channelId}`, updateError)
       }
     }
   } catch (error) {
