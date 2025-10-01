@@ -9,7 +9,7 @@ import { userDataTable, slackUserTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { processSchedulingActions } from './slack-message-handler'
-import { getTopicWithState, getTopics, updateTopicState } from './utils'
+import { getTopicWithState, getTopics, updateTopicState, parseInstantWithTimezone } from './utils'
 import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
 import { addCoHostsViaAutomation } from './meet-cohost-automation'
 
@@ -225,6 +225,9 @@ export async function createCalendarInviteFromBot(
       return null
     }
 
+    const startInstant = parseInstantWithTimezone(finalizedEvent.start, 'createCalendarInviteFromBot.start')
+    const endInstant = parseInstantWithTimezone(finalizedEvent.end, 'createCalendarInviteFromBot.end')
+
     // Load attendee emails from Slack users in the topic (exclude bots / missing emails)
     const attendees: { email: string }[] = []
     const users = await db.select().from(slackUserTable)
@@ -239,8 +242,8 @@ export async function createCalendarInviteFromBot(
       calendarId: getBotCalendarId(),
       requestBody: {
         summary,
-        start: { dateTime: new Date(finalizedEvent.start).toISOString() },
-        end: { dateTime: new Date(finalizedEvent.end).toISOString() },
+        start: { dateTime: startInstant.toString() },
+        end: { dateTime: endInstant.toString() },
         attendees,
         // Tag event so we can recover it later by topic id
         extendedProperties: {
@@ -410,6 +413,9 @@ export async function tryRescheduleTaggedEvent(
     const calendar = buildServiceAccountCalendarClient()
     if (!calendar) return { success: false }
 
+    const startInstant = parseInstantWithTimezone(newStartISO, 'tryRescheduleTaggedEvent.start')
+    const endInstant = parseInstantWithTimezone(newEndISO, 'tryRescheduleTaggedEvent.end')
+
     const existing = await findTaggedEventForTopic(topicId)
     if (!existing?.id) return { success: false }
 
@@ -417,8 +423,8 @@ export async function tryRescheduleTaggedEvent(
       calendarId: getBotCalendarId(),
       eventId: existing.id,
       requestBody: {
-        start: { dateTime: new Date(newStartISO).toISOString() },
-        end: { dateTime: new Date(newEndISO).toISOString() },
+        start: { dateTime: startInstant.toString() },
+        end: { dateTime: endInstant.toString() },
       },
       sendUpdates: 'all',
     })

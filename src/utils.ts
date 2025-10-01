@@ -543,6 +543,22 @@ export async function getChannelDescription(
   return channelDescription
 }
 
+const TIMEZONE_SUFFIX_REGEX = /(Z|[+-]\d{2}:?\d{2})$/i
+
+export function parseInstantWithTimezone(isoTimestamp: string, context: string): Temporal.Instant {
+  try {
+    return Temporal.Instant.from(isoTimestamp)
+  } catch (error) {
+    const missingTimezone = !TIMEZONE_SUFFIX_REGEX.test(isoTimestamp)
+    const detail = missingTimezone
+      ? 'timestamp is missing timezone information. Include `Z` or an explicit offset such as `+01:00`.'
+      : error instanceof Error
+        ? error.message
+        : 'unknown parsing error.'
+    throw new Error(`[${context}] Invalid timestamp "${isoTimestamp}": ${detail}`)
+  }
+}
+
 // Helper function to format timestamp with timezone
 export function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp

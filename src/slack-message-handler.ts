@@ -5,7 +5,7 @@ import type { SlackMessage, SlackUser, SlackUserInsert } from './db/schema/main'
 import { topicTable, topicStateTable, slackMessageTable, slackUserTable, slackChannelTable } from './db/schema/main'
 import { workflowAgentMap, analyzeTopicRelevance, runConversationAgent } from './agents'
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm'
-import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone } from './utils'
+import { tsToDate, getTopicWithState, getTopics, updateTopicState, formatTimestampWithTimezone, parseInstantWithTimezone } from './utils'
 import type { TopicWithState, CalendarEvent } from '@shared/api-types'
 import { shouldShowCalendarButtons, addPromptedUser, updateTopicUserContext, createCalendarInviteFromBot, tryRescheduleTaggedEvent, deleteTaggedEvent } from './calendar-service'
 import type { CalendarActionResult } from './calendar-service'
@@ -560,8 +560,18 @@ async function handleFinalizedEvent(
   client: WebClient,
 ): Promise<SlackMessage[]> {
   const createdMessages: SlackMessage[] = []
-  const start = new Date(finalizedEvent.start)
-  const end = new Date(finalizedEvent.end)
+  let start: Date
+  let end: Date
+
+  try {
+    const startInstant = parseInstantWithTimezone(finalizedEvent.start, 'handleFinalizedEvent.start')
+    const endInstant = parseInstantWithTimezone(finalizedEvent.end, 'handleFinalizedEvent.end')
+    start = new Date(startInstant.epochMilliseconds)
+    end = new Date(endInstant.epochMilliseconds)
+  } catch (error) {
+    console.error('handleFinalizedEvent received invalid timestamps:', error)
+    return createdMessages
+  }
 
   let actionWord: 'created' | 'updated' = 'created'
   let calendarResult: CalendarActionResult | null = null
