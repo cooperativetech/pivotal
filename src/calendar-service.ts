@@ -9,7 +9,7 @@ import { userDataTable, slackUserTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { processSchedulingActions } from './slack-message-handler'
-import { getTopicWithState, updateTopicState } from './utils'
+import { getTopicWithState, getTopics, updateTopicState } from './utils'
 import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
 import { addCoHostsViaAutomation } from './meet-cohost-automation'
 
@@ -176,6 +176,29 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
     await processSchedulingActions(topicId, syntheticSlackMessage, slackClient)
   } catch (error) {
     console.error(`Error continuing scheduling workflow for user ${slackUserId}:`, error)
+  }
+}
+
+export async function clearCalendarPromptMessages(slackUserId: string, slackClient: WebClient): Promise<void> {
+  try {
+    const topics = await getTopics(null, true)
+    for (const topic of topics) {
+      const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
+      if (!pointer) continue
+
+      try {
+        await slackClient.chat.update({
+          channel: pointer.channelId,
+          ts: pointer.ts,
+          text: '✅ Calendar connected. All set!',
+          blocks: [],
+        })
+      } catch (updateError) {
+        console.warn(`Failed to clear calendar prompt buttons for user ${slackUserId} in channel ${pointer.channelId}`, updateError)
+      }
+    }
+  } catch (error) {
+    console.error(`Error clearing calendar prompt messages for user ${slackUserId}:`, error)
   }
 }
 

@@ -8,8 +8,10 @@ import { decryptOAuthToken } from 'better-auth/oauth2'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { eq, and } from 'drizzle-orm'
+import { WebClient } from '@slack/web-api'
 import db from './db/engine'
 import { betterAuthSchema, organizationTable, memberTable } from './db/schema/auth'
+import { clearCalendarPromptMessages } from './calendar-service'
 
 export const baseURL = (
   process.env.PV_NODE_ENV === 'local' ?
@@ -149,6 +151,44 @@ export function slackTeamPlugin() {
   } satisfies BetterAuthPlugin
 }
 
+export function googleCalendarCleanupPlugin() {
+  return {
+    id: 'google-calendar-cleanup-plugin',
+    hooks: {
+      after: [{
+        matcher: (c) => c.path === '/callback/:id' && c.params?.id === 'google',
+        handler: createAuthMiddleware(async (c) => {
+          try {
+            const session = await getSessionFromCtx(c)
+            if (!session?.user) {
+              c.context.logger.error('No user session found after Google callback')
+              return
+            }
+
+            const slackBotToken = process.env.PV_SLACK_BOT_TOKEN
+            if (!slackBotToken) {
+              c.context.logger.warn('PV_SLACK_BOT_TOKEN missing; cannot clear calendar prompts')
+              return
+            }
+
+            const accounts = await c.context.internalAdapter.findAccounts(session.user.id)
+            const slackAccount = accounts.find((account) => account.providerId === 'slack')
+            if (!slackAccount?.accountId) {
+              c.context.logger.warn('No linked Slack account found; skipping calendar prompt cleanup')
+              return
+            }
+
+            const slackClient = new WebClient(slackBotToken)
+            await clearCalendarPromptMessages(slackAccount.accountId, slackClient)
+          } catch (error) {
+            c.context.logger.error('Failed to clear calendar prompt buttons after Google callback', error)
+          }
+        }),
+      }],
+    },
+  } satisfies BetterAuthPlugin
+}
+
 export function githubAppInstallationPlugin(appName: string) {
   return {
     id: 'github-app-installation-plugin',
@@ -268,6 +308,7 @@ export const auth = betterAuth({
       organizationLimit: 1,
     }),
     slackTeamPlugin(),
+    googleCalendarCleanupPlugin(),
     githubAppInstallationPlugin(process.env.PV_GITHUB_APP_NAME!),
   ],
   socialProviders: {
