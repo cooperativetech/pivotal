@@ -610,7 +610,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     let evaluationReason = ''
 
     // Check if all groups that should have meetings do have them and are feasible
-    const failingGroups = groupFeasibilityResults.filter(group => {
+    const failingGroups = groupFeasibilityResults.filter((group) => {
       if (!group.hasSuggestedEvent && group.hasSufficientTime) {
         return true // Should have had a meeting but didn't
       }
@@ -626,10 +626,10 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       evaluationReason = 'SUCCESS: All groups correctly handled - meetings found when feasible, none when infeasible'
     } else {
       // There are failing groups - determine the primary failure reason
-      const groupsWithInsufficientTime = failingGroups.filter(g => g.hasSuggestedEvent && !g.hasSufficientTime)
-      const groupsWithConflicts = failingGroups.filter(g => g.hasSuggestedEvent && g.hasSufficientTime && !g.allUsersCanAttend)
-      const groupsWithTimeRangeIssues = failingGroups.filter(g => g.hasSuggestedEvent && !g.withinTimeRange)
-      const groupsWithMissedOpportunities = failingGroups.filter(g => !g.hasSuggestedEvent && g.hasSufficientTime)
+      const groupsWithInsufficientTime = failingGroups.filter((g) => g.hasSuggestedEvent && !g.hasSufficientTime)
+      const groupsWithConflicts = failingGroups.filter((g) => g.hasSuggestedEvent && g.hasSufficientTime && !g.allUsersCanAttend)
+      const groupsWithTimeRangeIssues = failingGroups.filter((g) => g.hasSuggestedEvent && !g.withinTimeRange)
+      const groupsWithMissedOpportunities = failingGroups.filter((g) => !g.hasSuggestedEvent && g.hasSufficientTime)
 
       evaluationSucceeded = false
 
@@ -662,7 +662,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Get genTimestamp directly from benchmark data
     const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
 
-    const allUsersCanAttend = groupFeasibilityResults.every(g => !g.hasSuggestedEvent || g.allUsersCanAttend)
+    const allUsersCanAttend = groupFeasibilityResults.every((g) => !g.hasSuggestedEvent || g.allUsersCanAttend)
 
     const resultsData: SavedEvaluationResults = {
       evalTimestamp: formatTimestamp(),
@@ -675,8 +675,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       } : null),
       confirmedSimUsers: confirmedSimUsers.map(([name]) => name),
       allSimUsersConfirmed,
-      maxSharedFreeTimes: groupFeasibilityResults.map(g => g.maxSharedFreeTime),
-      allCanAttends: groupFeasibilityResults.map(g => g.allUsersCanAttend),
+      maxSharedFreeTimes: groupFeasibilityResults.map((g) => g.maxSharedFreeTime),
+      allCanAttends: groupFeasibilityResults.map((g) => g.allUsersCanAttend),
       evaluationSummary: {
         totalSimUsers: simUsers.length,
         confirmedCount: confirmedSimUsers.length,
