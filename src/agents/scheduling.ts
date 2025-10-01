@@ -335,7 +335,21 @@ IMPORTANT:
 - Any time you are not calling a tool, you MUST return well-formed JSON that exactly matches the schema above. Do not return plain text or partial structures. Always include the reasoning field, even if replyMessage is an empty string.
 - When calling tools: Output NOTHING - just call the tool
 - When not calling tools: Return ONLY the JSON object above
-- Do not include any text before or after the JSON`
+- Do not include any text before or after the JSON
+- Common mistakes to avoid:
+  * Forgetting to include the "reasoning" field
+  * Mixing tool calls and JSON in the same response
+  * Returning acknowledgements or prose instead of JSON
+- Example waiting response:
+  {
+    "replyMessage": "",
+    "markTopicInactive": false,
+    "messagesToUsers": null,
+    "groupMessage": null,
+    "finalizedEvent": null,
+    "cancelEvent": null,
+    "reasoning": "Waiting for Bob to confirm availability"
+  }`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
 
