@@ -1,0 +1,187 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T12:55:12.000Z",
+    "startTimeOffset": 1.33,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 50,
+    "nSimUsers": 4,
+    "nGroups": 2,
+    "userGroupMapping": {
+      "Bob": 0,
+      "Charlie": 0,
+      "Diana": 1,
+      "Alice": 1
+    },
+    "genTimestamp": "20250930130247423"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning briefing - Emergency response protocols"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Training Session: CPR and First Aid Certification"
+        },
+        {
+          "start": "2025-01-02T16:45:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Curriculum Development - Emergency Medical Response"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:15:00.000Z",
+          "summary": "Student Performance Review Meeting"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Scenario-Based Training: Multi-Casualty Incident Response"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Equipment Inspection and Maintenance Review"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Administrative work - Training reports and documentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "Schedule a 50-minute meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Workshop prep - Custom jewelry project"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Client consultation - Handcrafted furniture restoration"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Metalworking - Custom sculpture commission"
+        },
+        {
+          "start": "2025-01-02T20:15:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Supply vendor meeting - Sustainable materials sourcing"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Woodworking session - Handcrafted cabinet doors"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning kitchen inventory check"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Menu planning & nutritional analysis"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Meeting with Hospital Nutrition Director"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Patient meal prep - Special dietary requirements"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Staff training: New therapeutic cooking techniques"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Recipe development for diabetic patients"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Quality control review with Food Safety team"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Evening meal service coordination"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "Schedule a 50-minute meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Alice",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Daily Safety Briefing - Spacecraft Electrical Systems"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Spacecraft Power Distribution Panel Installation"
+        },
+        {
+          "start": "2025-01-02T16:15:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Meeting: Artemis Mission Electrical Requirements Review"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Lunar Habitat Wiring Harness Testing"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Team Standup - Space Station Electrical Upgrades"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "EMI/EMC Compliance Testing - Rocket Avionics"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Documentation Review - Spacecraft Electrical Schematics"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
