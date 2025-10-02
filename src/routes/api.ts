@@ -57,6 +57,10 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       const [rawOrganization] = (await auth.api.listOrganizations({
         headers: c.req.raw.headers,
       })) as Organization[]
+      if (!rawOrganization) {
+        await auth.api.signOut({ headers: c.req.raw.headers })
+        throw new Error(`No organization found for user ${sessionUser.id}`)
+      }
       const organization = {
         id: rawOrganization.id,
         name: rawOrganization.name,
