@@ -271,7 +271,7 @@ export async function createCalendarInviteFromBot(
 
     // Add co-hosts via headless browser automation (if enabled)
     if (meetLink && attendees.length > 0) {
-      const organizerEmail = process.env.PV_GOOGLE_ORGANIZER_EMAIL
+      const organizerEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT
       const organizerPassword = process.env.PV_GOOGLE_ORGANIZER_PASSWORD
 
       if (organizerEmail && organizerPassword) {
@@ -291,7 +291,7 @@ export async function createCalendarInviteFromBot(
           console.error('[Calendar] Co-host automation failed:', error)
         }
       } else {
-        console.log('[Calendar] Skipping co-host automation: PV_GOOGLE_ORGANIZER_EMAIL or PV_GOOGLE_ORGANIZER_PASSWORD not set')
+        console.log('[Calendar] Skipping co-host automation: PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT or PV_GOOGLE_ORGANIZER_PASSWORD not set')
       }
     }
 
