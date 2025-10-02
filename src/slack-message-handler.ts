@@ -679,14 +679,29 @@ async function getOrCreateTopic(
 
   const isDirectMessage = channel.userIds.length === 1
   const isBotMentioned = message.text.includes(`<@${botUserId}>`)
+  const shouldExcludeOtherWorkflows = isDirectMessage || isBotMentioned
 
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
+  // Share canned response helper so we don't duplicate text when the bot can't assist
+  let hasSentUnsupportedMessage = false
+  const sendUnsupportedMessage = async () => {
+    hasSentUnsupportedMessage = true
+    await client.chat.postMessage({
+      channel: message.channelId,
+      thread_ts: message.rawTs,
+      text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
+    })
+  }
+
   // Step 1: Gather active topics and augment with any topics that have recent activity in this channel/thread
   let topics: TopicWithState[] = []
   if (!ignoreExistingTopics) {
-    const activeTopics = await getTopics(botUserId, true)
+    let activeTopics = await getTopics(botUserId, true)
+    if (shouldExcludeOtherWorkflows) {
+      activeTopics = activeTopics.filter((topic) => topic.workflowType !== 'other')
+    }
     const activeTopicIds = new Set(activeTopics.map((topic) => topic.id))
 
     const recentChannelMessages = await db
@@ -726,9 +741,12 @@ async function getOrCreateTopic(
       }
     }
 
-    const additionalTopics = recentTopicIds.size > 0
+    let additionalTopics = recentTopicIds.size > 0
       ? await getTopics(botUserId, false, Array.from(recentTopicIds))
       : []
+    if (shouldExcludeOtherWorkflows) {
+      additionalTopics = additionalTopics.filter((topic) => topic.workflowType !== 'other')
+    }
 
     topics = [...activeTopics, ...additionalTopics.filter((topic) => !activeTopicIds.has(topic.id))]
   }
@@ -789,13 +807,13 @@ async function getOrCreateTopic(
       return newTopic.id
     } else {
       // Invalid workflow - send canned response in thread
-      await client.chat.postMessage({
-        channel: message.channelId,
-        thread_ts: message.rawTs,
-        text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
-      })
+      await sendUnsupportedMessage()
       return null
     }
+  }
+
+  if (shouldExcludeOtherWorkflows && !hasSentUnsupportedMessage) {
+    await sendUnsupportedMessage()
   }
 
   return null
