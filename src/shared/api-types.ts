@@ -61,6 +61,7 @@ export interface ProfileOrg {
   id: string
   name: string
   slackTeamId: string
+  slackAppInstalled: boolean
 }
 
 export interface UserProfile {

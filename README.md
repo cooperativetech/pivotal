@@ -20,7 +20,7 @@ mkcert -install
 pnpm run cert
 ```
 
-For linux, 
+For linux,
 ```
 sudo apt install mkcert
 mkcert -install
@@ -34,6 +34,7 @@ Set the following env vars to their proper values (e.g. in your `~/.zshrc` or `~
 ```
 export PV_DB_URL=...
 export PV_OPENROUTER_API_KEY=...
+export PV_BETTER_AUTH_SECRET=...
 export PV_SLACK_CLIENT_ID=...
 export PV_SLACK_CLIENT_SECRET=...
 export PV_GITHUB_APP_NAME=...
@@ -62,7 +63,7 @@ pnpm run eval
 
 The eval command supports several options:
 ```
-pnpm run eval --help                           # Show all options
+pnpm run eval --help                          # Show all options
 pnpm run eval -f benchmark_file.json          # Run specific benchmark file
 pnpm run eval -d benchmark_folder             # Run all files in folder
 pnpm run eval -r 5                            # Run 5 repetitions per case
@@ -70,14 +71,14 @@ pnpm run eval --topicRouting                  # Enable topic routing (flag only,
 ```
 
 
-To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
+To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_APP_TOKEN` env var set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
 pnpm run dev
 ```
 
 You can then visit the website in your browser at https://localhost:3009. This hosts the "production" version of the website, with rolled-up js and css assets served out of the src/dist folder.
 
-To run the bot in production, you additionally need `PV_BETTER_AUTH_SECRET` set to a random string, and `PV_BASE_URL` set to the public website's URL. Then, run:
+To run the bot in production, you additionally need `PV_BASE_URL` set to the public website's URL. Then, run:
 ```
 pnpm run prod
 ```
