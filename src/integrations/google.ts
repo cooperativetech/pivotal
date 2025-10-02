@@ -18,13 +18,11 @@ export async function getLinkedGoogleAccount(userId: string) {
     return null
   }
 
-  const accessToken = await getGoogleAccessToken(userId, linkedGoogleAccount.id)
-  if (accessToken === null) {
-    return null
-  }
-
   return {
     accountId: linkedGoogleAccount.accountId,
+    createdAt: linkedGoogleAccount.createdAt,
+    updatedAt: linkedGoogleAccount.updatedAt,
+    scope: linkedGoogleAccount.scope,
   }
 }
 

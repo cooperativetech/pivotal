@@ -36,15 +36,21 @@ async function upsertSlackChannel(channelId: string, userIds: string[]): Promise
   }
 }
 
+type CalendarPromptOptions = {
+  force?: boolean,
+  contextMessage?: string | null,
+}
+
 async function promptUserToConnectCalendar(
   topicId: string,
   userId: string,
   messageId: string,
   client: WebClient,
+  options: CalendarPromptOptions = {},
 ): Promise<void> {
   try {
     if (userId === 'USLACKBOT') return
-    const shouldPrompt = await shouldShowCalendarButtons(topicId, userId)
+    const shouldPrompt = options.force ? true : await shouldShowCalendarButtons(topicId, userId)
     if (!shouldPrompt) return
 
     const dmResult = await client.conversations.open({ users: userId })
@@ -52,11 +58,15 @@ async function promptUserToConnectCalendar(
 
     await upsertSlackChannel(dmResult.channel.id, [userId])
 
+    const promptText = options.contextMessage?.trim()
+      ? options.contextMessage.trim()
+      : 'To help with scheduling, you can connect your Google Calendar:'
+
     const dmResponse = await client.chat.postMessage({
       channel: dmResult.channel.id,
-      text: 'To help with scheduling, you can connect your Google Calendar:',
+      text: promptText,
       blocks: [
-        { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
+        { type: 'section', text: { type: 'mrkdwn', text: promptText } },
         {
           type: 'actions',
           elements: [
@@ -69,7 +79,9 @@ async function promptUserToConnectCalendar(
     })
 
     if (dmResponse.ok && dmResponse.ts) {
-      await addPromptedUser(topicId, userId, messageId)
+      if (!options.force) {
+        await addPromptedUser(topicId, userId, messageId)
+      }
       try {
         await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmResult.channel.id, ts: dmResponse.ts } }, messageId)
       } catch (error) {
@@ -241,11 +253,29 @@ export async function processSchedulingActions(
     await promptUnconnectedCalendars(topic, message, client)
     topic = await getTopicWithState(topicId)
 
+    console.log(`Processing topic ${topicId} with stored workflow '${topic.workflowType}'`)
+
     // Check if it's a valid workflow type, i.e. not 'other'
-    const workflowAgent = workflowAgentMap.get(topic.workflowType)
+    let workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
-      return createdMessages
+      if (workflowAgentMap.has('queries')) {
+        console.log(`No workflow agent for '${topic.workflowType}'. Switching topic ${topicId} to queries.`)
+        await db.update(topicTable)
+          .set({ workflowType: 'queries' })
+          .where(eq(topicTable.id, topicId))
+        workflowAgent = workflowAgentMap.get('queries')
+        if (workflowAgent) {
+          topic = { ...topic, workflowType: 'queries' }
+        }
+      }
+
+      if (!workflowAgent) {
+        console.warn(`No workflow agent registered for ${topic.workflowType}; skipping message.`)
+        return createdMessages
+      }
     }
+
+    console.log(`Running workflow '${topic.workflowType}' for topic ${topicId}`)
 
     // Check if this is a group message (not DM) by looking at the channel's user list
     const [channel] = await db.select()
@@ -293,6 +323,24 @@ export async function processSchedulingActions(
       userMap,
     )
     console.log('Next workflow step:', nextStep)
+
+    if (nextStep.promptCalendarButtons) {
+      const targetName = nextStep.promptCalendarButtons.userName?.trim()
+      let targetUserId: string | undefined
+      if (targetName) {
+        for (const [id, user] of userMap.entries()) {
+          if (user.realName && user.realName.localeCompare(targetName, undefined, { sensitivity: 'base' }) === 0) {
+            targetUserId = id
+            break
+          }
+        }
+      }
+      targetUserId = targetUserId || message.userId
+      await promptUserToConnectCalendar(topicId, targetUserId, message.id, client, {
+        force: nextStep.promptCalendarButtons.force ?? false,
+        contextMessage: nextStep.promptCalendarButtons.contextMessage ?? null,
+      })
+    }
 
     // Check if the current message sender will receive any DMs
     let senderWillReceiveDM = false
@@ -755,8 +803,29 @@ async function getOrCreateTopic(
   const analysis = await analyzeTopicRelevance(topics, message, userMap, botUserId)
   console.log('Analysis result:', analysis)
 
+  if (analysis.workflowType) {
+    console.log(`Analyzer suggested workflow '${analysis.workflowType}' for topic ${analysis.relevantTopicId ?? 'new topic'}`)
+  }
+
   // Step 3: If message is relevant to existing topic
   if (analysis.relevantTopicId) {
+    if (analysis.workflowType && workflowAgentMap.has(analysis.workflowType)) {
+      let existingTopic = topics.find((topic) => topic.id === analysis.relevantTopicId)
+      if (!existingTopic) {
+        try {
+          existingTopic = await getTopicWithState(analysis.relevantTopicId)
+        } catch (error) {
+          console.warn(`Could not load topic ${analysis.relevantTopicId} for workflow update:`, error)
+        }
+      }
+
+      if (existingTopic && existingTopic.workflowType !== analysis.workflowType) {
+        console.log(`Updating topic ${analysis.relevantTopicId} workflow from ${existingTopic.workflowType} to ${analysis.workflowType}`)
+        await db.update(topicTable)
+          .set({ workflowType: analysis.workflowType })
+          .where(eq(topicTable.id, analysis.relevantTopicId))
+      }
+    }
     return analysis.relevantTopicId
   }
 
