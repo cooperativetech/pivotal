@@ -4,7 +4,9 @@ import {
   text,
   timestamp,
   boolean,
+  jsonb,
 } from 'drizzle-orm/pg-core'
+import type { Installation } from '@slack/oauth'
 
 export const userTable = pgTable('user', {
   id: text().primaryKey(),
@@ -96,6 +98,16 @@ export const invitationTable = pgTable('invitation', {
 export type InvitationInsert = InferInsertModel<typeof invitationTable>
 export type Invitation = InferSelectModel<typeof invitationTable>
 
+export const slackAppInstallationTable = pgTable('slack_app_installation', {
+  id: text().primaryKey(),
+  teamId: text().notNull().unique().references(() => organizationTable.slackTeamId, { onDelete: 'cascade' }),
+  installation: jsonb().$type<Installation<'v2', boolean>>().notNull(),
+  createdByUserId: text().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp().notNull().defaultNow(),
+})
+export type SlackAppInstallationInsert = InferInsertModel<typeof slackAppInstallationTable>
+export type SlackAppInstallation = InferSelectModel<typeof slackAppInstallationTable>
+
 export const betterAuthSchema = {
   user: userTable,
   session: sessionTable,
@@ -104,4 +116,5 @@ export const betterAuthSchema = {
   organization: organizationTable,
   member: memberTable,
   invitation: invitationTable,
+  slackAppInstallation: slackAppInstallationTable,
 }

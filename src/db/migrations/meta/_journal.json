@@ -183,6 +183,13 @@
       "when": 1759254276545,
       "tag": "0025_add_organization_member_and_invitation_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1759420217258,
+      "tag": "0026_add_slack_app_installation_table",
+      "breakpoints": true
     }
   ]
 }
