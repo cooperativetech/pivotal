@@ -256,23 +256,10 @@ export async function processSchedulingActions(
     console.log(`Processing topic ${topicId} with stored workflow '${topic.workflowType}'`)
 
     // Check if it's a valid workflow type, i.e. not 'other'
-    let workflowAgent = workflowAgentMap.get(topic.workflowType)
+    const workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
-      if (workflowAgentMap.has('queries')) {
-        console.log(`No workflow agent for '${topic.workflowType}'. Switching topic ${topicId} to queries.`)
-        await db.update(topicTable)
-          .set({ workflowType: 'queries' })
-          .where(eq(topicTable.id, topicId))
-        workflowAgent = workflowAgentMap.get('queries')
-        if (workflowAgent) {
-          topic = { ...topic, workflowType: 'queries' }
-        }
-      }
-
-      if (!workflowAgent) {
-        console.warn(`No workflow agent registered for ${topic.workflowType}; skipping message.`)
-        return createdMessages
-      }
+      console.warn(`No workflow agent registered for ${topic.workflowType}; skipping message.`)
+      return createdMessages
     }
 
     console.log(`Running workflow '${topic.workflowType}' for topic ${topicId}`)
@@ -803,29 +790,8 @@ async function getOrCreateTopic(
   const analysis = await analyzeTopicRelevance(topics, message, userMap, botUserId)
   console.log('Analysis result:', analysis)
 
-  if (analysis.workflowType) {
-    console.log(`Analyzer suggested workflow '${analysis.workflowType}' for topic ${analysis.relevantTopicId ?? 'new topic'}`)
-  }
-
   // Step 3: If message is relevant to existing topic
   if (analysis.relevantTopicId) {
-    if (analysis.workflowType && workflowAgentMap.has(analysis.workflowType)) {
-      let existingTopic = topics.find((topic) => topic.id === analysis.relevantTopicId)
-      if (!existingTopic) {
-        try {
-          existingTopic = await getTopicWithState(analysis.relevantTopicId)
-        } catch (error) {
-          console.warn(`Could not load topic ${analysis.relevantTopicId} for workflow update:`, error)
-        }
-      }
-
-      if (existingTopic && existingTopic.workflowType !== analysis.workflowType) {
-        console.log(`Updating topic ${analysis.relevantTopicId} workflow from ${existingTopic.workflowType} to ${analysis.workflowType}`)
-        await db.update(topicTable)
-          .set({ workflowType: analysis.workflowType })
-          .where(eq(topicTable.id, analysis.relevantTopicId))
-      }
-    }
     return analysis.relevantTopicId
   }
 

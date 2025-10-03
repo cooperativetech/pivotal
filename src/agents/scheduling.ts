@@ -164,7 +164,7 @@ const updateUserCalendar = tool({
 })
 
 async function schedulingInstructions(runContext: RunContext<ConversationContext>) {
-const mainPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
+  const mainPrompt = `You are a scheduling assistant that helps coordinate meetings and events. Your job is to determine the next step in the scheduling process and generate appropriate responses.
 
 ## Important Timezone Instructions
 - ALWAYS include timezone abbreviations in parentheses next to ALL times you mention (e.g., "2pm (PST)" or "3:30pm (EST)")

@@ -8,7 +8,6 @@ import { isGoogleCalendarConnected } from '../integrations/google'
 import { findMeetingsForUsers } from '../meeting-artifacts'
 import { getUserCalendarStructured } from '../calendar-service'
 import { formatTimestampWithTimezone } from '../utils'
-import { Temporal } from '@js-temporal/polyfill'
 import db from '../db/engine'
 import { slackMessageTable, slackChannelTable } from '../db/schema/main'
 import { eq } from 'drizzle-orm'
@@ -118,23 +117,22 @@ const checkCalendarConnection = tool({
       }
     }
 
-    const lines: string[] = []
-
-    for (const target of pendingIds) {
+    const lines = await Promise.all(pendingIds.map(async (target) => {
       try {
         const connected = await isGoogleCalendarConnected(target.userId)
-        lines.push(`${target.name}: ${connected ? '✅ Connected' : '❌ Not connected'}`)
+        return `${target.name}: ${connected ? '✅ Connected' : '❌ Not connected'}`
       } catch (error) {
-        lines.push(`${target.name}: Unable to check (${error instanceof Error ? error.message : 'unknown error'})`)
+        const message = error instanceof Error ? error.message : 'unknown error'
+        return `${target.name}: Unable to check (${message})`
       }
-    }
+    }))
 
     return lines.join('\n')
   },
 })
 
-const lookupMeetings = tool({
-  name: 'lookupMeetings',
+const lookupPivotalMeetings = tool({
+  name: 'lookupPivotalMeetings',
   description: 'Retrieve meetings recorded by Pivotal for specified users. Useful for questions like "What\'s my next meeting?" or "Send me the meeting link again."',
   parameters: z.strictObject({
     userNames: z.array(z.string()).optional().default([]).describe('Exact real names (from the User Directory) to find meetings for. Leave empty to reference the requesting user.'),
@@ -238,11 +236,12 @@ const getCalendarEvents = tool({
         : 'No users specified to search for events.'
     }
 
-    const now = Temporal.Now.instant()
+    const HOUR_IN_MS = 60 * 60 * 1000
+    const now = new Date()
     const start = includePastHours > 0
-      ? now.subtract({ hours: includePastHours })
-      : now
-    const end = now.add({ hours: rangeHours })
+      ? new Date(now.getTime() - includePastHours * HOUR_IN_MS)
+      : new Date(now.getTime())
+    const end = new Date(now.getTime() + rangeHours * HOUR_IN_MS)
 
     const lines: string[] = []
 
@@ -251,8 +250,8 @@ const getCalendarEvents = tool({
         const events = await getUserCalendarStructured(
           target.id,
           topic,
-          new Date(start.epochMilliseconds),
-          new Date(end.epochMilliseconds),
+          start,
+          end,
         )
 
         if (!events || events.length === 0) {
@@ -536,7 +535,7 @@ Guidelines:
 - Reference the evidence you used ("conversation history", tool names, etc.) when it helps the user understand your answer.
 - Avoid fabricating details or making assumptions beyond what is supported.
 - When checking calendar status, call checkCalendarConnection and keep the response concise (✅/❌). If you can’t identify the linked account from the data available, tell the user to check their account settings.
-- For meeting-related questions (next meeting, meeting link, meeting purpose), call lookupMeetings to check Pivotal-managed meetings, and call getCalendarEvents when you need the full calendar (busy slots, external events) within a specific time window.
+- For meeting-related questions (next meeting, meeting link, meeting purpose), call lookupPivotalMeetings to check Pivotal-managed meetings, and call getCalendarEvents when you need the full calendar (busy slots, external events) within a specific time window.
 - For cross-user availability or mutual free-time questions, call findCommonAvailability with an explicit ISO start and end window and include every person that should be considered.
 - For status updates (“Did Ben respond?”, “Who are we waiting on?”) or before sending follow-up nudges, call getParticipantResponseStatus and use its JSON payload to ground your answer and determine who still needs a ping.
 - When sending nudges, only include users who are actually outstanding according to the latest status data, and respect user requests when crafting the DM text.
@@ -551,7 +550,7 @@ export const queryAgent = new ConversationAgent({
   },
   tools: [
     checkCalendarConnection,
-    lookupMeetings,
+    lookupPivotalMeetings,
     getCalendarEvents,
     findCommonAvailability,
     getParticipantResponseStatus,
