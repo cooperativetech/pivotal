@@ -244,6 +244,29 @@ export async function processSchedulingActions(
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
+      // For 'other' workflow types, we still need to provide feedback
+      // Check if this was an @mention or DM - if so, add X reaction to indicate no action
+      const [channel] = await db.select()
+        .from(slackChannelTable)
+        .where(eq(slackChannelTable.id, message.channelId))
+
+      if (channel) {
+        const isDirectMessage = channel.userIds.length === 1
+        const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
+
+        if (isDirectMessage || isBotMentioned) {
+          try {
+            await client.reactions.add({
+              channel: message.channelId,
+              name: 'x',
+              timestamp: message.rawTs,
+            })
+          } catch (reactionError) {
+            console.error('Error adding x reaction for unsupported workflow:', reactionError)
+          }
+        }
+      }
+
       return createdMessages
     }
 
