@@ -126,7 +126,7 @@ async function isToggleEnabled(locator: Locator): Promise<boolean> {
 async function ensureToggleEnabled(locator: Locator): Promise<boolean> {
   if (await isToggleEnabled(locator)) return true
   await locator.click({ timeout: 10000 })
-  await delay(500)
+  await delay(200)
   return isToggleEnabled(locator)
 }
 
@@ -197,7 +197,7 @@ async function tryAddCoHostsViaHostControls(
         errors.push('Failed to enable Host management in host controls')
       } else {
         console.log('[MeetAutomation] Host management enabled')
-        await delay(500)
+        await delay(200)
       }
     } catch (error) {
       const message = `Error toggling Host management: ${String(error)}`
@@ -223,7 +223,7 @@ async function tryAddCoHostsViaHostControls(
     console.log('[MeetAutomation] Found Guests button, clicking it')
     try {
       await guestsNavButton.click({ timeout: 5000 })
-      await delay(500)
+      await delay(200)
       console.log('[MeetAutomation] Clicked Guests tab')
     } catch (error) {
       console.log('[MeetAutomation] Failed to switch to Guests tab:', error)
@@ -304,7 +304,7 @@ async function tryAddCoHostsViaHostControls(
 
       // Click the input to focus it
       await addInput.click({ timeout: 5000 })
-      await delay(300)
+      await delay(150)
 
       // Clear any existing text
       await addInput.fill('')
@@ -313,7 +313,7 @@ async function tryAddCoHostsViaHostControls(
       // Type the email
       console.log(`[MeetAutomation] Typing email: ${email}`)
       await addInput.fill(email)
-      await delay(800)
+      await delay(200)
 
       // Look for dropdown suggestions
       console.log('[MeetAutomation] Looking for dropdown option')
@@ -328,11 +328,11 @@ async function tryAddCoHostsViaHostControls(
       if (suggestion) {
         console.log(`[MeetAutomation] Found dropdown option for ${email}, clicking it`)
         await suggestion.click({ timeout: 5000 })
-        await delay(500)
+        await delay(200)
       } else {
         console.log('[MeetAutomation] No dropdown option found, pressing Enter')
         await addInput.press('Enter')
-        await delay(500)
+        await delay(200)
       }
 
       // Verify the email was added by looking for it in the list
@@ -367,7 +367,7 @@ async function tryAddCoHostsViaHostControls(
     console.log('[MeetAutomation] Found Save button, clicking it')
     try {
       await saveButton.click({ timeout: 5000 })
-      await delay(1000)
+      await delay(400)
       console.log('[MeetAutomation] Clicked Save button')
     } catch (error) {
       console.log('[MeetAutomation] Failed to click Save button in Meet options:', error)
@@ -428,7 +428,11 @@ export async function addCoHostsViaAutomation(
     // Check if we're already signed in by trying to go to Google
     console.log('[MeetAutomation] Checking sign-in status')
     await page.goto('https://accounts.google.com', { timeout: 120000 })
-    await page.waitForTimeout(10000)
+    await Promise.race([
+      page.waitForSelector('input[type="email"]', { timeout: 15000 }).catch(() => null),
+      page.waitForSelector('input[type="password"]', { timeout: 15000 }).catch(() => null),
+      page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null),
+    ])
 
     // If we see an email input, we need to sign in
     const emailInput = page.locator('input[type="email"]')
@@ -442,10 +446,13 @@ export async function addCoHostsViaAutomation(
         await page.waitForSelector('input[type="password"]', { timeout: 60000 })
         await page.fill('input[type="password"]', organizerPassword)
         await page.click('button:has-text("Next")')
-
-        // Wait for sign-in to complete
-        console.log('[MeetAutomation] Waiting for sign-in to complete')
-        await page.waitForTimeout(20000)
+        console.log('[MeetAutomation] Waiting for account redirect after password submit')
+        await Promise.race([
+          page.waitForURL((url) => !/ServiceLogin|signin|password/i.test(url.href), { timeout: 20000 }).catch(() => null),
+          page.waitForSelector('input[type="password"]', { state: 'detached', timeout: 20000 }).catch(() => null),
+          page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null),
+          delay(3000),
+        ])
       } else {
         errors.push('No password provided for organizer account')
         return { success: false, errors }
@@ -485,7 +492,11 @@ export async function addCoHostsViaAutomation(
 
     // Wait for the calendar event page to load
     console.log('[MeetAutomation] Waiting for calendar event page to load')
-    await page.waitForTimeout(15000)
+    await Promise.race([
+      page.waitForSelector('input[aria-label*="title" i], input[placeholder*="Add title" i]', { timeout: 15000 }).catch(() => null),
+      page.waitForSelector('[data-eventid], [data-eventchip]', { timeout: 15000 }).catch(() => null),
+      page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null),
+    ])
 
     // Check if we're on the event edit page or need to navigate there
     // Look for event title or edit form
@@ -500,14 +511,17 @@ export async function addCoHostsViaAutomation(
       if (await eventElement.isVisible({ timeout: 10000 }).catch(() => false)) {
         console.log('[MeetAutomation] Found event, clicking it')
         await eventElement.click()
-        await page.waitForTimeout(5000)
+        await page.waitForTimeout(1500)
 
         // Now click edit button
         const editButton = page.locator('button:has-text("Edit"), [aria-label*="Edit" i]').first()
         if (await editButton.isVisible({ timeout: 10000 }).catch(() => false)) {
           console.log('[MeetAutomation] Clicking Edit button')
-          await editButton.click()
-          await page.waitForTimeout(10000)
+          await Promise.all([
+            page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => null),
+            editButton.click(),
+          ])
+          await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => null)
         }
       }
     }
@@ -517,7 +531,7 @@ export async function addCoHostsViaAutomation(
 
     // Scroll down to see more of the page
     await page.evaluate(() => window.scrollBy(0, 300))
-    await page.waitForTimeout(3000)
+    await page.waitForTimeout(800)
 
     await page.screenshot({ path: '/tmp/meet-debug-1c-scrolled.png' })
     console.log('[MeetAutomation] Screenshot after scrolling')
@@ -535,7 +549,7 @@ export async function addCoHostsViaAutomation(
       const meetLinkLocator = page.locator('text="meet.google.com"').first()
       if (await meetLinkLocator.isVisible({ timeout: 10000 }).catch(() => false)) {
         await meetLinkLocator.scrollIntoViewIfNeeded()
-        await page.waitForTimeout(1000)
+        await page.waitForTimeout(400)
         await meetLinkLocator.click({ timeout: 10000 })
         hostControlsOpened = true
       } else {
@@ -547,7 +561,7 @@ export async function addCoHostsViaAutomation(
     }
 
     if (hostControlsOpened) {
-      await page.waitForTimeout(2000)
+      await page.waitForTimeout(800)
       await page.screenshot({ path: '/tmp/meet-debug-2-after-click.png' })
       console.log('[MeetAutomation] Screenshot saved after opening Meet options trigger')
     }
