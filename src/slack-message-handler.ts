@@ -258,6 +258,7 @@ export async function processSchedulingActions(
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
+      // For 'other' workflow types, canned response was already sent during topic creation
       console.warn(`No workflow agent registered for ${topic.workflowType}; skipping message.`)
       return createdMessages
     }
@@ -276,15 +277,7 @@ export async function processSchedulingActions(
     const isDirectMessage = channel.userIds.length === 1
     const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
     if (!isDirectMessage && !isBotMentioned) {
-      try {
-        await client.reactions.add({
-          channel: message.channelId,
-          name: 'thumbsup',
-          timestamp: message.rawTs,
-        })
-      } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
-      }
+      console.log('Skipping message in group channel without bot mention')
       return createdMessages
     }
 
@@ -379,7 +372,7 @@ export async function processSchedulingActions(
           timestamp: message.rawTs,
         })
       } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
+        console.error('Error adding thumbsup reaction:', reactionError)
       }
     }
 
@@ -979,6 +972,7 @@ export async function handleSlackMessage(
 
     // If getOrCreateTopic returns null or the dummy topic, leave the message
     // saved to the dummy topic and return
+    // Note: getOrCreateTopic already sends canned response messages for @mentions/DMs
     if (!topicId || topicId === message.topicId) {
       return null
     }
