@@ -259,15 +259,7 @@ export async function processSchedulingActions(
     const isDirectMessage = channel.userIds.length === 1
     const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
     if (!isDirectMessage && !isBotMentioned) {
-      try {
-        await client.reactions.add({
-          channel: message.channelId,
-          name: 'thumbsup',
-          timestamp: message.rawTs,
-        })
-      } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
-      }
+      console.log('Skipping message in group channel without bot mention')
       return createdMessages
     }
 
@@ -335,16 +327,41 @@ export async function processSchedulingActions(
         }).returning()
         createdMessages.push(createdMessage)
       }
-    } else if (!nextStep.groupMessage && !senderWillReceiveDM) {
-      // Only add thumbs up if there's no reply, no group message, and sender won't get a DM
-      try {
-        await client.reactions.add({
-          channel: message.channelId,
-          name: 'thumbsup',
-          timestamp: message.rawTs,
-        })
-      } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
+    } else {
+      // Check if we took any actions (DMs, group messages, events, etc.)
+      const tookAction = nextStep.messagesToUsers?.length > 0 ||
+                        nextStep.groupMessage ||
+                        nextStep.finalizedEvent ||
+                        nextStep.cancelEvent ||
+                        nextStep.markTopicInactive
+
+      if (tookAction && !senderWillReceiveDM) {
+        // Add thumbs up if we took action but sender won't receive immediate feedback
+        try {
+          await client.reactions.add({
+            channel: message.channelId,
+            name: 'thumbsup',
+            timestamp: message.rawTs,
+          })
+        } catch (reactionError) {
+          console.error('Error adding thumbsup reaction:', reactionError)
+        }
+      } else if (!tookAction) {
+        // No action taken - check if this was an @mention or DM
+        const isDirectMessage = channel.userIds.length === 1
+        const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
+
+        if (isDirectMessage || isBotMentioned) {
+          try {
+            await client.reactions.add({
+              channel: message.channelId,
+              name: 'x',
+              timestamp: message.rawTs,
+            })
+          } catch (reactionError) {
+            console.error('Error adding x reaction for no action:', reactionError)
+          }
+        }
       }
     }
 
@@ -945,6 +962,28 @@ export async function handleSlackMessage(
     // If getOrCreateTopic returns null or the dummy topic, leave the message
     // saved to the dummy topic and return
     if (!topicId || topicId === message.topicId) {
+      // Check if this was an @mention or DM - if so, add X reaction to indicate no action
+      const [channel] = await db.select()
+        .from(slackChannelTable)
+        .where(eq(slackChannelTable.id, message.channelId))
+
+      if (channel) {
+        const isDirectMessage = channel.userIds.length === 1
+        const isBotMentioned = message.text.includes(`<@${botUserId}>`)
+
+        if (isDirectMessage || isBotMentioned) {
+          try {
+            await client.reactions.add({
+              channel: message.channelId,
+              name: 'x',
+              timestamp: message.rawTs,
+            })
+          } catch (reactionError) {
+            console.error('Error adding x reaction for no action:', reactionError)
+          }
+        }
+      }
+
       return null
     }
 
