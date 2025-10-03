@@ -329,7 +329,7 @@ export async function processSchedulingActions(
       }
     } else {
       // Check if we took any actions (DMs, group messages, events, etc.)
-      const tookAction = nextStep.messagesToUsers?.length > 0 ||
+      const tookAction = (nextStep.messagesToUsers?.length ?? 0) > 0 ||
                         nextStep.groupMessage ||
                         nextStep.finalizedEvent ||
                         nextStep.cancelEvent ||
