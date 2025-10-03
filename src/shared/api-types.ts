@@ -15,7 +15,7 @@ export type TopicStateWithMessageTs = TopicState & {
   createdByMessageRawTs: string
 }
 
-export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
+export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'queries', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
 
 export const CalendarEvent = z.strictObject({

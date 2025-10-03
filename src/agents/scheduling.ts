@@ -172,6 +172,9 @@ async function schedulingInstructions(runContext: RunContext<ConversationContext
 - Be explicit about timezone differences when they exist between participants
 - When proposing times to multiple users with different timezones, show the time in each user's timezone
 
+## Responsiveness
+- Always provide a helpful reply whenever the user sends a direct message or addresses you explicitly. Never leave a user query unanswered.
+
 ## Current Context
 You will receive:
 - The current message from a user

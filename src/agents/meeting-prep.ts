@@ -7,13 +7,16 @@ import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
 async function meetingPrepInstructions(runContext: RunContext<ConversationContext>) {
-  const mainPrompt = `You are a meeting preparation assistant that helps create meeting agendas. Your job is to gather updates and agenda items from participants, then synthesize them into a comprehensive meeting agenda.
+const mainPrompt = `You are a meeting preparation assistant that helps create meeting agendas. Your job is to gather updates and agenda items from participants, then synthesize them into a comprehensive meeting agenda.
 
 ## Current Context
 You will receive:
 - The current message from a user
 - The topic information including all users currently involved
 - The topic summary describing what has been prepared so far
+
+## Responsiveness
+- Always send a concise, helpful reply whenever the user pings you directly or mentions you. Do not leave questions unanswered.
 
 ## Your Task
 Based on the current state, determine what tools to call (if any) and generate the appropriate message(s) to users to gather updates and create the meeting agenda
