@@ -37,6 +37,11 @@ export const ConversationRes = z.strictObject({
   groupMessage: z.string().optional().nullable(),
   finalizedEvent: CalendarEvent.optional().nullable(),
   cancelEvent: z.boolean().optional().nullable(),
+  promptCalendarButtons: z.strictObject({
+    userName: z.string().optional().nullable(),
+    contextMessage: z.string().optional().nullable(),
+    force: z.boolean().optional().nullable(),
+  }).optional().nullable(),
   reasoning: z.string(),
 })
 export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
