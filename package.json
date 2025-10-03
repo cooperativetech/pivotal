@@ -17,7 +17,7 @@
     "oneliners": "tsx ./src/evals/oneline_evals.ts",
     "cert": "mkdir -p .cert && mkcert -key-file .cert/key.pem -cert-file .cert/cert.pem localhost",
     "lint": "tsc --noEmit && eslint . --cache",
-    "postinstall": "./setup-git.sh"
+    "postinstall": "./setup-git.sh && pnpm exec playwright install chromium"
   },
   "dependencies": {
     "@better-auth/utils": "0.3.0",
