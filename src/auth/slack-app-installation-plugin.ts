@@ -66,6 +66,15 @@ export function slackAppInstallationPlugin() {
           email: session.user.email,
         })
 
+        // Get user's organization teamId
+        const [userOrg] = await db.select({ slackTeamId: organizationTable.slackTeamId })
+          .from(memberTable)
+          .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+          .where(eq(memberTable.userId, session.user.id))
+          .limit(1)
+
+        const additionalParams = userOrg?.slackTeamId ? { team: userOrg.slackTeamId } : undefined
+
         const installUrl = await createAuthorizationURL({
           id: '', // unused
           options: {
@@ -77,6 +86,7 @@ export function slackAppInstallationPlugin() {
           state,
           codeVerifier,
           scopes: SLACK_APP_SCOPES,
+          additionalParams,
         })
 
         return c.json({ installUrl: installUrl.toString() })
