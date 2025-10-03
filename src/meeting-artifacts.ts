@@ -116,7 +116,7 @@ export async function deleteMeetingArtifactByEvent(calendarId: string, eventId: 
 
 export async function getPendingMeetingSummaries(limit: number = 10): Promise<MeetingArtifact[]> {
   const now = new Date()
-  const withinOneDayOfLastCheck = or(
+  const withinTranscriptCheckWindow = or(
     isNull(meetingArtifactTable.transcriptLastCheckedAt),
     sql`${meetingArtifactTable.transcriptLastCheckedAt} <= ${meetingArtifactTable.endTime} + interval '1 day'`,
   )
@@ -126,7 +126,7 @@ export async function getPendingMeetingSummaries(limit: number = 10): Promise<Me
     .where(and(
       isNull(meetingArtifactTable.summaryPostedAt),
       lt(meetingArtifactTable.startTime, now),
-      withinOneDayOfLastCheck,
+      withinTranscriptCheckWindow,
     ))
     .orderBy(asc(meetingArtifactTable.endTime))
     .limit(limit)
