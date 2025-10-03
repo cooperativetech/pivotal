@@ -1,7 +1,7 @@
 import { createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import type { BetterAuthPlugin } from 'better-auth/plugins'
-import { WebClient } from '@slack/web-api'
 import { clearCalendarPromptMessages } from '../calendar-service'
+import { getSlackClient } from '../integrations/slack'
 
 export function googleCalendarCleanupPlugin() {
   return {
@@ -17,12 +17,6 @@ export function googleCalendarCleanupPlugin() {
               return
             }
 
-            const slackBotToken = process.env.PV_SLACK_BOT_TOKEN
-            if (!slackBotToken) {
-              c.context.logger.warn('PV_SLACK_BOT_TOKEN missing; cannot clear calendar prompts')
-              return
-            }
-
             const accounts = await c.context.internalAdapter.findAccounts(session.user.id)
             const slackAccount = accounts.find((account) => account.providerId === 'slack')
             if (!slackAccount?.accountId) {
@@ -30,7 +24,12 @@ export function googleCalendarCleanupPlugin() {
               return
             }
 
-            const slackClient = new WebClient(slackBotToken)
+            const slackClient = await getSlackClient(session.user.id)
+            if (!slackClient) {
+              c.context.logger.warn('No Slack app installation found; cannot clear calendar prompts')
+              return
+            }
+
             await clearCalendarPromptMessages(slackAccount.accountId, slackClient)
           } catch (error) {
             c.context.logger.error('Failed to clear calendar prompt buttons after Google callback', error)
