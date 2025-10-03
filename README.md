@@ -12,6 +12,8 @@ brew install pnpm
 pnpm install
 ```
 
+`pnpm install` also downloads the Playwright Chromium bundle used by the Meet co-host automation. Re-run `pnpm exec playwright install chromium` manually if you ever need to refresh the browser binaries.
+
 Install `mkcert`, and use it to create a locally trusted CA certificate, which allows us to run our local server using https. This is necessary to authenticate with slack, which requires https for its redirect URLs.
 ```
 brew install mkcert
@@ -20,7 +22,7 @@ mkcert -install
 pnpm run cert
 ```
 
-For linux, 
+For linux,
 ```
 sudo apt install mkcert
 mkcert -install
@@ -34,6 +36,7 @@ Set the following env vars to their proper values (e.g. in your `~/.zshrc` or `~
 ```
 export PV_DB_URL=...
 export PV_OPENROUTER_API_KEY=...
+export PV_BETTER_AUTH_SECRET=...
 export PV_SLACK_CLIENT_ID=...
 export PV_SLACK_CLIENT_SECRET=...
 export PV_GITHUB_APP_NAME=...
@@ -46,7 +49,20 @@ export PV_GOOGLE_CLIENT_SECRET=...
 export PV_LANGFUSE_BASE_URL=...
 export PV_LANGFUSE_PUBLIC_KEY=...
 export PV_LANGFUSE_SECRET_KEY=...
+export PV_GOOGLE_ORGANIZER_EMAIL=...
+export PV_GOOGLE_ORGANIZER_PASSWORD=...
 ```
+
+Optional overrides for the Playwright automation:
+
+```
+export PV_BROWSERLESS_WS_ENDPOINT=...
+export PV_BROWSERLESS_API_TOKEN=...
+export PV_BROWSERLESS_FORCE_LOCAL=false
+export PV_PLAYWRIGHT_HEADLESS=false
+```
+
+Leave the Browserless variables unset to run Chromium locally (default). Set `PV_BROWSERLESS_FORCE_LOCAL=false` when you want to connect to a Browserless endpoint instead. Toggle `PV_PLAYWRIGHT_HEADLESS=false` to watch the automation while debugging.
 
 For the next part, you will have to have PostgreSQL database running, so first follow the "Setting Up Local DB" instructions below if you don't have it installed already.
 
@@ -62,7 +78,7 @@ pnpm run eval
 
 The eval command supports several options:
 ```
-pnpm run eval --help                           # Show all options
+pnpm run eval --help                          # Show all options
 pnpm run eval -f benchmark_file.json          # Run specific benchmark file
 pnpm run eval -d benchmark_folder             # Run all files in folder
 pnpm run eval -r 5                            # Run 5 repetitions per case
@@ -70,14 +86,14 @@ pnpm run eval --topicRouting                  # Enable topic routing (flag only,
 ```
 
 
-To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_BOT_TOKEN` and `PV_SLACK_APP_TOKEN` env vars set. This will connect with real slack and avoid exposing the local-only website routes:
+To run the bot in dev mode, for testing a local version of the code with the live "Pivotal Dev" slack bot, you will additionally need the `PV_SLACK_APP_TOKEN` env var set. This will connect with real slack and avoid exposing the local-only website routes:
 ```
 pnpm run dev
 ```
 
 You can then visit the website in your browser at https://localhost:3009. This hosts the "production" version of the website, with rolled-up js and css assets served out of the src/dist folder.
 
-To run the bot in production, you additionally need `PV_BETTER_AUTH_SECRET` set to a random string, and `PV_BASE_URL` set to the public website's URL. Then, run:
+To run the bot in production, you additionally need `PV_BASE_URL` set to the public website's URL. Then, run:
 ```
 pnpm run prod
 ```
@@ -112,6 +128,14 @@ pnpm run dkmig
 ### Calendar Invites
 
 - When a time is finalized, the bot uses the Google service account configured via `PV_GOOGLE_SERVICE_ACCOUNT_EMAIL`, `PV_GOOGLE_SERVICE_ACCOUNT_KEY`, and `PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT` to create a calendar event, adds topic users with emails as attendees, includes a Google Meet link, and posts the links in Slack. Implementation: see `createCalendarInviteFromBot` in `src/calendar-service.ts` and its trigger in `processSchedulingActions` in `src/slack-message-handler.ts`.
+
+### Google Meet Co-host Automation
+
+- Bot promotes attendees to Meet co-hosts using the Google account defined by `PV_GOOGLE_ORGANIZER_EMAIL` and `PV_GOOGLE_ORGANIZER_PASSWORD`; the account must be able to edit the event and should use an app password if 2FA is enabled.
+- Ensure Playwright's Chromium bundle is installed (downloaded automatically during `pnpm install`; rerun `pnpm exec playwright install chromium` if needed). Set `PV_PLAYWRIGHT_HEADLESS=false` to watch the automation locally during debugging.
+- Leave the organizer variables unset to skip the automation; calendar invites still send without automatic co-host changes.
+- To run through Browserless, set `PV_BROWSERLESS_FORCE_LOCAL=false` and provide `PV_BROWSERLESS_WS_ENDPOINT` plus (optionally) `PV_BROWSERLESS_API_TOKEN`; the `PLAYWRIGHT_FORCE_LOCAL` and `BROWSERLESS_*` aliases are also honored.
+- Browser state is cached in `/tmp/playwright-chrome-data` and debug screenshots are written to `/tmp/meet-debug-*.png` for troubleshooting.
 
 ### Linux
 

@@ -9,8 +9,9 @@ import { userDataTable, slackUserTable } from './db/schema/main'
 import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { processSchedulingActions } from './slack-message-handler'
-import { getTopicWithState, updateTopicState } from './utils'
+import { getTopicWithState, getTopics, updateTopicState } from './utils'
 import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
+import { addCoHostsViaAutomation } from './meet-cohost-automation'
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -178,6 +179,29 @@ export async function continueSchedulingWorkflow(topicId: string, slackUserId: s
   }
 }
 
+export async function clearCalendarPromptMessages(slackUserId: string, slackClient: WebClient): Promise<void> {
+  try {
+    const topics = await getTopics(null, true)
+    for (const topic of topics) {
+      const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
+      if (!pointer) continue
+
+      try {
+        await slackClient.chat.update({
+          channel: pointer.channelId,
+          ts: pointer.ts,
+          text: '✅ Calendar connected. All set!',
+          blocks: [],
+        })
+      } catch (updateError) {
+        console.warn(`Failed to clear calendar prompt buttons for user ${slackUserId} in channel ${pointer.channelId}`, updateError)
+      }
+    }
+  } catch (error) {
+    console.error(`Error clearing calendar prompt messages for user ${slackUserId}:`, error)
+  }
+}
+
 /**
  * Create a Google Calendar event from the bot account and return links.
  * Uses env-provided bot refresh token. Optionally suppresses emails (Slack-only mode).
@@ -243,6 +267,32 @@ export async function createCalendarInviteFromBot(
     if (entryPoints && entryPoints.length > 0) {
       const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
       meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    // Add co-hosts via headless browser automation (if enabled)
+    if (meetLink && attendees.length > 0) {
+      const organizerEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT
+      const organizerPassword = process.env.PV_GOOGLE_ORGANIZER_PASSWORD
+
+      if (organizerEmail && organizerPassword) {
+        const attendeeEmails = attendees.map((a) => a.email)
+        console.log('[Calendar] Attempting to add co-hosts via browser automation')
+
+        // AWAIT the automation instead of running in background
+        // This ensures the browser process stays alive
+        try {
+          const result = await addCoHostsViaAutomation(meetLink, attendeeEmails, organizerEmail, organizerPassword, event.id || undefined)
+          if (result.success) {
+            console.log('[Calendar] Successfully added all co-hosts via automation')
+          } else {
+            console.warn('[Calendar] Co-host automation completed with errors:', result.errors)
+          }
+        } catch (error) {
+          console.error('[Calendar] Co-host automation failed:', error)
+        }
+      } else {
+        console.log('[Calendar] Skipping co-host automation: PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT or PV_GOOGLE_ORGANIZER_PASSWORD not set')
+      }
     }
 
     return {

@@ -63,21 +63,25 @@ Given a list of existing topics and a new message, determine:
 When suggesting a new topic, also classify its workflow type:
 - "scheduling": The topic involves planning, organizing, or scheduling meetings, events, or activities (e.g., "plan lunch", "schedule meeting", "organize team event")
 - "meeting-prep": The topic involves preparing for an upcoming meeting by gathering updates, creating agendas, or collecting input from participants (e.g., "prepare agenda for tomorrow's standup", "gather updates for the quarterly review", "compile discussion topics for the team meeting")
-- "other": All other topics that don't involve scheduling or meeting preparation
+- "queries": The topic is focused on answering questions, retrieving information, or checking statuses (e.g., "is my calendar connected?", "what was the summary from Monday's meeting?", "did Parker reply?")
+- "other": All other topics that don't fit the above categories
 
 ## Response Format
 You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
 
 The JSON structure must be:
 {
-  "relevantTopicId": "topic-id-2",           // Include only if message is relevant to existing topic
-  "suggestedNewTopic": "New topic summary",  // Include only if existingTopicId is not populated
-  "workflowType": "scheduling",              // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", or "other"
-  "confidence": 0.85,                        // Confidence level between 0 and 1
-  "reasoning": "Brief explanation"           // One sentence explaining the decision
+  "relevantTopicId": "e55a48d1-bf81-4f7f-8848-d0f69b74ff85",  // Include the full UUID from "Topic ID: ..." if message is relevant to existing topic
+  "suggestedNewTopic": "New topic summary",                   // Include only if relevantTopicId is not populated
+  "workflowType": "scheduling",                               // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", "queries", or "other"
+  "confidence": 0.85,                                         // Confidence level between 0 and 1
+  "reasoning": "Brief explanation"                            // One sentence explaining the decision
 }
 
-IMPORTANT: Return ONLY the JSON object. Do not include any text before or after the JSON.`,
+IMPORTANT:
+- If the message relates to an existing topic, you MUST use the exact UUID string shown in "Topic ID: ..." (e.g., "e55a48d1-bf81-4f7f-8848-d0f69b74ff85")
+- Do NOT use numbers or any other identifier - only the full UUID
+- Return ONLY the JSON object. Do not include any text before or after the JSON.`,
 })
 
 export async function analyzeTopicRelevance(topics: TopicWithState[], message: SlackMessage, userMap: Map<string, SlackUser>, botUserId: string): Promise<AnalyzeTopicRes> {
@@ -145,7 +149,7 @@ ${Array.from(userMap.values())
   .join(', ')}
 
 ` : ''}Existing topics:
-${(await Promise.all(topics.map(async (topic, i) => {
+${(await Promise.all(topics.map(async (topic) => {
   const ageInDays = Math.floor((Date.now() - new Date(topic.state.createdAt).getTime()) / (1000 * 60 * 60 * 24))
   const userNames = topic.state.userIds.map((id) => {
     const name = userMap.get(id)?.realName
@@ -157,7 +161,7 @@ ${(await Promise.all(topics.map(async (topic, i) => {
   const messagesFormatted = recentMessages.length > 0
     ? `\n   Recent messages in this channel:\n${(await organizeMessagesByChannelAndThread(recentMessages, callingUserTimezone)).split('\n').map((line) => '   ' + line).join('\n')}`
     : ''
-  return `${i + 1}. Topic ID: ${topic.id}
+  return `Topic ID: ${topic.id}
    Summary: ${topic.state.summary}
    Users involved: [${userNames}]
    Last updated: ${ageInDays === 0 ? 'today' : `${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`}${messagesFormatted}`

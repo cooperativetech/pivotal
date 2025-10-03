@@ -1,0 +1,167 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T12:55:12.000Z",
+    "startTimeOffset": 1.33,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "nGroups": 2,
+    "userGroupMapping": {
+      "Bob": 0,
+      "Diana": 0,
+      "Charlie": 1,
+      "Alice": 1
+    },
+    "genTimestamp": "20251001022526323"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Manufacturing Floor Walkthrough - Safety Assessment"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Design Review: Medieval Castle Escape Room Props"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Vendor Meeting - Electronic Puzzle Components"
+        },
+        {
+          "start": "2025-01-02T19:45:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Production Planning - Q1 Escape Room Installations"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Creative Design Session - Underwater Adventure Theme"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Diana",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Pre-flight Safety Check & Aircraft Inspection"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Family Consultation - Memorial Flight Planning"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Aerial Ash Scattering Service - Henderson Family"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Aircraft Refueling & Post-Flight Documentation"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Monthly Safety Training - Ceremonial Flight Protocols"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T21:45:00.000Z",
+          "summary": "Weather Briefing & Route Planning for Tomorrow's Services"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Admin Work - Flight Logs & Insurance Documentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Alice",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Venom Extraction Session - Timber Rattlesnake"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:45:00.000Z",
+          "summary": "Transportation Logistics Review - Weekly Shipment Planning"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Venom Processing & Quality Control"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Cold Chain Transport Coordination - Pharmaceutical Client"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Equipment Maintenance & Snake Habitat Check"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Daily Standup - Construction Tech Team"
+        },
+        {
+          "start": "2025-01-02T15:15:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Deep Work: Building Management System API Development"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T18:45:00.000Z",
+          "summary": "Site Visit Data Review with Field Engineers"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "IoT Sensor Integration Planning"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Code Review: Safety Monitoring Dashboard"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Focus Time: Documentation and Testing"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

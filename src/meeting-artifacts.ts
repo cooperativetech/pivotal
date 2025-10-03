@@ -4,6 +4,8 @@ import type { calendar_v3 } from 'googleapis'
 import db from './db/engine'
 import { meetingArtifactTable } from './db/schema/main'
 import type { MeetingArtifact } from './db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
+import { getTopicWithState } from './utils'
 
 export interface MeetingArtifactUpsertParams {
   topicId: string
@@ -187,4 +189,60 @@ export async function markMeetingSummaryPosted(
       updatedAt: new Date(),
     })
     .where(eq(meetingArtifactTable.id, id))
+}
+
+export interface MeetingLookupOptions {
+  userIds: string[],
+  direction?: 'upcoming' | 'past',
+  summaryContains?: string | null,
+  limit?: number,
+}
+
+export interface MeetingLookupResult {
+  artifact: MeetingArtifact,
+  topic: TopicWithState,
+}
+
+export async function findMeetingsForUsers({
+  userIds,
+  direction = 'upcoming',
+  summaryContains,
+  limit = 3,
+}: MeetingLookupOptions): Promise<MeetingLookupResult[]> {
+  if (userIds.length === 0) return []
+
+  const now = new Date()
+  const fetchLimit = Math.max(limit * 5, 10)
+
+  const baseQuery = db.select().from(meetingArtifactTable)
+  const artifacts = await (direction === 'past'
+    ? baseQuery.where(lt(meetingArtifactTable.startTime, now)).orderBy(desc(meetingArtifactTable.startTime))
+    : baseQuery.where(gt(meetingArtifactTable.startTime, now)).orderBy(asc(meetingArtifactTable.startTime)))
+    .limit(fetchLimit)
+  const summaryNeedle = summaryContains?.toLowerCase() ?? null
+  const results: MeetingLookupResult[] = []
+
+  for (const artifact of artifacts) {
+    if (results.length >= limit) break
+
+    let topic: TopicWithState
+    try {
+      topic = await getTopicWithState(artifact.topicId)
+    } catch (error) {
+      console.warn('[MeetingArtifact] Failed to load topic state for', artifact.topicId, error)
+      continue
+    }
+
+    const matchesUser = topic.state.userIds.some((id) => userIds.includes(id))
+    if (!matchesUser) continue
+
+    if (summaryNeedle) {
+      const combined = `${artifact.summary ?? ''} ${topic.state.summary ?? ''}`.toLowerCase()
+      if (!combined.includes(summaryNeedle)) continue
+    }
+
+    results.push({ artifact, topic })
+  }
+
+  return results
 }

@@ -10,6 +10,7 @@ export default function Profile() {
   const [slackBusy, setSlackBusy] = useState(false)
   const [githubBusy, setGithubBusy] = useState(false)
   const [githubRepoBusy, setGithubRepoBusy] = useState<string | null>(null)
+  const [slackAppBusy, setSlackAppBusy] = useState(false)
 
   useEffect(() => {
     loadProfile().catch((err) => {
@@ -49,7 +50,6 @@ export default function Profile() {
     } catch (err) {
       setError('Failed to link Slack account')
       console.error(err)
-    } finally {
       setSlackBusy(false)
     }
   }
@@ -97,17 +97,45 @@ export default function Profile() {
     }
   }
 
+  const handleSlackAppConnect = async () => {
+    try {
+      setSlackAppBusy(true)
+      const response = await authClient.slackApp.initInstall({ callbackURL: '/profile' })
+      if (response.error) {
+        throw new Error(`Failed to get Slack installation URL: ${response.error.message}`)
+      }
+      // Redirect to the installation URL
+      window.location.href = response.data.installUrl
+    } catch (err) {
+      setError('Failed to link Slack application')
+      console.error(err)
+      setSlackAppBusy(false)
+    }
+  }
+
+  const handleSlackAppDisconnect = async () => {
+    try {
+      setSlackAppBusy(true)
+      const response = await authClient.slackApp.uninstall()
+      if (response.error) {
+        throw new Error(`Failed to uninstall Slack app: ${response.error.message}`)
+      }
+      await loadProfile()
+    } catch (err) {
+      setError('Failed to uninstall Slack app')
+      console.error(err)
+    } finally {
+      setSlackAppBusy(false)
+    }
+  }
+
   const handleGithubConnect = async () => {
     try {
       setGithubBusy(true)
       const response = await authClient.githubApp.initInstall()
-
       if (response.error) {
-        setError('Failed to get Github installation URL')
-        console.error(response.error)
-        return
+        throw new Error(`Failed to get Github installation URL: ${response.error.message}`)
       }
-
       // Redirect to the installation URL
       window.location.href = response.data.installUrl
     } catch (err) {
@@ -230,7 +258,7 @@ export default function Profile() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Slack Account</h2>
         {profile.slackAccount ? (
           <div className="py-2 border-b border-gray-100">
-            <strong>{profile.slackAccount.realName || profile.slackAccount.id}</strong> (Team: {profile.slackAccount.teamName || profile.slackAccount.teamId})
+            Team: {profile.organization.name }
           </div>
         ) : (
           <p>No Slack account linked</p>
@@ -296,7 +324,7 @@ export default function Profile() {
                   disabled={googleBusy}
                   className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
                 >
-                  {googleBusy ? 'Opening…' : 'Connect Google Calendar'}
+                  {googleBusy ? 'Connecting…' : 'Connect Google Calendar'}
                 </button>
               )}
             </div>
@@ -399,6 +427,52 @@ export default function Profile() {
           </>
         )}
       </div>
+
+      {profile.organization && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Organization</h2>
+          <div className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 inline-block mb-4">
+            <span className="font-medium text-gray-900">{profile.organization.name}</span>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Slack Bot</h3>
+            {profile.organization.slackAppInstalled ? (
+              <div className="py-2">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled
+                    className="px-4 py-2 rounded border font-medium border-emerald-600 text-emerald-600"
+                  >
+                    ✅ Bot Installed
+                  </button>
+                  <button
+                    onClick={() => { handleSlackAppDisconnect().catch(console.error) }}
+                    disabled={slackAppBusy}
+                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
+                  >
+                    {slackAppBusy ? 'Uninstalling…' : 'Uninstall Bot'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-700 mb-3">
+                  The Pivotal bot needs to be installed to your Slack workspace to enable conversation features and scheduling assistance.
+                </p>
+                <button
+                  onClick={() => { handleSlackAppConnect().catch(console.error) }}
+                  disabled={slackAppBusy}
+                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
+                >
+                  {slackAppBusy ? 'Connecting…' : 'Install to Slack'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

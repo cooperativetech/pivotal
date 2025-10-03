@@ -1,21 +1,7 @@
-import { betterAuth } from 'better-auth'
 import { createAuthEndpoint, createAuthMiddleware, getSessionFromCtx, APIError } from 'better-auth/api'
 import type { Account } from 'better-auth/types'
 import type { BetterAuthPlugin } from 'better-auth/plugins'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
-import db from './db/engine'
-import { betterAuthSchema } from './db/schema/auth'
-
-export const baseURL = (
-  process.env.PV_NODE_ENV === 'local' ?
-  'https://localhost:5173' :
-  process.env.PV_BASE_URL || 'https://localhost:3009'
-)
-
-if (process.env.PV_NODE_ENV === 'prod' && !process.env.PV_BETTER_AUTH_SECRET) {
-  throw new Error('PV_BETTER_AUTH_SECRET required for production')
-}
 
 const generateRandomString = createRandomStringGenerator('a-z', '0-9', 'A-Z', '-_')
 
@@ -125,50 +111,3 @@ export function githubAppInstallationPlugin(appName: string) {
   } satisfies BetterAuthPlugin
 }
 
-export const auth = betterAuth({
-  baseURL,
-  secret: process.env.PV_BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema: betterAuthSchema,
-  }),
-  plugins: [
-    githubAppInstallationPlugin(process.env.PV_GITHUB_APP_NAME!),
-  ],
-  socialProviders: {
-    slack: {
-      clientId: process.env.PV_SLACK_CLIENT_ID!,
-      clientSecret: process.env.PV_SLACK_CLIENT_SECRET!,
-    },
-    github: {
-      clientId: process.env.PV_GITHUB_CLIENT_ID!,
-      clientSecret: process.env.PV_GITHUB_CLIENT_SECRET!,
-    },
-    google: {
-      clientId: process.env.PV_GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.PV_GOOGLE_CLIENT_SECRET!,
-      scope: [
-        'https://www.googleapis.com/auth/calendar.readonly',
-        'https://www.googleapis.com/auth/calendar.events.readonly',
-      ],
-      accessType: 'offline', // Required to get a refresh token
-      prompt: 'consent', // Required to get a refresh token
-    },
-  },
-  account: {
-    encryptOAuthTokens: true,
-    accountLinking: {
-      enabled: true,
-      trustedProviders: ['slack', 'github', 'google'],
-    },
-  },
-  rateLimit: {
-    enabled: true,
-  },
-  advanced: {
-    useSecureCookies: true,
-  },
-  telemetry: {
-    enabled: false,
-  },
-})

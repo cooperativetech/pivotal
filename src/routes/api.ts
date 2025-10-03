@@ -5,7 +5,8 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import db from '../db/engine'
 import { slackUserTable } from '../db/schema/main'
-import { accountTable } from '../db/schema/auth'
+import { accountTable, slackAppInstallationTable } from '../db/schema/auth'
+import type { Organization } from '../db/schema/auth'
 import type { CalendarEvent } from '@shared/api-types'
 import { auth } from '../auth'
 import { dumpTopic, getTopics } from '../utils'
@@ -47,14 +48,39 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         email: sessionUser.email,
         name: sessionUser.name,
       }
+
       const slackAccount = await getLinkedSlackAccount(sessionUser.id)
       const googleAccount = await getLinkedGoogleAccount(sessionUser.id)
       const githubAccount = await getLinkedGithubAccount(sessionUser.id)
+
+      // Type hint required since better-auth return type doesn't include custom slackTeamId column
+      const [rawOrganization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+      if (!rawOrganization) {
+        await auth.api.signOut({ headers: c.req.raw.headers })
+        throw new Error(`No organization found for user ${sessionUser.id}`)
+      }
+
+      // Check if bot is installed for this organization
+      const [slackAppInstallation] = await db.select()
+        .from(slackAppInstallationTable)
+        .where(eq(slackAppInstallationTable.teamId, rawOrganization.slackTeamId))
+        .limit(1)
+
+      const organization = {
+        id: rawOrganization.id,
+        name: rawOrganization.name,
+        slackTeamId: rawOrganization.slackTeamId,
+        slackAppInstalled: !!slackAppInstallation,
+      }
+
       return c.json({
         user,
         slackAccount,
         googleAccount,
         githubAccount,
+        organization,
       })
     } catch (error) {
       console.error('Error fetching profile:', error)

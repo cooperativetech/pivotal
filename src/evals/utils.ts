@@ -59,8 +59,8 @@ export const EvaluationResults = z.strictObject({
   }).nullable()),
   confirmedSimUsers: z.array(z.string()),
   allSimUsersConfirmed: z.boolean(),
-  canAttend: z.record(z.boolean()),
-  maxSharedFreeTime: z.number(),
+  maxSharedFreeTimes: z.array(z.number()),
+  allCanAttends: z.array(z.boolean()),
   evaluationSummary: EvaluationSummary,
 })
 
@@ -191,7 +191,7 @@ export function findBenchmarkFile(filename: string): string {
 
   // Try looking in subdirectory (for organized benchmark files)
   // Extract folder name pattern from filename
-  const folderMatch = baseFilename.match(/^(benchmark_\d+simusers_[\d-]+start_[\d-]+end_\d+min)/)
+  const folderMatch = baseFilename.match(/^(benchmark_\d+simusers_(?:\d+groups_)?[\d-]+start_[\d-]+end_\d+min)/)
   if (folderMatch) {
     const folderName = folderMatch[1]
     const subDirPath = join(__dirname, 'data', folderName, `${baseFilename}.json`)

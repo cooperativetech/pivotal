@@ -1,0 +1,157 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T12:55:12.000Z",
+    "startTimeOffset": 1.33,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "nGroups": 2,
+    "userGroupMapping": {
+      "Bob": 0,
+      "Charlie": 0,
+      "Diana": 1,
+      "Alice": 1
+    },
+    "genTimestamp": "20251001022539059"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Sustainable Seafood Sourcing Meeting"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Restaurant Menu Development - Seasonal Fish Selection"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Aquaculture Quality Assessment - Farm Visit Prep"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Marine Conservation Impact Report Review"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Quick Check-in with Restaurant Partners"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Farm Equipment Maintenance - Tattoo Gun Cleaning"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Client Consultation - Crop Harvest Memorial Sleeve"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Tattoo Session - Agricultural Workers Union Logo"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Design Work - Custom Botanical Patterns"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Meeting with Local Farmers Market - Art Booth Planning"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Puppet show setup - The Hungry Bear Restaurant"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Children's birthday party performance"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Meeting with restaurant owner - new character ideas"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Puppet repair workshop time"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Evening dinner show - Mama Rosa's Pizzeria"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Alice",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Pre-flight aircraft inspection"
+        },
+        {
+          "start": "2025-01-02T14:45:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Crop dusting - Johnson Farm (Section 12)"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T18:30:00.000Z",
+          "summary": "Weather briefing with Chief Pilot"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Aerial seeding - Miller Ranch (North fields)"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Aircraft maintenance log review"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "Call with pesticide supplier about new formulations"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

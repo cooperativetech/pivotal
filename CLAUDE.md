@@ -87,3 +87,16 @@ The application is a Slack bot with an integrated web interface that facilitates
 ## Frontend Conventions
 
 - Always use `cursor-pointer` and `disabled:cursor-default` in the className for buttons
+
+## Git Commit Template
+
+```
+[Concise commit message title]
+
+Summary:
+
+Test Plan:
+
+```
+- wrap commit messages at 72 characters
+- keep commit titles to 72 characters or less
