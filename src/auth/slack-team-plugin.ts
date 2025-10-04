@@ -73,6 +73,16 @@ export function slackTeamPlugin() {
                 })
                 .returning()
 
+              // Remove user from any existing organizations
+              const removedOrgs = await db
+                .delete(memberTable)
+                .where(eq(memberTable.userId, userId))
+                .returning()
+
+              for (const membership of removedOrgs) {
+                c.context.logger.info(`Removed user ${userId} from organization ${membership.organizationId}`)
+              }
+
               // Add member to the new organization
               await auth.api.addMember({
                 body: {
