@@ -62,11 +62,12 @@ export async function getTopicWithState(topicId: string): Promise<TopicWithState
 }
 
 export async function getTopics(
+  teamId: string,
   botUserId: string | null = null,
   onlyActive: boolean = false,
   topicIds?: string[],
 ): Promise<TopicWithState[]> {
-  const filters = []
+  const filters = [eq(topicTable.slackTeamId, teamId)]
   if (botUserId) {
     filters.push(eq(topicTable.botUserId, botUserId))
   }
@@ -160,9 +161,31 @@ export type GetTopicReq = z.infer<typeof GetTopicReq>
 export async function dumpTopic(topicId: string, options: GetTopicReq = {}): Promise<TopicData> {
   const { lastMessageId, visibleToUserId } = options
 
+  const filters = [eq(topicTable.id, topicId)]
+
+  if (visibleToUserId) {
+    // Get the user's teamId from slackUserTable
+    const [slackUser] = await db.select()
+      .from(slackUserTable)
+      .where(eq(slackUserTable.id, visibleToUserId))
+
+    if (!slackUser) {
+      throw new Error(`User ${visibleToUserId} not found in slackUserTable`)
+    }
+
+    filters.push(eq(topicTable.slackTeamId, slackUser.teamId))
+  }
+
   const [topic] = await db.select()
     .from(topicTable)
-    .where(eq(topicTable.id, topicId))
+    .where(and(...filters))
+
+  if (!topic) {
+    if (visibleToUserId) {
+      throw new Error(`Topic ${topicId} not found or not accessible to user ${visibleToUserId}`)
+    }
+    throw new Error(`Topic ${topicId} not found`)
+  }
 
   let states = await getStatesWithMessageTs(topicId)
 
@@ -637,6 +660,7 @@ async function sendAutoMessage(autoMessage: AutoMessage, slackClient: WebClient)
 
     await handleSlackMessage(
       message,
+      topic.slackTeamId,
       botUserId,
       slackClient,
       topicId,

@@ -11,11 +11,13 @@ import {
 } from 'drizzle-orm/pg-core'
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivation } from '@shared/api-types'
+import { organizationTable } from './auth'
 
 export const topicTable = pgTable('topic', {
   id: uuid().primaryKey().defaultRandom(),
   botUserId: text().notNull(),
   workflowType: text().$type<WorkflowType>().notNull().default('other'),
+  slackTeamId: text().notNull().references(() => organizationTable.slackTeamId),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 })
 export type TopicInsert = InferInsertModel<typeof topicTable>

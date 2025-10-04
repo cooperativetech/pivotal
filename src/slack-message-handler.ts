@@ -692,10 +692,11 @@ async function handleFinalizedEvent(
 }
 
 async function getOrCreateTopic(
+  teamId: string,
   message: SlackMessage,
   botUserId: string,
   client: WebClient,
-  ignoreExistingTopics: boolean = false,
+  ignoreExistingTopics: boolean,
 ): Promise<string | null> {
   // Check if this message is a DM by looking at the channel's user list
   const [channel] = await db.select()
@@ -726,7 +727,7 @@ async function getOrCreateTopic(
   // Step 1: Gather active topics and augment with any topics that have recent activity in this channel/thread
   let topics: TopicWithState[] = []
   if (!ignoreExistingTopics) {
-    let activeTopics = await getTopics(botUserId, true)
+    let activeTopics = await getTopics(teamId, botUserId, true)
     if (shouldExcludeOtherWorkflows) {
       activeTopics = activeTopics.filter((topic) => topic.workflowType !== 'other')
     }
@@ -770,7 +771,7 @@ async function getOrCreateTopic(
     }
 
     let additionalTopics = recentTopicIds.size > 0
-      ? await getTopics(botUserId, false, Array.from(recentTopicIds))
+      ? await getTopics(teamId, botUserId, false, Array.from(recentTopicIds))
       : []
     if (shouldExcludeOtherWorkflows) {
       additionalTopics = additionalTopics.filter((topic) => topic.workflowType !== 'other')
@@ -821,6 +822,7 @@ async function getOrCreateTopic(
       // Create new topic with all mentioned users
       const [newTopic] = await db.insert(topicTable).values({
         botUserId: botUserId,
+        slackTeamId: teamId,
         workflowType: analysis.workflowType,
       }).returning()
 
@@ -848,6 +850,7 @@ async function getOrCreateTopic(
 }
 
 async function saveMessageToDummyTopic(
+  teamId: string,
   botUserId: string,
   message: SlackAPIMessage,
   autoMessageId: string | null,
@@ -855,11 +858,12 @@ async function saveMessageToDummyTopic(
 ): Promise<SlackMessage> {
   const DUMMY_SUMMARY = 'dummy topic for uncategorized messages'
 
-  // Check if a dummy topic exists for this bot user
+  // Check if a dummy topic exists for this bot user and team
   const [existingDummyRow] = await db.select()
     .from(topicTable)
     .innerJoin(topicStateTable, eq(topicTable.id, topicStateTable.topicId))
     .where(and(
+      eq(topicTable.slackTeamId, teamId),
       eq(topicTable.botUserId, botUserId),
       eq(topicTable.workflowType, 'other'),
       eq(topicStateTable.summary, DUMMY_SUMMARY),
@@ -872,6 +876,7 @@ async function saveMessageToDummyTopic(
     (await db
       .insert(topicTable)
       .values({
+        slackTeamId: teamId,
         botUserId: botUserId,
         workflowType: 'other',
       })
@@ -943,6 +948,7 @@ interface MessageProcessingRes {
 
 export async function handleSlackMessage(
   apiMessage: SlackAPIMessage,
+  teamId: string,
   botUserId: string,
   client: WebClient,
   presetTopicId: string | null = null,
@@ -965,10 +971,10 @@ export async function handleSlackMessage(
 
   try {
     // Save the message to the dummy topic by default
-    const message = await saveMessageToDummyTopic(botUserId, apiMessage, autoMessageId, client)
+    const message = await saveMessageToDummyTopic(teamId, botUserId, apiMessage, autoMessageId, client)
 
     // Route message to topic (creates topic if necessary)
-    const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(message, botUserId, client, ignoreExistingTopics)
+    const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(teamId, message, botUserId, client, ignoreExistingTopics)
 
     // If getOrCreateTopic returns null or the dummy topic, leave the message
     // saved to the dummy topic and return
