@@ -95,6 +95,14 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     }
 
     try {
+      // Get user's organization to access slackTeamId
+      const [organization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+      if (!organization) {
+        return c.json({ error: 'No organization found' }, 404)
+      }
+
       // Get user's linked Slack account IDs from auth account table
       const linkedSlackIds = await db
         .select({ slackId: accountTable.accountId })
@@ -111,8 +119,8 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       const slackIdList = linkedSlackIds.map((s) => s.slackId)
       const slackIdSet = new Set(slackIdList)
 
-      // Get all topics (no filtering by bot user ID)
-      const allTopics = await getTopics()
+      // Get all topics for this team
+      const allTopics = await getTopics(organization.slackTeamId)
 
       // Filter topics in TypeScript to include only those with user's Slack IDs
       const userTopics = allTopics.filter((topic) => (

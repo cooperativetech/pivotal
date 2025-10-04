@@ -55,9 +55,12 @@ export async function connectSlackClient(): Promise<WebClient> {
     if (!context.botUserId) {
       throw new Error('Bot user id not found in context for message')
     }
+    if (!context.teamId) {
+      throw new Error('Team id not found in context for message')
+    }
     // Only handle GenericMessageEvent and BotMessageEvent for now
     if (message.subtype === undefined || message.subtype === 'bot_message') {
-      await handleSlackMessage(message, context.botUserId, client)
+      await handleSlackMessage(message, context.teamId, context.botUserId, client)
     }
   })
 

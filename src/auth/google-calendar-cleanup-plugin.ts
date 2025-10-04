@@ -1,6 +1,9 @@
 import { createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import type { BetterAuthPlugin } from 'better-auth/plugins'
-import { clearCalendarPromptMessages } from '../calendar-service'
+import { eq } from 'drizzle-orm'
+import db from '../db/engine'
+import { slackUserTable } from '../db/schema/main'
+import { getTopics } from '../utils'
 import { getSlackClient } from '../integrations/slack'
 
 export function googleCalendarCleanupPlugin() {
@@ -30,7 +33,34 @@ export function googleCalendarCleanupPlugin() {
               return
             }
 
-            await clearCalendarPromptMessages(slackAccount.accountId, slackClient)
+            const slackUserId = slackAccount.accountId
+
+            // Get the user's teamId from slackUserTable
+            const [slackUser] = await db.select()
+              .from(slackUserTable)
+              .where(eq(slackUserTable.id, slackUserId))
+
+            if (!slackUser) {
+              c.context.logger.warn(`User ${slackUserId} not found in slackUserTable`)
+              return
+            }
+
+            const topics = await getTopics(slackUser.teamId, null, true)
+            for (const topic of topics) {
+              const pointer = topic.state.perUserContext[slackUserId]?.calendarPromptMessage
+              if (!pointer) continue
+
+              try {
+                await slackClient.chat.update({
+                  channel: pointer.channelId,
+                  ts: pointer.ts,
+                  text: '✅ Calendar connected. All set!',
+                  blocks: [],
+                })
+              } catch (updateError) {
+                c.context.logger.warn(`Failed to clear calendar prompt buttons for user ${slackUserId} in channel ${pointer.channelId}`, updateError)
+              }
+            }
           } catch (error) {
             c.context.logger.error('Failed to clear calendar prompt buttons after Google callback', error)
           }
