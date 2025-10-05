@@ -3,6 +3,11 @@ import { Link } from 'react-router'
 import { local_api } from '@shared/api-client'
 import type { TopicWithState } from '@shared/api-types'
 import { unserializeTopicWithState } from '@shared/api-types'
+import { PageShell } from '@shared/components/page-shell'
+import { LogoMark } from '@shared/components/logo-mark'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card'
+import { Badge } from '@shared/components/ui/badge'
+import { Button } from '@shared/components/ui/button'
 
 function LocalHome() {
   const [topics, setTopics] = useState<TopicWithState[]>([])
@@ -33,85 +38,92 @@ function LocalHome() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading...</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error}</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Card className="border-destructive/40 bg-destructive/10 px-6 py-4 text-sm text-destructive">
+            Error: {error}
+          </Card>
+        </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 py-8">
-      <div className="w-full max-w-6xl">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Flack Testing Interface</h1>
-          <p className="text-gray-600 mt-2">Testing mode - no authentication required</p>
-        </div>
+    <PageShell>
+      <div className="mb-8 text-center">
+        <h1 className="heading-hero text-foreground">Flack testing interface</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Local mode — no authentication required.</p>
+      </div>
 
-        <div className="flex justify-center mb-4">
-          <Link
-            to="/local/create-topic"
-            className="block w-full max-w-2xl px-4 py-2 bg-green-600 text-white text-center rounded-lg shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200 font-medium"
-          >
-            + New Topic
-          </Link>
-        </div>
+      <div className="mb-6 flex justify-center">
+        <Button asChild className="bg-primary text-primary-foreground">
+          <Link to="/local/create-topic">+ New topic</Link>
+        </Button>
+      </div>
 
-        {topics.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-gray-500">
-              No topics found
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            {topics.map((topic) => (
-              <Link
-                key={topic.id}
-                to={`/local/topic/${topic.id}`}
-                className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 w-full max-w-2xl"
-              >
-                <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                  {topic.state.summary}
-                </h2>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
+      {topics.length === 0 ? (
+        <Card className="border-dashed border-token bg-surface/80 text-center">
+          <CardHeader>
+            <CardTitle>No topics yet</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Kick off a test message to generate a topic snapshot.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {topics.map((topic) => (
+            <Card
+              key={topic.id}
+              className="border-token bg-surface/90 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              <CardHeader className="space-y-3">
+                <CardTitle className="text-lg text-foreground">{topic.state.summary}</CardTitle>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary" className="bg-secondary/80 text-secondary-foreground">
                     {topic.workflowType}
-                  </span>
-
-                  <span
-                    className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                      topic.state.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={topic.state.isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-border'}
                   >
                     {topic.state.isActive ? 'Active' : 'Inactive'}
-                  </span>
-
-                  <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                  </Badge>
+                  <Badge variant="outline" className="border-border text-muted-foreground">
                     Local
-                  </span>
+                  </Badge>
                 </div>
-
-                <div className="text-sm text-gray-600">
+              </CardHeader>
+              <CardContent className="flex items-center justify-between text-sm text-muted-foreground">
+                <div>
                   <div>Users: {topic.state.userIds.length}</div>
-                  <div>Created: {new Date(topic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                  <div>
+                    Created: {new Date(topic.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to={`/local/topic/${topic.id}`}>Open</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </PageShell>
   )
 }
 

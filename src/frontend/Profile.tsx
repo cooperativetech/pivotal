@@ -1,6 +1,50 @@
 import { useState, useEffect } from 'react'
+import { LogOut, Slack, Calendar as CalendarIcon, GitHub, AlertCircle, CheckCircle, Link as LinkIcon } from 'react-feather'
 import type { UserProfile } from '@shared/api-types'
 import { api, authClient } from '@shared/api-client'
+import { PageShell } from '@shared/components/page-shell'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/components/ui/card'
+import { Button } from '@shared/components/ui/button'
+import { Badge } from '@shared/components/ui/badge'
+import { Separator } from '@shared/components/ui/separator'
+import { Skeleton } from '@shared/components/ui/skeleton'
+import { LogoMark } from '@shared/components/logo-mark'
+
+function StatusBadge({ connected }: { connected: boolean }) {
+  return connected ? (
+    <Badge className="border-transparent bg-emerald-500/15 px-3 py-1 text-emerald-400 whitespace-nowrap">
+      <CheckCircle size={14} className="mr-1 text-emerald-400" /> Connected
+    </Badge>
+  ) : (
+    <Badge variant="outline" className="border-border px-3 py-1 text-muted-foreground whitespace-nowrap">
+      <AlertCircle size={14} className="mr-1 text-muted-foreground" /> Not connected
+    </Badge>
+  )
+}
+
+function LoadingState() {
+  return (
+    <PageShell>
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <LogoMark size={72} className="animate-spin-slow" />
+      </div>
+      <div className="space-y-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="border-token bg-surface">
+            <CardHeader className="space-y-3">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </PageShell>
+  )
+}
 
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -70,8 +114,6 @@ export default function Profile() {
   const handleGoogleConnect = () => {
     try {
       setGoogleBusy(true)
-      // Use api route here instead of linkSocial so that the codepath is
-      // identical between this button and the button sent via slack
       const params = new URLSearchParams({
         callbackURL: '/profile',
         errorCallbackURL: '/profile',
@@ -104,7 +146,6 @@ export default function Profile() {
       if (response.error) {
         throw new Error(`Failed to get Slack installation URL: ${response.error.message}`)
       }
-      // Redirect to the installation URL
       window.location.href = response.data.installUrl
     } catch (err) {
       setError('Failed to link Slack application')
@@ -136,7 +177,6 @@ export default function Profile() {
       if (response.error) {
         throw new Error(`Failed to get Github installation URL: ${response.error.message}`)
       }
-      // Redirect to the installation URL
       window.location.href = response.data.installUrl
     } catch (err) {
       setError('Failed to link Github account')
@@ -190,7 +230,6 @@ export default function Profile() {
       })
 
       if (response.ok) {
-        // Reload profile to show updated repository status
         await loadProfile()
       } else {
         const errorData = await response.json()
@@ -213,267 +252,308 @@ export default function Profile() {
     }
   }
 
-  const handleSignOutClick = () => {
-    handleSignOut().catch((err) => {
-      console.error('Sign out failed:', err)
-      setError('Failed to sign out')
-    })
-  }
-
-  const handleSlackConnectClick = () => {
-    handleSlackConnect().catch((err) => {
-      console.error('Slack link failed:', err)
-      setError('Failed to link Slack account')
-    })
-  }
-
   const calendarConnected = !!profile?.googleAccount
 
-  const handleGithubConnectClick = () => {
-    handleGithubConnect().catch((err) => {
-      console.error('Github link failed:', err)
-      setError('Failed to link Github account')
-    })
+  if (loading) return <LoadingState />
+  if (error && !profile) {
+    return (
+      <PageShell>
+        <Card className="border-destructive/40 bg-destructive/10 text-destructive">
+          <CardHeader>
+            <CardTitle>Unable to load profile</CardTitle>
+            <CardDescription className="text-destructive/80">{error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </PageShell>
+    )
   }
-
-  if (loading) return <div className="flex justify-center items-center h-52 text-gray-600">Loading...</div>
-  if (error) return <div className="text-red-600">{error}</div>
-  if (!profile) return <div>No profile data</div>
+  if (!profile) return <PageShell>No profile data</PageShell>
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900">Profile</h1>
-        <button onClick={handleSignOutClick} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer">Sign Out</button>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Information</h2>
-        <p><strong>Name:</strong> {profile.user.name}</p>
-        <p><strong>Email:</strong> {profile.user.email}</p>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Slack Account</h2>
-        {profile.slackAccount ? (
-          <div className="py-2 border-b border-gray-100">
-            Team: {profile.organization.name }
-          </div>
-        ) : (
-          <p>No Slack account linked</p>
-        )}
-
-        <div className="flex flex-wrap gap-3 mt-4">
-          <button
-            type="button"
-            disabled
-            className={`px-4 py-2 rounded border font-medium ${
-              profile.slackAccount
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-red-500 text-red-500'
-            }`}
-          >
-            {profile.slackAccount ? '✅ Connected!' : '❌ Not connected!'}
-          </button>
-          <button
-            onClick={profile.slackAccount ? (() => { handleSlackDisconnect().catch(console.error) }) : handleSlackConnectClick}
-            disabled={slackBusy}
-            className={`px-6 py-3 rounded font-medium text-white cursor-pointer disabled:cursor-default ${
-              profile.slackAccount
-                ? 'bg-red-500 hover:bg-red-600 disabled:bg-red-400'
-                : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
-            }`}
-          >
-            {slackBusy ? 'Working…' : profile.slackAccount ? 'Disconnect Slack' : 'Connect Slack'}
-          </button>
+    <PageShell>
+      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="heading-hero text-foreground">Your Pivotal identity</h1>
+          <p className="max-w-xl text-base text-muted-foreground">
+            Manage the roots that feed your workspace.
+          </p>
         </div>
+        <Button variant="outline" onClick={() => { handleSignOut().catch((err) => {
+          console.error('Sign out failed:', err)
+          setError('Failed to sign out')
+        }) }} className="self-start">
+          <LogOut size={16} /> Sign out
+        </Button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Calendar</h2>
-        {!profile.slackAccount ? (
-          <p className="text-sm text-gray-700">Connect a Slack account first to connect your Google Calendar.</p>
-        ) : (
-          <>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled
-                className={`px-4 py-2 rounded border font-medium ${
-                  calendarConnected
-                    ? 'border-emerald-600 text-emerald-600'
-                    : 'border-red-500 text-red-500'
-                }`}
-              >
-                {calendarConnected ? '✅ Connected!' : '❌ Not connected!'}
-              </button>
-              {calendarConnected ? (
-                <>
-                  <button
-                    onClick={() => { handleGoogleDisconnect().catch(console.error) }}
-                    disabled={googleBusy}
-                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
-                  >
-                    {googleBusy ? 'Disconnecting…' : 'Disconnect calendar'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleGoogleConnect}
-                  disabled={googleBusy}
-                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
-                >
-                  {googleBusy ? 'Connecting…' : 'Connect Google Calendar'}
-                </button>
-              )}
+      {error && (
+        <Card className="mb-6 border-destructive/40 bg-destructive/10 text-destructive">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-destructive">Something needs attention</CardTitle>
+              <CardDescription className="text-destructive/80">{error}</CardDescription>
             </div>
-          </>
-        )}
+            <AlertCircle size={32} />
+          </CardHeader>
+        </Card>
+      )}
 
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Github Account</h2>
-        {profile.githubAccount ? (
-          <>
-            <div className="py-2 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <strong>{profile.githubAccount.username}</strong>
-                {profile.githubAccount.orgName && <span className="text-gray-600 ml-2">(Org: {profile.githubAccount.orgName})</span>}
-              </div>
-              <button
-                onClick={() => {
-                  handleGithubDisconnect(profile.githubAccount!.accountId).catch((err) => {
-                    console.error('Github unlink failed:', err)
-                    setError('Failed to unlink Github account')
-                  })
-                }}
-                disabled={githubBusy}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-red-400 text-sm cursor-pointer disabled:cursor-default"
-              >
-                {githubBusy ? 'Disconnecting…' : 'Disconnect'}
-              </button>
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <Card className="border-token bg-surface">
+          <CardHeader className="space-y-4">
+            <CardTitle>Account</CardTitle>
+            <CardDescription className="mt-1 text-sm text-muted-foreground">Your identity inside Pivotal.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Name</span>
+              <span className="font-medium text-foreground">{profile.user.name}</span>
             </div>
+            <Separator className="bg-border" />
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Email</span>
+              <span className="font-medium text-foreground">{profile.user.email}</span>
+            </div>
+          </CardContent>
+        </Card>
 
-            {!profile.githubAccount.linkedRepo && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2">How to connect a context repository:</h3>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-                  <li>Create a new GitHub repository in your organization (suggested name: <span className="font-mono bg-blue-100 px-1 py-0.5 rounded">pivotal-context</span>)</li>
-                  <li>Invite GitHub username <span className="font-mono bg-blue-100 px-1 py-0.5 rounded">pivotal-bot</span> to that repository with <b>write</b> access</li>
-                  <li>Refresh this page</li>
-                  <li>The repository name should appear below. Click &quot;Connect&quot; to connect it with your organization</li>
-                </ol>
+        <Card className="border-token bg-surface">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Slack size={18} className="text-[color:var(--p-leaf)]" /> Slack workspace
+              </CardTitle>
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Connect Slack so Pivotal can sync your workspace.</CardDescription>
+            </div>
+            <StatusBadge connected={!!profile.slackAccount} />
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {profile.slackAccount ? (
+              <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                <span className="text-foreground">Workspace:</span> {profile.organization?.name}
               </div>
+            ) : (
+              <p className="text-muted-foreground">Link your Slack account to start syncing conversations.</p>
             )}
-            {profile.githubAccount.linkedRepo ? (
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Connected repository:</p>
-                <div className="bg-green-50 border border-green-200 rounded px-3 py-2 flex items-center justify-between">
-                  <span className="text-sm font-mono text-green-900">{profile.githubAccount.linkedRepo.fullName}</span>
-                  <button
-                    onClick={() => {
-                      handleRepositoryDisconnect(profile.githubAccount!.linkedRepo!.id).catch((err) => {
-                        console.error('Disconnect repository failed:', err)
-                        setError('Failed to disconnect repository')
-                      })
-                    }}
-                    disabled={githubRepoBusy !== null}
-                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
-                  >
-                    {githubRepoBusy ? 'Disconnecting…' : 'Disconnect'}
-                  </button>
+          </CardContent>
+          <CardFooter>
+            <Button
+              onClick={profile.slackAccount ? (() => { handleSlackDisconnect().catch(console.error) }) : (() => { handleSlackConnect().catch(console.error) })}
+              disabled={slackBusy}
+              variant={profile.slackAccount ? 'outline' : 'default'}
+              className={profile.slackAccount ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : ''}
+            >
+              {slackBusy ? 'Working…' : profile.slackAccount ? 'Disconnect Slack' : 'Connect Slack'}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-token bg-surface">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon size={18} className="text-[color:var(--p-leaf)]" /> Google Calendar
+              </CardTitle>
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Sync your availability for scheduling.</CardDescription>
+            </div>
+            <StatusBadge connected={calendarConnected} />
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            {!profile.slackAccount ? (
+              <p>Connect Slack first to unlock calendar syncing.</p>
+            ) : calendarConnected ? (
+              <p>Your calendar is connected. Meetings will stay aligned with real availability.</p>
+            ) : (
+              <p>Link your Google calendar to let Pivotal propose real-time availability.</p>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button
+              onClick={calendarConnected ? (() => { handleGoogleDisconnect().catch(console.error) }) : handleGoogleConnect}
+              disabled={googleBusy || !profile.slackAccount}
+              variant={calendarConnected ? 'outline' : 'default'}
+              className={calendarConnected ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : ''}
+            >
+              {googleBusy
+                ? calendarConnected
+                  ? 'Disconnecting…'
+                  : 'Connecting…'
+                : calendarConnected
+                ? 'Disconnect calendar'
+                : 'Connect Google Calendar'}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-token bg-surface">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GitHub size={18} className="text-[color:var(--p-leaf)]" /> GitHub repositories
+              </CardTitle>
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Share repos so Pivotal can pull docs and history.</CardDescription>
+            </div>
+            <StatusBadge connected={!!profile.githubAccount} />
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {profile.githubAccount ? (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-foreground">
+                    <span className="font-medium">{profile.githubAccount.username}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleGithubDisconnect(profile.githubAccount!.accountId).catch((err) => {
+                          console.error('Github unlink failed:', err)
+                          setError('Failed to unlink Github account')
+                        })
+                      }}
+                      disabled={githubBusy}
+                      className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                    >
+                      {githubBusy ? 'Disconnecting…' : 'Disconnect'}
+                    </Button>
+                  </div>
+                  {profile.githubAccount.orgName && (
+                    <div className="mt-2">Org: {profile.githubAccount.orgName}</div>
+                  )}
                 </div>
-              </div>
-            ) : profile.githubAccount.linkableRepos && profile.githubAccount.linkableRepos.length > 0 ? (
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Available repositories:</p>
-                <ul className="list-none space-y-2">
-                  {profile.githubAccount.linkableRepos.map((repo) => (
-                    <li key={repo.fullName} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono">{repo.fullName}</span>
-                        {repo.invitationId && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">Invitation pending</span>
-                        )}
-                      </div>
-                      <button
+
+                {profile.githubAccount.linkedRepo ? (
+                  <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between text-foreground">
+                      <span className="font-medium">{profile.githubAccount.linkedRepo.fullName}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
-                          handleRepositoryConnect(repo.id).catch((err) => {
-                            console.error('Connect repository failed:', err)
-                            setError('Failed to connect repository')
+                          handleRepositoryDisconnect(profile.githubAccount!.linkedRepo!.id).catch((err) => {
+                            console.error('Disconnect repository failed:', err)
+                            setError('Failed to disconnect repository')
                           })
                         }}
                         disabled={githubRepoBusy !== null}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
+                        className="border-destructive/40 text-destructive hover:bg-destructive/10"
                       >
-                        {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        {githubRepoBusy ? 'Disconnecting…' : 'Disconnect'}
+                      </Button>
+                    </div>
+                    <p className="mt-2">Primary context repository.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-xs text-muted-foreground">
+                    <div className="rounded-lg border border-dashed border-token/80 bg-background/30 p-3">
+                      <p className="font-medium text-foreground">How to connect a context repository:</p>
+                      <ol className="mt-2 list-decimal space-y-1 pl-4">
+                        <li>Create a GitHub repo (e.g. <span className="font-mono text-foreground">pivotal-context</span>).</li>
+                        <li>Invite <span className="font-mono text-foreground">pivotal-bot</span> with write access.</li>
+                        <li>Refresh this page after the invite lands.</li>
+                        <li>Connect the repo from the list below.</li>
+                      </ol>
+                    </div>
+
+                    {profile.githubAccount.linkableRepos && profile.githubAccount.linkableRepos.length > 0 ? (
+                      <div className="space-y-2">
+                        {profile.githubAccount.linkableRepos.map((repo) => (
+                      <div
+                        key={repo.fullName}
+                        className="flex items-center justify-between rounded-lg border border-token bg-background/40 p-3"
+                      >
+                        <div className="space-y-1">
+                              <p className="font-medium text-foreground">{repo.fullName}</p>
+                              {repo.invitationId && (
+                <Badge variant="outline" className="text-xs text-amber-500">
+                              Invitation pending
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            handleRepositoryConnect(repo.id).catch((err) => {
+                              console.error('Connect repository failed:', err)
+                              setError('Failed to connect repository')
+                            })
+                              }}
+                              disabled={githubRepoBusy !== null}
+                            >
+                              {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p>No repositories available yet. Follow the instructions above to add one.</p>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="text-gray-600 text-sm">No repositories available yet. Follow the instructions above to add one.</p>
+              <div className="flex flex-col gap-3 text-sm text-muted-foreground">
+                <p>Authorize GitHub so Pivotal can read your context repos.</p>
+                <Button onClick={() => { handleGithubConnect().catch((err) => {
+                  console.error('Github link failed:', err)
+                  setError('Failed to link Github account')
+                }) }} disabled={githubBusy}>
+                  {githubBusy ? 'Connecting…' : 'Connect GitHub'}
+                </Button>
+              </div>
             )}
-          </>
-        ) : (
-          <>
-            <p>No Github account linked</p>
-            <button onClick={handleGithubConnectClick} disabled={githubBusy} className="px-6 py-3 bg-gray-800 text-white rounded font-medium hover:bg-gray-900 disabled:bg-gray-600 mt-4 cursor-pointer disabled:cursor-default">
-              {githubBusy ? 'Connecting…' : 'Connect Github Account'}
-            </button>
-          </>
-        )}
-      </div>
+          </CardContent>
+        </Card>
 
-      {profile.organization && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Organization</h2>
-          <div className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 inline-block mb-4">
-            <span className="font-medium text-gray-900">{profile.organization.name}</span>
-          </div>
-
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Slack Bot</h3>
-            {profile.organization.slackAppInstalled ? (
-              <div className="py-2">
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled
-                    className="px-4 py-2 rounded border font-medium border-emerald-600 text-emerald-600"
-                  >
-                    ✅ Bot Installed
-                  </button>
-                  <button
-                    onClick={() => { handleSlackAppDisconnect().catch(console.error) }}
-                    disabled={slackAppBusy}
-                    className="px-6 py-3 rounded font-medium bg-red-500 text-white hover:bg-red-600 disabled:bg-red-400 cursor-pointer disabled:cursor-default"
-                  >
-                    {slackAppBusy ? 'Uninstalling…' : 'Uninstall Bot'}
-                  </button>
-                </div>
+        {profile.organization && (
+          <Card className="border-token bg-surface">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <LinkIcon size={18} className="text-[color:var(--p-leaf)]" /> Organization
+              </CardTitle>
+            <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared by your workspace.</CardDescription>
+            </div>
+            <Badge variant="secondary" className="bg-secondary/80 text-secondary-foreground">
+              {profile.organization.name}
+            </Badge>
+          </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                <div className="font-medium text-foreground">Slack workspace</div>
+                <div className="mt-1">{profile.organization.slackTeamId}</div>
               </div>
-            ) : (
-              <div>
-                <p className="text-sm text-gray-700 mb-3">
-                  The Pivotal bot needs to be installed to your Slack workspace to enable conversation features and scheduling assistance.
+              <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-foreground">
+                  <span className="font-medium">Pivotal bot</span>
+                  <StatusBadge connected={profile.organization.slackAppInstalled} />
+                </div>
+                <p className="mt-2 text-muted-foreground">
+                  Install the bot to let Pivotal participate in workspace conversations.
                 </p>
-                <button
-                  onClick={() => { handleSlackAppConnect().catch(console.error) }}
+              </div>
+            </CardContent>
+            <CardFooter>
+              {profile.organization.slackAppInstalled ? (
+                <Button
+                  variant="outline"
+                  onClick={() => { handleSlackAppDisconnect().catch(console.error) }}
                   disabled={slackAppBusy}
-                  className="px-6 py-3 rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 cursor-pointer disabled:cursor-default"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                >
+                  {slackAppBusy ? 'Uninstalling…' : 'Uninstall bot'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { handleSlackAppConnect().catch(console.error) }}
+                  disabled={slackAppBusy || !profile.slackAccount}
                 >
                   {slackAppBusy ? 'Connecting…' : 'Install to Slack'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        )}
       </div>
-    </div>
+    </PageShell>
   )
 }
