@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  better-auth@1.3.11:
+    hash: b68def855f97c1d400855afa72b80269084da2e4666ddf33054c67d348bb863b
+    path: patches/better-auth@1.3.11.patch
+
 importers:
 
   .:
@@ -52,7 +57,7 @@ importers:
         version: 4.3.19(react@19.1.1)(zod@3.25.76)
       better-auth:
         specifier: 1.3.11
-        version: 1.3.11(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.3.11(patch_hash=b68def855f97c1d400855afa72b80269084da2e4666ddf33054c67d348bb863b)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       cron:
         specifier: 4.3.3
         version: 4.3.3
@@ -5319,7 +5324,7 @@ snapshots:
 
   before-after-hook@4.0.0: {}
 
-  better-auth@1.3.11(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+  better-auth@1.3.11(patch_hash=b68def855f97c1d400855afa72b80269084da2e4666ddf33054c67d348bb863b)(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.18
