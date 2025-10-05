@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
+import { ArrowLeft, Calendar as CalendarIcon } from 'react-feather'
 import { api, local_api, authClient } from '@shared/api-client'
 import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
@@ -7,6 +8,11 @@ import type { UserProfile } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 import { useLocalMode } from './LocalModeContext'
+import { Button } from '@shared/components/ui/button'
+import { Badge } from '@shared/components/ui/badge'
+import { Card } from '@shared/components/ui/card'
+import { PageShell } from '@shared/components/page-shell'
+import { LogoMark } from '@shared/components/logo-mark'
 
 interface ChannelGroup {
   channelId: string
@@ -33,11 +39,14 @@ function Topic() {
   const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
   const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
   const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set())
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [thumbPulse, setThumbPulse] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
   const messageContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const initialLoadRef = useRef(true)
+  const pulseTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     const fetchTopicData = async () => {
@@ -52,7 +61,9 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(unserializeTopicData(data.topicData))
+        const deserialized = unserializeTopicData(data.topicData)
+        setTopicData(deserialized)
+        setTopicState(deserialized.states.length > 0 ? deserialized.states[deserialized.states.length - 1] : null)
         setUserCalendars(data.userCalendars)
 
         // Only read query params on initial load
@@ -86,7 +97,7 @@ function Topic() {
   }, [topicId, apiClient, searchParams])
 
   useEffect(() => {
-    const loadProfile = async () => {
+  const loadProfile = async () => {
       try {
         const session = await authClient.getSession()
         if (!session.data?.session?.token) {
@@ -129,12 +140,16 @@ function Topic() {
 
   // Update topicState based on current timeline position
   useEffect(() => {
-    if (!topicData?.states || sortedMessages.length === 0) {
+    if (!topicData?.states || topicData.states.length === 0) {
       setTopicState(null)
       return
     }
 
-    // Get the current message's rawTs based on timeline position
+    if (sortedMessages.length === 0) {
+      setTopicState(topicData.states[topicData.states.length - 1])
+      return
+    }
+
     const currentMessageRawTs = timelinePosition !== null && sortedMessages[timelinePosition]
       ? sortedMessages[timelinePosition].rawTs
       : sortedMessages[sortedMessages.length - 1]?.rawTs
@@ -144,17 +159,13 @@ function Topic() {
       return
     }
 
-    // Find the newest state where createdByMessageRawTs <= currentMessageRawTs
     const applicableStates = topicData.states.filter(
       (state) => Number(state.createdByMessageRawTs) <= Number(currentMessageRawTs),
     )
 
-    // Get the newest applicable state (states are already in chronological order)
-    setTopicState(
-      applicableStates.length > 0
-        ? applicableStates[applicableStates.length - 1]
-        : null,
-    )
+    const fallbackState = topicData.states[topicData.states.length - 1]
+    const nextState = applicableStates.length > 0 ? applicableStates[applicableStates.length - 1] : fallbackState
+    setTopicState(nextState)
   }, [timelinePosition, sortedMessages, topicData?.states])
 
   // Update URL query parameter when timeline position changes (debounced)
@@ -198,12 +209,14 @@ function Topic() {
           if (prev === null) return sortedMessages.length - 1
           return Math.max(0, prev - 1)
         })
+        setThumbPulse(true)
       } else if (e.key === 'ArrowRight') {
         e.preventDefault()
         setTimelinePosition((prev) => {
           if (prev === null) return sortedMessages.length - 1
           return Math.min(sortedMessages.length - 1, prev + 1)
         })
+        setThumbPulse(true)
       }
     }
 
@@ -220,6 +233,7 @@ function Topic() {
     const width = rect.width
     const position = Math.round((x / width) * (sortedMessages.length - 1))
     setTimelinePosition(Math.max(0, Math.min(sortedMessages.length - 1, position)))
+    setThumbPulse(true)
   }, [sortedMessages.length, sendingChannels.size])
 
   // Handle test LLM response
@@ -256,6 +270,7 @@ function Topic() {
     if (!timelineRef.current || sortedMessages.length === 0 || sendingChannels.size > 0) return
 
     setIsDragging(true)
+    setThumbPulse(false)
     dragStartX.current = e.clientX
     dragStartPosition.current = timelinePosition ?? sortedMessages.length - 1
 
@@ -279,6 +294,7 @@ function Topic() {
 
     const handleMouseUp = () => {
       setIsDragging(false)
+      setThumbPulse(true)
     }
 
     document.addEventListener('mousemove', handleMouseMove)
@@ -290,19 +306,88 @@ function Topic() {
     }
   }, [isDragging, sortedMessages.length])
 
-  if (loading) {
+  useEffect(() => {
+    if (!thumbPulse) return
+    if (pulseTimeoutRef.current) window.clearTimeout(pulseTimeoutRef.current)
+    pulseTimeoutRef.current = window.setTimeout(() => {
+      setThumbPulse(false)
+      pulseTimeoutRef.current = null
+    }, 500)
+    return () => {
+      if (pulseTimeoutRef.current) {
+        window.clearTimeout(pulseTimeoutRef.current)
+        pulseTimeoutRef.current = null
+      }
+    }
+  }, [thumbPulse])
+
+  const handleTopicStatusToggle = useCallback(() => {
+    if (!topicId || !topicState) return
+    const nextActive = !topicState.isActive
+    const confirmMessage = nextActive
+      ? 'Mark this topic active again?'
+      : 'Mark this topic inactive?'
+    if (!window.confirm(confirmMessage)) return
+
+    setUpdatingStatus(true)
+
+    fetch(`/api/topics/${topicId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isActive: nextActive }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        let message = 'Failed to update topic status'
+        try {
+          const errorBody: unknown = await response.json()
+          if (typeof errorBody === 'object' && errorBody && 'error' in errorBody) {
+            const maybeError = (errorBody as { error?: string }).error
+            if (maybeError) message = maybeError
+          }
+        } catch {
+          // ignore
+        }
+        setError(message)
+        return
+      }
+
+      setTopicState((prev) => (prev ? { ...prev, isActive: nextActive } : prev))
+      setError(null)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Failed to update topic status')
+    }).finally(() => {
+      setUpdatingStatus(false)
+    })
+  }, [topicId, topicState])
+
+  if (loading && !error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading topic...</div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm">
+          Error: {error}
+        </div>
       </div>
     )
   }
 
-  if (error || !topicData || !topicState) {
+  if (!topicData || !topicState) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error || 'Topic not found'}</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
     )
   }
 
@@ -342,6 +427,7 @@ function Topic() {
 
   // Check if we're viewing the latest message
   const isViewingLatest = timelinePosition === sortedMessages.length - 1
+
 
   // Helper to check if a channel is a DM (1 user since bot is not included)
   const isDMChannel = (channelId: string) => {
@@ -426,40 +512,48 @@ function Topic() {
     }
 
     return (
-      <div className="mt-2 flex gap-2 flex-wrap">
+      <div className="mt-2 flex flex-wrap gap-2">
         {actions.elements.map((el, idx: number) => {
           const label = el.text?.text || 'Button'
           if (typeof el.url === 'string') {
             return (
-              <a
+              <Button
                 key={idx}
-                onClick={() => { signOutAndRedirect(el.url as string).catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-white text-blue-700 border border-blue-300 hover:bg-blue-50"
+                onClick={() => {
+                  signOutAndRedirect(el.url as string).catch(console.error)
+                }}
+                variant="secondary"
+                size="sm"
+                className="bg-secondary text-secondary-foreground"
               >
                 {label}
-              </a>
+              </Button>
             )
           }
           if (el.action_id === 'calendar_not_now') {
             return (
-              <button
+              <Button
                 key={idx}
                 onClick={onNotNow}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+                variant="ghost"
+                size="sm"
               >
                 {label}
-              </button>
+              </Button>
             )
           }
           if (el.action_id === 'dont_ask_calendar_again') {
             return (
-              <button
+              <Button
                 key={idx}
-                onClick={() => { onDontAskAgain().catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+                onClick={() => {
+                  onDontAskAgain().catch(console.error)
+                }}
+                variant="ghost"
+                size="sm"
               >
                 {label}
-              </button>
+              </Button>
             )
           }
           return null
@@ -569,41 +663,78 @@ function Topic() {
   }
 
   return (
-    <div className="h-full min-h-0 bg-gray-50 p-4 flex flex-col overflow-hidden">
-      <div className="flex-shrink-0">
-        <div className="flex items-center gap-3 mb-1">
-          <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
-            ← Back to Topics
-          </Link>
-          <h1 className="text-xl font-bold">{topicState.summary}</h1>
-        </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
-            {topicData.topic.workflowType}
-          </span>
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicState.isActive
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 px-4 py-6 sm:px-6 lg:px-10">
+      <div className="gap-4 border-b border-token pb-4 sm:grid sm:grid-cols-[minmax(0,1fr)_260px] sm:items-start sm:gap-6">
+        <div className="space-y-2">
+          <Link
+            to={isLocalMode ? '/local' : '/'}
+            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground transition hover:text-foreground"
           >
-            {topicState.isActive ? 'Active' : 'Inactive'}
-          </span>
-          <span className="text-sm text-gray-600">
-            Updated: {new Date(topicState.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
-          </span>
-          {sortedMessages.length > 0 && timelinePosition !== null && (
-            <span className="text-sm text-gray-600">
-              Showing {timelinePosition + 1} of {sortedMessages.length} messages
+            <ArrowLeft size={16} /> Back
+          </Link>
+          <h1 className="heading-section text-foreground">{topicState.summary}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
+              {topicData.topic.workflowType}
+            </Badge>
+            <Badge
+              variant={topicState.isActive ? undefined : 'outline'}
+              className={
+                topicState.isActive
+                  ? 'border-transparent bg-emerald-500/15 px-2.5 py-1 text-emerald-400 shadow-[0_0_0_1px_rgba(95,115,67,0.25)] transition-colors hover:bg-primary/75 hover:text-primary-foreground'
+                  : 'border-border px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground'
+              }
+            >
+              {topicState.isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            <span>
+              Updated {new Date(topicState.createdAt).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
             </span>
+            {sortedMessages.length > 0 && timelinePosition !== null && (
+              <span>
+                Showing {timelinePosition + 1} of {sortedMessages.length} messages
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:w-[260px] sm:items-end sm:justify-self-end">
+          <Button
+            type="button"
+            variant={topicState.isActive ? 'outline' : 'default'}
+            className={`w-full ${topicState.isActive ? 'border-border text-muted-foreground hover:bg-muted' : ''}`}
+            onClick={handleTopicStatusToggle}
+            disabled={updatingStatus}
+          >
+            {updatingStatus
+              ? 'Saving…'
+              : topicState.isActive
+              ? 'Mark inactive'
+              : 'Mark active'}
+          </Button>
+          {profile && (
+            <div className="w-full rounded-xl border border-token bg-surface px-4 py-3 text-xs text-muted-foreground shadow-sm">
+              <div className="flex items-center gap-2 text-foreground">
+                <CalendarIcon size={14} className="text-[color:var(--p-leaf)]" />
+                <span className="font-medium">{profile.user.name}</span>
+              </div>
+              <p className="mt-1">Timezone: {getShortTimezone()}</p>
+            </div>
           )}
         </div>
       </div>
+      {/* Calendar detail panel removed */}
 
       {channelGroups.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500">No conversations found for this topic</div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="rounded-xl border border-token bg-surface px-4 py-3 text-sm text-muted-foreground shadow-sm">
+            No conversations found for this topic
+          </div>
         </div>
         ) : (
         <div className="flex-1 min-h-0 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
@@ -614,20 +745,20 @@ function Topic() {
               const user = userId ? topicData.users.find((u) => u.id === userId) : null
               const userCalendar = userId ? userCalendars[userId] || null : null
               const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicState.perUserContext[userId] : null
+              const topicUserContext = userId ? topicState.perUserContext?.[userId] ?? null : null
 
               return (
-                <div
+                <Card
                   key={channel.channelId}
-                  className="bg-white rounded-lg shadow-md p-2 flex flex-col min-h-0"
+                  className="flex min-h-0 flex-col border-token bg-surface/90 shadow-sm"
                 >
                   <div
-                    className={`flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between -m-2 p-2 mb-0 rounded-t-lg ${
-                      isDM ? 'cursor-pointer hover:bg-gray-200 transition-colors' : ''
+                    className={`flex items-center justify-between border-b border-token/60 px-3 py-2 text-xs font-medium text-muted-foreground ${
+                      isDM ? 'cursor-pointer transition-colors hover:bg-accent/10' : ''
                     }`}
                     onClick={isDM ? () => toggleContextExpansion(channel.channelId) : undefined}
                   >
-                    <div className="text-xs font-medium text-gray-700">
+                    <div>
                       {isDM ? (
                         (() => {
                           const userInfo = getDMUserInfo(channel.channelId)
@@ -635,7 +766,7 @@ function Topic() {
                             <>
                               {userInfo.realName}
                               {userInfo.timezone && ` (${userInfo.timezone})`}
-                              <span className="text-gray-400 ml-1">
+                              <span className="ml-1 text-muted-foreground/70">
                                 (#{channel.channelId})
                               </span>
                             </>
@@ -648,12 +779,12 @@ function Topic() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
                       </div>
                       {isDM && (
                         <svg
-                          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -665,7 +796,7 @@ function Topic() {
                   </div>
 
                   {isExpanded && isDM && (
-                    <div className="mb-2 -mx-2 px-2">
+                    <div className="mb-3 px-3">
                       <UserContextView
                         calendar={userCalendar}
                         context={userData?.context}
@@ -684,7 +815,7 @@ function Topic() {
                   )}
 
               <div
-                className="flex-1 space-y-3 overflow-y-auto px-1 py-1"
+                className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
                 ref={(el) => {
                   if (el) {
                     messageContainerRefs.current.set(channel.channelId, el)
@@ -704,12 +835,12 @@ function Topic() {
                           className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer hover:opacity-90 transition-opacity ${
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer transition-opacity hover:opacity-95 ${
                               isBot
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-900'
+                                ? 'bg-accent text-accent-foreground'
+                                : 'bg-card text-foreground shadow-sm'
                             } ${
-                              isLatestOverall ? 'ring-2 ring-offset-2 ring-amber-500' : ''
+                              isLatestOverall ? 'ring-2 ring-accent/60 ring-offset-2 ring-offset-background' : ''
                             }`}
                             onClick={() => {
                               if (sendingChannels.size === 0) {
@@ -721,8 +852,8 @@ function Topic() {
                             }}
                           >
                             <div
-                              className={`text-xs mb-1 ${
-                                isBot ? 'text-blue-100' : 'text-gray-600'
+                              className={`mb-1 text-xs ${
+                                isBot ? 'text-accent-foreground/80' : 'text-muted-foreground'
                               }`}
                             >
                               {userName}
@@ -732,8 +863,8 @@ function Topic() {
                               {renderActionButtons(msg, channel.channelId)}
                             </div>
                             <div
-                              className={`text-xs mt-1 ${
-                                isBot ? 'text-blue-100' : 'text-gray-500'
+                              className={`mt-1 text-xs ${
+                                isBot ? 'text-accent-foreground/70' : 'text-muted-foreground'
                               }`}
                             >
                               {isLatestOverall ? (
@@ -775,13 +906,16 @@ function Topic() {
                         </div>
                         {isLocalMode && !isBot && isLatestOverall && (
                           <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
-                            <button
-                              onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
+                            <Button
+                              onClick={() => {
+                                handleTestLlmResponse(msg.id).catch(console.error)
+                              }}
                               disabled={testingMessageId === msg.id}
-                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                              size="sm"
+                              className="h-7 rounded-full px-3 text-xs"
                             >
-                              {testingMessageId === msg.id ? 'Testing...' : 'Test LLM Response'}
-                            </button>
+                              {testingMessageId === msg.id ? 'Testing…' : 'Test LLM Response'}
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -791,8 +925,8 @@ function Topic() {
 
                 {/* Chat Bar for DM Channels */}
                 {isLocalMode && isDM && isViewingLatest && (
-                  <div className="mt-2 -mx-2 -mb-2">
-                    <div className="flex">
+                  <div className="mt-3 border-t border-token/50 bg-background/80 px-3 py-2">
+                    <div className="flex gap-2">
                       <input
                         type="text"
                         value={chatInputs.get(channel.channelId) || ''}
@@ -809,21 +943,23 @@ function Topic() {
                             handleSendMessage(channel.channelId).catch(console.error)
                           }
                         }}
-                        placeholder="Type a message..."
+                        placeholder="Send a test message"
                         disabled={sendingChannels.has(channel.channelId)}
-                        className="flex-1 px-3 py-1.5 text-sm border-t border-l border-b border-gray-200 rounded-bl-lg focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="flex-1 rounded-lg border border-token bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:bg-muted disabled:text-muted-foreground"
                       />
-                      <button
-                        onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
+                      <Button
+                        onClick={() => {
+                          handleSendMessage(channel.channelId).catch(console.error)
+                        }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
-                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0"
                       >
-                        {sendingChannels.has(channel.channelId) ? '...' : 'Send'}
-                      </button>
+                        {sendingChannels.has(channel.channelId) ? 'Sending…' : 'Send'}
+                      </Button>
                     </div>
                   </div>
                 )}
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -831,30 +967,31 @@ function Topic() {
 
       {/* Timeline Component */}
       {sortedMessages.length > 0 && (
-        <div className="flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-md p-2">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-sm font-medium text-gray-700">Message Timeline</div>
-              <div className="text-xs text-gray-500">
-                Use arrow keys (← →) or drag to navigate
-              </div>
+        <div className="mt-6 flex-shrink-0">
+          <div className="rounded-xl border border-token bg-surface p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-medium text-foreground">Message timeline</div>
+              <div className="text-xs text-muted-foreground">Use arrow keys or drag to navigate</div>
             </div>
             <div
               ref={timelineRef}
-              className={`relative h-8 bg-gray-100 rounded-lg select-none ${
-                sendingChannels.size > 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              className={`relative h-10 select-none rounded-full border border-token/60 bg-[radial-gradient(circle_at_center,var(--p-leaf)/18,transparent_75%)] px-5 ${
+                sendingChannels.size > 0 ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
               }`}
               onClick={handleTimelineClick}
               onMouseDown={handleDragStart}
             >
-              {/* Timeline track */}
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-300 rounded-full" />
+              <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[color:rgba(95,115,67,0.32)]" />
 
-              {/* Timeline ticks */}
               {sortedMessages.map((msg, index) => {
                 const position = (index / (sortedMessages.length - 1)) * 100
                 const isActive = timelinePosition !== null && index <= timelinePosition
                 const isCurrent = index === timelinePosition
+                const dotStyle = isCurrent
+                  ? { backgroundColor: 'var(--p-leaf)', boxShadow: '0 0 0 4px rgba(95,115,67,0.28)' }
+                  : isActive
+                  ? { backgroundColor: 'rgba(95,115,67,0.75)' }
+                  : { backgroundColor: 'rgba(95,115,67,0.35)' }
 
                 return (
                   <div
@@ -863,20 +1000,14 @@ function Topic() {
                     style={{ left: `${position}%` }}
                   >
                     <div
-                      className={`w-1.5 h-1.5 rounded-full -translate-x-1/2 transition-all ${
-                        isCurrent
-                          ? 'w-3 h-3 bg-blue-600 ring-2 ring-blue-300'
-                          : isActive
-                          ? 'bg-blue-500'
-                          : 'bg-gray-400'
-                      }`}
+                      className="h-2 w-2 -translate-x-1/2 rounded-full transition-all"
+                      style={dotStyle}
                       title={`${new Date(msg.timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} - ${msg.text.substring(0, 50)}...`}
                     />
                   </div>
                 )
               })}
 
-              {/* Current position indicator/thumb */}
               {timelinePosition !== null && (
                 <div
                   className="absolute top-1/2 -translate-y-1/2 transition-none"
@@ -885,9 +1016,10 @@ function Topic() {
                   }}
                 >
                   <div
-                    className={`w-5 h-5 bg-blue-600 rounded-full -translate-x-1/2 shadow-lg ring-2 ring-white cursor-grab ${
-                      isDragging ? 'cursor-grabbing scale-110' : ''
-                    }`}
+                    className={`h-6 w-6 -translate-x-1/2 cursor-grab rounded-full border-2 border-background shadow-lg transition ${
+                      isDragging ? 'scale-110 cursor-grabbing' : ''
+                    } ${thumbPulse ? 'animate-timeline-pulse' : ''}`}
+                    style={{ backgroundColor: 'var(--p-leaf)', boxShadow: '0 0 18px rgba(95,115,67,0.4)' }}
                   />
                 </div>
               )}
@@ -899,26 +1031,26 @@ function Topic() {
       {/* JSON Response Popup */}
       {showPopup && (
         <div
-          className="fixed inset-0 bg-gray-600/60 flex items-center justify-center z-50 p-4 cursor-pointer"
+          className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
           onClick={() => setShowPopup(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[80vh] w-full overflow-hidden flex flex-col cursor-auto"
+            className="flex max-h-[80vh] w-full max-w-4xl cursor-auto flex-col overflow-hidden rounded-xl border border-token bg-surface shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">LLM Response</h2>
+            <div className="flex items-center justify-between border-b border-token/60 px-4 py-3">
+              <h2 className="text-lg font-semibold text-foreground">LLM response</h2>
               <button
                 onClick={() => setShowPopup(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-4">
-              <pre className="text-xs font-mono whitespace-pre-wrap">
+            <div className="flex-1 overflow-auto bg-background px-4 py-3">
+              <pre className="font-mono text-xs text-muted-foreground whitespace-pre-wrap">
                 {llmResponse}
               </pre>
             </div>

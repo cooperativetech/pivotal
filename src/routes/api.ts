@@ -1,15 +1,15 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { RequestError } from '@octokit/request-error'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import db from '../db/engine'
-import { slackUserTable } from '../db/schema/main'
+import { slackUserTable, slackMessageTable } from '../db/schema/main'
 import { accountTable, slackAppInstallationTable } from '../db/schema/auth'
 import type { Organization } from '../db/schema/auth'
 import type { CalendarEvent } from '@shared/api-types'
 import { auth } from '../auth'
-import { dumpTopic, getTopics } from '../utils'
+import { dumpTopic, getTopics, getTopicWithState, updateTopicState } from '../utils'
 import { getLinkedSlackAccount } from '../integrations/slack'
 import { getLinkedGoogleAccount, getGoogleCalendar } from '../integrations/google'
 import { getOctokit, getBotOctokit, getLinkedGithubAccount, getAllBotRepositories } from '../integrations/github'
@@ -148,6 +148,52 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       return c.json({ topics: userTopics, userNameMap })
     } catch (error) {
       console.error('Error fetching user topics:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  .post('/topics/:topicId/status', zValidator('json', z.object({ isActive: z.boolean() })), async (c) => {
+    const sessionUser = c.get('user')
+    if (!sessionUser) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    const { topicId } = c.req.param()
+    const { isActive } = c.req.valid('json')
+
+    try {
+      const [organization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+
+      if (!organization) {
+        return c.json({ error: 'No organization found' }, 404)
+      }
+
+      const topic = await getTopicWithState(topicId)
+
+      if (topic.slackTeamId !== organization.slackTeamId) {
+        return c.json({ error: 'Forbidden' }, 403)
+      }
+
+      const [latestMessage] = await db
+        .select({ id: slackMessageTable.id })
+        .from(slackMessageTable)
+        .where(eq(slackMessageTable.topicId, topicId))
+        .orderBy(desc(slackMessageTable.timestamp))
+        .limit(1)
+
+      const messageId = latestMessage?.id ?? topic.state.createdByMessageId
+
+      if (!messageId) {
+        return c.json({ error: 'Unable to determine message context for state change' }, 400)
+      }
+
+      const updatedTopic = await updateTopicState(topic, { isActive }, messageId)
+
+      return c.json({ topic: updatedTopic })
+    } catch (error) {
+      console.error('Error updating topic status:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })
