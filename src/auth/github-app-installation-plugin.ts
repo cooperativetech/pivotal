@@ -1,7 +1,10 @@
 import { createAuthEndpoint, createAuthMiddleware, getSessionFromCtx, APIError } from 'better-auth/api'
-import type { Account } from 'better-auth/types'
+import { generateId } from 'better-auth'
 import type { BetterAuthPlugin } from 'better-auth/plugins'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
+import { eq, and } from 'drizzle-orm'
+import db from '../db/engine'
+import { memberTable, organizationTable, githubAppInstallationTable, accountTable } from '../db/schema/auth'
 
 const generateRandomString = createRandomStringGenerator('a-z', '0-9', 'A-Z', '-_')
 
@@ -79,32 +82,83 @@ export function githubAppInstallationPlugin(appName: string) {
             return
           }
 
-          // Find the Github account for this user
-          const accounts = await c.context.internalAdapter.findAccounts(session.user.id)
-          const githubAccount = accounts.find((account) => account.providerId === 'github')
-          if (!githubAccount) {
-            c.context.logger.error('No Github account found for user')
+          // Get the user's organization with a single join
+          const [userOrg] = await db.select({ slackTeamId: organizationTable.slackTeamId })
+            .from(memberTable)
+            .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+            .where(eq(memberTable.userId, session.user.id))
+            .limit(1)
+
+          if (!userOrg) {
+            c.context.logger.error('No organization membership found for user')
             return
           }
 
-          // Update the account with the installation ID
-          // Using type assertion since installationId is a custom field
-          await c.context.internalAdapter.updateAccount(
-            githubAccount.id,
-            { installationId } as Partial<Account>,
-          )
+          // Insert the GitHub app installation
+          await db.insert(githubAppInstallationTable)
+            .values({
+              id: generateId(),
+              slackTeamId: userOrg.slackTeamId,
+              installationId,
+              createdByUserId: session.user.id,
+            })
+
+          // Remove the user's Github account, which is no longer needed
+          await db.delete(accountTable)
+            .where(and(
+              eq(accountTable.providerId, 'github'),
+              eq(accountTable.userId, session.user.id),
+            ))
 
           c.context.logger.info('Github installation ID saved successfully')
         }),
       }],
     },
 
-    // Allow adding an installation id to an account
     schema: {
-      account: {
+      githubAppInstallation: {
         fields: {
-          installationId: { type: 'string' },
-          repositoryId: { type: 'string' },
+          slackTeamId: {
+            type: 'string',
+            required: true,
+            unique: true,
+            references: {
+              model: 'organization',
+              field: 'slackTeamId',
+              onDelete: 'cascade',
+            },
+          },
+          installationId: {
+            type: 'string',
+            required: true,
+          },
+          createdByUserId: {
+            type: 'string',
+            required: true,
+            references: {
+              model: 'user',
+              field: 'id',
+              onDelete: 'cascade',
+            },
+          },
+          createdAt: {
+            type: 'date',
+            required: true,
+          },
+          repositoryId: {
+            type: 'string',
+          },
+          repositoryConnectedByUserId: {
+            type: 'string',
+            references: {
+              model: 'user',
+              field: 'id',
+              onDelete: 'set null',
+            },
+          },
+          repositoryConnectedAt: {
+            type: 'date',
+          },
         },
       },
     },

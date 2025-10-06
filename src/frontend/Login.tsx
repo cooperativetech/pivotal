@@ -50,7 +50,7 @@ export default function Login() {
               handleSlackSignIn().catch(console.error)
             }}
             disabled={loading}
-            className="hover-ember w-full gap-3 bg-primary py-4 text-base text-primary-foreground transition-colors"
+            className="w-full gap-3 bg-green-600 py-4 text-base text-white transition-colors hover:bg-green-700"
             size="lg"
           >
             {loading ? (
@@ -68,7 +68,7 @@ export default function Login() {
         </CardContent>
       </Card>
       <div className="mt-20 text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--p-root)]/80">
-        A Cooperative.tech Product
+        A Coop.tech Product
       </div>
     </div>
   )
