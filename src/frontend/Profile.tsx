@@ -275,7 +275,7 @@ export default function Profile() {
         <div className="space-y-2">
           <h1 className="heading-hero text-foreground">Your Pivotal identity</h1>
           <p className="max-w-xl text-base text-muted-foreground">
-            Manage the roots that feed your workspace.
+            {'  Manage the roots of your workspace.'}
           </p>
         </div>
         <Button variant="outline" onClick={() => { handleSignOut().catch((err) => {

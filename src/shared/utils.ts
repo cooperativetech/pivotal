@@ -1,3 +1,84 @@
+import type { CalendarEvent } from './api-types.ts'
+
+function formatDateSnippet(value: string): string | null {
+  const cleaned = value.trim()
+  if (!cleaned) return null
+  const parsed = Date.parse(cleaned)
+  if (Number.isNaN(parsed)) return null
+  const date = new Date(parsed)
+  return `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()}`
+}
+
+export function compactTopicSummary(summary: string): string {
+  if (!summary) return ''
+
+  let text = summary.replace(/\s+/g, ' ').trim()
+
+  const dashIndex = text.indexOf(' - ')
+  if (dashIndex !== -1) {
+    text = text.slice(0, dashIndex).trim()
+  }
+
+  const sentenceIndex = text.indexOf('. ')
+  if (sentenceIndex !== -1) {
+    text = text.slice(0, sentenceIndex).trim()
+  }
+
+  const leadingPatterns = [
+    'Follow up on',
+    'Follow up',
+    'Check in on',
+    'Check in',
+    'Set up',
+    'Schedule',
+    'Scheduling',
+    'Book',
+    'Booking',
+    'Plan',
+    'Planning',
+    'Organize',
+    'Organizing',
+    'Coordinate',
+    'Coordinating',
+    'Arrange',
+    'Arranging',
+    'Find',
+    'Finding',
+    'Prepare',
+    'Draft',
+    'Create',
+    'Write',
+    'Review',
+    'Summarize',
+    'Track',
+  ]
+
+  for (const pattern of leadingPatterns.sort((a, b) => b.length - a.length)) {
+    const regex = new RegExp(`^${pattern.replace(/ /g, '\\s+')}\\s+(?:to\\s+)?`, 'i')
+    if (regex.test(text)) {
+      text = text.replace(regex, '')
+      break
+    }
+  }
+
+  text = text.replace(/^a\s+/i, '').replace(/^the\s+/i, '')
+
+  text = text.replace(/\bfor\s+tomorrow\b/gi, 'for')
+  text = text.replace(/\btomorrow\b/gi, '')
+
+  text = text.replace(/\(\s*([^)]+?)\s*\)/g, (_, inner: string) => {
+    const formatted = formatDateSnippet(inner)
+    return formatted ? formatted : inner.trim()
+  })
+
+  text = text.replace(/\s+/g, ' ').trim()
+  if (!text) {
+    return summary.trim()
+  }
+
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 export function getShortTimezoneFromIANA(iana: string): string {
   try {
     const date = new Date()
@@ -15,8 +96,6 @@ export function getShortTimezoneFromIANA(iana: string): string {
 export function getShortTimezone(): string {
   return getShortTimezoneFromIANA(Intl.DateTimeFormat().resolvedOptions().timeZone)
 }
-
-import type { CalendarEvent } from './api-types.ts'
 
 /**
  * Subtract time ranges from a single event

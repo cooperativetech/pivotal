@@ -8,6 +8,7 @@ import { LogoMark } from '@shared/components/logo-mark'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card'
 import { Badge } from '@shared/components/ui/badge'
 import { Button } from '@shared/components/ui/button'
+import { compactTopicSummary } from '@shared/utils'
 
 function LocalHome() {
   const [topics, setTopics] = useState<TopicWithState[]>([])
@@ -82,13 +83,18 @@ function LocalHome() {
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {topics.map((topic) => (
-            <Card
-              key={topic.id}
-              className="border-token bg-surface/90 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
+          {topics.map((topic) => {
+            const compactSummary = compactTopicSummary(topic.state.summary)
+
+            return (
+              <Card
+                key={topic.id}
+                className="border-token bg-surface/90 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
               <CardHeader className="space-y-3">
-                <CardTitle className="text-lg text-foreground">{topic.state.summary}</CardTitle>
+                <CardTitle className="text-lg text-foreground" title={topic.state.summary}>
+                  {compactSummary}
+                </CardTitle>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="secondary" className="bg-secondary/80 text-secondary-foreground">
                     {topic.workflowType}
@@ -119,8 +125,9 @@ function LocalHome() {
                   <Link to={`/local/topic/${topic.id}`}>Open</Link>
                 </Button>
               </CardContent>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
       )}
     </PageShell>
