@@ -220,18 +220,10 @@ async function generateMultiGroupBenchmarks() {
       await writeFile(filePath, JSON.stringify(exportData, null, 2))
       console.log(`Benchmark saved to ${filePath}`)
     } else {
-      // Multi-group benchmark - validate nGroups parameter
-      if (nGroups > 1) {
-        const minUsersPerGroup = 2
-        const minRequiredUsers = nGroups * minUsersPerGroup
-        if (nSimUsers < minRequiredUsers) {
-          throw new Error(`Cannot divide ${nSimUsers} users into ${nGroups} groups with at least ${minUsersPerGroup} users each. Need at least ${minRequiredUsers} users.`)
-        }
-      }
-
+      
       // Create multigroup folder structure
       const baseFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-      const subFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${timestamp}`
+      const subFolderName = `${baseFolderName}_gen${timestamp}`
       const baseFolderPath = join(__dirname, 'data', baseFolderName)
       const folderPath = join(baseFolderPath, subFolderName)
 
@@ -253,7 +245,7 @@ async function generateMultiGroupBenchmarks() {
         const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp, nGroups, groupIndex)
 
         // Save with group-specific filename
-        const filename = `${baseFolderName}_group${groupIndex + 1}_gen${timestamp}.json`
+        const filename = `${subFolderName}_group${groupIndex + 1}.json`
         const filePath = join(folderPath, filename)
 
         await writeFile(filePath, JSON.stringify(exportData, null, 2))
