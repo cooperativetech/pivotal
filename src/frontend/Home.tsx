@@ -221,16 +221,18 @@ function Home() {
       </header>
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex h-10 w-full max-w-xs items-center rounded-full bg-muted p-1 text-sm font-medium text-muted-foreground">
+        <div className="relative flex h-12 w-full max-w-sm items-center rounded-full border border-[color:rgba(13,38,24,0.22)] bg-[color-mix(in_srgb,var(--p-sand)80%,var(--p-leaf)20%)]/45 p-1.5 text-sm font-medium text-[color:rgba(13,38,24,0.78)] shadow-[0_18px_36px_-28px_rgba(13,38,24,0.55)] backdrop-blur-sm transition-colors">
           <span
-            className="pointer-events-none absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-full bg-background shadow transition-transform duration-300 ease-out"
+            className="pointer-events-none absolute inset-y-1 w-[calc(50%-0.5rem)] rounded-full bg-[color-mix(in_srgb,var(--p-sand)65%,var(--p-leaf)25%)] shadow-[0_10px_20px_-18px_rgba(13,38,24,0.55)] transition-transform duration-300 ease-out"
             style={{ transform: filter === 'all' ? 'translateX(0)' : 'translateX(100%)' }}
           />
           <button
             type="button"
             onClick={() => setFilter('all')}
-            className={`relative z-10 flex-1 rounded-full px-4 py-1 transition-colors ${
-              filter === 'all' ? 'text-foreground' : 'hover:text-foreground'
+            className={`relative z-10 flex-1 rounded-full px-5 py-2 transition-colors ${
+              filter === 'all'
+                ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
+                : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
             }`}
           >
             All
@@ -238,8 +240,10 @@ function Home() {
           <button
             type="button"
             onClick={() => setFilter('active')}
-            className={`relative z-10 flex-1 rounded-full px-4 py-1 transition-colors ${
-              filter === 'active' ? 'text-foreground' : 'hover:text-foreground'
+            className={`relative z-10 flex-1 rounded-full px-5 py-2 transition-colors ${
+              filter === 'active'
+                ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
+                : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
             }`}
           >
             Active

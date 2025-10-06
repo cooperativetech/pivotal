@@ -1095,13 +1095,13 @@ function Topic() {
             </div>
             <div
               ref={timelineRef}
-              className={`relative h-10 select-none rounded-full border border-token/60 bg-[radial-gradient(circle_at_center,var(--p-leaf)/18,transparent_75%)] px-5 ${
+              className={`relative h-12 select-none rounded-full border border-token/60 bg-[radial-gradient(circle_at_center,var(--p-leaf)/16,transparent_78%)] px-6 ${
                 sendingChannels.size > 0 ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
               }`}
               onClick={handleTimelineClick}
               onMouseDown={handleDragStart}
             >
-              <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[color:rgba(95,115,67,0.32)]" />
+              <div className="absolute left-6 right-6 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[color:rgba(95,115,67,0.28)]" />
 
               {sortedMessages.map((msg, index) => {
                 const position = (index / (sortedMessages.length - 1)) * 100
@@ -1117,7 +1117,7 @@ function Topic() {
                   <div
                     key={msg.id}
                     className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${position}%` }}
+                    style={{ left: `${2 + position * 0.96}%` }}
                   >
                     <div
                       className="h-2 w-2 -translate-x-1/2 rounded-full transition-all"
@@ -1132,7 +1132,7 @@ function Topic() {
                 <div
                   className="absolute top-1/2 -translate-y-1/2 transition-none"
                   style={{
-                    left: `${(timelinePosition / (sortedMessages.length - 1)) * 100}%`,
+                    left: `${2 + (timelinePosition / (sortedMessages.length - 1)) * 96}%`,
                   }}
                 >
                   <div

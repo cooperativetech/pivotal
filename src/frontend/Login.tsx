@@ -27,21 +27,21 @@ export default function Login() {
   }
 
   return (
-    <div className="login-gradient flex min-h-screen w-full flex-col items-center justify-center px-4 py-16 text-foreground">
-      <div className="mb-8 flex items-center gap-3 rounded-full bg-surface/60 px-4 py-2 text-xs uppercase tracking-[0.35em] text-[color:rgba(8,25,16,0.85)] shadow-sm backdrop-blur">
-        <LogoMark size={40} />
+    <div className="login-gradient flex min-h-screen w-full flex-col items-center justify-center px-6 py-24 text-foreground">
+      <div className="mb-12 flex items-center gap-3 rounded-full bg-surface/60 px-5 py-3 text-sm uppercase tracking-[0.35em] text-[color:rgba(8,25,16,0.85)] shadow-sm backdrop-blur">
+        <LogoMark size={48} />
         <span className="font-semibold">Pivotal</span>
       </div>
-      <Card className="w-full max-w-md border-token bg-surface/90 shadow-lg transition duration-300 hover:shadow-xl focus-within:shadow-xl focus-within:ring-2 focus-within:ring-accent/40">
-        <CardHeader className="space-y-3 text-center">
-          <CardTitle className="text-2xl font-semibold text-foreground">Welcome back</CardTitle>
-          <CardDescription className="text-sm text-foreground/90">
+      <Card className="w-full max-w-lg border-token bg-surface/95 shadow-[0_32px_60px_-28px_rgba(13,38,24,0.65)] transition duration-300 hover:shadow-[0_38px_80px_-30px_rgba(13,38,24,0.7)] focus-within:shadow-[0_38px_80px_-30px_rgba(13,38,24,0.7)] focus-within:ring-2 focus-within:ring-accent/35">
+        <CardHeader className="space-y-4 px-8 pt-10 text-center">
+          <CardTitle className="text-3xl font-semibold text-foreground">Welcome back</CardTitle>
+          <CardDescription className="text-base text-foreground/90">
             Sign in with Slack to step back into the Pivotal network.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6 px-8 pb-10">
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-base text-destructive">
               {error}
             </div>
           )}
@@ -50,24 +50,24 @@ export default function Login() {
               handleSlackSignIn().catch(console.error)
             }}
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground transition-colors hover:bg-[#d46245]"
+            className="w-full gap-3 bg-primary py-4 text-base text-primary-foreground transition-colors hover:bg-[#d46245]"
             size="lg"
           >
             {loading ? (
               <>
-                <LogoMark size={18} withHalo />
+                <LogoMark size={20} withHalo />
                 Redirecting…
               </>
             ) : (
               <>
-                <Slack size={18} />
+                <Slack size={20} />
                 Continue with Slack
               </>
             )}
           </Button>
         </CardContent>
       </Card>
-      <div className="mt-16 text-xs font-semibold uppercase tracking-[0.25em] text-[color:var(--p-root)]/80">
+      <div className="mt-20 text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--p-root)]/80">
         A Cooperative.tech Product
       </div>
     </div>
