@@ -171,7 +171,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<number, string[]>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, groupUserMapping: Record<number, string[]>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -185,11 +185,11 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
 
-  // Validate userGroupMapping for topicRouting=false case
+  // Validate groupUserMapping for topicRouting=false case
   if (!topicRouting) {
     // Check that no user appears in multiple groups
     const userToGroupsMap: Record<string, number[]> = {}
-    Object.entries(userGroupMapping).forEach(([groupIndex, userNames]) => {
+    Object.entries(groupUserMapping).forEach(([groupIndex, userNames]) => {
       userNames.forEach(userName => {
         if (!userToGroupsMap[userName]) {
           userToGroupsMap[userName] = []
@@ -211,12 +211,12 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
   // Helper function to find which group a user belongs to (guaranteed single group when topicRouting=false)
   const findUserGroup = (userName: string): number => {
-    for (const [groupIndex, userNames] of Object.entries(userGroupMapping)) {
+    for (const [groupIndex, userNames] of Object.entries(groupUserMapping)) {
       if (userNames.includes(userName)) {
         return parseInt(groupIndex)
       }
     }
-    throw new Error(`User ${userName} not found in userGroupMapping`)
+    throw new Error(`User ${userName} not found in groupUserMapping`)
   }
 
   // Initialize group-based tracking
@@ -341,7 +341,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
                   console.log(`  → Previous meeting for group ${userGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
                   console.log(`  → Resetting confirmations for group ${userGroup} due to meeting change`)
                   // Reset confirmations for users in this group
-                  const groupUserNames = userGroupMapping[userGroup] || []
+                  const groupUserNames = groupUserMapping[userGroup] || []
                   simUsers.forEach((user) => {
                     if (groupUserNames.includes(user.name)) {
                       confirmations[user.name] = false
@@ -362,7 +362,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     let allGroupsConfirmed = true
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
-        const groupUserNames = userGroupMapping[groupIndex] || []
+        const groupUserNames = groupUserMapping[groupIndex] || []
         const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
@@ -401,7 +401,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     const topicId = topicIds[i]
     if (topicId) {
       // Find a user from this specific group to query the topic
-      const groupUserNames = userGroupMapping[i] || []
+      const groupUserNames = groupUserMapping[i] || []
       const groupUser = simUsers.find((user) => groupUserNames.includes(user.name))
       if (!groupUser) {
         throw new Error(`No user found for group ${i}`)
@@ -537,7 +537,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nLoading benchmark data...')
 
     let nGroups: number
-    let userGroupMapping: Record<number, string[]>
+    let groupUserMapping: Record<number, string[]>
     let simUsers: BaseScheduleUser[] = []
     let benchmarkData: any
 
@@ -570,10 +570,10 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         simUsers.push(...groupSimUsers)
       }
 
-      // Create userGroupMapping on the fly based on group files
-      userGroupMapping = {}
+      // Create groupUserMapping on the fly based on group files
+      groupUserMapping = {}
       groupData.forEach((group, groupIndex) => {
-        userGroupMapping[groupIndex] = group.simUsers.map(simUser => simUser.name)
+        groupUserMapping[groupIndex] = group.simUsers.map(simUser => simUser.name)
       })
 
       // Use the first group's benchmark data as the template (they should all have the same parameters)
@@ -592,7 +592,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       benchmarkData = BenchmarkFileData.parse(parsedData)
       const benchmarkSimUsers = benchmarkData.simUsers
       nGroups = benchmarkData.benchmark.nGroups || 1
-      userGroupMapping = benchmarkData.benchmark.userGroupMapping || {}
+      groupUserMapping = benchmarkData.benchmark.userGroupMapping || {}
 
       console.log('Loading simUsers from benchmark data...')
       simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
@@ -602,7 +602,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Log all loaded simUsers
     simUsers.forEach((simUser) => {
       // Find which group(s) this user belongs to
-      const userGroups = Object.entries(userGroupMapping)
+      const userGroups = Object.entries(groupUserMapping)
         .filter(([groupIndex, userNames]) => userNames.includes(simUser.name))
         .map(([groupIndex]) => groupIndex)
 
@@ -615,7 +615,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     await createUsersFromSimUsers(simUsers)
 
     // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, userGroupMapping)
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, groupUserMapping)
 
     // Log conversation completion for each group
     result.topicDatas.forEach((topicData, groupIndex) => {
@@ -669,7 +669,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       console.log(`\nFeasibility Check for Group ${groupIndex}:`)
 
       // Get users for this group
-      const groupUserNames = userGroupMapping[groupIndex] || []
+      const groupUserNames = groupUserMapping[groupIndex] || []
       const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
