@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { ArrowLeft, Calendar as CalendarIcon, ChevronDown } from 'react-feather'
 import { api, local_api, authClient } from '@shared/api-client'
-import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
+import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs, SlackUser } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import type { UserProfile } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone, compactTopicSummary } from '@shared/utils'
@@ -188,6 +188,8 @@ function Topic() {
       ? [...topicData.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
       : []
   }, [topicData?.messages])
+
+  const totalSegments = Math.max(sortedMessages.length - 1, 1)
 
   // Filter messages based on timeline position
   const visibleMessageIds = new Set(
@@ -825,14 +827,25 @@ function Topic() {
             const user = userId ? topicData.users.find((u) => u.id === userId) : null
             const channelInfo = topicData.channels?.find((ch) => ch.id === channel.channelId)
             const participantNames = (channelInfo?.userIds ?? [])
-              .map((id) => topicData.users.find((u) => u.id === id)?.realName?.trim())
-              .filter((name): name is string => Boolean(name))
+              .map((id) => topicData.users.find((u) => u.id === id))
+              .filter((participant): participant is SlackUser => Boolean(participant))
 
-            const humanLabel = isDM
-              ? user?.realName || 'Direct message'
-              : participantNames.length > 0
-                ? `${participantNames.slice(0, 3).join(', ')}${participantNames.length > 3 ? ` +${participantNames.length - 3}` : ''}`
-                : `Channel ${channel.channelId}`
+            const otherParticipants = participantNames
+              .filter((participant) => participant.id !== viewerSlackId)
+              .map((participant) => participant.realName?.trim() || participant.id)
+              .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+
+            const viewerName = viewerSlackId
+              ? participantNames.find((participant) => participant.id === viewerSlackId)?.realName?.trim()
+              : null
+
+            const displayNames = isDM
+              ? [user?.realName || 'Direct message']
+              : [...otherParticipants, viewerName || 'You']
+
+            const humanLabel = displayNames.length > 0
+              ? displayNames.join(', ')
+              : `Channel ${channel.channelId}`
             return (
               <Card
                 key={channel.channelId}
@@ -1104,7 +1117,7 @@ function Topic() {
               <div className="absolute left-6 right-6 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[color:rgba(95,115,67,0.28)]" />
 
               {sortedMessages.map((msg, index) => {
-                const position = (index / (sortedMessages.length - 1)) * 100
+                const position = 2 + (index / totalSegments) * 96
                 const isActive = timelinePosition !== null && index <= timelinePosition
                 const isCurrent = index === timelinePosition
                 const dotStyle = isCurrent
@@ -1117,7 +1130,7 @@ function Topic() {
                   <div
                     key={msg.id}
                     className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${2 + position * 0.96}%` }}
+                    style={{ left: `${position}%` }}
                   >
                     <div
                       className="h-2 w-2 -translate-x-1/2 rounded-full transition-all"
@@ -1132,7 +1145,7 @@ function Topic() {
                 <div
                   className="absolute top-1/2 -translate-y-1/2 transition-none"
                   style={{
-                    left: `${2 + (timelinePosition / (sortedMessages.length - 1)) * 96}%`,
+                    left: `${2 + (timelinePosition / totalSegments) * 96}%`,
                   }}
                 >
                   <div
