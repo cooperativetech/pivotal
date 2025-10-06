@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, genTimestamp: string) {
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, genTimestamp: string, nGroups?: number, groupIndex?: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
@@ -108,6 +108,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     meetingLength,
     nSimUsers,
     genTimestamp,
+    ...(nGroups !== undefined && { nGroups }),
+    ...(groupIndex !== undefined && { groupIndex }),
   }
 
   const exportData = {
@@ -228,8 +230,8 @@ async function generateMultiGroupBenchmarks() {
       }
 
       // Create multigroup folder structure
-      const baseFolderName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-      const subFolderName = `multigroup_benchmark_gen${timestamp}`
+      const baseFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+      const subFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${timestamp}`
       const baseFolderPath = join(__dirname, 'data', baseFolderName)
       const folderPath = join(baseFolderPath, subFolderName)
 
@@ -248,11 +250,7 @@ async function generateMultiGroupBenchmarks() {
         console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
 
         // Call createBenchmark for each group
-        const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp)
-
-        // Add group-specific data to benchmark
-        exportData.benchmark.nGroups = nGroups
-        exportData.benchmark.groupIndex = groupIndex
+        const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp, nGroups, groupIndex)
 
         // Save with group-specific filename
         const filename = `${baseFolderName}_group${groupIndex + 1}_gen${timestamp}.json`
