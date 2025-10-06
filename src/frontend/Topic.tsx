@@ -1,18 +1,18 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
-import { ArrowLeft, Calendar as CalendarIcon } from 'react-feather'
+import { ArrowLeft, Calendar as CalendarIcon, ChevronDown } from 'react-feather'
 import { api, local_api, authClient } from '@shared/api-client'
 import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import type { UserProfile } from '@shared/api-types'
-import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
-import { UserContextView } from './UserContextView'
+import { getShortTimezoneFromIANA, getShortTimezone, compactTopicSummary } from '@shared/utils'
 import { useLocalMode } from './LocalModeContext'
 import { Button } from '@shared/components/ui/button'
 import { Badge } from '@shared/components/ui/badge'
 import { Card } from '@shared/components/ui/card'
 import { PageShell } from '@shared/components/page-shell'
 import { LogoMark } from '@shared/components/logo-mark'
+import { LogoMarkInline } from '@shared/components/logo-mark-inline'
 
 interface ChannelGroup {
   channelId: string
@@ -36,10 +36,10 @@ function Topic() {
   const [showPopup, setShowPopup] = useState(false)
   const [chatInputs, setChatInputs] = useState<Map<string, string>>(new Map())
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
-  const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
   const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
   const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set())
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [showCalendarPanel, setShowCalendarPanel] = useState(false)
   const [thumbPulse, setThumbPulse] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
@@ -47,6 +47,48 @@ function Topic() {
   const messageContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const initialLoadRef = useRef(true)
   const pulseTimeoutRef = useRef<number | null>(null)
+
+  const botUserId = topicData?.topic.botUserId ?? null
+
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!topicData) return map
+
+    topicData.users.forEach((user) => {
+      map.set(user.id, user.realName || user.id)
+    })
+
+    if (topicData.topic.botUserId && !map.has(topicData.topic.botUserId)) {
+      map.set(topicData.topic.botUserId, 'Pivotal')
+    }
+
+    return map
+  }, [topicData])
+
+  const formatSlackText = useCallback(
+    (text: string) =>
+      (text ?? '').replace(/<@([A-Z0-9]+)>/gi, (_, id: string) => {
+        const displayName = userMap.get(id) || (botUserId === id ? 'Pivotal' : id)
+        const normalized = displayName.startsWith('@') ? displayName.slice(1) : displayName
+        return `@${normalized}`
+      }),
+    [userMap, botUserId],
+  )
+
+  const compactSummary = useMemo(
+    () => compactTopicSummary(topicState?.summary ?? ''),
+    [topicState?.summary],
+  )
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const previousTitle = document.title
+    const displayTitle = compactSummary || topicState?.summary || 'Topic'
+    document.title = `Pivotal · ${displayTitle}`
+    return () => {
+      document.title = previousTitle
+    }
+  }, [compactSummary, topicState?.summary])
 
   useEffect(() => {
     const fetchTopicData = async () => {
@@ -124,6 +166,22 @@ function Topic() {
     loadProfile().catch(console.error)
   }, [isLocalMode])
 
+  const viewerSlackId = profile?.slackAccount?.accountId ?? null
+  const calendarConnected = !!profile?.googleAccount
+  const viewerCalendar = useMemo(() => {
+    if (!viewerSlackId) return null
+    return userCalendars[viewerSlackId] ?? null
+  }, [userCalendars, viewerSlackId])
+
+  const upcomingEvents = useMemo(() => {
+    if (!viewerCalendar) return []
+    const now = Date.now()
+    return viewerCalendar
+      .filter((event) => new Date(event.end).getTime() >= now)
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .slice(0, 3)
+  }, [viewerCalendar])
+
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
     return topicData?.messages
@@ -196,7 +254,7 @@ function Topic() {
     }, 10)
 
     return () => clearTimeout(timer)
-  }, [timelinePosition, topicData])
+  }, [timelinePosition, topicData, showCalendarPanel])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -361,6 +419,17 @@ function Topic() {
     })
   }, [topicId, topicState])
 
+  const redirectToCalendarAuth = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    const currentPath = window.location.pathname + window.location.search
+    const params = new URLSearchParams({
+      callbackURL: currentPath,
+      errorCallbackURL: currentPath,
+    })
+    window.location.href = `/api/google/authorize?${params.toString()}`
+  }, [])
+
   if (loading && !error) {
     return (
       <PageShell>
@@ -419,14 +488,12 @@ function Topic() {
     group.messages.sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
   })
 
-  // Create user map for display names
-  const userMap = new Map<string, string>()
-  topicData.users.forEach((user) => {
-    userMap.set(user.id, user.realName || user.id)
-  })
-
   // Check if we're viewing the latest message
   const isViewingLatest = timelinePosition === sortedMessages.length - 1
+
+  const lastMessageDate = sortedMessages.length > 0
+    ? sortedMessages[sortedMessages.length - 1].timestamp
+    : topicState?.createdAt ?? null
 
 
   // Helper to check if a channel is a DM (1 user since bot is not included)
@@ -439,34 +506,6 @@ function Topic() {
   const getCurrentUserId = (channelId: string) => {
     const channel = topicData.channels?.find((ch) => ch.id === channelId)
     return channel?.userIds[0]
-  }
-
-  // Helper to get DM user info (for channel title)
-  const getDMUserInfo = (channelId: string) => {
-    const channel = topicData.channels?.find((ch) => ch.id === channelId)
-    if (!channel || channel.userIds.length !== 1) return null
-
-    // Get the user details
-    const user = topicData.users.find((u) => u.id === channel.userIds[0])
-    if (!user) return null
-
-    return {
-      realName: user.realName || user.id,
-      timezone: user.tz ? getShortTimezoneFromIANA(user.tz) : '',
-    }
-  }
-
-  // Handle toggling user context expansion
-  const toggleContextExpansion = (channelId: string) => {
-    setExpandedContexts((prev) => {
-      const next = new Set(prev)
-      if (next.has(channelId)) {
-        next.delete(channelId)
-      } else {
-        next.add(channelId)
-      }
-      return next
-    })
   }
 
   // Render Slack-like action buttons (local only)
@@ -558,6 +597,19 @@ function Topic() {
           }
           return null
         })}
+        {isLocalMode && (
+          <Button
+            key="llm-test"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              handleTestLlmResponse(msg.id).catch(console.error)
+            }}
+            disabled={testingMessageId === msg.id}
+          >
+            {testingMessageId === msg.id ? 'Testing…' : 'Test LLM response'}
+          </Button>
+        )}
       </div>
     )
   }
@@ -672,7 +724,9 @@ function Topic() {
           >
             <ArrowLeft size={16} /> Back
           </Link>
-          <h1 className="heading-section text-foreground">{topicState.summary}</h1>
+          <h1 className="heading-section text-foreground" title={topicState.summary}>
+            {compactSummary || topicState.summary}
+          </h1>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
               {topicData.topic.workflowType}
@@ -688,17 +742,24 @@ function Topic() {
               {topicState.isActive ? 'Active' : 'Inactive'}
             </Badge>
             <span>
-              Updated {new Date(topicState.createdAt).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
+              {lastMessageDate
+                ? `Last message ${new Date(lastMessageDate).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}`
+                : 'No messages yet'}
             </span>
             {sortedMessages.length > 0 && timelinePosition !== null && (
               <span>
                 Showing {timelinePosition + 1} of {sortedMessages.length} messages
+              </span>
+            )}
+            {!isViewingLatest && (
+              <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/80">
+                Historic view
               </span>
             )}
           </div>
@@ -718,125 +779,107 @@ function Topic() {
               : 'Mark active'}
           </Button>
           {profile && (
-            <div className="w-full rounded-xl border border-token bg-surface px-4 py-3 text-xs text-muted-foreground shadow-sm">
-              <div className="flex items-center gap-2 text-foreground">
-                <CalendarIcon size={14} className="text-[color:var(--p-leaf)]" />
-                <span className="font-medium">{profile.user.name}</span>
+            <button
+              type="button"
+              onClick={() => setShowCalendarPanel((prev) => !prev)}
+              aria-expanded={showCalendarPanel}
+              className={`group w-full rounded-xl border border-token bg-surface px-4 py-3 text-left text-xs text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                showCalendarPanel ? 'ring-2 ring-accent/60 ring-offset-2 ring-offset-background' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between text-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-full bg-[color:rgba(95,115,67,0.15)] p-1.5 text-[color:var(--p-leaf)] transition-colors group-hover:bg-primary/15 group-hover:text-primary">
+                    <CalendarIcon size={16} />
+                  </div>
+                  <div className="text-left text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground/80">Calendar</div>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-muted-foreground transition-transform duration-200 ${showCalendarPanel ? 'rotate-180 text-foreground' : 'group-hover:text-foreground'}`}
+                />
               </div>
-              <p className="mt-1">Timezone: {getShortTimezone()}</p>
-            </div>
+              <p className="mt-2 text-left text-xs text-muted-foreground">
+                Showing all times in {getShortTimezone()}.
+              </p>
+            </button>
           )}
         </div>
       </div>
-      {/* Calendar detail panel removed */}
-
       {channelGroups.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="rounded-xl border border-token bg-surface px-4 py-3 text-sm text-muted-foreground shadow-sm">
             No conversations found for this topic
           </div>
         </div>
-        ) : (
-        <div className="flex-1 min-h-0 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
+      ) : (
+        <div className="flex-1 min-h-0 grid gap-2 overflow-hidden pb-2 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`min-h-0 grid grid-cols-1 gap-2 md:col-span-2 ${
+              showCalendarPanel ? 'lg:col-span-2 lg:grid-cols-2' : 'lg:col-span-3 lg:grid-cols-3'
+            }`}
+          >
             {channelGroups.map((channel) => {
-              const isExpanded = expandedContexts.has(channel.channelId)
-              const isDM = isDMChannel(channel.channelId)
-              const userId = isDM ? getCurrentUserId(channel.channelId) : null
-              const user = userId ? topicData.users.find((u) => u.id === userId) : null
-              const userCalendar = userId ? userCalendars[userId] || null : null
-              const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicState.perUserContext?.[userId] ?? null : null
+            const isDM = isDMChannel(channel.channelId)
+            const userId = isDM ? getCurrentUserId(channel.channelId) : null
+            const user = userId ? topicData.users.find((u) => u.id === userId) : null
+            const channelInfo = topicData.channels?.find((ch) => ch.id === channel.channelId)
+            const participantNames = (channelInfo?.userIds ?? [])
+              .map((id) => topicData.users.find((u) => u.id === id)?.realName?.trim())
+              .filter((name): name is string => Boolean(name))
 
-              return (
-                <Card
-                  key={channel.channelId}
-                  className="flex min-h-0 flex-col border-token bg-surface/90 shadow-sm"
-                >
-                  <div
-                    className={`flex items-center justify-between border-b border-token/60 px-3 py-2 text-xs font-medium text-muted-foreground ${
-                      isDM ? 'cursor-pointer transition-colors hover:bg-accent/10' : ''
-                    }`}
-                    onClick={isDM ? () => toggleContextExpansion(channel.channelId) : undefined}
-                  >
-                    <div>
-                      {isDM ? (
-                        (() => {
-                          const userInfo = getDMUserInfo(channel.channelId)
-                          return userInfo ? (
-                            <>
-                              {userInfo.realName}
-                              {userInfo.timezone && ` (${userInfo.timezone})`}
-                              <span className="ml-1 text-muted-foreground/70">
-                                (#{channel.channelId})
-                              </span>
-                            </>
-                          ) : (
-                            `#${channel.channelId}`
-                          )
-                        })()
-                      ) : (
-                        `#${channel.channelId}`
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-muted-foreground">
-                        {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
-                      </div>
-                      {isDM && (
-                        <svg
-                          className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
+            const humanLabel = isDM
+              ? user?.realName || 'Direct message'
+              : participantNames.length > 0
+                ? `${participantNames.slice(0, 3).join(', ')}${participantNames.length > 3 ? ` +${participantNames.length - 3}` : ''}`
+                : `Channel ${channel.channelId}`
+            return (
+              <Card
+                key={channel.channelId}
+                className="flex min-h-0 flex-col border-token bg-surface/90 shadow-sm"
+              >
+                <div className="flex items-center justify-between border-b border-token/60 px-3 py-2 text-xs text-muted-foreground">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">{humanLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
                     </div>
                   </div>
+                </div>
 
-                  {isExpanded && isDM && (
-                    <div className="mb-3 px-3">
-                      <UserContextView
-                        calendar={userCalendar}
-                        context={userData?.context}
-                        topicContext={topicUserContext}
-                        userTimezone={user?.tz || null}
-                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.accountId === userId ? (() => {
-                          const currentPath = window.location.pathname + window.location.search
-                          const params = new URLSearchParams({
-                            callbackURL: currentPath,
-                            errorCallbackURL: currentPath,
-                          })
-                          window.location.href = `/api/google/authorize?${params.toString()}`
-                        }) : null}
-                      />
-                    </div>
-                  )}
-
-              <div
-                className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
-                ref={(el) => {
-                  if (el) {
-                    messageContainerRefs.current.set(channel.channelId, el)
-                  }
-                }}
-              >
+                <div
+                  className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
+                  ref={(el) => {
+                    if (el) {
+                      messageContainerRefs.current.set(channel.channelId, el)
+                    }
+                  }}
+                >
                   {channel.messages.map((msg) => {
-                    const userName = userMap.get(msg.userId) || 'Pivotal'
-                    const isBot = !userMap.has(msg.userId)
-                    // Check if this is the latest message overall based on timeline position
+                    const baseUserName = userMap.get(msg.userId) || 'Pivotal'
+                    const isBot = msg.userId === topicData.topic.botUserId || !userMap.has(msg.userId)
+                    const isViewer = viewerSlackId ? msg.userId === viewerSlackId : false
+                    const userName = isBot
+                      ? (
+                          <span className="inline-flex items-center gap-1 text-[color:var(--p-stem)]">
+                            <LogoMarkInline size={14} />
+                            Pivotal
+                          </span>
+                        )
+                      : baseUserName
                     const isLatestOverall = timelinePosition !== null &&
                       sortedMessages[timelinePosition]?.id === msg.id
 
                     return (
                       <div key={msg.id} className="space-y-2">
                         <div
-                          className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${isViewer ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
                             className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer transition-opacity hover:opacity-95 ${
-                              isBot
+                              isViewer
                                 ? 'bg-accent text-accent-foreground'
                                 : 'bg-card text-foreground shadow-sm'
                             } ${
@@ -859,7 +902,7 @@ function Topic() {
                               {userName}
                             </div>
                             <div className="text-sm whitespace-pre-wrap break-words">
-                              {msg.text}
+                              {formatSlackText(msg.text ?? '')}
                               {renderActionButtons(msg, channel.channelId)}
                             </div>
                             <div
@@ -878,7 +921,8 @@ function Topic() {
                                     const timezoneString = isDM && user?.tz
                                       ? getShortTimezoneFromIANA(user.tz)
                                       : getShortTimezone()
-                                    return `${timeString} (${timezoneString}) (${msg.id})`
+                                    const idSuffix = isLocalMode ? ` (${msg.id})` : ''
+                                    return `${timeString} (${timezoneString})${idSuffix}`
                                   })()}
                                 </div>
                               ) : (
@@ -896,44 +940,30 @@ function Topic() {
                                       return `${timeString} (${timezoneString})`
                                     })()}
                                   </span>
-                                  <span className="truncate">
-                                    ({msg.id})
-                                  </span>
+                                  {isLocalMode && (
+                                    <span className="truncate text-muted-foreground/70">{msg.id}</span>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
-                        {isLocalMode && !isBot && isLatestOverall && (
-                          <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
-                            <Button
-                              onClick={() => {
-                                handleTestLlmResponse(msg.id).catch(console.error)
-                              }}
-                              disabled={testingMessageId === msg.id}
-                              size="sm"
-                              className="h-7 rounded-full px-3 text-xs"
-                            >
-                              {testingMessageId === msg.id ? 'Testing…' : 'Test LLM Response'}
-                            </Button>
-                          </div>
-                        )}
+
+                        {isLocalMode && renderActionButtons(msg, channel.channelId)}
                       </div>
                     )
                   })}
                 </div>
 
-                {/* Chat Bar for DM Channels */}
                 {isLocalMode && isDM && isViewingLatest && (
-                  <div className="mt-3 border-t border-token/50 bg-background/80 px-3 py-2">
-                    <div className="flex gap-2">
+                  <div className="border-t border-token/60 px-3 py-3">
+                    <div className="flex items-center gap-2">
                       <input
-                        type="text"
                         value={chatInputs.get(channel.channelId) || ''}
-                        onChange={(e) => {
+                        onChange={(event) => {
                           setChatInputs((prev) => {
                             const next = new Map(prev)
-                            next.set(channel.channelId, e.target.value)
+                            next.set(channel.channelId, event.target.value)
                             return next
                           })
                         }}
@@ -943,7 +973,7 @@ function Topic() {
                             handleSendMessage(channel.channelId).catch(console.error)
                           }
                         }}
-                        placeholder="Send a test message"
+                        placeholder="Type a message..."
                         disabled={sendingChannels.has(channel.channelId)}
                         className="flex-1 rounded-lg border border-token bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:bg-muted disabled:text-muted-foreground"
                       />
@@ -959,10 +989,100 @@ function Topic() {
                     </div>
                   </div>
                 )}
-                </Card>
-              )
+              </Card>
+            )
             })}
           </div>
+          {showCalendarPanel && profile && (
+            <Card
+              key="calendar-overview"
+              className="flex min-h-0 flex-col border-[color:var(--p-leaf)] bg-surface/95 shadow-[0_12px_36px_-30px_rgba(13,38,24,0.35)] md:col-span-2 lg:col-span-1 lg:col-start-3 lg:row-span-full lg:self-stretch"
+            >
+              <div className="flex items-center justify-between border-b border-token/60 px-4 py-3 text-sm font-medium text-foreground">
+                <span className="flex items-center gap-2"><CalendarIcon size={16} className="text-[color:var(--p-leaf)]" />Calendar overview</span>
+                <Badge
+                  role={calendarConnected ? undefined : 'button'}
+                  tabIndex={calendarConnected ? undefined : 0}
+                  onClick={calendarConnected ? undefined : redirectToCalendarAuth}
+                  onKeyDown={calendarConnected
+                    ? undefined
+                    : (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          redirectToCalendarAuth()
+                        }
+                      }}
+                  variant={calendarConnected ? undefined : 'outline'}
+                  className={
+                    calendarConnected
+                      ? 'border-transparent bg-emerald-500/15 px-2.5 py-1 text-emerald-400 shadow-[0_0_0_1px_rgba(95,115,67,0.25)]'
+                      : 'cursor-pointer border-[color:rgba(191,69,42,0.35)] px-2.5 py-1 text-[color:var(--p-ember)] transition-colors duration-200 hover:border-[color:rgba(191,69,42,0.5)] hover:bg-[color:rgba(191,69,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgba(191,69,42,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                  }
+                >
+                  {calendarConnected ? 'Google Calendar connected' : 'Connect Google Calendar'}
+                </Badge>
+              </div>
+              <div className="flex flex-1 flex-col gap-3 px-4 py-4 text-sm text-muted-foreground overflow-hidden">
+                <div className="rounded-lg border border-token/60 bg-background/70 p-3">
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground/70">User timezone</div>
+                  <div className="mt-1 text-sm font-medium text-foreground">{getShortTimezone()}</div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto rounded-lg border border-dashed border-token/60 bg-background/60 p-3">
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Upcoming</div>
+                    {upcomingEvents.length === 0 ? (
+                      <div className="mt-2 text-xs">
+                        {viewerCalendar
+                          ? 'No upcoming calendar holds detected.'
+                          : 'Calendar data will appear here once connected.'}
+                      </div>
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        {upcomingEvents.map((event) => {
+                          const start = new Date(event.start)
+                          const end = new Date(event.end)
+                          const sameDay = start.toDateString() === end.toDateString()
+                          const dayFormatter = new Intl.DateTimeFormat('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                          const timeFormatter = new Intl.DateTimeFormat('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })
+                          const rangeLabel = sameDay
+                            ? `${dayFormatter.format(start)} · ${timeFormatter.format(start)} – ${timeFormatter.format(end)}`
+                            : `${dayFormatter.format(start)} ${timeFormatter.format(start)} → ${timeFormatter.format(end)} ${timeFormatter.format(end)}`
+
+                          return (
+                            <div key={`${event.start}-${event.end}-${event.summary}`} className="rounded border border-token/60 bg-surface/80 p-3">
+                              <div className="flex items-center justify-between text-sm font-medium text-foreground">
+                                <span>{event.summary || 'Scheduled hold'}</span>
+                                {event.free && (
+                                  <span className="text-xs font-semibold text-emerald-400">
+                                    Open
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 text-xs text-muted-foreground">{rangeLabel}</div>
+                              {event.participantEmails && event.participantEmails.length > 0 && (
+                                <div className="mt-2 text-xs text-muted-foreground/80">
+                                  With {event.participantEmails.slice(0, 3).join(', ')}
+                                  {event.participantEmails.length > 3 ? '…' : ''}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Timeline Component */}

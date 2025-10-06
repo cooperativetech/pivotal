@@ -12,6 +12,7 @@ import { Badge } from '@shared/components/ui/badge'
 import { Button } from '@shared/components/ui/button'
 import { Skeleton } from '@shared/components/ui/skeleton'
 import { Input } from '@shared/components/ui/input'
+import { compactTopicSummary } from '@shared/utils'
 
 function formatDate(date: Date | string) {
   return new Date(date).toLocaleDateString('en-US', {
@@ -46,21 +47,38 @@ interface EmptyStateProps {
   onSlackLink: () => void
   filter: 'active' | 'all'
   hasAnyTopics: boolean
+  searchTerm: string
 }
 
-function EmptyState({ slackConnected, onSlackLink, filter, hasAnyTopics }: EmptyStateProps) {
+function EmptyState({ slackConnected, onSlackLink, filter, hasAnyTopics, searchTerm }: EmptyStateProps) {
+  const trimmedSearch = searchTerm.trim()
+  const hasSearch = trimmedSearch.length > 0
+
+  let title = 'No topics yet'
+  let description = slackConnected
+    ? 'Your workspace is connected. Pivotal will populate topics as new conversations emerge.'
+    : 'Connect Slack to let Pivotal gather the conversations and context you care about.'
+
+  if (!slackConnected) {
+    title = 'Connect Slack to get started'
+    description = 'Link your workspace to start building your living map of conversations.'
+  } else if (hasSearch) {
+    title = 'No topics match your search'
+    description =
+      filter === 'active'
+        ? 'No active topics match your search. Try a different keyword or switch to All to include archived threads.'
+        : 'No topics match your search. Try a different keyword or adjust your filters to explore other conversations.'
+  } else if (filter === 'active' && hasAnyTopics) {
+    title = 'No active topics right now'
+    description = 'Switch to All to review archived threads or wait for new conversations to bloom.'
+  }
+
   return (
     <Card className="border-dashed border-token bg-surface/80 text-center">
       <CardHeader className="space-y-4">
         <LogoMark size={56} pulse withHalo className="mx-auto" />
-        <CardTitle className="text-xl">No topics yet</CardTitle>
-        <CardDescription>
-          {filter === 'active' && hasAnyTopics
-            ? 'No active topics right now. Switch to All to review archived threads.'
-            : slackConnected
-            ? 'Your workspace is connected. Pivotal will populate topics as new conversations emerge.'
-            : 'Connect Slack to let Pivotal gather the conversations and context you care about.'}
-        </CardDescription>
+        <CardTitle className="text-xl">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       {!slackConnected && (
         <CardContent className="flex justify-center">
@@ -188,7 +206,7 @@ function Home() {
         <div className="space-y-2">
           <h1 className="heading-hero text-foreground">Pivotal Topics</h1>
           <p className="max-w-xl text-base text-muted-foreground">
-            A living map of the conversations your team is nurturing.
+            {'A living map of your team\'s conversations.'}
           </p>
         </div>
         {profile?.slackAccount && (
@@ -261,12 +279,14 @@ function Home() {
           onSlackLink={handleSlackLinkClick}
           filter={filter}
           hasAnyTopics={topics.length > 0}
+          searchTerm={search}
         />
       ) : (
         <div className="grid auto-rows-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredTopics.map((topic) => {
             const isActive = topic.state.isActive
             const users = topic.state.userIds.map((id) => userNameMap[id]).filter(Boolean)
+            const compactSummary = compactTopicSummary(topic.state.summary)
 
             return (
               <Link key={topic.id} to={`/topic/${topic.id}`} className="group block h-full">
@@ -287,8 +307,11 @@ function Home() {
                         {isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg leading-snug text-foreground line-clamp-2">
-                      {topic.state.summary}
+                    <CardTitle
+                      className="text-lg leading-snug text-foreground line-clamp-2"
+                      title={topic.state.summary}
+                    >
+                      {compactSummary}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
                       <Activity size={14} className={isActive ? 'text-emerald-400' : 'text-muted-foreground'} />
