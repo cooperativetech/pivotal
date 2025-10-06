@@ -185,38 +185,23 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
 
-  // Validate groupUserMapping for topicRouting=false case
+  // Create inverse mapping and validate for topicRouting
+  let userGroupMapping: Record<string, number> | null = null
+
   if (!topicRouting) {
-    // Check that no user appears in multiple groups
-    const userToGroupsMap: Record<string, number[]> = {}
+    // Construct inverse mapping: user -> group
+    userGroupMapping = {}
     Object.entries(groupUserMapping).forEach(([groupIndex, userNames]) => {
       userNames.forEach(userName => {
-        if (!userToGroupsMap[userName]) {
-          userToGroupsMap[userName] = []
+        if (userGroupMapping![userName] !== undefined) {
+          throw new Error(`When topicRouting is false, users cannot be in multiple groups. User '${userName}' found in both group ${userGroupMapping![userName]} and group ${groupIndex}`)
         }
-        userToGroupsMap[userName].push(parseInt(groupIndex))
+        userGroupMapping![userName] = parseInt(groupIndex)
       })
     })
-
-    const usersInMultipleGroups = Object.entries(userToGroupsMap)
-      .filter(([userName, groups]) => groups.length > 1)
-
-    if (usersInMultipleGroups.length > 0) {
-      const errorMsg = usersInMultipleGroups.map(([userName, groups]) =>
-        `${userName} appears in groups: ${groups.join(', ')}`
-      ).join('; ')
-      throw new Error(`When topicRouting is false, users cannot be in multiple groups. Found: ${errorMsg}`)
-    }
-  }
-
-  // Helper function to find which group a user belongs to (guaranteed single group when topicRouting=false)
-  const findUserGroup = (userName: string): number => {
-    for (const [groupIndex, userNames] of Object.entries(groupUserMapping)) {
-      if (userNames.includes(userName)) {
-        return parseInt(groupIndex)
-      }
-    }
-    throw new Error(`User ${userName} not found in groupUserMapping`)
+  } else {
+    // When topicRouting is enabled, users can be in multiple groups
+    userGroupMapping = null
   }
 
   // Initialize group-based tracking
