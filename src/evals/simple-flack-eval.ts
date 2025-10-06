@@ -502,24 +502,78 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Step 1: Clear database
     await clearDatabase()
 
-    // Step 2: Load benchmark file and agents from benchmark data
-    console.log('\nLoading benchmark file...')
-    const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
-    console.log(`Found benchmark file at: ${dataPath}`)
-    const rawData = readFileSync(dataPath, 'utf-8')
-    const parsedData: unknown = JSON.parse(rawData)
+    // Step 2: Load benchmark file(s) and agents from benchmark data
+    console.log('\nLoading benchmark data...')
 
-    // Validate benchmark data structure with Zod
-    const benchmarkData = BenchmarkFileData.parse(parsedData)
-    const benchmarkSimUsers = benchmarkData.simUsers
-    const nGroups = benchmarkData.benchmark.nGroups
-    const userGroupMapping = benchmarkData.benchmark.userGroupMapping
+    let nGroups: number
+    let userGroupMapping: Record<string, number>
+    let simUsers: BaseScheduleUser[] = []
+    let benchmarkData: any
 
-    console.log('Loading simUsers from benchmark data...')
-    const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
-    console.log(`Loaded ${simUsers.length} simUsers:`)
+    // Check if this is a multigroup folder path or a single benchmark file
+    const isMultigroupFolder = benchmarkFileOrPath.includes('multigroup_benchmark_gen')
+
+    if (isMultigroupFolder && isFullPath) {
+      // Handle multigroup folder: load all group files and combine them
+      console.log(`Loading multigroup benchmark from folder: ${benchmarkFileOrPath}`)
+      const groupFiles = findAllFilesInMultigroupFolder(benchmarkFileOrPath)
+      console.log(`Found ${groupFiles.length} group files`)
+
+      const groupData: Array<{ benchmarkData: any; simUsers: BaseScheduleUser[] }> = []
+
+      // Load each group file
+      for (let i = 0; i < groupFiles.length; i++) {
+        const groupFilePath = groupFiles[i]
+        console.log(`Loading group file ${i + 1}: ${groupFilePath}`)
+
+        const rawData = readFileSync(groupFilePath, 'utf-8')
+        const parsedData: unknown = JSON.parse(rawData)
+        const groupBenchmarkData = BenchmarkFileData.parse(parsedData)
+        const groupSimUsers = loadSimUsersFromBenchmarkData(groupBenchmarkData.simUsers)
+
+        groupData.push({
+          benchmarkData: groupBenchmarkData,
+          simUsers: groupSimUsers,
+        })
+
+        simUsers.push(...groupSimUsers)
+      }
+
+      // Create userGroupMapping on the fly based on group files
+      userGroupMapping = {}
+      groupData.forEach((group, groupIndex) => {
+        group.simUsers.forEach((simUser) => {
+          userGroupMapping[simUser.name] = groupIndex
+        })
+      })
+
+      // Use the first group's benchmark data as the template (they should all have the same parameters)
+      benchmarkData = groupData[0].benchmarkData
+      nGroups = groupFiles.length
+
+      console.log(`Loaded ${simUsers.length} total simUsers across ${nGroups} groups`)
+    } else {
+      // Handle single benchmark file (existing logic)
+      const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
+      console.log(`Found benchmark file at: ${dataPath}`)
+      const rawData = readFileSync(dataPath, 'utf-8')
+      const parsedData: unknown = JSON.parse(rawData)
+
+      // Validate benchmark data structure with Zod
+      benchmarkData = BenchmarkFileData.parse(parsedData)
+      const benchmarkSimUsers = benchmarkData.simUsers
+      nGroups = benchmarkData.benchmark.nGroups || 1
+      userGroupMapping = benchmarkData.benchmark.userGroupMapping || {}
+
+      console.log('Loading simUsers from benchmark data...')
+      simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
+      console.log(`Loaded ${simUsers.length} simUsers`)
+    }
+
+    // Log all loaded simUsers
     simUsers.forEach((simUser) => {
-      console.log(`  - ${simUser.name}: ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
+      const groupIndex = userGroupMapping[simUser.name] !== undefined ? userGroupMapping[simUser.name] : 'unknown'
+      console.log(`  - ${simUser.name} (Group ${groupIndex}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
     // Step 3: Create users in database
