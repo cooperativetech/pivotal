@@ -314,22 +314,42 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             // Process bot responses and add to simUser buffers
             const newSuggestedEvent = await processBotMessages(replyData, simUsers)
             if (newSuggestedEvent) {
+              // Determine which group this suggestion belongs to
+              let targetGroup: number
+
+              if (!topicRouting) {
+                // Use userGroupMapping to determine the group
+                targetGroup = userGroupMapping![simUser.name]
+              } else {
+                // Use topicId from response to find the group
+                const responseTopicId = replyData.topicId
+                if (!responseTopicId) {
+                  throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
+                }
+
+                const topicIndex = topicIds.findIndex(topicId => topicId === responseTopicId)
+                if (topicIndex === -1) {
+                  throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
+                }
+                targetGroup = topicIndex
+              }
+
               // Check if this is a new/different suggested event for this group
-              const currentGroupEvent = suggestedEvents[userGroup]
+              const currentGroupEvent = suggestedEvents[targetGroup]
               if (!currentGroupEvent || newSuggestedEvent.start.getTime() !== currentGroupEvent.start.getTime() || newSuggestedEvent.end.getTime() !== currentGroupEvent.end.getTime()) {
-                console.log(`  → Bot suggested new meeting for group ${userGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+                console.log(`  → Bot suggested new meeting for group ${targetGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
                 if (currentGroupEvent) {
-                  console.log(`  → Previous meeting for group ${userGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
-                  console.log(`  → Resetting confirmations for group ${userGroup} due to meeting change`)
+                  console.log(`  → Previous meeting for group ${targetGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
+                  console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
                   // Reset confirmations for users in this group
-                  const groupUserNames = groupUserMapping[userGroup] || []
+                  const groupUserNames = groupUserMapping[targetGroup] || []
                   simUsers.forEach((user) => {
                     if (groupUserNames.includes(user.name)) {
                       confirmations[user.name] = false
                     }
                   })
                 }
-                suggestedEvents[userGroup] = newSuggestedEvent
+                suggestedEvents[targetGroup] = newSuggestedEvent
               }
             }
           } else {
