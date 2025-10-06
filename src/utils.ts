@@ -139,17 +139,25 @@ export async function getStatesWithMessageTs(topicId: string): Promise<TopicStat
   const statesWithMessageTs = await db
     .select({
       state: topicStateTable,
-      createdByMessageRawTs: slackMessageTable.rawTs,
+      slackMessage: slackMessageTable,
     })
     .from(topicStateTable)
-    .innerJoin(slackMessageTable, eq(topicStateTable.createdByMessageId, slackMessageTable.id))
+    .leftJoin(slackMessageTable, eq(topicStateTable.createdByMessageId, slackMessageTable.id))
     .where(eq(topicStateTable.topicId, topicId))
     .orderBy(topicStateTable.createdAt)
 
-  return statesWithMessageTs.map(({ state, createdByMessageRawTs }) => ({
-    ...state,
-    createdByMessageRawTs,
-  }))
+  return statesWithMessageTs.map(({ state, slackMessage }) => {
+    const createdAtValue = state.createdAt instanceof Date ? state.createdAt : new Date(state.createdAt)
+    const fallbackRawTs = slackMessage?.rawTs
+      ?? Number.isNaN(createdAtValue.getTime())
+        ? `${Date.now() / 1000}`
+        : (createdAtValue.getTime() / 1000).toFixed(6)
+
+    return {
+      ...state,
+      createdByMessageRawTs: fallbackRawTs,
+    }
+  })
 }
 
 export const GetTopicReq = z.strictObject({

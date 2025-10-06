@@ -69,7 +69,7 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
 
   if (events.length === 0 && (!manualOverrides || manualOverrides.length === 0)) {
     return (
-      <div className="text-gray-500 text-sm italic">
+      <div className="text-sm italic text-muted-foreground">
         No upcoming events
       </div>
     )
@@ -81,32 +81,32 @@ function CalendarView({ events, manualOverrides, userTimezone }: CalendarViewPro
         <button
           type="button"
           onClick={() => setUseLocalTime(!useLocalTime)}
-          className="text-xs text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+          className="text-xs text-accent transition-colors hover:text-accent/80"
         >
           Showing in {timezoneLabel} (click to toggle)
         </button>
       </div>
-      <div className="max-h-96 overflow-y-auto space-y-3 pr-1 border border-gray-200 rounded-md p-2">
+      <div className="max-h-96 space-y-3 overflow-y-auto rounded-lg border border-token bg-background/70 p-3">
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
         <div key={dateKey}>
-          <div className="text-xs font-medium text-gray-600 mb-1">{dateKey}</div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">{dateKey}</div>
           <div className="space-y-1">
             {dateEvents.map((event) => (
               <div
                 key={`${event.start}-${event.end}-${event.summary ?? ''}`}
                 className={`rounded px-2 py-1 ${
                   event.isManualOverride
-                    ? 'bg-blue-100 border border-blue-300'
-                    : 'bg-gray-50'
+                    ? 'border border-accent/40 bg-accent/15'
+                    : 'bg-muted'
                 }`}
               >
                 <div className={`text-sm font-medium truncate ${
-                  event.isManualOverride ? 'text-blue-900' : 'text-gray-900'
+                  event.isManualOverride ? 'text-accent-foreground' : 'text-foreground'
                 }`}>
                   {event.summary || '(No title)'} {event.isManualOverride && '(Override)'}
                 </div>
                 <div className={`text-xs ${
-                  event.isManualOverride ? 'text-blue-700' : 'text-gray-600'
+                  event.isManualOverride ? 'text-accent-foreground/80' : 'text-muted-foreground'
                 }`}>
                   {formatTime(event.start)} - {formatTime(event.end)} ({formatDuration(event.start, event.end)})
                 </div>
@@ -131,28 +131,28 @@ interface UserContextViewProps {
 export function UserContextView({ calendar, context, topicContext, userTimezone, onConnectClick }: UserContextViewProps) {
   const manualOverrides = topicContext?.calendarManualOverrides
   return (
-    <div className="p-1 bg-gray-50 rounded-lg space-y-2 text-sm">
+    <div className="space-y-2 rounded-xl border border-token bg-background/70 p-3 text-sm text-muted-foreground">
       {context?.slackUserName && (
-        <div>Username: {context.slackUserName}</div>
+        <div className="text-foreground">Username: {context.slackUserName}</div>
       )}
       {context?.slackDisplayName && (
-        <div>Display Name: {context.slackDisplayName}</div>
+        <div className="text-foreground">Display Name: {context.slackDisplayName}</div>
       )}
       {context?.slackTeamId && (
-        <div>Team ID: {context.slackTeamId}</div>
+        <div className="text-foreground">Team ID: {context.slackTeamId}</div>
       )}
       {calendar !== null ? (
-        <div className="text-emerald-600 flex items-center gap-2">
+        <div className="flex items-center gap-2 text-accent">
           <span>✓ Google Calendar connected.</span>
         </div>
       ) : (
-        <div className="text-amber-600 flex items-center gap-2">
+        <div className="flex items-center gap-2 text-amber-500">
           <span>⚠ Google Calendar not connected.</span>
           {onConnectClick && (
             <button
               type="button"
               onClick={onConnectClick}
-              className="text-amber-700 underline hover:text-amber-800 cursor-pointer"
+              className="text-amber-600 underline transition-colors hover:text-amber-500"
             >
               Click to connect
             </button>
