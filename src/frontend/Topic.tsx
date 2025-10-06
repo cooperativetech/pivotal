@@ -13,6 +13,7 @@ import { Card } from '@shared/components/ui/card'
 import { PageShell } from '@shared/components/page-shell'
 import { LogoMark } from '@shared/components/logo-mark'
 import { LogoMarkInline } from '@shared/components/logo-mark-inline'
+import { Timeline } from '@shared/components/timeline'
 
 interface ChannelGroup {
   channelId: string
@@ -189,7 +190,15 @@ function Topic() {
       : []
   }, [topicData?.messages])
 
-  const totalSegments = Math.max(sortedMessages.length - 1, 1)
+  const timelineEntries = useMemo(
+    () =>
+      sortedMessages.map((msg) => ({
+        id: msg.id,
+        timestamp: msg.timestamp,
+        text: msg.text ?? '',
+      })),
+    [sortedMessages],
+  )
 
   // Filter messages based on timeline position
   const visibleMessageIds = new Set(
@@ -722,7 +731,7 @@ function Topic() {
         <div className="space-y-2">
           <Link
             to={isLocalMode ? '/local' : '/'}
-            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground transition hover:text-foreground"
+            className="inline-flex items-center gap-2 heading-label text-muted-foreground transition hover:text-foreground"
           >
             <ArrowLeft size={16} /> Back
           </Link>
@@ -737,7 +746,7 @@ function Topic() {
               variant={topicState.isActive ? undefined : 'outline'}
               className={
                 topicState.isActive
-                  ? 'border-transparent bg-emerald-500/15 px-2.5 py-1 text-emerald-400 shadow-[0_0_0_1px_rgba(95,115,67,0.25)] transition-colors hover:bg-primary/75 hover:text-primary-foreground'
+                  ? 'badge-active border-transparent px-2.5 py-1 transition-colors hover:bg-primary/75 hover:text-primary-foreground'
                   : 'border-border px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground'
               }
             >
@@ -785,7 +794,7 @@ function Topic() {
               type="button"
               onClick={() => setShowCalendarPanel((prev) => !prev)}
               aria-expanded={showCalendarPanel}
-              className={`group w-full rounded-xl border border-token bg-surface px-4 py-3 text-left text-xs text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              className={`group w-full cursor-pointer rounded-xl border border-token bg-surface px-4 py-3 text-left text-xs text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
                 showCalendarPanel ? 'ring-2 ring-accent/60 ring-offset-2 ring-offset-background' : ''
               }`}
             >
@@ -794,7 +803,7 @@ function Topic() {
                   <div className="rounded-full bg-[color:rgba(95,115,67,0.15)] p-1.5 text-[color:var(--p-leaf)] transition-colors group-hover:bg-primary/15 group-hover:text-primary">
                     <CalendarIcon size={16} />
                   </div>
-                  <div className="text-left text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground/80">Calendar</div>
+                  <div className="heading-label text-left text-muted-foreground/80">Calendar</div>
                 </div>
                 <ChevronDown
                   size={16}
@@ -835,13 +844,17 @@ function Topic() {
               .map((participant) => participant.realName?.trim() || participant.id)
               .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 
-            const viewerName = viewerSlackId
-              ? participantNames.find((participant) => participant.id === viewerSlackId)?.realName?.trim()
+            const viewerParticipant = viewerSlackId
+              ? participantNames.find((participant) => participant.id === viewerSlackId)
               : null
+            const viewerName = viewerParticipant?.realName?.trim()
+            const includeViewer = Boolean(viewerParticipant)
 
             const displayNames = isDM
               ? [user?.realName || 'Direct message']
-              : [...otherParticipants, viewerName || 'You']
+              : includeViewer
+              ? [...otherParticipants, viewerName || 'You']
+              : otherParticipants
 
             const humanLabel = displayNames.length > 0
               ? displayNames.join(', ')
@@ -1028,7 +1041,7 @@ function Topic() {
                   variant={calendarConnected ? undefined : 'outline'}
                   className={
                     calendarConnected
-                      ? 'border-transparent bg-emerald-500/15 px-2.5 py-1 text-emerald-400 shadow-[0_0_0_1px_rgba(95,115,67,0.25)]'
+                      ? 'badge-active border-transparent px-2.5 py-1'
                       : 'cursor-pointer border-[color:rgba(191,69,42,0.35)] px-2.5 py-1 text-[color:var(--p-ember)] transition-colors duration-200 hover:border-[color:rgba(191,69,42,0.5)] hover:bg-[color:rgba(191,69,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgba(191,69,42,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                   }
                 >
@@ -1073,7 +1086,7 @@ function Topic() {
                               <div className="flex items-center justify-between text-sm font-medium text-foreground">
                                 <span>{event.summary || 'Scheduled hold'}</span>
                                 {event.free && (
-                                  <span className="text-xs font-semibold text-emerald-400">
+                                  <span className="text-xs font-semibold text-[color:var(--status-active-text)]">
                                     Open
                                   </span>
                                 )}
@@ -1106,57 +1119,16 @@ function Topic() {
               <div className="text-sm font-medium text-foreground">Message timeline</div>
               <div className="text-xs text-muted-foreground">Use arrow keys or drag to navigate</div>
             </div>
-            <div
-              ref={timelineRef}
-              className={`relative h-12 select-none rounded-full border border-token/60 bg-[radial-gradient(circle_at_center,var(--p-leaf)/16,transparent_78%)] px-6 ${
-                sendingChannels.size > 0 ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-              }`}
-              onClick={handleTimelineClick}
-              onMouseDown={handleDragStart}
-            >
-              <div className="absolute left-6 right-6 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[color:rgba(95,115,67,0.28)]" />
-
-              {sortedMessages.map((msg, index) => {
-                const position = 2 + (index / totalSegments) * 96
-                const isActive = timelinePosition !== null && index <= timelinePosition
-                const isCurrent = index === timelinePosition
-                const dotStyle = isCurrent
-                  ? { backgroundColor: 'var(--p-leaf)', boxShadow: '0 0 0 4px rgba(95,115,67,0.28)' }
-                  : isActive
-                  ? { backgroundColor: 'rgba(95,115,67,0.75)' }
-                  : { backgroundColor: 'rgba(95,115,67,0.35)' }
-
-                return (
-                  <div
-                    key={msg.id}
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${position}%` }}
-                  >
-                    <div
-                      className="h-2 w-2 -translate-x-1/2 rounded-full transition-all"
-                      style={dotStyle}
-                      title={`${new Date(msg.timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} - ${msg.text.substring(0, 50)}...`}
-                    />
-                  </div>
-                )
-              })}
-
-              {timelinePosition !== null && (
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 transition-none"
-                  style={{
-                    left: `${2 + (timelinePosition / totalSegments) * 96}%`,
-                  }}
-                >
-                  <div
-                    className={`h-6 w-6 -translate-x-1/2 cursor-grab rounded-full border-2 border-background shadow-lg transition ${
-                      isDragging ? 'scale-110 cursor-grabbing' : ''
-                    } ${thumbPulse ? 'animate-timeline-pulse' : ''}`}
-                    style={{ backgroundColor: 'var(--p-leaf)', boxShadow: '0 0 18px rgba(95,115,67,0.4)' }}
-                  />
-                </div>
-              )}
-            </div>
+            <Timeline
+              entries={timelineEntries}
+              position={timelinePosition}
+              disabled={sendingChannels.size > 0}
+              isDragging={isDragging}
+              thumbPulse={thumbPulse}
+              timelineRef={timelineRef}
+              onTrackClick={handleTimelineClick}
+              onDragStart={handleDragStart}
+            />
           </div>
         </div>
       )}
@@ -1164,7 +1136,7 @@ function Topic() {
       {/* JSON Response Popup */}
       {showPopup && (
         <div
-          className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-modal flex cursor-pointer items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
           onClick={() => setShowPopup(false)}
         >
           <div
@@ -1172,10 +1144,10 @@ function Topic() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-token/60 px-4 py-3">
-              <h2 className="text-lg font-semibold text-foreground">LLM response</h2>
+              <h2 className="heading-card text-foreground">LLM response</h2>
               <button
                 onClick={() => setShowPopup(false)}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

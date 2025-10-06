@@ -221,15 +221,15 @@ function Home() {
       </header>
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex h-12 w-full max-w-sm items-center rounded-full border border-[color:rgba(13,38,24,0.22)] bg-[color-mix(in_srgb,var(--p-sand)80%,var(--p-leaf)20%)]/45 p-1.5 text-sm font-medium text-[color:rgba(13,38,24,0.78)] shadow-[0_18px_36px_-28px_rgba(13,38,24,0.55)] backdrop-blur-sm transition-colors">
+        <div className="filter-toggle-shell relative flex h-12 w-full max-w-filter-toggle items-center rounded-full p-1.5 text-sm font-medium text-[color:rgba(13,38,24,0.78)] transition-colors">
           <span
-            className="pointer-events-none absolute inset-y-1 w-[calc(50%-0.5rem)] rounded-full bg-[color-mix(in_srgb,var(--p-sand)65%,var(--p-leaf)25%)] shadow-[0_10px_20px_-18px_rgba(13,38,24,0.55)] transition-transform duration-300 ease-out"
+            className="filter-toggle-thumb pointer-events-none absolute inset-y-1 w-[calc(50%-0.5rem)] rounded-full transition-transform duration-300 ease-out"
             style={{ transform: filter === 'all' ? 'translateX(0)' : 'translateX(100%)' }}
           />
           <button
             type="button"
             onClick={() => setFilter('all')}
-            className={`relative z-10 flex-1 rounded-full px-5 py-2 transition-colors ${
+            className={`relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
               filter === 'all'
                 ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
                 : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
@@ -240,7 +240,7 @@ function Home() {
           <button
             type="button"
             onClick={() => setFilter('active')}
-            className={`relative z-10 flex-1 rounded-full px-5 py-2 transition-colors ${
+            className={`relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
               filter === 'active'
                 ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
                 : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
@@ -293,7 +293,11 @@ function Home() {
             const compactSummary = compactTopicSummary(topic.state.summary)
 
             return (
-              <Link key={topic.id} to={`/topic/${topic.id}`} className="group block h-full">
+              <Link
+                key={topic.id}
+                to={`/topic/${topic.id}`}
+                className="group block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Card className="flex h-full flex-col border-token bg-surface shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
                   <CardHeader className="space-y-4">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -304,7 +308,7 @@ function Home() {
                         variant={isActive ? undefined : 'outline'}
                         className={
                           isActive
-                            ? 'border-transparent bg-emerald-500/15 px-2.5 py-1 text-emerald-400 shadow-[0_0_0_1px_rgba(95,115,67,0.25)] transition-colors hover:bg-primary/75 hover:text-primary-foreground'
+                            ? 'badge-active border-transparent px-2.5 py-1 transition-colors hover:bg-primary/75 hover:text-primary-foreground'
                             : 'border-border bg-muted/60 px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground'
                         }
                       >
@@ -318,7 +322,7 @@ function Home() {
                       {compactSummary}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                      <Activity size={14} className={isActive ? 'text-emerald-400' : 'text-muted-foreground'} />
+                      <Activity size={14} className={isActive ? 'text-[color:var(--status-active-text)]' : 'text-muted-foreground'} />
                       Updated {formatDate(topic.state.createdAt)}
                     </CardDescription>
                   </CardHeader>

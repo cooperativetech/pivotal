@@ -12,8 +12,8 @@ import { LogoMark } from '@shared/components/logo-mark'
 
 function StatusBadge({ connected }: { connected: boolean }) {
   return connected ? (
-    <Badge className="border-transparent bg-emerald-500/15 px-3 py-1 text-emerald-400 whitespace-nowrap">
-      <CheckCircle size={14} className="mr-1 text-emerald-400" /> Connected
+    <Badge className="badge-active border-transparent px-3 py-1 whitespace-nowrap">
+      <CheckCircle size={14} className="mr-1 text-[color:var(--status-active-text)]" /> Connected
     </Badge>
   ) : (
     <Badge variant="outline" className="border-border px-3 py-1 text-muted-foreground whitespace-nowrap">
@@ -290,7 +290,7 @@ export default function Profile() {
         <Card className="mb-6 border-destructive/40 bg-destructive/10 text-destructive">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle className="text-destructive">Something needs attention</CardTitle>
+              <CardTitle className="heading-card text-destructive">Something needs attention</CardTitle>
               <CardDescription className="text-destructive/80">{error}</CardDescription>
             </div>
             <AlertCircle size={32} />
@@ -320,7 +320,7 @@ export default function Profile() {
         <Card className="border-token bg-surface">
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="heading-card flex items-center gap-2">
                 <Slack size={18} className="text-[color:var(--p-leaf)]" /> Slack workspace
               </CardTitle>
               <CardDescription className="mt-2 text-sm text-muted-foreground">Connect Slack so Pivotal can sync your workspace.</CardDescription>
@@ -351,7 +351,7 @@ export default function Profile() {
         <Card className="border-token bg-surface">
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="heading-card flex items-center gap-2">
                 <CalendarIcon size={18} className="text-[color:var(--p-leaf)]" /> Google Calendar
               </CardTitle>
               <CardDescription className="mt-2 text-sm text-muted-foreground">Sync your availability for scheduling.</CardDescription>
@@ -388,7 +388,7 @@ export default function Profile() {
         <Card className="border-token bg-surface">
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="heading-card flex items-center gap-2">
                 <GitHub size={18} className="text-[color:var(--p-leaf)]" /> GitHub repositories
               </CardTitle>
               <CardDescription className="mt-2 text-sm text-muted-foreground">Share repos so Pivotal can pull docs and history.</CardDescription>
@@ -459,7 +459,7 @@ export default function Profile() {
                         {profile.githubAccount.linkableRepos.map((repo) => (
                       <div
                         key={repo.fullName}
-                        className="flex items-center justify-between rounded-lg border border-token bg-background/40 p-3"
+                        className="flex items-center justify-between rounded-lg border border-token bg-background/40 p-3 focus-within:outline-none focus-within:ring-2 focus-within:ring-accent/60 focus-within:ring-offset-2 focus-within:ring-offset-background"
                       >
                         <div className="space-y-1">
                               <p className="font-medium text-foreground">{repo.fullName}</p>
@@ -508,7 +508,7 @@ export default function Profile() {
           <Card className="border-token bg-surface">
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="heading-card flex items-center gap-2">
                 <LinkIcon size={18} className="text-[color:var(--p-leaf)]" /> Organization
               </CardTitle>
             <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared by your workspace.</CardDescription>

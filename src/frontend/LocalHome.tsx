@@ -92,7 +92,7 @@ function LocalHome() {
                 className="border-token bg-surface/90 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
               >
               <CardHeader className="space-y-3">
-                <CardTitle className="text-lg text-foreground" title={topic.state.summary}>
+                <CardTitle className="heading-card text-foreground" title={topic.state.summary}>
                   {compactSummary}
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -101,7 +101,7 @@ function LocalHome() {
                   </Badge>
                   <Badge
                     variant="outline"
-                    className={topic.state.isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-border'}
+                    className={topic.state.isActive ? 'badge-active border-transparent' : 'border-border'}
                   >
                     {topic.state.isActive ? 'Active' : 'Inactive'}
                   </Badge>

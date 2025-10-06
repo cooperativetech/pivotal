@@ -50,7 +50,7 @@ export default function Login() {
               handleSlackSignIn().catch(console.error)
             }}
             disabled={loading}
-            className="w-full gap-3 bg-primary py-4 text-base text-primary-foreground transition-colors hover:bg-[#d46245]"
+            className="hover-ember w-full gap-3 bg-primary py-4 text-base text-primary-foreground transition-colors"
             size="lg"
           >
             {loading ? (
