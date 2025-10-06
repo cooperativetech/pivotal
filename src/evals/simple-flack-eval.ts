@@ -208,20 +208,23 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   const topicIds: (string | null)[] = Array.from({ length: nGroups }, () => null)
   const suggestedEvents: (SimpleCalendarEvent | null)[] = Array.from({ length: nGroups }, () => null)
 
-  // Start conversation: First simUser sends initial message through API
+  // Start conversation: Send initial messages from goal initializers
   console.log('\n--- Starting Conversation ---')
-  // Send initial messages from all simUsers with goals
+  // Send initial messages from goal initializers for each group
 
-  for (const simUser of simUsers) {
+  for (let groupIndex = 0; groupIndex < groupGoalInitializer.length; groupIndex++) {
+    const goalUserName = groupGoalInitializer[groupIndex]
+    const simUser = simUsers.find(user => user.name === goalUserName)!
+
     if (simUser.goal && simUser.goal.trim() !== '') {
       const initialMessage = await simUser.sendInitialMessage()
 
       if (!initialMessage) {
-        console.log(`${simUser.name} has a goal but no initial message to send`)
+        console.log(`${simUser.name} (Group ${groupIndex}) has a goal but no initial message to send`)
         continue
       }
 
-      console.log(`${simUser.name}: ${initialMessage}`)
+      console.log(`${simUser.name} (Group ${groupIndex}): ${initialMessage}`)
 
       // Send initial message through local API
       const initMessageRes = await local_api.message.$post({
@@ -229,7 +232,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
           userId: simUser.name,
           text: initialMessage,
           ignoreExistingTopics: !topicRouting,
-          ...(!topicRouting && userGroupMapping ? { topicId: topicIds[userGroupMapping[simUser.name]] || undefined } : {}),
+          ...(!topicRouting ? { topicId: topicIds[groupIndex] || undefined } : {}),
         },
       })
       if (!initMessageRes.ok) {
@@ -238,17 +241,17 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
       const initResData = await initMessageRes.json()
 
-      // Store topicId for this user's group
-      if (!topicIds[userGroup]) {
-        topicIds[userGroup] = initResData.topicId
-        console.log(`Created topic for group ${userGroup}: ${topicIds[userGroup]}`)
+      // Store topicId for this group
+      if (!topicIds[groupIndex]) {
+        topicIds[groupIndex] = initResData.topicId
+        console.log(`Created topic for group ${groupIndex}: ${topicIds[groupIndex]}`)
       }
 
       // Process bot responses for this initial message and extract suggested event
       const newSuggestedEvent = await processBotMessages(initResData, simUsers)
-      if (newSuggestedEvent && !suggestedEvents[userGroup]) {
-        suggestedEvents[userGroup] = newSuggestedEvent
-        console.log(`  → Initial bot suggestion for group ${userGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+      if (newSuggestedEvent && !suggestedEvents[groupIndex]) {
+        suggestedEvents[groupIndex] = newSuggestedEvent
+        console.log(`  → Initial bot suggestion for group ${groupIndex}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
       }
     }
   }
@@ -593,8 +596,22 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nCreating users in database...')
     await createUsersFromSimUsers(simUsers)
 
-    // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, groupUserMapping)
+    // Step 4: Construct groupGoalInitializer (find the user with a goal in each group)
+    const groupGoalInitializer: string[] = []
+    for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
+      const groupUsers = groupUserMapping[groupIndex]
+      const goalUser = simUsers.find(user =>
+        groupUsers.includes(user.name) && user.goal && user.goal.trim() !== ''
+      )
+      if (goalUser) {
+        groupGoalInitializer.push(goalUser.name)
+      } else {
+        throw new Error(`No user with a goal found in group ${groupIndex}`)
+      }
+    }
+
+    // Step 5: Run turn-based simulation
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, groupUserMapping, groupGoalInitializer)
 
     // Log conversation completion for each group
     result.topicDatas.forEach((topicData, groupIndex) => {
