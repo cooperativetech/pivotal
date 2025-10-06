@@ -171,7 +171,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, groupUserMapping: Record<number, string[]>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -191,12 +191,12 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   if (!topicRouting) {
     // Construct inverse mapping: user -> group
     userGroupMapping = {}
-    Object.entries(groupUserMapping).forEach(([groupIndex, userNames]) => {
+    groupUserMapping.forEach((userNames, groupIndex) => {
       userNames.forEach(userName => {
         if (userGroupMapping![userName] !== undefined) {
           throw new Error(`When topicRouting is false, users cannot be in multiple groups. User '${userName}' found in both group ${userGroupMapping![userName]} and group ${groupIndex}`)
         }
-        userGroupMapping![userName] = parseInt(groupIndex)
+        userGroupMapping![userName] = groupIndex
       })
     })
   } else {
@@ -223,16 +223,13 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
       console.log(`${simUser.name}: ${initialMessage}`)
 
-      // Get the user's group from the mapping
-      const userGroup = findUserGroup(simUser.name)
-
       // Send initial message through local API
       const initMessageRes = await local_api.message.$post({
         json: {
           userId: simUser.name,
           text: initialMessage,
           ignoreExistingTopics: !topicRouting,
-          ...(topicIds[userGroup] && !topicRouting ? { topicId: topicIds[userGroup] } : {}),
+          ...(!topicRouting && userGroupMapping ? { topicId: topicIds[userGroupMapping[simUser.name]] || undefined } : {}),
         },
       })
       if (!initMessageRes.ok) {
@@ -522,7 +519,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nLoading benchmark data...')
 
     let nGroups: number
-    let groupUserMapping: Record<number, string[]>
+    let groupUserMapping: string[][]
     let simUsers: BaseScheduleUser[] = []
     let benchmarkData: any
 
@@ -556,10 +553,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       }
 
       // Create groupUserMapping on the fly based on group files
-      groupUserMapping = {}
-      groupData.forEach((group, groupIndex) => {
-        groupUserMapping[groupIndex] = group.simUsers.map(simUser => simUser.name)
-      })
+      groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
 
       // Use the first group's benchmark data as the template (they should all have the same parameters)
       benchmarkData = groupData[0].benchmarkData
@@ -587,9 +581,9 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Log all loaded simUsers
     simUsers.forEach((simUser) => {
       // Find which group(s) this user belongs to
-      const userGroups = Object.entries(groupUserMapping)
-        .filter(([groupIndex, userNames]) => userNames.includes(simUser.name))
-        .map(([groupIndex]) => groupIndex)
+      const userGroups = groupUserMapping
+        .map((userNames, groupIndex) => userNames.includes(simUser.name) ? groupIndex : -1)
+        .filter(groupIndex => groupIndex !== -1)
 
       const groupDisplay = userGroups.length > 0 ? userGroups.join(', ') : 'unknown'
       console.log(`  - ${simUser.name} (Group ${groupDisplay}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
