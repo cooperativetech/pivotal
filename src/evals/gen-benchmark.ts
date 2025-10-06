@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number) {
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, genTimestamp: string) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
@@ -97,11 +97,8 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   console.log('Created simUsers:')
   simUsers.forEach((simUser) => console.log(`${simUser.name}: ${simUser.calendar.length} events`))
 
-  // Export simUsers and benchmark parameters to JSON file
+  // Export simUsers and benchmark parameters
   const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
-
-  // Generate timestamp for this benchmark
-  const timestamp = formatTimestamp()
 
   const benchmark = {
     startTime,
@@ -110,7 +107,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     endTimeOffset,
     meetingLength,
     nSimUsers,
-    genTimestamp: timestamp,
+    genTimestamp,
   }
 
   const exportData = {
@@ -118,22 +115,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     simUsers: exportedSimUsers,
   }
 
-  // Create folder name and filename with benchmark parameters
-  const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-  const filename = `${folderName}_gen${timestamp}.json`
-  const folderPath = join(__dirname, 'data', folderName)
-
-  // Create folder if it doesn't exist
-  if (!existsSync(folderPath)) {
-    await mkdir(folderPath, { recursive: true })
-    console.log(`Created folder: ${folderName}`)
-  }
-
-  const filePath = join(folderPath, filename)
-  await writeFile(filePath, JSON.stringify(exportData, null, 2))
-  console.log(`Agents saved to ${filePath}`)
-
-  return simUsers
+  return exportData
 }
 
 
@@ -397,11 +379,29 @@ async function generateMultipleBenchmarks() {
   for (let i = 1; i <= nCases; i++) {
     console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
 
+    // Generate timestamp for this benchmark case
+    const timestamp = formatTimestamp()
+
     if (nGroups === 1) {
-      // Use single-group function
-      await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers)
+      // Single-group benchmark
+      const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp)
+
+      // Create folder name and filename with benchmark parameters
+      const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+      const filename = `${folderName}_gen${timestamp}.json`
+      const folderPath = join(__dirname, 'data', folderName)
+
+      // Create folder if it doesn't exist
+      if (!existsSync(folderPath)) {
+        await mkdir(folderPath, { recursive: true })
+        console.log(`Created folder: ${folderName}`)
+      }
+
+      const filePath = join(folderPath, filename)
+      await writeFile(filePath, JSON.stringify(exportData, null, 2))
+      console.log(`Benchmark saved to ${filePath}`)
     } else {
-      // Use multi-group function
+      // Multi-group benchmark
       await createMultiGroupBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups)
     }
   }
