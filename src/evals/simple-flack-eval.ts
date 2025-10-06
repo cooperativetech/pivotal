@@ -171,7 +171,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<string, number>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<number, string[]>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -184,6 +184,40 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   simUsers.forEach((simUser, index) => {
     console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
+
+  // Validate userGroupMapping for topicRouting=false case
+  if (!topicRouting) {
+    // Check that no user appears in multiple groups
+    const userToGroupsMap: Record<string, number[]> = {}
+    Object.entries(userGroupMapping).forEach(([groupIndex, userNames]) => {
+      userNames.forEach(userName => {
+        if (!userToGroupsMap[userName]) {
+          userToGroupsMap[userName] = []
+        }
+        userToGroupsMap[userName].push(parseInt(groupIndex))
+      })
+    })
+
+    const usersInMultipleGroups = Object.entries(userToGroupsMap)
+      .filter(([userName, groups]) => groups.length > 1)
+
+    if (usersInMultipleGroups.length > 0) {
+      const errorMsg = usersInMultipleGroups.map(([userName, groups]) =>
+        `${userName} appears in groups: ${groups.join(', ')}`
+      ).join('; ')
+      throw new Error(`When topicRouting is false, users cannot be in multiple groups. Found: ${errorMsg}`)
+    }
+  }
+
+  // Helper function to find which group a user belongs to (guaranteed single group when topicRouting=false)
+  const findUserGroup = (userName: string): number => {
+    for (const [groupIndex, userNames] of Object.entries(userGroupMapping)) {
+      if (userNames.includes(userName)) {
+        return parseInt(groupIndex)
+      }
+    }
+    throw new Error(`User ${userName} not found in userGroupMapping`)
+  }
 
   // Initialize group-based tracking
   const topicIds: (string | null)[] = Array.from({ length: nGroups }, () => null)
@@ -205,10 +239,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
       console.log(`${simUser.name}: ${initialMessage}`)
 
       // Get the user's group from the mapping
-      const userGroup = userGroupMapping[simUser.name]
-      if (userGroup === undefined) {
-        throw new Error(`User ${simUser.name} not found in userGroupMapping`)
-      }
+      const userGroup = findUserGroup(simUser.name)
 
       // Send initial message through local API
       const initMessageRes = await local_api.message.$post({
@@ -285,10 +316,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
           }
 
           // Get the user's group from the mapping
-          const userGroup = userGroupMapping[simUser.name]
-          if (userGroup === undefined) {
-            throw new Error(`User ${simUser.name} not found in userGroupMapping`)
-          }
+          const userGroup = findUserGroup(simUser.name)
 
           // Send reply through local API
           const replyRes = await local_api.message.$post({
@@ -313,8 +341,9 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
                   console.log(`  → Previous meeting for group ${userGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
                   console.log(`  → Resetting confirmations for group ${userGroup} due to meeting change`)
                   // Reset confirmations for users in this group
+                  const groupUserNames = userGroupMapping[userGroup] || []
                   simUsers.forEach((user) => {
-                    if (userGroupMapping[user.name] === userGroup) {
+                    if (groupUserNames.includes(user.name)) {
                       confirmations[user.name] = false
                     }
                   })
@@ -333,7 +362,8 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     let allGroupsConfirmed = true
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
-        const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
+        const groupUserNames = userGroupMapping[groupIndex] || []
+        const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
@@ -371,7 +401,8 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     const topicId = topicIds[i]
     if (topicId) {
       // Find a user from this specific group to query the topic
-      const groupUser = simUsers.find((user) => userGroupMapping[user.name] === i)
+      const groupUserNames = userGroupMapping[i] || []
+      const groupUser = simUsers.find((user) => groupUserNames.includes(user.name))
       if (!groupUser) {
         throw new Error(`No user found for group ${i}`)
       }
@@ -506,7 +537,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     console.log('\nLoading benchmark data...')
 
     let nGroups: number
-    let userGroupMapping: Record<string, number>
+    let userGroupMapping: Record<number, string[]>
     let simUsers: BaseScheduleUser[] = []
     let benchmarkData: any
 
@@ -542,9 +573,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       // Create userGroupMapping on the fly based on group files
       userGroupMapping = {}
       groupData.forEach((group, groupIndex) => {
-        group.simUsers.forEach((simUser) => {
-          userGroupMapping[simUser.name] = groupIndex
-        })
+        userGroupMapping[groupIndex] = group.simUsers.map(simUser => simUser.name)
       })
 
       // Use the first group's benchmark data as the template (they should all have the same parameters)
@@ -572,8 +601,13 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Log all loaded simUsers
     simUsers.forEach((simUser) => {
-      const groupIndex = userGroupMapping[simUser.name] !== undefined ? userGroupMapping[simUser.name] : 'unknown'
-      console.log(`  - ${simUser.name} (Group ${groupIndex}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
+      // Find which group(s) this user belongs to
+      const userGroups = Object.entries(userGroupMapping)
+        .filter(([groupIndex, userNames]) => userNames.includes(simUser.name))
+        .map(([groupIndex]) => groupIndex)
+
+      const groupDisplay = userGroups.length > 0 ? userGroups.join(', ') : 'unknown'
+      console.log(`  - ${simUser.name} (Group ${groupDisplay}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
     // Step 3: Create users in database
@@ -635,7 +669,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       console.log(`\nFeasibility Check for Group ${groupIndex}:`)
 
       // Get users for this group
-      const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
+      const groupUserNames = userGroupMapping[groupIndex] || []
+      const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
       const commonFreeSlots = findCommonFreeTime(groupUsers, benchmarkStartTime, benchmarkEndTime)
