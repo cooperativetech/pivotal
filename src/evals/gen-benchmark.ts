@@ -190,7 +190,7 @@ function parseArguments() {
 const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nCases, nGroups } = parseArguments()
 console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nCases=${nCases}, nGroups=${nGroups}`)
 
-async function generateMultipleBenchmarks() {
+async function generateMultiGroupBenchmarks() {
   console.log(`\nGenerating ${nCases} benchmark case(s)...`)
 
   for (let i = 1; i <= nCases; i++) {
@@ -267,4 +267,4 @@ async function generateMultipleBenchmarks() {
   console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
 }
 
-generateMultipleBenchmarks().catch(console.error)
+generateMultiGroupBenchmarks().catch(console.error)
