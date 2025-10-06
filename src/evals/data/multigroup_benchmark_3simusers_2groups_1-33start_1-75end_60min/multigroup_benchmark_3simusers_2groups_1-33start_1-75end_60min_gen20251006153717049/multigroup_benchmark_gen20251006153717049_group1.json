@@ -1,0 +1,124 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T12:55:12.000Z",
+    "startTimeOffset": 1.33,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 3,
+    "genTimestamp": "20251006153717049",
+    "nGroups": 2,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Bob, Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Kitchen Equipment Inspection - Main Line"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Repair Work - Commercial Oven Thermostat"
+        },
+        {
+          "start": "2025-01-02T17:30:00.000Z",
+          "end": "2025-01-02T18:30:00.000Z",
+          "summary": "Vendor Meeting - New Refrigeration System Proposal"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Preventive Maintenance - Walk-in Cooler Systems"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Custom Equipment Design Review - Prep Station Modifications"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Venom Extraction Protocol Review - Mission Critical Biosynthesis"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:15:00.000Z",
+          "summary": "Snake Habitat Maintenance - Zero-G Laboratory Module 7"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Astrobiology Team Sync - Venom-derived Pharmaceutical Research"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Safety Protocol Training - Handling Venomous Species in Microgravity"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Venom Sample Analysis - Preparation for Mars Mission Applications"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Daily Stand-up - Spacecraft Power Systems Team"
+        },
+        {
+          "start": "2025-01-02T14:45:00.000Z",
+          "end": "2025-01-02T16:15:00.000Z",
+          "summary": "Work Block - Solar Panel Array Testing"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Electrical Safety Review - Mars Habitat Module"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Work Block - Battery Management System Diagnostics"
+        },
+        {
+          "start": "2025-01-02T19:45:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Cross-Team Collaboration - Life Support Systems Integration"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Technical Deep Dive - Zero-G Electrical Connector Design"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Work Block - Documentation & Test Reports"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

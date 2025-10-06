@@ -220,7 +220,7 @@ async function generateMultiGroupBenchmarks() {
       await writeFile(filePath, JSON.stringify(exportData, null, 2))
       console.log(`Benchmark saved to ${filePath}`)
     } else {
-      
+
       // Create multigroup folder structure
       const baseFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
       const subFolderName = `${baseFolderName}_gen${timestamp}`
@@ -245,7 +245,7 @@ async function generateMultiGroupBenchmarks() {
         const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp, nGroups, groupIndex)
 
         // Save with group-specific filename
-        const filename = `${subFolderName}_group${groupIndex + 1}.json`
+        const filename = `multigroup_benchmark_gen${timestamp}_group${groupIndex + 1}.json`
         const filePath = join(folderPath, filename)
 
         await writeFile(filePath, JSON.stringify(exportData, null, 2))
