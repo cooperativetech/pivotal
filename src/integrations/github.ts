@@ -1,51 +1,17 @@
+import { App } from 'octokit'
 import { Octokit } from '@octokit/core'
-import { createOAuthUserAuth } from '@octokit/auth-oauth-user'
-import { and, eq } from 'drizzle-orm'
 import { simpleGit } from 'simple-git'
 import fs from 'fs/promises'
 import path from 'path'
-import db from '../db/engine'
-import { auth } from '../auth'
-import { accountTable } from '../db/schema/auth'
-import type { BotRepository, GithubAccount } from '@shared/api-types'
+import type { GithubRepo } from '@shared/api-types'
 
-export async function getOctokit(userId: string, accountPk: string): Promise<Octokit | null> {
-  try {
-    const { accessToken } = await auth.api.getAccessToken({
-      body: {
-        providerId: 'github',
-        userId,
-        accountId: accountPk,
-      },
-    })
-
-    const octokit = new Octokit({
-      authStrategy: createOAuthUserAuth,
-      auth: {
-        clientId: process.env.PV_GITHUB_CLIENT_ID,
-        clientSecret: process.env.PV_GITHUB_CLIENT_SECRET,
-        clientType: 'github-app',
-        token: accessToken,
-      },
-    })
-
-    // Test the credentials with a simple API call
-    await octokit.request('GET /user')
-
-    return octokit
-  } catch (error) {
-    // Check for bad credentials error
-    if (error && typeof error === 'object' && 'status' in error && 'message' in error) {
-      const requestError = error as { status: number; message: string }
-      // Clear the user's GitHub account credentials if they are invalid
-      if (requestError.status === 401 && requestError.message?.includes('Bad credentials')) {
-        await db.delete(accountTable).where(eq(accountTable.id, accountPk))
-        console.log(`Cleared bad GitHub credentials for account ${accountPk}`)
-      }
-    }
-
-    return null
-  }
+export async function getInstallationOctokit(installationId: string): Promise<Octokit> {
+  const app = new App({
+    appId: process.env.PV_GITHUB_APP_ID!,
+    privateKey: process.env.PV_GITHUB_APP_PRIVATE_KEY!,
+  })
+  const octokit = await app.getInstallationOctokit(parseInt(installationId))
+  return octokit
 }
 
 export function getBotOctokit(): Octokit {
@@ -56,64 +22,58 @@ export function getBotOctokit(): Octokit {
   return new Octokit({ auth: token })
 }
 
-export async function getLinkedGithubAccount(userId: string): Promise<GithubAccount | null> {
-  // Get linked Github account from auth account table (only one)
-  const linkedGithubAccount = await db.select()
-    .from(accountTable)
-    .where(and(
-      eq(accountTable.userId, userId),
-      eq(accountTable.providerId, 'github'),
-    ))
-    .limit(1)
-
-  if (linkedGithubAccount.length === 0) {
-    return null
-  }
-
-  const account = linkedGithubAccount[0]
-  const octokit = await getOctokit(userId, account.id)
-
-  if (!octokit) {
-    return null
-  }
-
-  try {
-    const { data: profile } = await octokit.request('GET /user')
-    const { data: orgs } = await octokit.request('GET /user/orgs', {
-      username: profile.login,
-    })
-    const orgName = orgs.length > 0 ? orgs[0].login : null
-
-    // Find all repositories in this org that 'pivotal-bot' has access to
-    const botRepositories = await getAllBotRepositories()
-    const repositories = botRepositories.filter((repo) => repo.owner === orgName)
-
-    // Check if this account has a linked repository
-    const linkedRepo = account.repositoryId
-      ? botRepositories.find((repo) => repo.id === account.repositoryId) || null
-      : null
-
-    // If there's a linked repository, linkableRepos is empty; otherwise, it's the repositories list
-    const linkableRepos = linkedRepo ? [] : repositories
-
-    return {
-      accountId: account.accountId,
-      username: profile.login,
-      orgName,
-      linkedRepo,
-      linkableRepos,
-    }
-  } catch (error) {
-    console.error(`Failed to fetch GitHub profile for account ${account.id}:`, error)
-    return null
-  }
+export function getAppOctokit(): Octokit {
+  const app = new App({
+    appId: process.env.PV_GITHUB_APP_ID!,
+    privateKey: process.env.PV_GITHUB_APP_PRIVATE_KEY!,
+  })
+  return app.octokit
 }
 
-export async function getAllBotRepositories(): Promise<BotRepository[]> {
-  const botOctokit = getBotOctokit()
-  const repositories: BotRepository[] = []
+// TODO: support if user installed an installation on their user account rather than an org
+export async function getOrgName(installationId: string): Promise<string> {
+  const octokit = await getInstallationOctokit(installationId)
+  const { data: installation } = await octokit.request('GET /app/installations/{installation_id}', {
+    installation_id: parseInt(installationId),
+  })
+  if (!installation.account || !('login' in installation.account)) {
+    throw new Error(`No account found for installation ${installationId}`)
+  }
+  return installation.account.login
+}
 
-  // Get all repositories the bot has access to (with pagination)
+export async function getOrgRepoInfo(installationId: string, repoId: string | null): Promise<{ linkedRepo: GithubRepo | null, linkableRepos: GithubRepo[] }> {
+  const repos = await getBotAccessibleRepos(installationId)
+  const linkedRepo = repos.find((repo) => repo.id === repoId) || null
+  const linkableRepos = linkedRepo ? [] : repos
+  return { linkedRepo, linkableRepos }
+}
+
+async function getInstallationRepoIds(installationId: string): Promise<Set<string>> {
+  const octokit = await getInstallationOctokit(installationId)
+  const installationRepoIds = new Set<string>()
+  let page = 1
+  let hasMore = true
+  while (hasMore) {
+    const { data } = await octokit.request('GET /installation/repositories', {
+      per_page: 100,
+      page,
+    })
+    if (data.repositories.length < 100) {
+      hasMore = false
+    }
+
+    for (const repo of data.repositories) {
+      installationRepoIds.add(repo.id.toString())
+    }
+    page += 1
+  }
+  return installationRepoIds
+}
+
+async function getBotUserRepos(): Promise<GithubRepo[]> {
+  const botOctokit = getBotOctokit()
+  const repositories: GithubRepo[] = []
   let page = 1
   let hasMore = true
   while (hasMore) {
@@ -136,10 +96,14 @@ export async function getAllBotRepositories(): Promise<BotRepository[]> {
     }
     page += 1
   }
+  return repositories
+}
 
-  // Get all repository invitations for the bot
-  page = 1
-  hasMore = true
+async function getBotUserInvitations(): Promise<GithubRepo[]> {
+  const botOctokit = getBotOctokit()
+  const repositories: GithubRepo[] = []
+  let page = 1
+  let hasMore = true
   while (hasMore) {
     const { data: invitations } = await botOctokit.request('GET /user/repository_invitations', {
       per_page: 100,
@@ -160,14 +124,28 @@ export async function getAllBotRepositories(): Promise<BotRepository[]> {
     }
     page += 1
   }
-
   return repositories
 }
 
-export async function getOrInitGitRepo(repositoryId: string): Promise<string> {
+export async function getBotAccessibleRepos(installationId: string): Promise<GithubRepo[]> {
+  // Get all data in parallel
+  const [installationRepoIds, botRepos, botInvitations] = await Promise.all([
+    getInstallationRepoIds(installationId),
+    getBotUserRepos(),
+    getBotUserInvitations(),
+  ])
+
+  // Combine bot repos and invitations
+  const repositories = [...botRepos, ...botInvitations]
+
+  // Filter to only include repositories that are in the installation
+  return repositories.filter((repo) => installationRepoIds.has(repo.id))
+}
+
+export async function getOrInitGitRepo(installationId: string, repoId: string): Promise<string> {
   // Define the repository directory path
   const projectRoot = process.cwd()
-  const repoDir = path.join(projectRoot, '.context-repos', repositoryId)
+  const repoDir = path.join(projectRoot, '.context-repos', repoId)
 
   // Check if the folder exists, create if not
   try {
@@ -199,13 +177,12 @@ export async function getOrInitGitRepo(repositoryId: string): Promise<string> {
   await git.addConfig('user.name', botProfile.name || botProfile.login)
   console.log(`Configured git identity: ${botProfile.name || botProfile.login} <${botProfile.email || `${botProfile.login}@users.noreply.github.com`}>`)
 
-  // Get repository URL from getAllBotRepositories
-  const botRepositories = await getAllBotRepositories()
-  const repository = botRepositories.find((repo) => repo.id === repositoryId)
-  if (!repository) {
-    throw new Error(`Repository with ID ${repositoryId} not found in bot repositories`)
+  // Get repository URL from getBotAccessibleRepositories
+  const { linkedRepo } = await getOrgRepoInfo(installationId, repoId)
+  if (!linkedRepo) {
+    throw new Error(`Repository with ID ${repoId} not found in installation repositories`)
   }
-  const githubUrl = `https://github.com/${repository.fullName}.git`
+  const githubUrl = `https://github.com/${linkedRepo.fullName}.git`
 
   // Check current remotes and set/update if needed
   const remotes = await git.getRemotes(true)

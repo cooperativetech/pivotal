@@ -47,8 +47,6 @@ export const accountTable = pgTable('account', {
   password: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().$onUpdate(() => new Date()),
-  installationId: text(),
-  repositoryId: text(),
 })
 export type AccountInsert = InferInsertModel<typeof accountTable>
 export type Account = InferSelectModel<typeof accountTable>
@@ -108,6 +106,19 @@ export const slackAppInstallationTable = pgTable('slack_app_installation', {
 export type SlackAppInstallationInsert = InferInsertModel<typeof slackAppInstallationTable>
 export type SlackAppInstallation = InferSelectModel<typeof slackAppInstallationTable>
 
+export const githubAppInstallationTable = pgTable('github_app_installation', {
+  id: text().primaryKey(),
+  slackTeamId: text().notNull().unique().references(() => organizationTable.slackTeamId, { onDelete: 'cascade' }),
+  installationId: text().notNull(),
+  createdByUserId: text().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp().notNull().defaultNow(),
+  repositoryId: text(),
+  repositoryConnectedByUserId: text().references(() => userTable.id, { onDelete: 'set null' }),
+  repositoryConnectedAt: timestamp(),
+})
+export type GithubAppInstallationInsert = InferInsertModel<typeof githubAppInstallationTable>
+export type GithubAppInstallation = InferSelectModel<typeof githubAppInstallationTable>
+
 export const betterAuthSchema = {
   user: userTable,
   session: sessionTable,
@@ -117,4 +128,5 @@ export const betterAuthSchema = {
   member: memberTable,
   invitation: invitationTable,
   slackAppInstallation: slackAppInstallationTable,
+  githubAppInstallation: githubAppInstallationTable,
 }

@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { eq, and, inArray, isNotNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { RunContext } from '../agent-sdk'
 import { tool } from '../agent-sdk'
 import db from '../../db/engine'
-import { accountTable } from '../../db/schema/auth'
+import { githubAppInstallationTable } from '../../db/schema/auth'
 import type { ConversationContext } from '../conversation-utils'
 import { getOrInitGitRepo } from '../../integrations/github.ts'
 import fs from 'fs/promises'
@@ -21,39 +21,17 @@ export const getOrgActionItems = tool({
     if (!runContext) throw new Error('runContext not provided')
     const { topic } = runContext.context
 
-    const userIds = topic.state.userIds
-
-    if (!userIds || userIds.length === 0) {
-      return 'Organization context not available'
-    }
-
-    // Find users who have Slack accounts matching the topic's userIds
-    // and also have GitHub accounts, returning the first repositoryId found
-    // TODO: get the repositoryId from the org once we add better-auth orgs
-    const slackAccounts = db.$with('slack_accounts').as(
-      db.select({ userId: accountTable.userId })
-      .from(accountTable)
-      .where(and(
-        eq(accountTable.providerId, 'slack'),
-        inArray(accountTable.accountId, userIds),
-      )),
-    )
-
-    const [result] = await db.with(slackAccounts)
-      .select({ repositoryId: accountTable.repositoryId })
-      .from(slackAccounts)
-      .innerJoin(accountTable, and(
-        eq(accountTable.userId, slackAccounts.userId),
-        eq(accountTable.providerId, 'github'),
-        isNotNull(accountTable.repositoryId),
-      ))
+    // Get GitHub app installation for this team
+    const [githubAppInstallation] = await db.select()
+      .from(githubAppInstallationTable)
+      .where(eq(githubAppInstallationTable.slackTeamId, topic.slackTeamId))
       .limit(1)
 
-    if (!result || !result.repositoryId) {
+    if (!githubAppInstallation?.repositoryId) {
       return 'Organization context not available'
     }
 
-    const repoPath = await getOrInitGitRepo(result.repositoryId)
+    const repoPath = await getOrInitGitRepo(githubAppInstallation.installationId, githubAppInstallation.repositoryId)
 
     try {
       const actionItemsPath = path.join(repoPath, 'action-items.md')
@@ -76,36 +54,17 @@ export const editOrgActionItems = tool({
     if (!runContext) throw new Error('runContext not provided')
     const { topic } = runContext.context
 
-    const userIds = topic.state.userIds
-
-    if (!userIds || userIds.length === 0) {
-      return 'Organization context not available'
-    }
-
-    const slackAccounts = db.$with('slack_accounts').as(
-      db.select({ userId: accountTable.userId })
-      .from(accountTable)
-      .where(and(
-        eq(accountTable.providerId, 'slack'),
-        inArray(accountTable.accountId, userIds),
-      )),
-    )
-
-    const [result] = await db.with(slackAccounts)
-      .select({ repositoryId: accountTable.repositoryId })
-      .from(slackAccounts)
-      .innerJoin(accountTable, and(
-        eq(accountTable.userId, slackAccounts.userId),
-        eq(accountTable.providerId, 'github'),
-        isNotNull(accountTable.repositoryId),
-      ))
+    // Get GitHub app installation for this team
+    const [githubAppInstallation] = await db.select()
+      .from(githubAppInstallationTable)
+      .where(eq(githubAppInstallationTable.slackTeamId, topic.slackTeamId))
       .limit(1)
 
-    if (!result || !result.repositoryId) {
+    if (!githubAppInstallation?.repositoryId) {
       return 'Organization context not available'
     }
 
-    const repoPath = await getOrInitGitRepo(result.repositoryId)
+    const repoPath = await getOrInitGitRepo(githubAppInstallation.installationId, githubAppInstallation.repositoryId)
     const filePath = 'action-items.md'
     const actionItemsPath = path.join(repoPath, filePath)
 

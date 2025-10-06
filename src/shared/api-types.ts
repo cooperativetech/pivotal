@@ -41,7 +41,7 @@ export interface TopicUserContext {
   calendarPromptMessage?: { channelId: string, ts: string }
 }
 
-export interface BotRepository {
+export interface GithubRepo {
   id: string
   name: string
   owner: string
@@ -49,19 +49,16 @@ export interface BotRepository {
   invitationId: string | null
 }
 
-export interface GithubAccount {
-  accountId: string
-  username: string
-  orgName: string | null
-  linkedRepo: BotRepository | null
-  linkableRepos: BotRepository[]
-}
-
 export interface ProfileOrg {
   id: string
   name: string
   slackTeamId: string
   slackAppInstalled: boolean
+  githubOrgName: string | null
+  githubOrgConnectedByUserName: string | null
+  githubLinkedRepo: GithubRepo | null
+  githubLinkableRepos: GithubRepo[]
+  githubRepoConnectedByUserName: string | null
 }
 
 export interface UserProfile {
@@ -72,7 +69,6 @@ export interface UserProfile {
   }
   slackAccount: { accountId: string } | null
   googleAccount: { accountId: string } | null
-  githubAccount: GithubAccount | null
   organization: ProfileOrg
 }
 

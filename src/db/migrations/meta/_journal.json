@@ -197,6 +197,13 @@
       "when": 1759487390913,
       "tag": "0027_add_slack_team_id_to_topic_table",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1759711890391,
+      "tag": "0028_create_github_app_installation_table",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LogOut, Slack, Calendar as CalendarIcon, GitHub, AlertCircle, CheckCircle, Link as LinkIcon } from 'react-feather'
+import { LogOut, Slack, Calendar as CalendarIcon, AlertCircle, CheckCircle, Link as LinkIcon } from 'react-feather'
 import type { UserProfile } from '@shared/api-types'
 import { api, authClient } from '@shared/api-client'
 import { PageShell } from '@shared/components/page-shell'
@@ -12,11 +12,11 @@ import { LogoMark } from '@shared/components/logo-mark'
 
 function StatusBadge({ connected }: { connected: boolean }) {
   return connected ? (
-    <Badge className="badge-active border-transparent px-3 py-1 whitespace-nowrap">
+    <Badge className="badge-active border-transparent px-3 py-1 whitespace-nowrap pointer-events-none">
       <CheckCircle size={14} className="mr-1 text-[color:var(--status-active-text)]" /> Connected
     </Badge>
   ) : (
-    <Badge variant="outline" className="border-border px-3 py-1 text-muted-foreground whitespace-nowrap">
+    <Badge variant="outline" className="border-border px-3 py-1 text-muted-foreground whitespace-nowrap pointer-events-none">
       <AlertCircle size={14} className="mr-1 text-muted-foreground" /> Not connected
     </Badge>
   )
@@ -185,22 +185,6 @@ export default function Profile() {
     }
   }
 
-  const handleGithubDisconnect = async (accountId: string) => {
-    try {
-      setGithubBusy(true)
-      await authClient.unlinkAccount({
-        providerId: 'github',
-        accountId,
-      })
-      await loadProfile()
-    } catch (err) {
-      setError('Failed to unlink Github account')
-      console.error(err)
-    } finally {
-      setGithubBusy(false)
-    }
-  }
-
   const handleRepositoryConnect = async (repoId: string) => {
     try {
       setGithubRepoBusy(repoId)
@@ -243,6 +227,25 @@ export default function Profile() {
     }
   }
 
+  const handleGithubUninstall = async () => {
+    try {
+      setGithubBusy(true)
+      const response = await api.github['uninstall-app'].$post()
+
+      if (response.ok) {
+        await loadProfile()
+      } else {
+        const errorData = await response.json()
+        setError((errorData as { error: string }).error || 'Failed to uninstall GitHub app')
+      }
+    } catch (err) {
+      setError('Failed to uninstall GitHub app')
+      console.error(err)
+    } finally {
+      setGithubBusy(false)
+    }
+  }
+
   const handleSignOut = async () => {
     try {
       await authClient.signOut()
@@ -281,7 +284,7 @@ export default function Profile() {
         <Button variant="outline" onClick={() => { handleSignOut().catch((err) => {
           console.error('Sign out failed:', err)
           setError('Failed to sign out')
-        }) }} className="self-start">
+        }) }} className="self-start cursor-pointer disabled:cursor-default">
           <LogOut size={16} /> Sign out
         </Button>
       </div>
@@ -341,7 +344,7 @@ export default function Profile() {
               onClick={profile.slackAccount ? (() => { handleSlackDisconnect().catch(console.error) }) : (() => { handleSlackConnect().catch(console.error) })}
               disabled={slackBusy}
               variant={profile.slackAccount ? 'outline' : 'default'}
-              className={profile.slackAccount ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : ''}
+              className={profile.slackAccount ? 'border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default' : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default'}
             >
               {slackBusy ? 'Working…' : profile.slackAccount ? 'Disconnect Slack' : 'Connect Slack'}
             </Button>
@@ -372,7 +375,7 @@ export default function Profile() {
               onClick={calendarConnected ? (() => { handleGoogleDisconnect().catch(console.error) }) : handleGoogleConnect}
               disabled={googleBusy || !profile.slackAccount}
               variant={calendarConnected ? 'outline' : 'default'}
-              className={calendarConnected ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : ''}
+              className={calendarConnected ? 'border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default' : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default'}
             >
               {googleBusy
                 ? calendarConnected
@@ -385,172 +388,180 @@ export default function Profile() {
           </CardFooter>
         </Card>
 
-        <Card className="border-token bg-surface">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0">
-            <div>
-              <CardTitle className="heading-card flex items-center gap-2">
-                <GitHub size={18} className="text-[color:var(--p-leaf)]" /> GitHub repositories
-              </CardTitle>
-              <CardDescription className="mt-2 text-sm text-muted-foreground">Share repos so Pivotal can pull docs and history.</CardDescription>
-            </div>
-            <StatusBadge connected={!!profile.githubAccount} />
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            {profile.githubAccount ? (
-              <div className="space-y-4">
-                <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
-                  <div className="flex items-center justify-between text-foreground">
-                    <span className="font-medium">{profile.githubAccount.username}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        handleGithubDisconnect(profile.githubAccount!.accountId).catch((err) => {
-                          console.error('Github unlink failed:', err)
-                          setError('Failed to unlink Github account')
-                        })
-                      }}
-                      disabled={githubBusy}
-                      className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                    >
-                      {githubBusy ? 'Disconnecting…' : 'Disconnect'}
-                    </Button>
-                  </div>
-                  {profile.githubAccount.orgName && (
-                    <div className="mt-2">Org: {profile.githubAccount.orgName}</div>
-                  )}
-                </div>
-
-                {profile.githubAccount.linkedRepo ? (
-                  <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
-                    <div className="flex items-center justify-between text-foreground">
-                      <span className="font-medium">{profile.githubAccount.linkedRepo.fullName}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          handleRepositoryDisconnect(profile.githubAccount!.linkedRepo!.id).catch((err) => {
-                            console.error('Disconnect repository failed:', err)
-                            setError('Failed to disconnect repository')
-                          })
-                        }}
-                        disabled={githubRepoBusy !== null}
-                        className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                      >
-                        {githubRepoBusy ? 'Disconnecting…' : 'Disconnect'}
-                      </Button>
-                    </div>
-                    <p className="mt-2">Primary context repository.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 text-xs text-muted-foreground">
-                    <div className="rounded-lg border border-dashed border-token/80 bg-background/30 p-3">
-                      <p className="font-medium text-foreground">How to connect a context repository:</p>
-                      <ol className="mt-2 list-decimal space-y-1 pl-4">
-                        <li>Create a GitHub repo (e.g. <span className="font-mono text-foreground">pivotal-context</span>).</li>
-                        <li>Invite <span className="font-mono text-foreground">pivotal-bot</span> with write access.</li>
-                        <li>Refresh this page after the invite lands.</li>
-                        <li>Connect the repo from the list below.</li>
-                      </ol>
-                    </div>
-
-                    {profile.githubAccount.linkableRepos && profile.githubAccount.linkableRepos.length > 0 ? (
-                      <div className="space-y-2">
-                        {profile.githubAccount.linkableRepos.map((repo) => (
-                      <div
-                        key={repo.fullName}
-                        className="flex items-center justify-between rounded-lg border border-token bg-background/40 p-3 focus-within:outline-none focus-within:ring-2 focus-within:ring-accent/60 focus-within:ring-offset-2 focus-within:ring-offset-background"
-                      >
-                        <div className="space-y-1">
-                              <p className="font-medium text-foreground">{repo.fullName}</p>
-                              {repo.invitationId && (
-                <Badge variant="outline" className="text-xs text-amber-500">
-                              Invitation pending
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            handleRepositoryConnect(repo.id).catch((err) => {
-                              console.error('Connect repository failed:', err)
-                              setError('Failed to connect repository')
-                            })
-                              }}
-                              disabled={githubRepoBusy !== null}
-                            >
-                              {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p>No repositories available yet. Follow the instructions above to add one.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-                <p>Authorize GitHub so Pivotal can read your context repos.</p>
-                <Button onClick={() => { handleGithubConnect().catch((err) => {
-                  console.error('Github link failed:', err)
-                  setError('Failed to link Github account')
-                }) }} disabled={githubBusy}>
-                  {githubBusy ? 'Connecting…' : 'Connect GitHub'}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {profile.organization && (
-          <Card className="border-token bg-surface">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0">
-            <div>
+          <Card className="border-token bg-surface lg:col-span-2">
+            <CardHeader>
               <CardTitle className="heading-card flex items-center gap-2">
                 <LinkIcon size={18} className="text-[color:var(--p-leaf)]" /> Organization
               </CardTitle>
-            <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared by your workspace.</CardDescription>
-            </div>
-            <Badge variant="secondary" className="bg-secondary/80 text-secondary-foreground">
-              {profile.organization.name}
-            </Badge>
-          </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
-                <div className="font-medium text-foreground">Slack workspace</div>
-                <div className="mt-1">{profile.organization.slackTeamId}</div>
-              </div>
-              <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
-                <div className="flex items-center justify-between text-foreground">
-                  <span className="font-medium">Pivotal bot</span>
-                  <StatusBadge connected={profile.organization.slackAppInstalled} />
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared by your workspace.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 text-sm">
+              <div className="space-y-4">
+                <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                  <div className="font-medium text-foreground">Slack workspace</div>
+                  <div className="mt-1">{profile.organization.name}</div>
                 </div>
-                <p className="mt-2 text-muted-foreground">
-                  Install the bot to let Pivotal participate in workspace conversations.
-                </p>
+                <div className="rounded-lg border border-token bg-background/40 p-4 text-xs text-muted-foreground">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">Pivotal bot</div>
+                      <p className="mt-2 text-muted-foreground">
+                        {profile.organization.slackAppInstalled
+                          ? 'The bot is installed and can participate in workspace conversations.'
+                          : 'Install the bot to let Pivotal participate in workspace conversations.'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      {profile.organization.slackAppInstalled ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { handleSlackAppDisconnect().catch(console.error) }}
+                          disabled={slackAppBusy}
+                          className="border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default"
+                        >
+                          {slackAppBusy ? 'Uninstalling…' : 'Uninstall bot'}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => { handleSlackAppConnect().catch(console.error) }}
+                          disabled={slackAppBusy || !profile.slackAccount}
+                          className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                        >
+                          {slackAppBusy ? 'Connecting…' : 'Install to Slack'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground">GitHub</h3>
+
+                {profile.organization.githubOrgName ? (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-token bg-background/40 p-3 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-foreground">Organization: <span className="font-mono">{profile.organization.githubOrgName}</span></div>
+                          {profile.organization.githubOrgConnectedByUserName && (
+                            <div className="mt-1">Connected by: {profile.organization.githubOrgConnectedByUserName}</div>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { handleGithubUninstall().catch(console.error) }}
+                          disabled={githubBusy}
+                          className="border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default"
+                        >
+                          {githubBusy ? 'Uninstalling…' : 'Uninstall App'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {!profile.organization.githubLinkedRepo && (
+                      <div className="rounded-lg border border-dashed border-token/80 bg-background/30 p-3 text-xs">
+                        <p className="font-medium text-foreground mb-2">Connect a context repository for your organization:</p>
+                        <p className="text-muted-foreground mb-2">
+                          <strong>Note:</strong> The connected repository will be shared with all members of your organization.
+                        </p>
+                        <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
+                          <li>Create a new GitHub repository in your organization (suggested name: <span className="font-mono text-foreground">pivotal-context</span>)</li>
+                          <li>Invite GitHub username <span className="font-mono text-foreground">pivotal-bot</span> to that repository with <b>write</b> access</li>
+                          <li>Refresh this page</li>
+                          <li>The repository name should appear below. Click &quot;Connect&quot; to connect it with your organization</li>
+                        </ol>
+                      </div>
+                    )}
+
+                    {profile.organization.githubLinkedRepo ? (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-foreground">Connected repository:</p>
+                        <p className="text-xs text-muted-foreground">This repository is shared with your organization.</p>
+                        <div className="rounded-lg border border-token bg-background/40 p-3 text-xs">
+                          <div className="flex items-center justify-between text-foreground">
+                            <div>
+                              <div className="font-mono font-medium">{profile.organization.githubLinkedRepo.fullName}</div>
+                              {profile.organization.githubRepoConnectedByUserName && (
+                                <div className="mt-1 text-muted-foreground">Connected by: {profile.organization.githubRepoConnectedByUserName}</div>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                handleRepositoryDisconnect(profile.organization.githubLinkedRepo!.id).catch((err) => {
+                                  console.error('Disconnect repository failed:', err)
+                                  setError('Failed to disconnect repository')
+                                })
+                              }}
+                              disabled={githubRepoBusy !== null}
+                              className="border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default"
+                            >
+                              {githubRepoBusy ? 'Disconnecting…' : 'Disconnect'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : profile.organization.githubLinkableRepos && profile.organization.githubLinkableRepos.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-foreground">Available repositories:</p>
+                        <p className="text-xs text-muted-foreground">Connecting a repository will make it available to your entire organization.</p>
+                        <div className="space-y-2">
+                          {profile.organization.githubLinkableRepos.map((repo) => (
+                            <div
+                              key={repo.fullName}
+                              className="flex items-center justify-between rounded-lg border border-token bg-background/40 p-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-foreground">{repo.fullName}</span>
+                                {repo.invitationId && (
+                                  <Badge variant="outline" className="text-xs text-amber-500">Invitation pending</Badge>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  handleRepositoryConnect(repo.id).catch((err) => {
+                                    console.error('Connect repository failed:', err)
+                                    setError('Failed to connect repository')
+                                  })
+                                }}
+                                disabled={githubRepoBusy !== null}
+                                className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                              >
+                                {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No repositories available yet. Follow the instructions above to add one.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Connect your GitHub organization to enable context repository features.
+                    </p>
+                    <Button
+                      onClick={() => { handleGithubConnect().catch(console.error) }}
+                      disabled={githubBusy}
+                      className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                    >
+                      {githubBusy ? 'Connecting…' : 'Connect GitHub'}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
-            <CardFooter>
-              {profile.organization.slackAppInstalled ? (
-                <Button
-                  variant="outline"
-                  onClick={() => { handleSlackAppDisconnect().catch(console.error) }}
-                  disabled={slackAppBusy}
-                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                >
-                  {slackAppBusy ? 'Uninstalling…' : 'Uninstall bot'}
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => { handleSlackAppConnect().catch(console.error) }}
-                  disabled={slackAppBusy || !profile.slackAccount}
-                >
-                  {slackAppBusy ? 'Connecting…' : 'Install to Slack'}
-                </Button>
-              )}
-            </CardFooter>
           </Card>
         )}
       </div>
