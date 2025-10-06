@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, findAllMultigroupBenchmarkFolders, findAllFilesInMultigroupFolder, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
@@ -414,18 +414,51 @@ async function runSimpleEvaluation(): Promise<void> {
       // Run folder (either specified or default)
       const folderName = benchmarkFolder || 'benchmark_2simusers_1groups_1start_2end_60min'
       console.log(`Using benchmark folder: ${folderName}`)
-      const benchmarkFiles = findAllBenchmarkFiles(folderName)
-      console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
-      console.log(`Running ${nReps} repetition(s) per case`)
 
-      for (let i = 0; i < benchmarkFiles.length; i++) {
-        console.log(`\n${'='.repeat(80)}`)
-        console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
-        console.log(`${'='.repeat(80)}`)
-        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps, topicRouting)
+      // Detect if this is a multigroup benchmark folder
+      const isMultigroup = folderName.includes('multigroup') || (folderName.includes('groups_') && !folderName.includes('1groups_'))
+
+      if (isMultigroup) {
+        // Handle multigroup benchmarks
+        const multigroupFolders = findAllMultigroupBenchmarkFolders(folderName)
+        console.log(`Found ${multigroupFolders.length} multigroup benchmark subfolder(s)`)
+
+        for (let i = 0; i < multigroupFolders.length; i++) {
+          const subFolderPath = multigroupFolders[i]
+          const benchmarkFiles = findAllFilesInMultigroupFolder(subFolderPath)
+
+          console.log(`\n${'='.repeat(80)}`)
+          console.log(`Running multigroup evaluation ${i + 1}/${multigroupFolders.length}`)
+          console.log(`Subfolder: ${subFolderPath}`)
+          console.log(`Found ${benchmarkFiles.length} group files`)
+          console.log(`Running ${nReps} repetition(s) per multigroup case`)
+          console.log(`${'='.repeat(80)}`)
+
+          // For multigroup, we need to run evaluation on all group files together
+          // This will require modification to runRepeatedEvaluation or a new function
+          // For now, let's run each group file individually
+          for (let j = 0; j < benchmarkFiles.length; j++) {
+            console.log(`\n--- Running group ${j + 1}/${benchmarkFiles.length} ---`)
+            await runRepeatedEvaluation(benchmarkFiles[j], true, nReps, topicRouting)
+          }
+        }
+
+        console.log(`\n✅ Completed all ${multigroupFolders.length} multigroup evaluations`)
+      } else {
+        // Handle single-group benchmarks (existing logic)
+        const benchmarkFiles = findAllBenchmarkFiles(folderName)
+        console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
+        console.log(`Running ${nReps} repetition(s) per case`)
+
+        for (let i = 0; i < benchmarkFiles.length; i++) {
+          console.log(`\n${'='.repeat(80)}`)
+          console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
+          console.log(`${'='.repeat(80)}`)
+          await runRepeatedEvaluation(benchmarkFiles[i], true, nReps, topicRouting)
+        }
+
+        console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
       }
-
-      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
     }
   } catch (error) {
     console.error('\n❌ Evaluation failed:', error)

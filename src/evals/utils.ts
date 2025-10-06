@@ -276,6 +276,54 @@ export function findAllBenchmarkFiles(folderName: string): string[] {
   }
 }
 
+// Find all multigroup benchmark subfolders (returns subfolder paths, not individual files)
+export function findAllMultigroupBenchmarkFolders(folderName: string): string[] {
+  const folderPath = join(__dirname, 'data', folderName)
+
+  if (!existsSync(folderPath)) {
+    throw new Error(`Multigroup benchmark folder not found: ${folderName} at ${folderPath}`)
+  }
+
+  try {
+    // Look for multigroup_benchmark_gen* subfolders
+    const subFolders = readdirSync(folderPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('multigroup_benchmark_gen'))
+      .map(dirent => join(folderPath, dirent.name))
+      .sort() // Sort subfolders alphabetically for consistent processing order
+
+    if (subFolders.length === 0) {
+      throw new Error(`No multigroup benchmark subfolders found in: ${folderName}`)
+    }
+
+    return subFolders
+  } catch (error) {
+    throw new Error(`Error reading multigroup benchmark folder ${folderName}: ${String(error)}`)
+  }
+}
+
+// Find all benchmark files within a multigroup subfolder
+export function findAllFilesInMultigroupFolder(subFolderPath: string): string[] {
+  if (!existsSync(subFolderPath)) {
+    throw new Error(`Multigroup subfolder not found: ${subFolderPath}`)
+  }
+
+  try {
+    const files = readdirSync(subFolderPath)
+    const benchmarkFiles = files
+      .filter((file) => file.endsWith('.json') && file.includes('_group') && file.includes('_gen'))
+      .map((file) => join(subFolderPath, file))
+      .sort() // Sort files alphabetically for consistent processing order
+
+    if (benchmarkFiles.length === 0) {
+      throw new Error(`No multigroup benchmark files found in subfolder: ${subFolderPath}`)
+    }
+
+    return benchmarkFiles
+  } catch (error) {
+    throw new Error(`Error reading multigroup subfolder ${subFolderPath}: ${String(error)}`)
+  }
+}
+
 // Check if a string looks like a specific benchmark file (contains gen + timestamp OR ends with .json)
 export function isSpecificBenchmarkFile(target: string): boolean {
   // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms) OR ends with .json
