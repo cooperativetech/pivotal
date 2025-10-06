@@ -269,7 +269,6 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   }
   resetConfirmations()
 
-
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
   let roundCount = 0
@@ -300,16 +299,13 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             }
           }
 
-          // Get the user's group from the mapping
-          const userGroup = findUserGroup(simUser.name)
-
           // Send reply through local API
           const replyRes = await local_api.message.$post({
             json: {
               userId: simUser.name,
               text: reply,
               ignoreExistingTopics: !topicRouting,
-              ...(topicRouting ? {} : topicIds[userGroup] ? { topicId: topicIds[userGroup] } : {}),
+              ...(topicRouting ? {} : topicIds[userGroupMapping![simUser.name]] ? { topicId: topicIds[userGroupMapping![simUser.name]]! } : {}),
             },
           })
 
