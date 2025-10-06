@@ -52,7 +52,7 @@ export function Timeline({
       />
 
       {entries.map((entry, index) => {
-        const positionPercent = 2 + (index / totalSegments) * 96
+        const fraction = index / totalSegments
         const isActive = position !== null && index <= position
         const isCurrent = index === position
 
@@ -76,7 +76,9 @@ export function Timeline({
           <div
             key={entry.id}
             className="absolute top-1/2 -translate-y-1/2"
-            style={{ left: `${positionPercent}%` }}
+            style={{
+              left: `calc(var(--spacing-container) + ((100% - (2 * var(--spacing-container))) * ${fraction}))`,
+            }}
           >
             <div className="h-2 w-2 -translate-x-1/2 rounded-full transition-all" style={dotStyle} title={tooltip} />
           </div>
@@ -86,7 +88,9 @@ export function Timeline({
       {position !== null && (
         <div
           className="absolute top-1/2 -translate-y-1/2 transition-none"
-          style={{ left: `${2 + (position / totalSegments) * 96}%` }}
+          style={{
+            left: `calc(var(--spacing-container) + ((100% - (2 * var(--spacing-container))) * ${position / totalSegments}))`,
+          }}
         >
           <div
             className={cn(
