@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
+import { join, dirname } from 'path'
 import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, findAllMultigroupBenchmarkFolders, findAllFilesInMultigroupFolder, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 // Parse command line arguments for benchmark file or folder
-function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number; topicRouting: boolean } {
+function parseArguments(): { benchmarkSet: string | null; benchmark: string | null; nReps: number; topicRouting: boolean } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      benchmarkFile: {
+      benchmarkSet: {
         type: 'string',
-        short: 'f',
+        short: 's',
       },
-      benchmarkFolder: {
+      benchmark: {
         type: 'string',
-        short: 'd',
+        short: 'b',
       },
       nReps: {
         type: 'string',
@@ -41,24 +43,25 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
   if (values.help) {
     console.log('Usage: pnpm run eval [options]')
     console.log('\nOptions:')
-    console.log('  -f, --benchmarkFile     Specific benchmark file (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773.json)')
-    console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1groups_1start_2end_60min)')
+    console.log('  -s, --benchmarkSet      Top-level folder containing multiple benchmarks (e.g., benchmark_2simusers_1start_2end_60min)')
+    console.log('  -b, --benchmark         Single benchmark folder with timestamped groups (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
     console.log('  -t, --topicRouting      Enable topic routing (default: false)')
     console.log('  -h, --help              Show this help message')
-    console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1groups_1start_2end_60min')
+    console.log('\nEither --benchmarkSet or --benchmark must be specified')
     process.exit(0)
   }
 
-  // Validate arguments
-  if (values.benchmarkFile && values.benchmarkFolder) {
-    console.error('Error: Cannot specify both --benchmarkFile and --benchmarkFolder')
+  // Validate arguments - only one option should be specified
+  const argCount = [values.benchmarkSet, values.benchmark].filter(Boolean).length
+  if (argCount > 1) {
+    console.error('Error: Cannot specify both --benchmarkSet and --benchmark')
     process.exit(1)
   }
 
   return {
-    benchmarkFile: values.benchmarkFile || null,
-    benchmarkFolder: values.benchmarkFolder || null,
+    benchmarkSet: values.benchmarkSet || null,
+    benchmark: values.benchmark || null,
     nReps: parseInt(values.nReps, 10),
     topicRouting: values.topicRouting || false,
   }
@@ -428,70 +431,68 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   return { topicDatas, suggestedEvents, confirmations }
 }
 
+// Get list of benchmarks from a benchmark set folder
+async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<string[]> {
+  const folderPath = join(__dirname, 'data', benchmarkSetFolder)
+
+  if (!existsSync(folderPath)) {
+    throw new Error(`Benchmark set folder not found: ${benchmarkSetFolder} at ${folderPath}`)
+  }
+
+  try {
+    // Find all benchmark_*_gen* folders within the top-level folder
+    const subFolders = readdirSync(folderPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && dirent.name.includes('_gen'))
+      .map(dirent => dirent.name)
+      .sort()
+
+    if (subFolders.length === 0) {
+      throw new Error(`No benchmark folders found in set: ${benchmarkSetFolder}`)
+    }
+
+    console.log(`Found ${subFolders.length} benchmark(s) in set`)
+    return subFolders
+  } catch (error) {
+    throw new Error(`Error reading benchmark set folder ${benchmarkSetFolder}: ${String(error)}`)
+  }
+}
+
 // Main evaluation function
 async function runSimpleEvaluation(): Promise<void> {
   console.log('=� Starting Simple Flack Evaluation')
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkFile, benchmarkFolder, nReps, topicRouting } = parseArguments()
+    const { benchmarkSet, benchmark, nReps, topicRouting } = parseArguments()
 
     // Step 2: Determine what to run based on arguments
-    if (benchmarkFile) {
-      // Run specific file
-      console.log(`Using benchmark file: ${benchmarkFile}`)
-      console.log(`Running ${nReps} repetition(s) per case`)
-      await runRepeatedEvaluation(benchmarkFile, false, nReps, topicRouting)
+    let benchmarksToRun: string[] = []
+
+    if (benchmarkSet) {
+      // Option 1: Loop over all benchmarks within a top-level folder
+      console.log(`Using benchmark set: ${benchmarkSet}`)
+      benchmarksToRun = await getBenchmarksFromSet(benchmarkSet)
+    } else if (benchmark) {
+      // Option 2: Run single benchmark folder
+      console.log(`Using single benchmark: ${benchmark}`)
+      benchmarksToRun = [benchmark]
     } else {
-      // Run folder (either specified or default)
-      const folderName = benchmarkFolder || 'benchmark_2simusers_1groups_1start_2end_60min'
-      console.log(`Using benchmark folder: ${folderName}`)
-
-      // Detect if this is a multigroup benchmark folder
-      const isMultigroup = folderName.includes('multigroup') || (folderName.includes('groups_') && !folderName.includes('1groups_'))
-
-      if (isMultigroup) {
-        // Handle multigroup benchmarks
-        const multigroupFolders = findAllMultigroupBenchmarkFolders(folderName)
-        console.log(`Found ${multigroupFolders.length} multigroup benchmark subfolder(s)`)
-
-        for (let i = 0; i < multigroupFolders.length; i++) {
-          const subFolderPath = multigroupFolders[i]
-          const benchmarkFiles = findAllFilesInMultigroupFolder(subFolderPath)
-
-          console.log(`\n${'='.repeat(80)}`)
-          console.log(`Running multigroup evaluation ${i + 1}/${multigroupFolders.length}`)
-          console.log(`Subfolder: ${subFolderPath}`)
-          console.log(`Found ${benchmarkFiles.length} group files`)
-          console.log(`Running ${nReps} repetition(s) per multigroup case`)
-          console.log(`${'='.repeat(80)}`)
-
-          // For multigroup, we need to run evaluation on all group files together
-          // This will require modification to runRepeatedEvaluation or a new function
-          // For now, let's run each group file individually
-          for (let j = 0; j < benchmarkFiles.length; j++) {
-            console.log(`\n--- Running group ${j + 1}/${benchmarkFiles.length} ---`)
-            await runRepeatedEvaluation(benchmarkFiles[j], true, nReps, topicRouting)
-          }
-        }
-
-        console.log(`\n✅ Completed all ${multigroupFolders.length} multigroup evaluations`)
-      } else {
-        // Handle single-group benchmarks (existing logic)
-        const benchmarkFiles = findAllBenchmarkFiles(folderName)
-        console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
-        console.log(`Running ${nReps} repetition(s) per case`)
-
-        for (let i = 0; i < benchmarkFiles.length; i++) {
-          console.log(`\n${'='.repeat(80)}`)
-          console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
-          console.log(`${'='.repeat(80)}`)
-          await runRepeatedEvaluation(benchmarkFiles[i], true, nReps, topicRouting)
-        }
-
-        console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
-      }
+      throw new Error('Must specify either --benchmarkSet or --benchmark')
     }
+
+    // Run all benchmarks
+    console.log(`Running ${benchmarksToRun.length} benchmark(s) with ${nReps} repetition(s) each`)
+
+    for (let i = 0; i < benchmarksToRun.length; i++) {
+      const benchmarkName = benchmarksToRun[i]
+      console.log(`\n${'='.repeat(80)}`)
+      console.log(`Running benchmark ${i + 1}/${benchmarksToRun.length}: ${benchmarkName}`)
+      console.log(`${'='.repeat(80)}`)
+
+      await runRepeatedEvaluation(benchmarkName, nReps, topicRouting)
+    }
+
+    console.log(`\n✅ Completed all ${benchmarksToRun.length} benchmarks (${nReps} reps each)`)
   } catch (error) {
     console.error('\n❌ Evaluation failed:', error)
     process.exit(1)
@@ -499,7 +500,7 @@ async function runSimpleEvaluation(): Promise<void> {
 }
 
 // Wrapper function to run repeated evaluations
-async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number, topicRouting: boolean): Promise<void> {
+async function runRepeatedEvaluation(benchmarkName: string, nReps: number, topicRouting: boolean): Promise<void> {
   const allResults: SavedEvaluationResults[] = []
 
   for (let rep = 1; rep <= nReps; rep++) {
@@ -507,7 +508,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
       console.log(`\n--- Repetition ${rep}/${nReps} ---`)
     }
     try {
-      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath, topicRouting)
+      const result = await runSingleEvaluation(benchmarkName, topicRouting)
       if (result) {
         allResults.push(result)
       }
@@ -522,14 +523,13 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
 
     // Create aggregated summary if we have multiple runs
     if (allResults.length > 1) {
-      const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-      createAggregatedSummary(fileName, allResults, nReps)
+      createAggregatedSummary(benchmarkName, allResults, nReps)
     }
   }
 }
 
-// Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false, topicRouting = false): Promise<SavedEvaluationResults | null> {
+// Run a single evaluation for a specific benchmark folder
+async function runSingleEvaluation(benchmarkName: string, topicRouting = false): Promise<SavedEvaluationResults | null> {
   try {
     // Step 1: Clear database
     await clearDatabase()
@@ -542,10 +542,21 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     let simUsers: BaseScheduleUser[] = []
     let benchmarkData: any
 
-    // Determine file paths to load
-    const filesToLoad = isFullPath
-      ? findAllFilesInMultigroupFolder(benchmarkFileOrPath)
-      : [findBenchmarkFile(benchmarkFileOrPath)]
+    // Load all JSON files from the benchmark folder
+    const folderPath = join(__dirname, 'data', benchmarkName)
+    if (!existsSync(folderPath)) {
+      throw new Error(`Benchmark folder not found: ${benchmarkName}`)
+    }
+
+    const files = readdirSync(folderPath)
+    const filesToLoad = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => join(folderPath, file))
+      .sort()
+
+    if (filesToLoad.length === 0) {
+      throw new Error(`No JSON files found in benchmark folder: ${benchmarkName}`)
+    }
 
     console.log(`Loading benchmark data from ${filesToLoad.length} file(s)`)
 
@@ -770,10 +781,6 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Save evaluation results
     console.log('\nSaving evaluation results...')
 
-    // Extract filename from path
-    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-    const baseFileName = fileName.replace(/\.json$/, '')
-
     // Get genTimestamp directly from benchmark data
     const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
 
@@ -781,7 +788,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     const resultsData: SavedEvaluationResults = {
       evalTimestamp: formatTimestamp(),
-      benchmarkFile: baseFileName,
+      benchmarkFile: benchmarkName,
       genTimestamp,
       suggestedEvents: result.suggestedEvents.map((event) => event ? {
         start: event.start.toISOString(),
@@ -803,7 +810,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     }
 
     // Create results folder
-    const evalFolderPath = createResultsFolder(fileName)
+    const evalFolderPath = createResultsFolder(benchmarkName)
 
     // Save evaluation results
     const savedResults = saveEvaluationResults(evalFolderPath, resultsData)
@@ -816,8 +823,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         const topicId = topicData.topic.id
         const fullTopicData = await dumpTopic(topicId)
 
-        // Create topic filename with group info: benchmarkType_gen<timestamp>_eval<timestamp>_group<index>_topic.json
-        const topicFileName = `${baseFileName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
+        // Create topic filename with group info: benchmarkName_eval<timestamp>_group<index>_topic.json
+        const topicFileName = `${benchmarkName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
         const topicPath = join(evalFolderPath, topicFileName)
         writeFileSync(topicPath, JSON.stringify(fullTopicData, null, 2))
         console.log(`Topic conversation history for group ${groupIndex} saved to: ${topicPath}`)
