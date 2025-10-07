@@ -82,15 +82,15 @@ function loadSimUsersFromBenchmarkData(benchmarkSimUsers: BaseScheduleUserData[]
 }
 
 // Create all server-side users based on simUsers
-async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
-  const usersToCreate = simUsers.map((simUser) => ({
+async function createUsersFromSimUsers(simUsers: Record<string, BaseScheduleUser>): Promise<Map<string, BaseScheduleUser>> {
+  const usersToCreate = Object.values(simUsers).map((simUser) => ({
     id: simUser.name,
     realName: simUser.name,
     isBot: false,
   }))
 
   const userSimUserMap = new Map<string, BaseScheduleUser>()
-  simUsers.forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
+  Object.values(simUsers).forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
 
   const createUsersRes = await local_api.users.create_fake.$post({
     json: { users: usersToCreate },
@@ -174,17 +174,17 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][], groupGoalInitializer: string[]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: Record<string, BaseScheduleUser>, topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][], groupGoalInitializer: string[]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
 
-  if (simUsers.length === 0) {
+  if (Object.keys(simUsers).length === 0) {
     throw new Error('No simUsers provided for conversation')
   }
 
   // Log all simUsers
-  simUsers.forEach((simUser, index) => {
+  Object.values(simUsers).forEach((simUser, index) => {
     console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
 
@@ -217,7 +217,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
   for (let groupIndex = 0; groupIndex < groupGoalInitializer.length; groupIndex++) {
     const goalUserName = groupGoalInitializer[groupIndex]
-    const simUser = simUsers.find(user => user.name === goalUserName)!
+    const simUser = simUsers[goalUserName]
 
     if (simUser.goal && simUser.goal.trim() !== '') {
       const initialMessage = await simUser.sendInitialMessage()
@@ -266,7 +266,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   // Initialize confirmation tracking for all simUsers
   const confirmations: Record<string, boolean> = {}
   const resetConfirmations = () => {
-    simUsers.forEach((simUser) => {
+    Object.values(simUsers).forEach((simUser) => {
       confirmations[simUser.name] = false
     })
   }
@@ -346,9 +346,9 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
                   console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
                   // Reset confirmations for users in this group
                   const groupUserNames = groupUserMapping[targetGroup] || []
-                  simUsers.forEach((user) => {
-                    if (groupUserNames.includes(user.name)) {
-                      confirmations[user.name] = false
+                  groupUserNames.forEach((userName) => {
+                    if (simUsers[userName]) {
+                      confirmations[userName] = false
                     }
                   })
                 }
@@ -367,7 +367,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
         const groupUserNames = groupUserMapping[groupIndex] || []
-        const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
+        const groupUsers = groupUserNames.map(name => simUsers[name]).filter(user => user)
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
@@ -406,7 +406,8 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     if (topicId) {
       // Find a user from this specific group to query the topic
       const groupUserNames = groupUserMapping[i] || []
-      const groupUser = simUsers.find((user) => groupUserNames.includes(user.name))
+      const validUserName = groupUserNames.find(name => simUsers[name])
+      const groupUser = validUserName ? simUsers[validUserName] : null
       if (!groupUser) {
         throw new Error(`No user found for group ${i}`)
       }
@@ -513,7 +514,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     let nGroups: number
     let groupUserMapping: string[][]
-    let simUsers: BaseScheduleUser[] = []
+    let simUsers: Record<string, BaseScheduleUser> = {}
     let benchmarkData: any
 
     // Load all JSON files from the benchmark folder
@@ -551,48 +552,34 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
         simUsers: groupSimUsers,
       })
 
-      simUsers.push(...groupSimUsers)
-    }
+      // Add users to the dictionary, handling deduplication
+      for (const simUser of groupSimUsers) {
+        const existing = simUsers[simUser.name]
+        if (existing) {
+          const existingHasGoal = existing.goal && existing.goal.trim() !== ''
+          const currentHasGoal = simUser.goal && simUser.goal.trim() !== ''
 
-    // Deduplicate simUsers: if multiple users have the same name, keep only the one with a goal
-    console.log(`Before deduplication: ${simUsers.length} simUsers`)
-    const userMap = new Map<string, BaseScheduleUser>()
-    const duplicatesFound: string[] = []
+          // Error if both users have goals - this indicates a data inconsistency
+          if (existingHasGoal && currentHasGoal) {
+            throw new Error(`Data inconsistency: User '${simUser.name}' appears multiple times with different goals. Existing: "${existing.goal}", New: "${simUser.goal}"`)
+          }
 
-    for (const simUser of simUsers) {
-      const existing = userMap.get(simUser.name)
-      if (existing) {
-        duplicatesFound.push(simUser.name)
-
-        const existingHasGoal = existing.goal && existing.goal.trim() !== ''
-        const currentHasGoal = simUser.goal && simUser.goal.trim() !== ''
-
-        // Error if both users have goals - this indicates a data inconsistency
-        if (existingHasGoal && currentHasGoal) {
-          throw new Error(`Data inconsistency: User '${simUser.name}' appears multiple times with different goals. Existing: "${existing.goal}", New: "${simUser.goal}"`)
-        }
-
-        // Keep the user with a goal, or if neither has goals, keep the first one
-        if (currentHasGoal && !existingHasGoal) {
-          userMap.set(simUser.name, simUser)
-          console.log(`  Replaced duplicate user '${simUser.name}' - keeping version with goal: "${simUser.goal}"`)
-        } else if (existingHasGoal && !currentHasGoal) {
-          console.log(`  Kept existing user '${simUser.name}' - has goal: "${existing.goal}"`)
+          // Keep the user with a goal, or if neither has goals, keep the first one
+          if (currentHasGoal && !existingHasGoal) {
+            simUsers[simUser.name] = simUser
+            console.log(`  Replaced duplicate user '${simUser.name}' - keeping version with goal: "${simUser.goal}"`)
+          } else if (existingHasGoal && !currentHasGoal) {
+            console.log(`  Kept existing user '${simUser.name}' - has goal: "${existing.goal}"`)
+          } else {
+            console.log(`  Kept first version of user '${simUser.name}' (neither has goal)`)
+          }
         } else {
-          console.log(`  Kept first version of user '${simUser.name}' (neither has goal)`)
+          simUsers[simUser.name] = simUser
         }
-      } else {
-        userMap.set(simUser.name, simUser)
       }
     }
 
-    // Update simUsers array with deduplicated users
-    simUsers = Array.from(userMap.values())
-
-    if (duplicatesFound.length > 0) {
-      console.log(`Removed ${duplicatesFound.length} duplicate user(s): ${[...new Set(duplicatesFound)].join(', ')}`)
-    }
-    console.log(`After deduplication: ${simUsers.length} simUsers`)
+    console.log(`Loaded ${Object.keys(simUsers).length} unique simUsers from ${filesToLoad.length} file(s)`)
 
     // Create groupUserMapping based on loaded groups
     groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
@@ -601,10 +588,10 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     benchmarkData = groupData[0].benchmarkData
     nGroups = filesToLoad.length
 
-    console.log(`Loaded ${simUsers.length} total simUsers across ${nGroups} groups`)
+    console.log(`Loaded ${Object.keys(simUsers).length} total simUsers across ${nGroups} groups`)
 
     // Log all loaded simUsers
-    simUsers.forEach((simUser) => {
+    Object.values(simUsers).forEach((simUser) => {
       // Find which group(s) this user belongs to
       const userGroups = groupUserMapping
         .map((userNames, groupIndex) => userNames.includes(simUser.name) ? groupIndex : -1)
@@ -622,9 +609,10 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     const groupGoalInitializer: string[] = []
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       const groupUsers = groupUserMapping[groupIndex]
-      const goalUser = simUsers.find(user =>
-        groupUsers.includes(user.name) && user.goal && user.goal.trim() !== ''
-      )
+      const goalUser = groupUsers
+        .map(name => simUsers[name])
+        .filter(user => user)
+        .find(user => user.goal && user.goal.trim() !== '')
       if (goalUser) {
         groupGoalInitializer.push(goalUser.name)
       } else {
@@ -654,7 +642,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     // Check confirmations
     const confirmedSimUsers = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
-    const allSimUsersConfirmed = confirmedSimUsers.length === simUsers.length
+    const allSimUsersConfirmed = confirmedSimUsers.length === Object.keys(simUsers).length
 
     console.log('\nConfirmation Status:')
     Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
@@ -664,7 +652,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     if (allSimUsersConfirmed && confirmedSimUsers.length > 0) {
       console.log('🎉 All simUsers have confirmed the meeting suggestion!')
     } else if (confirmedSimUsers.length > 0) {
-      console.log(`⚠️  Only ${confirmedSimUsers.length}/${simUsers.length} simUsers have confirmed`)
+      console.log(`⚠️  Only ${confirmedSimUsers.length}/${Object.keys(simUsers).length} simUsers have confirmed`)
     } else {
       console.log('❌ No confirmations detected from any simUsers')
     }
@@ -688,7 +676,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
       // Get users for this group
       const groupUserNames = groupUserMapping[groupIndex] || []
-      const groupUsers = simUsers.filter((user) => groupUserNames.includes(user.name))
+      const groupUsers = groupUserNames.map(name => simUsers[name]).filter(user => user)
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
       const commonFreeSlots = findCommonFreeTime(groupUsers, benchmarkStartTime, benchmarkEndTime)
@@ -814,7 +802,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       maxSharedFreeTimes: groupFeasibilityResults.map((g) => g.maxSharedFreeTime),
       allCanAttends: groupFeasibilityResults.map((g) => g.allUsersCanAttend),
       evaluationSummary: {
-        totalSimUsers: simUsers.length,
+        totalSimUsers: Object.keys(simUsers).length,
         confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvents: result.suggestedEvents.every((event) => event !== null),
         allCanAttend: allUsersCanAttend,
