@@ -100,3 +100,4 @@ Test Plan:
 ```
 - wrap commit messages at 72 characters
 - keep commit titles to 72 characters or less
+- in commit messages, don't take credit for authoring code
