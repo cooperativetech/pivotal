@@ -204,6 +204,13 @@
       "when": 1759711890391,
       "tag": "0028_create_github_app_installation_table",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1759823956215,
+      "tag": "0029_add_recurring_metadata_to_topic_state",
+      "breakpoints": true
     }
   ]
 }

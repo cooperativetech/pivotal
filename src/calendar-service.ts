@@ -6,7 +6,7 @@ import type { WebClient } from '@slack/web-api'
 
 import db from './db/engine'
 import { userDataTable, slackUserTable } from './db/schema/main'
-import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState } from '@shared/api-types'
+import type { UserContext, CalendarEvent, TopicUserContext, TopicWithState, RecurrencePattern } from '@shared/api-types'
 import { mergeCalendarWithOverrides } from '@shared/utils'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
@@ -44,6 +44,26 @@ function buildServiceAccountCalendarClient() {
   })
 
   return google.calendar({ version: 'v3', auth: jwt })
+}
+
+function buildRRule(pattern: RecurrencePattern): string {
+  const segments: string[] = [`FREQ=${pattern.frequency}`]
+
+  if (pattern.interval && pattern.interval > 1) {
+    segments.push(`INTERVAL=${pattern.interval}`)
+  }
+
+  if (pattern.byDay && pattern.byDay.length > 0) {
+    segments.push(`BYDAY=${pattern.byDay.join(',')}`)
+  }
+
+  if (pattern.until) {
+    const untilIso = new Date(pattern.until).toISOString()
+    const normalized = untilIso.replace(/[-:]/g, '').split('.')[0] + 'Z'
+    segments.push(`UNTIL=${normalized}`)
+  }
+
+  return `RRULE:${segments.join(';')}`
 }
 
 /**
@@ -193,7 +213,7 @@ export interface CalendarActionResult {
 
 export async function createCalendarInviteFromBot(
   topic: TopicWithState,
-  finalizedEvent: { start: string, end: string, summary?: string | null },
+  finalizedEvent: CalendarEvent,
 ): Promise<CalendarActionResult | null> {
   try {
     const calendar = buildServiceAccountCalendarClient()
@@ -212,27 +232,42 @@ export async function createCalendarInviteFromBot(
     const requestId = `pivotal-${topic.id}-${Date.now()}`
     const summary = finalizedEvent.summary || topic.state.summary || 'Meeting'
 
-    const insertRes = await calendar.events.insert({
-      calendarId: getBotCalendarId(),
-      requestBody: {
-        summary,
-        start: { dateTime: new Date(finalizedEvent.start).toISOString() },
-        end: { dateTime: new Date(finalizedEvent.end).toISOString() },
-        attendees,
-        // Tag event so we can recover it later by topic id
-        extendedProperties: {
-          private: {
-            pv_topic_id: topic.id,
-            pv_request_id: requestId,
-          },
-        },
-        conferenceData: {
-          createRequest: {
-            requestId,
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
+    const start = new Date(finalizedEvent.start)
+    const end = new Date(finalizedEvent.end)
+
+    const requestBody: calendar_v3.Schema$Event = {
+      summary,
+      start: {
+        dateTime: start.toISOString(),
+        timeZone: finalizedEvent.recurrencePattern?.timezone,
+      },
+      end: {
+        dateTime: end.toISOString(),
+        timeZone: finalizedEvent.recurrencePattern?.timezone,
+      },
+      attendees,
+      // Tag event so we can recover it later by topic id
+      extendedProperties: {
+        private: {
+          pv_topic_id: topic.id,
+          pv_request_id: requestId,
         },
       },
+      conferenceData: {
+        createRequest: {
+          requestId,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      },
+    }
+
+    if (finalizedEvent.recurrencePattern) {
+      requestBody.recurrence = [buildRRule(finalizedEvent.recurrencePattern)]
+    }
+
+    const insertRes = await calendar.events.insert({
+      calendarId: getBotCalendarId(),
+      requestBody,
       conferenceDataVersion: 1,
       // Always email calendar invites to attendees
       sendUpdates: 'all',

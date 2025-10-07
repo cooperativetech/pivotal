@@ -10,7 +10,7 @@ import {
   integer,
 } from 'drizzle-orm/pg-core'
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivation } from '@shared/api-types'
+import type { WorkflowType, TopicUserContext, UserContext, AutoMessageDeactivation, RecurringMetadata } from '@shared/api-types'
 import { organizationTable } from './auth'
 
 export const topicTable = pgTable('topic', {
@@ -30,6 +30,7 @@ export const topicStateTable = pgTable('topic_state', {
   summary: text().notNull(),
   isActive: boolean().notNull().default(true),
   perUserContext: jsonb().$type<Record<string, TopicUserContext>>().notNull().default({}),
+  recurringMetadata: jsonb().$type<RecurringMetadata>().notNull().default({}),
   createdByMessageId: uuid().notNull().references(() => slackMessageTable.id),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 })

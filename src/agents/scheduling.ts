@@ -1,16 +1,68 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import type { RunContext } from './agent-sdk'
 import { tool } from './agent-sdk'
-import { formatTimestampWithTimezone } from '../utils'
+import { formatTimestampWithTimezone, updateTopicState } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
+import type { RecurringSlotScore } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
 import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
 import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
 import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
 import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
+import { scoreRecurringSlots, summarizeIndividualConflicts } from '../tools/recurring-slots'
+
+type RecurringRecommendation = 'proceed' | 'dm_blocker' | 'present_options' | 'suggest_alternatives'
+
+function deriveRecurringRecommendation(scores: RecurringSlotScore[]): { recommendation: RecurringRecommendation; blockerUser?: string } {
+  if (scores.length === 0) {
+    return { recommendation: 'suggest_alternatives' }
+  }
+
+  const [best, ...rest] = scores
+  const participants = Math.max(1, Object.keys(best.perPersonConflicts).length)
+  const totalAttendanceSlots = best.totalOccurrences * participants
+  const normalizedConflictRate = totalAttendanceSlots === 0 ? 0 : best.totalConflicts / totalAttendanceSlots
+
+  const sortedIndividuals = Object.entries(best.perPersonConflicts).sort((a, b) => b[1] - a[1])
+  const [topName, topConflicts] = sortedIndividuals[0]
+  const topRate = best.totalOccurrences > 0 ? topConflicts / best.totalOccurrences : 0
+  const secondConflicts = sortedIndividuals[1]?.[1] ?? 0
+
+  if (best.totalConflicts === 0) {
+    return { recommendation: 'proceed' }
+  }
+
+  if (normalizedConflictRate >= 0.45) {
+    return { recommendation: 'suggest_alternatives', blockerUser: topConflicts > 0 ? topName : undefined }
+  }
+
+  const dominantBlocker = topConflicts > 0
+    && (topConflicts >= Math.max(2, Math.ceil(best.totalConflicts * 0.6)))
+    && topRate >= 0.15
+    && secondConflicts <= Math.max(1, Math.floor(best.totalConflicts * 0.25))
+
+  if (dominantBlocker) {
+    return { recommendation: 'dm_blocker', blockerUser: topName }
+  }
+
+  const secondBest = rest[0]
+  if (secondBest) {
+    const conflictDelta = Math.abs(best.totalConflicts - secondBest.totalConflicts)
+    if (conflictDelta <= 2 || (best.totalConflicts > 0 && secondBest.totalConflicts === best.totalConflicts)) {
+      return { recommendation: 'present_options', blockerUser: topConflicts > 0 ? topName : undefined }
+    }
+  }
+
+  if (topRate <= 0.1 && normalizedConflictRate <= 0.15) {
+    return { recommendation: 'proceed', blockerUser: topConflicts > 0 ? topName : undefined }
+  }
+
+  return { recommendation: 'present_options', blockerUser: topConflicts > 0 ? topName : undefined }
+}
 
 const findFreeSlots = tool({
   name: 'findFreeSlots',
@@ -106,6 +158,155 @@ const findFreeSlots = tool({
   },
 })
 
+const findRecurringSlots = tool({
+  name: 'findRecurringSlots',
+  description: 'Evaluate recurring meeting slots over multiple weeks and return tradeoff summaries plus a high-level recommendation.',
+  parameters: z.object({
+    userNames: z.array(z.string()).min(1).describe('Exact real names (from the User Directory) to include in the recurrence analysis.'),
+    slots: z.array(z.object({
+      dayOfWeek: z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']).describe('Day of the week for the recurring slot'),
+      time: z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM 24-hour format').describe('Local time in HH:MM (24h) for the meeting start'),
+      timezone: z.string().describe('IANA timezone for the slot'),
+    })).min(1).describe('Candidate recurring slots to evaluate'),
+    frequency: z.enum(['WEEKLY', 'BIWEEKLY']).describe('Recurrence cadence to score'),
+    durationMinutes: z.number().int().positive().max(8 * 60).describe('Meeting duration in minutes'),
+    startDate: z.string().describe('ISO date (YYYY-MM-DD) for the start of the analysis range'),
+    endDate: z.string().describe('ISO date (YYYY-MM-DD) for the end of the analysis range'),
+    sampleWeeks: z.number().int().positive().max(52).optional().default(12).describe('Number of weeks to sample when scoring conflicts (defaults to 12)'),
+  }),
+  execute: async (params, runContext?: RunContext<ConversationContext>) => {
+    if (!runContext) throw new Error('runContext not provided')
+
+    const { userNames, slots, frequency, durationMinutes, startDate, endDate, sampleWeeks } = params
+    const { topic, userMap, message } = runContext.context
+
+    const startPlain = Temporal.PlainDate.from(startDate)
+    const requestedEnd = Temporal.PlainDate.from(endDate)
+    const limitedEnd = sampleWeeks > 0 ? startPlain.add({ days: sampleWeeks * 7 }) : requestedEnd
+    const effectiveEnd = limitedEnd < requestedEnd ? limitedEnd : requestedEnd
+    const analysisEnd = effectiveEnd < startPlain ? startPlain : effectiveEnd
+
+    const analysisWindowStart = new Date(`${startPlain.toString()}T00:00:00.000Z`)
+    const analysisWindowEnd = new Date(`${analysisEnd.toString()}T23:59:59.000Z`)
+
+    const nameToIdMap = new Map<string, string>()
+    userMap.forEach((user, id) => {
+      if (user.realName) {
+        nameToIdMap.set(user.realName, id)
+      }
+    })
+
+    const missingCalendars: string[] = []
+    const unknownUsers: string[] = []
+    const calendarMap = new Map<string, CalendarEvent[]>()
+
+    await Promise.all(userNames.map(async (userName) => {
+      const userId = nameToIdMap.get(userName)
+      if (!userId) {
+        console.warn(`findRecurringSlots: could not match user ${userName}`)
+        unknownUsers.push(userName)
+        return
+      }
+
+      const calendar = await getUserCalendarStructured(userId, topic, analysisWindowStart, analysisWindowEnd)
+      if (calendar === null) {
+        missingCalendars.push(userName)
+        calendarMap.set(userName, [])
+        return
+      }
+      calendarMap.set(userName, calendar)
+    }))
+
+    // Ensure all known users appear in the map even if they lacked calendar data
+    userNames.forEach((userName) => {
+      if (!calendarMap.has(userName)) {
+        calendarMap.set(userName, [])
+      }
+    })
+
+    const scores = scoreRecurringSlots({
+      slots,
+      durationMinutes,
+      frequency,
+      startDate,
+      endDate: analysisEnd.toString(),
+      sampleWeeks,
+      userCalendars: calendarMap,
+    })
+
+    const sortedScores = scores.slice().sort((a, b) => {
+      if (a.totalConflicts !== b.totalConflicts) {
+        return a.totalConflicts - b.totalConflicts
+      }
+      return b.percentAvailable - a.percentAvailable
+    })
+
+    const topScores = sortedScores.slice(0, 5)
+    const { recommendation, blockerUser } = deriveRecurringRecommendation(sortedScores)
+    const blockerSummaries = sortedScores[0]
+      ? summarizeIndividualConflicts(sortedScores[0].perPersonConflicts, sortedScores[0].totalOccurrences)
+      : []
+
+    const blockerUserIds = blockerUser ? (() => {
+      const blockerId = nameToIdMap.get(blockerUser)
+      return blockerId ? [blockerId] : []
+    })() : []
+
+    const daySpan = startPlain.until(analysisEnd, { largestUnit: 'days' }).days
+    const sampleWeeksUsed = Math.max(1, Math.ceil((daySpan + 1) / 7))
+
+    try {
+      await updateTopicState(
+        topic,
+        {
+          recurringMetadata: {
+            analyzedRange: {
+              startDate,
+              endDate: analysisEnd.toString(),
+              frequency,
+              sampleWeeks: sampleWeeksUsed,
+            },
+            candidateSlots: topScores,
+            blockerUserIds,
+            recommendation,
+            selectedSlot: null,
+            lastAnalyzedAt: new Date().toISOString(),
+          },
+        },
+        message.id,
+      )
+    } catch (error) {
+      console.error('Failed to persist recurring metadata', error)
+    }
+
+    return {
+      analysisWindow: {
+        startDate,
+        endDate: analysisEnd.toString(),
+        requestedEndDate: endDate,
+        sampleWeeksUsed,
+      },
+      totalSlotsConsidered: sortedScores.length,
+      slots: topScores.map((score) => ({
+        slot: score.slot,
+        durationMinutes: score.durationMinutes,
+        totalOccurrences: score.totalOccurrences,
+        totalConflicts: score.totalConflicts,
+        perPersonConflicts: score.perPersonConflicts,
+        percentAvailable: Number(score.percentAvailable.toFixed(2)),
+        conflictWeeks: score.conflictWeeks,
+        tradeoffSummary: score.tradeoffSummary,
+      })),
+      missingCalendars,
+      unknownUsers,
+      recommendation,
+      blockerUser: blockerUser ?? null,
+      blockerSummaries,
+      participantsEvaluated: Array.from(calendarMap.keys()),
+    }
+  },
+})
+
 const updateUserCalendar = tool({
   name: 'updateUserCalendar',
   description: 'Update a user\'s calendar with manual availability overrides. These will be merged with their existing calendar, overwriting any overlapping time periods.',
@@ -183,6 +384,20 @@ You will receive:
 
 ## Your Task
 Based on the current state, determine what tools to call (if any) and generate the appropriate message(s) to users, if they are necessary to move the scheduling task along
+
+## Recurring Meetings (weekly/biweekly)
+- Detect recurring intent (e.g., "weekly", "every Monday", "standup", "for the semester").
+- Before calling tools, collect the cadence details: frequency (weekly vs biweekly), candidate day/time combinations, timezone anchor, duration, and the date range you should cover (usually 8–12 weeks or the timeframe provided).
+- Call **findRecurringSlots** with those candidate slots to score options. The tool returns tradeoff summaries, missing calendar notes, and a recommendation.
+- Follow the recommendation while still applying judgment:
+  - **proceed** → share the best slot succinctly in-channel ("Tuesdays 2pm (PT) works great — everyone can make ~95% of meetings").
+  - **dm_blocker** → DM the named person before moving on; ask if they can flex or prefer an alternate cadence.
+  - **present_options** → present the top 2–3 options in the group chat using social framing (balanced vs prioritizing a key person).
+  - **suggest_alternatives** → explain that every slot is rough and suggest changing cadence, rotating times, or splitting the group.
+- Always phrase conflicts socially, not as raw counts. Use the provided tradeoffSummary plus your own wording ("Bob would miss about one in four meetings" vs "Bob has 12 conflicts").
+- If the tool lists missing calendars, prompt those people for availability before locking anything in.
+- When everyone agrees on a recurring slot, include a **finalizedEvent** with 'recurrencePattern' (frequency, byDay, interval, until, timezone) and confirm the cadence in the groupMessage.
+- Keep empathy for social dynamics — prioritize quick alignment, minimal back-and-forth, and highlight tradeoffs so humans make the final call.
 
 ## Subtasks that need be handled
 1. Need to determine who should be involved
@@ -447,7 +662,7 @@ export const schedulingAgent = new ConversationAgent({
     temperature: 0.7,
     parallelToolCalls: false, // Only allow one tool call at a time
   },
-  tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
+  tools: [findFreeSlots, findRecurringSlots, updateUserNames, updateUserCalendar, updateSummary],
   outputType: ConversationRes,
   instructions: schedulingInstructions,
 })

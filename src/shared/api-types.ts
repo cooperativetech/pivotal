@@ -18,14 +18,41 @@ export type TopicStateWithMessageTs = TopicState & {
 export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'queries', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
 
+export const RecurrencePattern = z.strictObject({
+  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).describe('Recurrence frequency'),
+  byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional().describe('Days of week for recurrence'),
+  interval: z.number().default(1).describe('Recurrence interval, e.g. every N weeks'),
+  until: z.string().describe('ISO timestamp indicating when the recurrence ends'),
+  timezone: z.string().describe('IANA timezone identifier the recurrence anchors to'),
+})
+export type RecurrencePattern = z.infer<typeof RecurrencePattern>
+
 export const CalendarEvent = z.strictObject({
   start: z.string().describe('ISO timestamp for the start of the event'),
   end: z.string().describe('ISO timestamp for the end of the event'),
   summary: z.string().describe('Description of the event (e.g., "Available", "Busy", "Meeting")'),
   free: z.boolean().optional().nullable().describe('Whether the user is free during this time (default: false, meaning busy)'),
   participantEmails: z.array(z.string()).optional().nullable().describe('List of participant email addresses'),
+  recurrencePattern: RecurrencePattern.optional().nullable().describe('Optional recurrence metadata when the event represents a series'),
 })
 export type CalendarEvent = z.infer<typeof CalendarEvent>
+
+export type RecurringSlotDescriptor = {
+  dayOfWeek: 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU'
+  time: string // HH:MM in 24h format, anchored to timezone
+  timezone: string
+}
+
+export interface RecurringSlotScore {
+  slot: RecurringSlotDescriptor
+  durationMinutes: number
+  totalOccurrences: number
+  totalConflicts: number
+  perPersonConflicts: Record<string, number>
+  percentAvailable: number
+  conflictWeeks: string[]
+  tradeoffSummary: string
+}
 
 export interface UserContext {
   slackTeamId?: string
@@ -39,6 +66,25 @@ export interface TopicUserContext {
   calendarManualOverrides?: CalendarEvent[]
   // Pointer to the DM message where we showed calendar connect buttons
   calendarPromptMessage?: { channelId: string, ts: string }
+  recurringContext?: {
+    lastPromptedAt?: string
+    providedAvailability?: { startDate: string, endDate: string }[]
+    notes?: string
+  }
+}
+
+export interface RecurringMetadata {
+  analyzedRange?: {
+    startDate: string
+    endDate: string
+    frequency: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'
+    sampleWeeks?: number
+  }
+  candidateSlots?: RecurringSlotScore[]
+  blockerUserIds?: string[]
+  recommendation?: 'dm_blocker' | 'present_options' | 'proceed' | 'suggest_alternatives'
+  selectedSlot?: RecurringSlotDescriptor | null
+  lastAnalyzedAt?: string
 }
 
 export interface GithubRepo {
