@@ -542,60 +542,41 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     let simUsers: BaseScheduleUser[] = []
     let benchmarkData: any
 
-    // Check if this is a multigroup folder path or a single benchmark file
-    const isMultigroupFolder = benchmarkFileOrPath.includes('multigroup_benchmark_gen')
+    // Determine file paths to load
+    const filesToLoad = isFullPath
+      ? findAllFilesInMultigroupFolder(benchmarkFileOrPath)
+      : [findBenchmarkFile(benchmarkFileOrPath)]
 
-    if (isMultigroupFolder && isFullPath) {
-      // Handle multigroup folder: load all group files and combine them
-      console.log(`Loading multigroup benchmark from folder: ${benchmarkFileOrPath}`)
-      const groupFiles = findAllFilesInMultigroupFolder(benchmarkFileOrPath)
-      console.log(`Found ${groupFiles.length} group files`)
+    console.log(`Loading benchmark data from ${filesToLoad.length} file(s)`)
 
-      const groupData: Array<{ benchmarkData: any; simUsers: BaseScheduleUser[] }> = []
+    const groupData: Array<{ benchmarkData: any; simUsers: BaseScheduleUser[] }> = []
 
-      // Load each group file
-      for (let i = 0; i < groupFiles.length; i++) {
-        const groupFilePath = groupFiles[i]
-        console.log(`Loading group file ${i + 1}: ${groupFilePath}`)
+    // Load each file
+    for (let i = 0; i < filesToLoad.length; i++) {
+      const filePath = filesToLoad[i]
+      console.log(`Loading file ${i + 1}/${filesToLoad.length}: ${filePath}`)
 
-        const rawData = readFileSync(groupFilePath, 'utf-8')
-        const parsedData: unknown = JSON.parse(rawData)
-        const groupBenchmarkData = BenchmarkFileData.parse(parsedData)
-        const groupSimUsers = loadSimUsersFromBenchmarkData(groupBenchmarkData.simUsers)
-
-        groupData.push({
-          benchmarkData: groupBenchmarkData,
-          simUsers: groupSimUsers,
-        })
-
-        simUsers.push(...groupSimUsers)
-      }
-
-      // Create groupUserMapping on the fly based on group files
-      groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
-
-      // Use the first group's benchmark data as the template (they should all have the same parameters)
-      benchmarkData = groupData[0].benchmarkData
-      nGroups = groupFiles.length
-
-      console.log(`Loaded ${simUsers.length} total simUsers across ${nGroups} groups`)
-    } else {
-      // Handle single benchmark file (existing logic)
-      const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
-      console.log(`Found benchmark file at: ${dataPath}`)
-      const rawData = readFileSync(dataPath, 'utf-8')
+      const rawData = readFileSync(filePath, 'utf-8')
       const parsedData: unknown = JSON.parse(rawData)
+      const groupBenchmarkData = BenchmarkFileData.parse(parsedData)
+      const groupSimUsers = loadSimUsersFromBenchmarkData(groupBenchmarkData.simUsers)
 
-      // Validate benchmark data structure with Zod
-      benchmarkData = BenchmarkFileData.parse(parsedData)
-      const benchmarkSimUsers = benchmarkData.simUsers
-      nGroups = benchmarkData.benchmark.nGroups || 1
-      groupUserMapping = benchmarkData.benchmark.userGroupMapping || {}
+      groupData.push({
+        benchmarkData: groupBenchmarkData,
+        simUsers: groupSimUsers,
+      })
 
-      console.log('Loading simUsers from benchmark data...')
-      simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
-      console.log(`Loaded ${simUsers.length} simUsers`)
+      simUsers.push(...groupSimUsers)
     }
+
+    // Create groupUserMapping based on loaded groups
+    groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
+
+    // Use the first group's benchmark data as the template
+    benchmarkData = groupData[0].benchmarkData
+    nGroups = filesToLoad.length
+
+    console.log(`Loaded ${simUsers.length} total simUsers across ${nGroups} groups`)
 
     // Log all loaded simUsers
     simUsers.forEach((simUser) => {

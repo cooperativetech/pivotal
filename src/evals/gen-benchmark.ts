@@ -201,56 +201,44 @@ async function generateMultiGroupBenchmarks() {
     // Generate timestamp for this benchmark case
     const timestamp = formatTimestamp()
 
-    if (nGroups === 1) {
-      // Single-group benchmark
-      const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp)
-
-      // Create folder name and filename with benchmark parameters
-      const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-      const filename = `${folderName}_gen${timestamp}.json`
-      const folderPath = join(__dirname, 'data', folderName)
-
-      // Create folder if it doesn't exist
-      if (!existsSync(folderPath)) {
-        await mkdir(folderPath, { recursive: true })
-        console.log(`Created folder: ${folderName}`)
+    // Validate nGroups parameter for multi-group case
+    if (nGroups > 1) {
+      const minUsersPerGroup = 2
+      const minRequiredUsers = nGroups * minUsersPerGroup
+      if (nSimUsers < minRequiredUsers) {
+        throw new Error(`Cannot divide ${nSimUsers} users into ${nGroups} groups with at least ${minUsersPerGroup} users each. Need at least ${minRequiredUsers} users.`)
       }
+    }
 
+    // Create standardized folder structure (same for single and multi-group)
+    const baseFolderName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+    const subFolderName = `benchmark_gen${timestamp}`
+    const baseFolderPath = join(__dirname, 'data', baseFolderName)
+    const folderPath = join(baseFolderPath, subFolderName)
+
+    // Create folders if they don't exist
+    if (!existsSync(baseFolderPath)) {
+      await mkdir(baseFolderPath, { recursive: true })
+      console.log(`Created folder: ${baseFolderName}`)
+    }
+    if (!existsSync(folderPath)) {
+      await mkdir(folderPath, { recursive: true })
+      console.log(`Created subfolder: ${subFolderName}`)
+    }
+
+    // Create nGroups independent benchmarks
+    for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
+      console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
+
+      // Call createBenchmark for each group
+      const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp, nGroups, groupIndex)
+
+      // Save with group-specific filename
+      const filename = `${baseFolderName}_group${groupIndex + 1}_gen${timestamp}.json`
       const filePath = join(folderPath, filename)
+
       await writeFile(filePath, JSON.stringify(exportData, null, 2))
-      console.log(`Benchmark saved to ${filePath}`)
-    } else {
-
-      // Create multigroup folder structure
-      const baseFolderName = `multigroup_benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-      const subFolderName = `${baseFolderName}_gen${timestamp}`
-      const baseFolderPath = join(__dirname, 'data', baseFolderName)
-      const folderPath = join(baseFolderPath, subFolderName)
-
-      // Create folders if they don't exist
-      if (!existsSync(baseFolderPath)) {
-        await mkdir(baseFolderPath, { recursive: true })
-        console.log(`Created folder: ${baseFolderName}`)
-      }
-      if (!existsSync(folderPath)) {
-        await mkdir(folderPath, { recursive: true })
-        console.log(`Created subfolder: ${subFolderName}`)
-      }
-
-      // Create nGroups independent benchmarks
-      for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
-        console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
-
-        // Call createBenchmark for each group
-        const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, timestamp, nGroups, groupIndex)
-
-        // Save with group-specific filename
-        const filename = `multigroup_benchmark_gen${timestamp}_group${groupIndex + 1}.json`
-        const filePath = join(folderPath, filename)
-
-        await writeFile(filePath, JSON.stringify(exportData, null, 2))
-        console.log(`Group ${groupIndex + 1} benchmark saved to ${filePath}`)
-      }
+      console.log(`Group ${groupIndex + 1} benchmark saved to ${filePath}`)
     }
   }
 
