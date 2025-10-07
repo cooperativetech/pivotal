@@ -554,6 +554,46 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       simUsers.push(...groupSimUsers)
     }
 
+    // Deduplicate simUsers: if multiple users have the same name, keep only the one with a goal
+    console.log(`Before deduplication: ${simUsers.length} simUsers`)
+    const userMap = new Map<string, BaseScheduleUser>()
+    const duplicatesFound: string[] = []
+
+    for (const simUser of simUsers) {
+      const existing = userMap.get(simUser.name)
+      if (existing) {
+        duplicatesFound.push(simUser.name)
+
+        const existingHasGoal = existing.goal && existing.goal.trim() !== ''
+        const currentHasGoal = simUser.goal && simUser.goal.trim() !== ''
+
+        // Error if both users have goals - this indicates a data inconsistency
+        if (existingHasGoal && currentHasGoal) {
+          throw new Error(`Data inconsistency: User '${simUser.name}' appears multiple times with different goals. Existing: "${existing.goal}", New: "${simUser.goal}"`)
+        }
+
+        // Keep the user with a goal, or if neither has goals, keep the first one
+        if (currentHasGoal && !existingHasGoal) {
+          userMap.set(simUser.name, simUser)
+          console.log(`  Replaced duplicate user '${simUser.name}' - keeping version with goal: "${simUser.goal}"`)
+        } else if (existingHasGoal && !currentHasGoal) {
+          console.log(`  Kept existing user '${simUser.name}' - has goal: "${existing.goal}"`)
+        } else {
+          console.log(`  Kept first version of user '${simUser.name}' (neither has goal)`)
+        }
+      } else {
+        userMap.set(simUser.name, simUser)
+      }
+    }
+
+    // Update simUsers array with deduplicated users
+    simUsers = Array.from(userMap.values())
+
+    if (duplicatesFound.length > 0) {
+      console.log(`Removed ${duplicatesFound.length} duplicate user(s): ${[...new Set(duplicatesFound)].join(', ')}`)
+    }
+    console.log(`After deduplication: ${simUsers.length} simUsers`)
+
     // Create groupUserMapping based on loaded groups
     groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
 
