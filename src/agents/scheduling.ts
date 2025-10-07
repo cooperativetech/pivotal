@@ -210,7 +210,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Continue gathering until a consensus time emerges from the constraints
 
 4. Ready to confirm the consensus time
-  - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
+  - Return groupMessage with the agreed time for final confirmation (sent to shared channel) when you still need humans to acknowledge the proposed slot
   - Only use when you have identified a time that works for all participants and still need explicit confirmation from them
   - Return replyMessage with confirmation
   - Keep confirmations concise and avoid implying that a calendar invite has already been sent
@@ -220,7 +220,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
   - Set finalizedEvent.summary to 'Meeting with <list of all confirmed human participants>' using the exact full names (include the scheduler/initiator even if they requested the meeting).
-  - Pair the finalizedEvent with a short groupMessage confirming the plan (e.g., "Locked in Tue 1pm (EST). Invite is on the way."), but do not include calendar links or restate the full invite details yourself.
+  - When you include a finalizedEvent, rely on the automated calendar post for announcements—leave groupMessage blank instead of sending a duplicate confirmation.
 
 - Miscellaneous actions needed
   - Sometimes you need to ask for clarification, provide updates, or handle edge cases
@@ -245,7 +245,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 - Use the updateSummary tool whenever new information clarifies or changes the meeting details
 - When you revise the topic summary or finalizedEvent summary, list every confirmed attendee explicitly (include the scheduler/initiator so the meeting title reads like 'Meeting with Alice, Bob, and Taylor').
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
-- CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
+- CRITICAL: When you include a finalizedEvent, omit groupMessage; the platform will announce the calendar update. Avoid duplicating the invite details or sharing Meet links manually.
 - ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
@@ -325,8 +325,8 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
       "text": "Quick check - are you available Tuesday afternoon?"
     }
   ],
-  "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
-  // CRITICAL: If you confirm an exact meeting time in groupMessage, ALSO include a matching finalizedEvent in the same response
+  "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (use only when confirmation is still pending)
+  // CRITICAL: If you include finalizedEvent, leave groupMessage null—the system will post the confirmation automatically
   "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
     "start": "2025-03-12T18:00:00Z", // ISO string
     "end": "2025-03-12T18:30:00Z",   // ISO string
