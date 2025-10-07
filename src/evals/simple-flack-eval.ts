@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, findAllMultigroupBenchmarkFolders, findAllFilesInMultigroupFolder, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
+import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, findAllMultigroupBenchmarkFolders, findAllFilesInMultigroupFolder, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase, getBenchmarksFromSet } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
@@ -429,32 +429,6 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   }
 
   return { topicDatas, suggestedEvents, confirmations }
-}
-
-// Get list of benchmarks from a benchmark set folder
-async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<string[]> {
-  const folderPath = join(__dirname, 'data', benchmarkSetFolder)
-
-  if (!existsSync(folderPath)) {
-    throw new Error(`Benchmark set folder not found: ${benchmarkSetFolder} at ${folderPath}`)
-  }
-
-  try {
-    // Find all benchmark_*_gen* folders within the top-level folder
-    const subFolders = readdirSync(folderPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory() && dirent.name.includes('_gen'))
-      .map(dirent => dirent.name)
-      .sort()
-
-    if (subFolders.length === 0) {
-      throw new Error(`No benchmark folders found in set: ${benchmarkSetFolder}`)
-    }
-
-    console.log(`Found ${subFolders.length} benchmark(s) in set`)
-    return subFolders
-  } catch (error) {
-    throw new Error(`Error reading benchmark set folder ${benchmarkSetFolder}: ${String(error)}`)
-  }
 }
 
 // Main evaluation function

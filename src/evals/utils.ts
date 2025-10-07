@@ -464,3 +464,29 @@ export async function clearDatabase(): Promise<void> {
     throw error
   }
 }
+
+// Get benchmark folders from a benchmark set
+export async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<string[]> {
+  const folderPath = join(__dirname, 'data', benchmarkSetFolder)
+
+  if (!existsSync(folderPath)) {
+    throw new Error(`Benchmark set folder not found: ${benchmarkSetFolder} at ${folderPath}`)
+  }
+
+  try {
+    // Find all benchmark_*_gen* folders within the top-level folder
+    const subFolders = readdirSync(folderPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && dirent.name.includes('_gen'))
+      .map(dirent => dirent.name)
+      .sort()
+
+    if (subFolders.length === 0) {
+      throw new Error(`No benchmark folders found in set: ${benchmarkSetFolder}`)
+    }
+
+    console.log(`Found ${subFolders.length} benchmark(s) in set`)
+    return subFolders
+  } catch (error) {
+    throw new Error(`Error reading benchmark set folder ${benchmarkSetFolder}: ${String(error)}`)
+  }
+}
