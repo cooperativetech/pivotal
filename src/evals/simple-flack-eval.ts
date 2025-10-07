@@ -367,7 +367,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
         const groupUserNames = groupUserMapping[groupIndex] || []
-        const groupUsers = groupUserNames.map(name => simUsers[name]).filter(user => user)
+        const groupUsers = groupUserNames.map(name => simUsers[name])
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
@@ -611,7 +611,6 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       const groupUsers = groupUserMapping[groupIndex]
       const goalUser = groupUsers
         .map(name => simUsers[name])
-        .filter(user => user)
         .find(user => user.goal && user.goal.trim() !== '')
       if (goalUser) {
         groupGoalInitializer.push(goalUser.name)
@@ -676,7 +675,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
       // Get users for this group
       const groupUserNames = groupUserMapping[groupIndex] || []
-      const groupUsers = groupUserNames.map(name => simUsers[name]).filter(user => user)
+      const groupUsers = groupUserNames.map(name => simUsers[name])
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
       const commonFreeSlots = findCommonFreeTime(groupUsers, benchmarkStartTime, benchmarkEndTime)
