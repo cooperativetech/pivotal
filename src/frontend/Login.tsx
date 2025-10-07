@@ -25,7 +25,10 @@ export default function Login() {
         undefined
       )
 
-      await authClient.signIn.social({ provider: 'slack', callbackURL })
+      // Pass team parameter as query param to sign-in endpoint
+      const fetchOptions = team ? { query: { team } } : undefined
+
+      await authClient.signIn.social({ provider: 'slack', callbackURL, fetchOptions })
     } catch (err) {
       setError('Failed to continue with Slack')
       console.error(err)

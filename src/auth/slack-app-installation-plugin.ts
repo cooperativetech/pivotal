@@ -52,7 +52,7 @@ export function slackAppInstallationPlugin() {
         body: z.strictObject({
           'callbackURL': z.string(),
         }),
-      },async (c) => {
+      }, async (c) => {
         const session = await getSessionFromCtx(c)
         if (!session?.user) {
           c.context.logger.error('No logged in user found')
