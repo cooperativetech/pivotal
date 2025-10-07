@@ -204,6 +204,13 @@
       "when": 1759711890391,
       "tag": "0028_create_github_app_installation_table",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1759822982179,
+      "tag": "0029_add_team_id_to_account_table",
+      "breakpoints": true
     }
   ]
 }

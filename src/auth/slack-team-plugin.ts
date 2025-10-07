@@ -3,9 +3,9 @@ import { createAuthMiddleware } from 'better-auth/api'
 import type { BetterAuthPlugin } from 'better-auth/plugins'
 import type { SlackProfile } from 'better-auth/social-providers'
 import { decryptOAuthToken } from 'better-auth/oauth2'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, ne } from 'drizzle-orm'
 import db from '../db/engine'
-import { organizationTable, memberTable } from '../db/schema/auth'
+import { organizationTable, memberTable, accountTable } from '../db/schema/auth'
 import { auth } from './index'
 
 export function slackTeamPlugin() {
@@ -35,12 +35,29 @@ export function slackTeamPlugin() {
           }
 
           const accounts = await c.context.internalAdapter.findAccounts(userId)
-          const slackAccount = accounts.find((account) => account.providerId === 'slack')
-          if (!slackAccount) {
+          const slackAccounts = accounts.filter((account) => account.providerId === 'slack')
+          if (slackAccounts.length === 0) {
             c.context.logger.error('No Slack account found for user')
             await c.context.internalAdapter.deleteSession(sessionToken)
             return
+          } else if (slackAccounts.length > 1) {
+            // We don't support multiple slack workspaces for a single user, so if the user
+            // logs in with a different workspace than they did the first time, delete all but
+            // their oldest slack account. The login still succeeds though
+            const oldestAccountId = slackAccounts.reduce((oldest, account) => {
+              return new Date(account.createdAt).getTime() < new Date(oldest.createdAt).getTime() ? account : oldest
+            }).id
+            await db.delete(accountTable)
+              .where(and(
+                eq(accountTable.userId, userId),
+                eq(accountTable.providerId, 'slack'),
+                ne(accountTable.id, oldestAccountId),
+              ))
+
+            c.context.logger.warn(`Deleted duplicate Slack accounts for user ${userId}, kept ${oldestAccountId}`)
+            return
           }
+          const slackAccount = slackAccounts[0]
 
           const accessToken = await decryptOAuthToken(slackAccount.accessToken || '', c.context)
           const userInfo = await slackProvider.getUserInfo({ accessToken })
@@ -54,6 +71,11 @@ export function slackTeamPlugin() {
           const slackTeamId = slackData['https://slack.com/team_id']
           const slackTeamName = slackData['https://slack.com/team_name']
           const slackTeamDomain = slackData['https://slack.com/team_domain']
+
+          // Update the Slack account with the teamId
+          await db.update(accountTable)
+            .set({ teamId: slackTeamId })
+            .where(eq(accountTable.id, slackAccount.id))
 
           try {
             // Query for existing organization with this Slack team ID
@@ -139,6 +161,11 @@ export function slackTeamPlugin() {
       organization: {
         fields: {
           slackTeamId: { type: 'string', required: true, unique: true },
+        },
+      },
+      account: {
+        fields: {
+          teamId: { type: 'string' },
         },
       },
     },

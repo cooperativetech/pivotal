@@ -62,6 +62,8 @@ async function promptUserToConnectCalendar(
       ? options.contextMessage.trim()
       : 'To help with scheduling, you can connect your Google Calendar:'
 
+    const topic = await getTopicWithState(topicId)
+
     const dmResponse = await client.chat.postMessage({
       channel: dmResult.channel.id,
       text: promptText,
@@ -70,7 +72,7 @@ async function promptUserToConnectCalendar(
         {
           type: 'actions',
           elements: [
-            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize` },
+            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize?team=${topic.slackTeamId}` },
             { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
             { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
           ],
@@ -317,7 +319,7 @@ export async function processSchedulingActions(
       }
       targetUserId = targetUserId || message.userId
       await promptUserToConnectCalendar(topicId, targetUserId, message.id, client, {
-        force: nextStep.promptCalendarButtons.force ?? false,
+        force: true,
         contextMessage: nextStep.promptCalendarButtons.contextMessage ?? null,
       })
     }

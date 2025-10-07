@@ -16,7 +16,14 @@ export default function Login() {
     setLoading(true)
     try {
       const redirectTo = searchParams.get('redirectTo')
-      const callbackURL = redirectTo === 'googleAuthorize' ? '/api/google/authorize' : undefined
+      const team = searchParams.get('team')
+      const teamParam = team ? `?team=${team}` : ''
+
+      const callbackURL = (
+        redirectTo === 'googleAuthorize' ?
+        `/api/google/authorize${teamParam}` :
+        undefined
+      )
 
       await authClient.signIn.social({ provider: 'slack', callbackURL })
     } catch (err) {

@@ -40,7 +40,6 @@ export const ConversationRes = z.strictObject({
   promptCalendarButtons: z.strictObject({
     userName: z.string().optional().nullable(),
     contextMessage: z.string().optional().nullable(),
-    force: z.boolean().optional().nullable(),
   }).optional().nullable(),
   reasoning: z.string(),
 })

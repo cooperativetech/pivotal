@@ -55,8 +55,19 @@ export default function Profile() {
   const [githubBusy, setGithubBusy] = useState(false)
   const [githubRepoBusy, setGithubRepoBusy] = useState<string | null>(null)
   const [slackAppBusy, setSlackAppBusy] = useState(false)
+  const [teamMismatchError, setTeamMismatchError] = useState(false)
 
   useEffect(() => {
+    // Check for error parameters in URL
+    const params = new URLSearchParams(window.location.search)
+    const errorType = params.get('error')
+
+    if (errorType === 'team-mismatch') {
+      setTeamMismatchError(true)
+      // Remove error parameter from URL without reload
+      window.history.replaceState({}, '', '/profile')
+    }
+
     loadProfile().catch((err) => {
       console.error('Failed to load profile:', err)
       setError('Failed to load profile')
@@ -288,6 +299,31 @@ export default function Profile() {
           <LogOut size={16} /> Sign out
         </Button>
       </div>
+
+      {teamMismatchError && (
+        <Card className="mb-6 border-destructive/40 bg-destructive/10 text-destructive">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div className="flex-1">
+              <CardTitle className="heading-card text-destructive mb-2">Team Mismatch Error</CardTitle>
+              <CardDescription className="text-destructive/90">
+                You connected your Google Calendar from a different Slack team than the one associated with your account.
+              </CardDescription>
+              <CardDescription className="text-destructive/90 mt-2">
+                Please disconnect your Slack account below, then log in again using the correct Slack team.
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setTeamMismatchError(false) }}
+              className="text-destructive hover:text-destructive/80 hover:bg-destructive/20 cursor-pointer"
+              aria-label="Close error message"
+            >
+              ×
+            </Button>
+          </CardHeader>
+        </Card>
+      )}
 
       {error && (
         <Card className="mb-6 border-destructive/40 bg-destructive/10 text-destructive">
