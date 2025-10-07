@@ -4,7 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import db from '../db/engine'
 import { betterAuthSchema } from '../db/schema/auth'
 import { slackTeamPlugin } from './slack-team-plugin'
-import { googleCalendarCleanupPlugin } from './google-calendar-cleanup-plugin'
+import { googleCalendarCallbackPlugin } from './google-calendar-callback-plugin'
 import { slackAppInstallationPlugin, SLACK_APP_SCOPES } from './slack-app-installation-plugin'
 import { githubAppInstallationPlugin } from './github-app-installation-plugin'
 
@@ -33,7 +33,7 @@ export const auth = betterAuth({
       organizationLimit: 1,
     }),
     slackTeamPlugin(),
-    googleCalendarCleanupPlugin(),
+    googleCalendarCallbackPlugin(),
     slackAppInstallationPlugin(),
     githubAppInstallationPlugin(process.env.PV_GITHUB_APP_NAME!),
   ],

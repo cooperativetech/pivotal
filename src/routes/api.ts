@@ -8,7 +8,7 @@ import { slackUserTable, slackMessageTable } from '../db/schema/main'
 import { accountTable, slackAppInstallationTable, memberTable, organizationTable, githubAppInstallationTable, userTable } from '../db/schema/auth'
 import type { Organization } from '../db/schema/auth'
 import type { CalendarEvent, GithubRepo } from '@shared/api-types'
-import { auth } from '../auth'
+import { auth, baseURL } from '../auth'
 import { dumpTopic, getTopics, getTopicWithState, updateTopicState } from '../utils'
 import { getLinkedSlackAccount } from '../integrations/slack'
 import { getLinkedGoogleAccount, getGoogleCalendar } from '../integrations/google'
@@ -485,23 +485,34 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     zValidator('query', z.strictObject({
       callbackURL: z.string().optional(),
       errorCallbackURL: z.string().optional(),
+      team: z.string().optional(),
     })),
     async (c) => {
-      const sessionUser = c.get('user')
+      const { callbackURL, errorCallbackURL, team } = c.req.valid('query')
 
-      // If not logged in, redirect to login screen
+      // If not logged in, redirect to login screen with team parameter
+      const sessionUser = c.get('user')
       if (!sessionUser) {
-        return c.redirect('/login?redirectTo=googleAuthorize')
+        const { team } = c.req.valid('query')
+        const teamParam = team ? `&team=${team}` : ''
+        return c.redirect(`/login?redirectTo=googleAuthorize${teamParam}`)
       }
 
-      const { callbackURL, errorCallbackURL } = c.req.valid('query')
+      // Build callback URL with team parameter if provided
+      let finalCallbackURL = callbackURL || '/profile'
+      if (team) {
+        const url = new URL(finalCallbackURL, baseURL)
+        url.searchParams.set('team', team)
+        finalCallbackURL = url.pathname + url.search
+      }
+      console.log(finalCallbackURL)
 
       // If logged in, initiate the account linking process with linkSocialAccount,
       // and redirect the user to google's authorization flow
       const { url } = await auth.api.linkSocialAccount({
         body: {
           provider: 'google',
-          ...(callbackURL && { callbackURL }),
+          callbackURL: finalCallbackURL,
           ...(errorCallbackURL && { errorCallbackURL }),
         },
         headers: c.req.raw.headers,

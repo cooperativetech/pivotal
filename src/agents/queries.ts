@@ -539,7 +539,7 @@ Guidelines:
 - For cross-user availability or mutual free-time questions, call findCommonAvailability with an explicit ISO start and end window and include every person that should be considered.
 - For status updates (“Did Ben respond?”, “Who are we waiting on?”) or before sending follow-up nudges, call getParticipantResponseStatus and use its JSON payload to ground your answer and determine who still needs a ping.
 - When sending nudges, only include users who are actually outstanding according to the latest status data, and respect user requests when crafting the DM text.
-- When a user explicitly asks for the connection buttons—or clearly agrees that they want them—include "promptCalendarButtons": { "userName": "Exact Real Name" } in your final JSON so the platform knows who to prompt. Use the exact real name from the User Directory (e.g., "Anand Shah"). Add "force": true only if the user explicitly asks you to resend the buttons after already receiving them. Otherwise, omit this field.`
+- When a user explicitly asks for the connection buttons—or clearly agrees that they want them—include "promptCalendarButtons": { "userName": "Exact Real Name" } in your final JSON so the platform knows who to prompt. Use the exact real name from the User Directory (e.g., "Anand Shah").`
 
 export const queryAgent = new ConversationAgent({
   name: 'queryAgent',

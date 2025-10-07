@@ -47,6 +47,7 @@ export const accountTable = pgTable('account', {
   password: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().$onUpdate(() => new Date()),
+  teamId: text(),
 })
 export type AccountInsert = InferInsertModel<typeof accountTable>
 export type Account = InferSelectModel<typeof accountTable>
