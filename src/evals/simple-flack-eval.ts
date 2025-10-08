@@ -828,8 +828,9 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
         const topicId = topicData.topic.id
         const fullTopicData = await dumpTopic(topicId)
 
-        // Create topic filename with group info: benchmarkName_eval<timestamp>_group<index>_topic.json
-        const topicFileName = `${benchmarkName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
+        // Create topic filename with group info: benchmarkFolderName_eval<timestamp>_group<index>_topic.json
+        const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
+        const topicFileName = `${benchmarkFolderName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
         const topicPath = join(evalFolderPath, topicFileName)
         writeFileSync(topicPath, JSON.stringify(fullTopicData, null, 2))
         console.log(`Topic conversation history for group ${groupIndex} saved to: ${topicPath}`)
