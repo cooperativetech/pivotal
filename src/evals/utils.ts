@@ -204,31 +204,18 @@ export function findBenchmarkFile(filename: string): string {
 }
 
 // Create results folder and return the path
-export function createResultsFolder(benchmarkFileName: string, evalTimestamp: string): string {
+export function createResultsFolder(benchmarkName: string, evalTimestamp: string): string {
+  // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
 
-  // Remove .json extension from benchmark filename if present
-  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
-
-  // Extract benchmark type and gen timestamp from filename
-  // Format: benchmark_2simusers_1start_2end_60min_gen20250915121553773 (or with hyphens: benchmark_2simusers_1-5start_2end_60min)
-  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
-
-  if (!genMatch) {
-    throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
-  }
-
-  const [, benchmarkType, genTimestamp] = genMatch
-
-  // Create 3-level nested folder structure: results/benchmark_type/gen_timestamp/eval_timestamp/
-  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
+  // Create folder structure mirroring the benchmark structure: results/benchmarks/benchmark_name_gen<timestamp>/eval<timestamp>/
+  const resultsPath = join(__dirname, 'results', benchmarkName)
   const evalFolderName = `eval${evalTimestamp}`
-  const evalFolderPath = join(genTimestampPath, evalFolderName)
+  const evalFolderPath = join(resultsPath, evalFolderName)
 
   // Create folder if it doesn't exist
   if (!existsSync(evalFolderPath)) {
     mkdirSync(evalFolderPath, { recursive: true })
-    console.log(`Created results folder: ${benchmarkType}/gen${genTimestamp}/${evalFolderName}`)
+    console.log(`Created results folder: results/${benchmarkName}/${evalFolderName}`)
   }
 
   return evalFolderPath
