@@ -10,6 +10,7 @@ import { symmetricEncrypt } from 'better-auth/crypto'
 import db from '../db/engine'
 import { organizationTable, memberTable, slackAppInstallationTable } from '../db/schema/auth'
 import { getSlackClient } from '../integrations/slack'
+import { isProdEnv } from '../utils'
 
 export const SLACK_APP_SCOPES = [
   'channels:history',
@@ -273,17 +274,19 @@ export function slackAppInstallationPlugin() {
           })
         }
 
-        // Call apps.uninstall
-        try {
-          await client.apps.uninstall({
-            client_id: process.env.PV_SLACK_CLIENT_ID!,
-            client_secret: process.env.PV_SLACK_CLIENT_SECRET!,
-          })
-        } catch (error) {
-          c.context.logger.error('Failed to uninstall Slack app', error)
-          throw new APIError('INTERNAL_SERVER_ERROR', {
-            message: 'Failed to uninstall Slack app',
-          })
+        // Call apps.uninstall, but only on prod, to avoid resetting the bot token on dev
+        if (isProdEnv()) {
+          try {
+            await client.apps.uninstall({
+              client_id: process.env.PV_SLACK_CLIENT_ID!,
+              client_secret: process.env.PV_SLACK_CLIENT_SECRET!,
+            })
+          } catch (error) {
+            c.context.logger.error('Failed to uninstall Slack app', error)
+            throw new APIError('INTERNAL_SERVER_ERROR', {
+              message: 'Failed to uninstall Slack app',
+            })
+          }
         }
 
         // Delete the slackAppInstallation record
