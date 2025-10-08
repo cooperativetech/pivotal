@@ -221,7 +221,7 @@ export function isSpecificBenchmarkFile(target: string): boolean {
 
 // Create aggregated summary from multiple evaluation results
 export function createAggregatedSummary(
-  benchmarkFileName: string,
+  benchmarkName: string,
   allResults: SavedEvaluationResults[],
   nReps: number,
 ): void {
@@ -235,14 +235,15 @@ export function createAggregatedSummary(
 
   const timestamp = formatTimestamp()
 
-  // Remove .json extension from benchmark filename if present
-  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
+  // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
+  // Extract the benchmark folder name (last part of the path)
+  const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
 
-  // Extract benchmark type and gen timestamp from filename
-  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
+  // Extract gen timestamp from folder name for metadata
+  const genMatch = benchmarkFolderName.match(/^(.+)_gen(\d{17})$/)
 
   if (!genMatch) {
-    console.error(`Invalid benchmark filename format: ${baseFileName}. Cannot create aggregated summary.`)
+    console.error(`Invalid benchmark folder name format: ${benchmarkFolderName}. Cannot create aggregated summary.`)
     return
   }
 
@@ -251,7 +252,7 @@ export function createAggregatedSummary(
   // Create aggregated summary
   const aggregatedData = {
     summaryTimestamp: timestamp,
-    benchmarkFile: baseFileName,
+    benchmarkFolder: benchmarkFolderName,
     genTimestamp,
     totalRuns: validatedResults.length,
     expectedRuns: nReps,
@@ -273,15 +274,14 @@ export function createAggregatedSummary(
     })),
   }
 
-  // Save aggregated summary to gen timestamp folder
-  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
+  // Save aggregated summary to benchmark folder, preserving benchmarkSet structure
+  const resultsPath = join(__dirname, 'results', benchmarkName)
   const summaryFileName = `runs${timestamp}_summary.json`
-  const summaryPath = join(genTimestampPath, summaryFileName)
+  const summaryPath = join(resultsPath, summaryFileName)
 
   // Create folder if it doesn't exist
-  if (!existsSync(genTimestampPath)) {
-    mkdirSync(genTimestampPath, { recursive: true })
+  if (!existsSync(resultsPath)) {
+    mkdirSync(resultsPath, { recursive: true })
   }
 
   writeFileSync(summaryPath, JSON.stringify(aggregatedData, null, 2))
