@@ -43,12 +43,12 @@ function parseArguments(): { benchmarkSet: string | null; benchmark: string | nu
   if (values.help) {
     console.log('Usage: pnpm run eval [options]')
     console.log('\nOptions:')
-    console.log('  -s, --benchmarkSet      Top-level folder containing multiple benchmarks (e.g., benchmark_2simusers_1start_2end_60min)')
-    console.log('  -b, --benchmark         Single benchmark folder with timestamped groups (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773)')
+    console.log('  -s, --benchmarkSet      Top-level folder containing multiple benchmarks (e.g., "benchmarks" or specific folder)')
+    console.log('  -b, --benchmark         Single benchmark folder with timestamped groups (e.g., benchmark_XYZ_gen<timestamp>)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
     console.log('  -t, --topicRouting      Enable topic routing (default: false)')
     console.log('  -h, --help              Show this help message')
-    console.log('\nEither --benchmarkSet or --benchmark must be specified')
+    console.log('\nIf no arguments are provided, defaults to running all benchmarks in the "benchmarks" folder')
     process.exit(0)
   }
 
@@ -59,8 +59,11 @@ function parseArguments(): { benchmarkSet: string | null; benchmark: string | nu
     process.exit(1)
   }
 
+  // Set default to "benchmarks" if no arguments provided
+  const benchmarkSet = values.benchmarkSet || (argCount === 0 ? 'benchmarks' : null)
+
   return {
-    benchmarkSet: values.benchmarkSet || null,
+    benchmarkSet,
     benchmark: values.benchmark || null,
     nReps: parseInt(values.nReps, 10),
     topicRouting: values.topicRouting || false,
@@ -451,8 +454,6 @@ async function runSimpleEvaluation(): Promise<void> {
       // Option 2: Run single benchmark folder
       console.log(`Using single benchmark: ${benchmark}`)
       benchmarksToRun = [benchmark]
-    } else {
-      throw new Error('Must specify either --benchmarkSet or --benchmark')
     }
 
     // Run all benchmarks
