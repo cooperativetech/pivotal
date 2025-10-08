@@ -5,15 +5,18 @@ This directory contains tools for evaluating AI-assisted scheduling performance 
 ## Quick Start
 
 ```bash
-# Generate benchmark data
+# Generate benchmark data (creates new folder with timestamp)
 pnpm run gen-benchmark
 
-# Run evaluation on the generated benchmark
+# Add more benchmarks to an existing generation batch
+pnpm run gen-benchmark --genTimestamp=20251008150702575
+
+# Run evaluation on all benchmarks (default behavior)
 pnpm run eval
 
 # Run evaluation with specific parameters
 pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
-pnpm run eval --benchmarkFolder=benchmark_3simusers_1start_2end_60min --nReps=3
+pnpm run eval --benchmarkSet=benchmarks --nReps=3
 
 # Generate one-liner test cases
 pnpm run oneliners
@@ -29,23 +32,28 @@ Creates realistic scheduling scenarios with AI-generated calendar events.
 ### Usage
 
 ```bash
-# Basic usage with defaults
+# Basic usage with defaults (creates new folder)
 pnpm run gen-benchmark
 
 # With command line arguments
 pnpm run gen-benchmark --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nCases=10
 
-# Positional arguments (backwards compatibility)
-pnpm run gen-benchmark 1 2 60 3 5
+# Add to existing generation batch (appends to existing folder)
+pnpm run gen-benchmark --genTimestamp=20251008150702575 --nSimUsers=4
+
+# Generate multiple groups in one command
+pnpm run gen-benchmark --nGroups=3 --nSimUsers=6
 ```
 
 ### Parameters
 
-- `--startTimeOffset` / `--start`: Days offset from Jan 1, 2025 midnight EST for benchmark start (supports decimals, default: 1)
-- `--endTimeOffset` / `--end`: Days offset from Jan 1, 2025 midnight EST for benchmark end (supports decimals, default: 2)  
-- `--meetingLength` / `--length`: Meeting duration in minutes (default: 60)
+- `--startTimeOffset` / `-s`: Days offset from Jan 1, 2025 midnight EST for benchmark start (supports decimals, default: 1)
+- `--endTimeOffset` / `-e`: Days offset from Jan 1, 2025 midnight EST for benchmark end (supports decimals, default: 2)
+- `--meetingLength` / `-l`: Meeting duration in minutes (default: 60)
 - `--nSimUsers` / `-a`: Number of simulated users to create (default: 2)
-- `--nCases` / `--cases`: Number of benchmark cases to generate (default: 1)
+- `--nCases` / `-c`: Number of benchmark cases to generate (default: 1)
+- `--nGroups` / `-g`: Number of groups to divide users into (default: 1)
+- `--genTimestamp` / `-t`: Use existing generation timestamp (appends to existing folder)
 
 ### Features
 
@@ -58,15 +66,24 @@ pnpm run gen-benchmark 1 2 60 3 5
 ### Output Structure
 
 ```
-src/evals/data/
-├── benchmark_2simusers_1start_2end_60min/
-│   ├── benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
-│   └── benchmark_2simusers_1start_2end_60min_gen20250915121601234.json
-└── benchmark_3simusers_1-5start_3end_90min/
-    └── benchmark_3simusers_1-5start_3end_90min_gen20250915122034567.json
+src/evals/data/benchmarks/
+├── benchmark_2simusers_1groups_1start_2end_60min_gen20251008150702575/
+│   ├── benchmark_2simusers_1groups_1start_2end_60min_group1_gen20251008150702575.json
+│   ├── benchmark_2simusers_1groups_1start_2end_60min_group2_gen20251008150702575.json
+│   └── benchmark_2simusers_1groups_1start_2end_60min_group3_gen20251008150702575.json
+├── benchmark_4simusers_2groups_1-5start_3end_90min_gen20251008150745123/
+│   ├── benchmark_4simusers_2groups_1-5start_3end_90min_group1_gen20251008150745123.json
+│   └── benchmark_4simusers_2groups_1-5start_3end_90min_group2_gen20251008150745123.json
+└── benchmark_3simusers_1groups_2start_4end_30min_gen20251008150800456/
+    └── benchmark_3simusers_1groups_2start_4end_30min_group1_gen20251008150800456.json
 ```
 
-**Note**: Folder naming convention changed from `agents` to `simusers` for clarity. Existing folders with `agents` naming are still supported.
+### Folder Structure Logic
+
+- **New generation**: Creates folder `benchmark_X_gen<timestamp>` in `benchmarks/` directory
+- **Existing generation**: When using `--genTimestamp`, finds any folder ending with `_gen<timestamp>` and appends new files
+- **Group numbering**: Files are numbered sequentially (`group1`, `group2`, etc.) based on existing files in the folder
+- **Parameter flexibility**: Can add files with different parameters to the same generation batch using the timestamp
 
 ## Evaluation (`simple-flack-eval.ts`)
 
@@ -75,33 +92,36 @@ Simulates scheduling conversations and evaluates bot performance.
 ### Usage
 
 ```bash
-# Run on a specific benchmark file
-pnpm run eval --benchmarkFile=benchmark_2simusers_1start_2end_60min_gen20250915121553773.json
+# Run all benchmarks in the benchmarks folder (default)
+pnpm run eval
 
-# Run on all benchmarks in a folder
-pnpm run eval --benchmarkFolder=benchmark_2simusers_1start_2end_60min
+# Run all benchmarks in a specific benchmark set
+pnpm run eval --benchmarkSet=benchmarks
+
+# Run all benchmarks in a custom benchmark set folder
+pnpm run eval --benchmarkSet=my_custom_benchmarks
+
+# Run a single specific benchmark folder
+pnpm run eval --benchmark=benchmark_2simusers_1groups_1start_2end_60min_gen20251008150702575
 
 # Run multiple repetitions for statistical analysis
-pnpm run eval --benchmarkFolder=benchmark_2simusers_1start_2end_60min --nReps=5
+pnpm run eval --benchmarkSet=benchmarks --nReps=5
 
-# Default behavior (if no arguments specified)
-pnpm run eval  # Uses default folder: benchmark_2simusers_1start_2end_60min
-```
-
-**Note**: Use `--benchmarkFile` for a specific JSON file, or `--benchmarkFolder` to run all benchmarks in a directory.
-
+# Enable topic routing
+pnpm run eval --benchmarkSet=benchmarks --topicRouting
 ```
 
 ### Parameters
 
-- `benchmarkFile`: Benchmark file name or folder name to evaluate
-- `--nReps`: Number of repetitions to run for each benchmark case (default: 1)
+- `--benchmarkSet` / `-s`: Top-level folder containing multiple benchmarks (default: "benchmarks")
+- `--benchmark` / `-b`: Single benchmark folder with timestamped groups
+- `--nReps` / `-r`: Number of repetitions to run for each benchmark case (default: 1)
+- `--topicRouting` / `-t`: Enable topic routing (default: false)
 
-### File vs Folder Detection
+### Benchmark Set vs Single Benchmark
 
-The tool automatically detects whether you're specifying a file or folder:
-- **File**: Contains `gen` followed by 17 digits (timestamp pattern)
-- **Folder**: Any other string (evaluates all benchmarks in that folder)
+- **Benchmark Set**: Runs all benchmark folders within a top-level directory (e.g., all folders in `benchmarks/`)
+- **Single Benchmark**: Runs all files within a specific timestamped benchmark folder
 
 ### Features
 
@@ -116,13 +136,19 @@ The tool automatically detects whether you're specifying a file or folder:
 
 ```
 src/evals/results/
-├── benchmark_2simusers_1start_2end_60min/
-│   ├── gen20250915121553773/
-│   │   ├── eval20250915123045123_rep1.json
-│   │   ├── eval20250915123047456_rep2.json
-│   │   └── summary_20250915123050789.json
-│   └── gen20250915121601234/
-│       └── eval20250915123055123_rep1.json
+├── benchmark_2simusers_1groups_1start_2end_60min/
+│   └── gen20251008150702575/
+│       ├── eval20251008151045123/
+│       │   ├── eval_results.json
+│       │   ├── benchmark_2simusers_1groups_1start_2end_60min_eval20251008151045123_group0_topic.json
+│       │   └── benchmark_2simusers_1groups_1start_2end_60min_eval20251008151045123_group1_topic.json
+│       └── eval20251008151100456/
+│           └── eval_results.json
+└── benchmark_4simusers_2groups_1-5start_3end_90min/
+    └── gen20251008150745123/
+        └── eval20251008151200789/
+            ├── eval_results.json
+            └── benchmark_4simusers_2groups_1-5start_3end_90min_eval20251008151200789_group0_topic.json
 ```
 
 ### Evaluation Metrics
@@ -132,6 +158,59 @@ src/evals/results/
 - **Feasibility Rate**: Meetings scheduled during actual free time
 - **Max Shared Free Time**: Longest common availability window (minutes)
 - **Time Constraint Compliance**: Meetings within benchmark time range
+
+## Complete Workflow Examples
+
+### Example 1: Basic Generation and Evaluation
+
+```bash
+# 1. Generate initial benchmark set
+pnpm run gen-benchmark --nSimUsers=3 --nGroups=2 --meetingLength=60
+# Creates: benchmarks/benchmark_3simusers_2groups_1start_2end_60min_gen20251008150702575/
+#   - benchmark_3simusers_2groups_1start_2end_60min_group1_gen20251008150702575.json
+#   - benchmark_3simusers_2groups_1start_2end_60min_group2_gen20251008150702575.json
+
+# 2. Run evaluation on all benchmarks
+pnpm run eval
+# Evaluates all folders in benchmarks/ directory
+```
+
+### Example 2: Iterative Benchmark Development
+
+```bash
+# 1. Create initial batch with specific parameters
+pnpm run gen-benchmark --nSimUsers=4 --meetingLength=90 --startTimeOffset=1.5
+# Output: Generated timestamp 20251008151000123
+
+# 2. Add more cases to the same batch (different user counts, same timestamp)
+pnpm run gen-benchmark --genTimestamp=20251008151000123 --nSimUsers=2
+pnpm run gen-benchmark --genTimestamp=20251008151000123 --nSimUsers=6
+
+# 3. Add cases with different parameters to the same batch
+pnpm run gen-benchmark --genTimestamp=20251008151000123 --meetingLength=30 --nSimUsers=3
+
+# Result: All files in same folder, numbered sequentially:
+#   - benchmark_4simusers_1groups_1-5start_2end_90min_group1_gen20251008151000123.json
+#   - benchmark_2simusers_1groups_1-5start_2end_90min_group2_gen20251008151000123.json
+#   - benchmark_6simusers_1groups_1-5start_2end_90min_group3_gen20251008151000123.json
+#   - benchmark_3simusers_1groups_1-5start_2end_30min_group4_gen20251008151000123.json
+
+# 4. Evaluate the specific batch
+pnpm run eval --benchmark=benchmark_4simusers_1groups_1-5start_2end_90min_gen20251008151000123
+```
+
+### Example 3: Statistical Analysis with Multiple Repetitions
+
+```bash
+# 1. Generate diverse benchmark set
+pnpm run gen-benchmark --nCases=3 --nSimUsers=3
+pnpm run gen-benchmark --nCases=2 --nSimUsers=4 --meetingLength=120
+
+# 2. Run comprehensive evaluation with repetitions
+pnpm run eval --benchmarkSet=benchmarks --nReps=5 --topicRouting
+
+# 3. Results include statistical summaries across all repetitions
+```
 
 ## Architecture
 

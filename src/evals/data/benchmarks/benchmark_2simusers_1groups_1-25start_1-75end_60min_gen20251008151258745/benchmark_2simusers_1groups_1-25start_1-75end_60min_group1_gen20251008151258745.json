@@ -1,0 +1,101 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251008151258745",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Fiona",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with George",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Morning Venom Extraction - Eastern Diamondback Specimens"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T15:45:00.000Z",
+          "summary": "Transportation Safety Meeting - Hazmat Protocols"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:15:00.000Z",
+          "summary": "Specimen Inventory & Documentation"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Venom Processing & Quality Control"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Weekly Check-in with Transportation Coordinator"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "Equipment Maintenance & Sterilization"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "George",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T12:30:00.000Z",
+          "summary": "Morning Safety Protocol Review"
+        },
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Venom Extraction - Eastern Diamondback Rattlesnakes"
+        },
+        {
+          "start": "2025-01-02T15:15:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Equipment Sterilization & Maintenance"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Emergency Response Team Check-in"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Antivenom Quality Control Testing"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Snake Handling Training - New Protocols"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Venom Processing & Documentation"
+        },
+        {
+          "start": "2025-01-02T22:45:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "End of Shift Report & Facility Secure"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
