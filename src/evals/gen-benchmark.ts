@@ -251,7 +251,7 @@ async function generateMultiGroupBenchmarks() {
 
       // Save with group-specific filename using nextGroupNumber
       const actualGroupNumber = nextGroupNumber + groupIndex
-      const baseName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+      const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
       const filename = `${baseName}_group${actualGroupNumber}_gen${useTimestamp}.json`
       const filePath = join(targetFolder, filename)
 
