@@ -183,18 +183,15 @@ export function formatTimestamp(): string {
 export function createResultsFolder(benchmarkName: string, evalTimestamp: string): string {
   // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
 
-  // Extract just the benchmark folder name (remove "benchmarks/" prefix if present)
-  const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
-
-  // Create flatter structure: results/benchmark_name_gen<timestamp>/eval<timestamp>/
-  const resultsPath = join(__dirname, 'results', benchmarkFolderName)
+  // Create structure preserving the benchmarkSet: results/benchmarks/benchmark_name_gen<timestamp>/eval<timestamp>/
+  const resultsPath = join(__dirname, 'results', benchmarkName)
   const evalFolderName = `eval${evalTimestamp}`
   const evalFolderPath = join(resultsPath, evalFolderName)
 
   // Create folder if it doesn't exist
   if (!existsSync(evalFolderPath)) {
     mkdirSync(evalFolderPath, { recursive: true })
-    console.log(`Created results folder: results/${benchmarkFolderName}/${evalFolderName}`)
+    console.log(`Created results folder: results/${benchmarkName}/${evalFolderName}`)
   }
 
   return evalFolderPath

@@ -242,7 +242,7 @@ async function generateMultiGroupBenchmarks() {
     // Save with group-specific filename using nextGroupNumber
     const actualGroupNumber = nextGroupNumber + groupIndex
     const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-    const filename = `${baseName}_group${actualGroupNumber}_gen${useTimestamp}.json`
+    const filename = `${baseName}_gen${useTimestamp}_group${actualGroupNumber}.json`
     const filePath = join(targetFolder, filename)
 
     await writeFile(filePath, JSON.stringify(exportData, null, 2))
