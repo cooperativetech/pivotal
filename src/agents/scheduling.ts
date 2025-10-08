@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import type { RunContext } from './agent-sdk'
 import { tool } from './agent-sdk'
-import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
@@ -11,6 +10,8 @@ import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserConte
 import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
 import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools/time_intersection'
+import type { SlackUser } from '../db/schema/main'
+import { formatTimestampWithTimezone } from '../utils'
 
 const findFreeSlots = tool({
   name: 'findFreeSlots',
@@ -100,9 +101,60 @@ const findFreeSlots = tool({
       return `- [${durationStr}] ${startFormatted} to ${endTime}`
     }).join('\n')
 
-    const res = `${usersNoCalStr}These time slots are available for users ${usersWithCal.join(', ')}:\n${freeSlotsStr}`
+const res = `${usersNoCalStr}These time slots are available for users ${usersWithCal.join(', ')}:\n${freeSlotsStr}`
     console.log(res)
     return res
+  },
+})
+
+const formatTimeSlots = tool({
+  name: 'formatTimeSlots',
+  description: 'Convert proposed start/end times into localized strings for every human participant in the topic. Use this before sharing specific meeting options.',
+  parameters: z.strictObject({
+    slots: z.array(z.strictObject({
+      start: z.string().describe('ISO 8601 start timestamp (e.g., "2025-03-12T18:00:00Z")'),
+      end: z.string().describe('ISO 8601 end timestamp (must be after start)'),
+      label: z.string().optional().describe('Optional human-readable label for this slot'),
+    })).min(1),
+  }),
+  execute: ({ slots }, runContext?: RunContext<ConversationContext>) => {
+    if (!runContext) throw new Error('runContext not provided')
+    const { topic, userMap, callingUserTimezone } = runContext.context
+
+    const humanParticipants = topic.state.userIds
+      .map((id) => userMap.get(id))
+      .filter((user): user is SlackUser => !!user && !user.isBot && !!user.realName)
+
+    const fallbackTz = callingUserTimezone || 'UTC'
+
+    const normalizedSlots = slots.map((slot, index) => {
+      const start = new Date(slot.start)
+      const end = new Date(slot.end)
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+        return {
+          header: `Option ${index + 1}: Invalid time range provided`,
+          participantLines: [],
+        }
+      }
+
+      const slotLabel = slot.label?.trim() || `Option ${index + 1}`
+
+      const header = `${slotLabel}: ${formatTimestampWithTimezone(start, fallbackTz)} → ${formatTimestampWithTimezone(end, fallbackTz)}`
+
+      const participantLines = humanParticipants.length > 0
+        ? humanParticipants.map((participant) => {
+            const tz = participant.tz || fallbackTz
+            return `  - ${participant.realName}: ${formatTimestampWithTimezone(start, tz)} → ${formatTimestampWithTimezone(end, tz)}`
+          })
+        : ['  - (No other human participants recorded)']
+
+      return { header, participantLines }
+    })
+
+    return normalizedSlots
+      .map((slot) => [slot.header, ...slot.participantLines].join('\n'))
+      .join('\n\n')
   },
 })
 
@@ -210,7 +262,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - Continue gathering until a consensus time emerges from the constraints
 
 4. Ready to confirm the consensus time
-  - Return groupMessage with the agreed time for final confirmation (sent to shared channel)
+  - Return groupMessage with the agreed time for final confirmation (sent to shared channel) when you still need humans to acknowledge the proposed slot
   - Only use when you have identified a time that works for all participants and still need explicit confirmation from them
   - Return replyMessage with confirmation
   - Keep confirmations concise and avoid implying that a calendar invite has already been sent
@@ -220,7 +272,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
   - Set finalizedEvent.summary to 'Meeting with <list of all confirmed human participants>' using the exact full names (include the scheduler/initiator even if they requested the meeting).
-  - Pair the finalizedEvent with a short groupMessage confirming the plan (e.g., "Locked in Tue 1pm (EST). Invite is on the way."), but do not include calendar links or restate the full invite details yourself.
+  - When you include a finalizedEvent, rely on the automated calendar post for announcements—leave groupMessage blank instead of sending a duplicate confirmation.
 
 - Miscellaneous actions needed
   - Sometimes you need to ask for clarification, provide updates, or handle edge cases
@@ -241,11 +293,12 @@ Based on the current state, determine what tools to call (if any) and generate t
 - Only move to finalize when you've found a time that works for all participants
 - ALWAYS include timezone abbreviations when mentioning times (e.g., "2pm (PST)")
 - When users are in different timezones, show times in each user's local timezone
+- Before you share specific time options, call the formatTimeSlots tool so you can copy the localized strings it returns instead of formatting times yourself
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Use the updateSummary tool whenever new information clarifies or changes the meeting details
 - When you revise the topic summary or finalizedEvent summary, list every confirmed attendee explicitly (include the scheduler/initiator so the meeting title reads like 'Meeting with Alice, Bob, and Taylor').
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
-- CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
+- CRITICAL: When you include a finalizedEvent, omit groupMessage; the platform will announce the calendar update. Avoid duplicating the invite details or sharing Meet links manually.
 - ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
@@ -276,7 +329,7 @@ Based on the current state, determine what tools to call (if any) and generate t
     * Example: "I'm busy 2-3pm" → ONLY create: 2pm-3pm (busy). Do NOT add any free events.
 
 ## CRITICAL TOOL USAGE
-You have access to FOUR tools and can call multiple tools in sequence within the same turn. After a tool completes, you'll immediately get another chance to act—keep calling whichever tools you still need until you're ready to send the final JSON response. Only return JSON once all necessary tool calls for this turn are finished; never stop mid-sequence with an empty reply.
+You have access to FIVE tools and can call multiple tools in sequence within the same turn. After a tool completes, you'll immediately get another chance to act—keep calling whichever tools you still need until you're ready to send the final JSON response. Only return JSON once all necessary tool calls for this turn are finished; never stop mid-sequence with an empty reply.
 
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
@@ -284,12 +337,17 @@ You have access to FOUR tools and can call multiple tools in sequence within the
    - Returns guaranteed-free slots that work for everyone
    - Never propose times without using this tool first
 
-2. **updateUserNames**: Updates the list of users involved in the scheduling
+2. **formatTimeSlots**: Converts proposed start/end times into localized strings
+   - USE THIS immediately after you decide which slots to share
+   - Pass every option's ISO start/end times (and optionally a label)
+   - Copy the returned text directly into your reply so you don't hand-format times
+
+3. **updateUserNames**: Updates the list of users involved in the scheduling
    - USE THIS when you need to add/remove users from the topic (action: "identify_users")
    - Provide the COMPLETE list of user names (this replaces the existing list)
    - Use exact names from the User Directory
 
-3. **updateUserCalendar**: Updates a user's calendar with manual availability overrides
+4. **updateUserCalendar**: Updates a user's calendar with manual availability overrides
    - USE THIS when a user explicitly tells you their availability or when they're busy/free
    - Pass the exact user name from the User Directory and a list of CalendarEvent objects
    - Events specify times when the user is busy (default) or free (if free: true is set)
@@ -300,7 +358,7 @@ You have access to FOUR tools and can call multiple tools in sequence within the
    - These overrides will be merged with their existing calendar, replacing any overlapping time periods
    - Useful when users don't have calendar connected or need to override their calendar
 
-4. **updateSummary**: Updates the topic summary
+5. **updateSummary**: Updates the topic summary
    - USE THIS whenever new information clarifies or changes the meeting details
    - Pass the updated summary describing what needs to be scheduled
    - Helps maintain context for the scheduling process
@@ -325,8 +383,8 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
       "text": "Quick check - are you available Tuesday afternoon?"
     }
   ],
-  "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
-  // CRITICAL: If you confirm an exact meeting time in groupMessage, ALSO include a matching finalizedEvent in the same response
+  "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (use only when confirmation is still pending)
+  // CRITICAL: If you include finalizedEvent, leave groupMessage null—the system will post the confirmation automatically
   "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
     "start": "2025-03-12T18:00:00Z", // ISO string
     "end": "2025-03-12T18:30:00Z",   // ISO string
@@ -447,7 +505,7 @@ export const schedulingAgent = new ConversationAgent({
     temperature: 0.7,
     parallelToolCalls: false, // Only allow one tool call at a time
   },
-  tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
+  tools: [findFreeSlots, formatTimeSlots, updateUserNames, updateUserCalendar, updateSummary],
   outputType: ConversationRes,
   instructions: schedulingInstructions,
 })
