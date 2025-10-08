@@ -227,15 +227,14 @@ async function generateMultiGroupBenchmarks() {
     }
 
     if (genTimestamp) {
-      // Use provided timestamp - find existing folder
+      // Use provided timestamp - find any existing folder with this genTimestamp
       useTimestamp = genTimestamp
-      const folderPattern = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
 
       const existingFolders = readdirSync(benchmarksPath)
-      const matchingFolder = existingFolders.find(folder => folder === folderPattern)
+      const matchingFolder = existingFolders.find(folder => folder.endsWith(`_gen${useTimestamp}`))
 
       if (!matchingFolder) {
-        throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. Expected folder: ${folderPattern}`)
+        throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. No folder ending with _gen${genTimestamp} found in benchmarks directory.`)
       }
 
       targetFolder = join(benchmarksPath, matchingFolder)
@@ -244,7 +243,7 @@ async function generateMultiGroupBenchmarks() {
       nextGroupNumber = existingFiles.length + 1
       console.log(`Using existing folder: ${matchingFolder}, next group will be ${nextGroupNumber}`)
     } else {
-      // Create new folder with new timestamp
+      // Create new folder with new timestamp using current parameters
       useTimestamp = formatTimestamp()
       const folderName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
 
