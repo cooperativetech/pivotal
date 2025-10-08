@@ -101,33 +101,98 @@ async function waitForVisible(locator: Locator, timeout = 10000): Promise<boolea
   }
 }
 
-async function isToggleEnabled(locator: Locator): Promise<boolean> {
+type ToggleCheckResult = boolean | null
+
+async function isToggleEnabled(locator: Locator): Promise<ToggleCheckResult> {
   const ariaChecked = await locator.getAttribute('aria-checked')
   if (ariaChecked !== null) {
     return ariaChecked === 'true'
   }
 
+  const nestedAria = locator.locator('[aria-checked]')
   try {
-    const result = await locator.evaluate<boolean>((element) => {
-      const node = element as HTMLInputElement
-      if (typeof node.checked === 'boolean') {
-        return node.checked
+    if (await nestedAria.count() > 0) {
+      const nestedValue = await nestedAria.first().getAttribute('aria-checked')
+      if (nestedValue !== null) {
+        return nestedValue === 'true'
       }
-
-      const ariaPressed = element.getAttribute('aria-pressed')
-      return ariaPressed === 'true'
-    })
-    return result
+    }
   } catch {
-    return false
+    // ignore
   }
+
+  const inputCandidate = locator.locator('input[type="checkbox"], input[type="radio"]')
+  try {
+    if (await inputCandidate.count() > 0) {
+      const value = await inputCandidate.first().evaluate<boolean | null>((element) => {
+        const node = element as HTMLInputElement
+        return typeof node.checked === 'boolean' ? node.checked : null
+      })
+      if (value !== null) {
+        return value
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const switchRole = locator.locator('[role="switch"]')
+  try {
+    if (await switchRole.count() > 0) {
+      const switchValue = await switchRole.first().getAttribute('aria-checked')
+      if (switchValue !== null) {
+        return switchValue === 'true'
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const fallback = await locator.evaluate<boolean | null>((element) => {
+      const node = element as HTMLElement
+      if ('checked' in node && typeof (node as HTMLInputElement).checked === 'boolean') {
+        return (node as HTMLInputElement).checked
+      }
+      const ariaPressed = node.getAttribute('aria-pressed')
+      if (ariaPressed !== null) {
+        return ariaPressed === 'true'
+      }
+      const dataChecked = node.getAttribute('data-checked')
+      if (dataChecked !== null) {
+        return dataChecked === 'true' || dataChecked === 'on' || dataChecked === '1'
+      }
+      return null
+    })
+    if (fallback !== null) {
+      return fallback
+    }
+  } catch {
+    // ignore
+  }
+
+  return null
 }
 
-async function ensureToggleEnabled(locator: Locator): Promise<boolean> {
-  if (await isToggleEnabled(locator)) return true
+type ToggleResult = 'enabled' | 'already-enabled' | 'unknown' | 'failed'
+
+async function ensureToggleEnabled(locator: Locator): Promise<ToggleResult> {
+  const initialState = await isToggleEnabled(locator)
+  if (initialState === true) {
+    return 'already-enabled'
+  }
+
   await locator.click({ timeout: 10000 })
   await delay(200)
-  return isToggleEnabled(locator)
+
+  const afterClick = await isToggleEnabled(locator)
+  if (afterClick === true) {
+    return 'enabled'
+  }
+  if (afterClick === false) {
+    return 'failed'
+  }
+  return 'unknown'
 }
 
 interface HostControlsScope {
@@ -192,12 +257,15 @@ async function tryAddCoHostsViaHostControls(
   if (hostManagementToggle) {
     console.log('[MeetAutomation] Found Host management toggle, enabling it')
     try {
-      const enabled = await ensureToggleEnabled(hostManagementToggle)
-      if (!enabled) {
-        errors.push('Failed to enable Host management in host controls')
-      } else {
+      const toggleResult = await ensureToggleEnabled(hostManagementToggle)
+      if (toggleResult === 'enabled') {
         console.log('[MeetAutomation] Host management enabled')
-        await delay(200)
+      } else if (toggleResult === 'already-enabled') {
+        console.log('[MeetAutomation] Host management already enabled')
+      } else if (toggleResult === 'unknown') {
+        console.log('[MeetAutomation] Host management toggle state could not be confirmed, continuing')
+      } else {
+        errors.push('Failed to enable Host management in host controls')
       }
     } catch (error) {
       const message = `Error toggling Host management: ${String(error)}`
@@ -511,7 +579,7 @@ export async function addCoHostsViaAutomation(
       if (await eventElement.isVisible({ timeout: 10000 }).catch(() => false)) {
         console.log('[MeetAutomation] Found event, clicking it')
         await eventElement.click()
-        await page.waitForTimeout(1500)
+        await page.waitForTimeout(1800)
 
         // Now click edit button
         const editButton = page.locator('button:has-text("Edit"), [aria-label*="Edit" i]').first()
@@ -531,7 +599,7 @@ export async function addCoHostsViaAutomation(
 
     // Scroll down to see more of the page
     await page.evaluate(() => window.scrollBy(0, 300))
-    await page.waitForTimeout(800)
+    await page.waitForTimeout(1200)
 
     await page.screenshot({ path: '/tmp/meet-debug-1c-scrolled.png' })
     console.log('[MeetAutomation] Screenshot after scrolling')
@@ -540,16 +608,16 @@ export async function addCoHostsViaAutomation(
     const hostOptionsButton = page.locator('button[aria-label*="Video call options" i], button[aria-label*="Meeting options" i], button[aria-label*="Host controls" i]').first()
     let hostControlsOpened = false
 
-    if (await hostOptionsButton.isVisible({ timeout: 15000 }).catch(() => false)) {
+    if (await hostOptionsButton.isVisible({ timeout: 20000 }).catch(() => false)) {
       console.log('[MeetAutomation] Clicking video call options button')
       await hostOptionsButton.click()
       hostControlsOpened = true
     } else {
       console.log('[MeetAutomation] Video call options button not found, falling back to Meet link click')
       const meetLinkLocator = page.locator('text="meet.google.com"').first()
-      if (await meetLinkLocator.isVisible({ timeout: 10000 }).catch(() => false)) {
+      if (await meetLinkLocator.isVisible({ timeout: 15000 }).catch(() => false)) {
         await meetLinkLocator.scrollIntoViewIfNeeded()
-        await page.waitForTimeout(400)
+        await page.waitForTimeout(900)
         await meetLinkLocator.click({ timeout: 10000 })
         hostControlsOpened = true
       } else {
@@ -561,7 +629,7 @@ export async function addCoHostsViaAutomation(
     }
 
     if (hostControlsOpened) {
-      await page.waitForTimeout(800)
+      await page.waitForTimeout(1200)
       await page.screenshot({ path: '/tmp/meet-debug-2-after-click.png' })
       console.log('[MeetAutomation] Screenshot saved after opening Meet options trigger')
     }
