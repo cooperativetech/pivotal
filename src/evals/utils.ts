@@ -33,7 +33,7 @@ export const BenchmarkData = z.strictObject({
   meetingLength: z.number(),
   nSimUsers: z.number(),
   nGroups: z.number(),
-  userGroupMapping: z.record(z.number()),
+  groupIndex: z.number(),
   genTimestamp: z.string(),
 })
 
