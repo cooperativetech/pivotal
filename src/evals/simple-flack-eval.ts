@@ -283,7 +283,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     let anySimUserSpoke = false
 
     // Each simUser replies to messages in their buffer
-    for (const simUser of simUsers) {
+    for (const simUser of Object.values(simUsers)) {
       console.log(`${simUser.name} buffer length: ${simUser.messageBuffer.length}`)
       if (simUser.messageBuffer.length > 0) {
       //if (true) {
