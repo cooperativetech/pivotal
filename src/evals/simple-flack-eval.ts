@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, findAllMultigroupBenchmarkFolders, findAllFilesInMultigroupFolder, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase, getBenchmarksFromSet } from './utils'
+import { saveEvaluationResults, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase, getBenchmarksFromSet } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 

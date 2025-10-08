@@ -178,30 +178,6 @@ export function formatTimestamp(): string {
   return `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}`
 }
 
-// Find the benchmark file in the data directory or subdirectories
-export function findBenchmarkFile(filename: string): string {
-  // Remove .json extension if provided
-  const baseFilename = filename.replace(/\.json$/, '')
-
-  // Try direct file path first
-  const directPath = join(__dirname, 'data', `${baseFilename}.json`)
-  if (existsSync(directPath)) {
-    return directPath
-  }
-
-  // Try looking in subdirectory (for organized benchmark files)
-  // Extract folder name pattern from filename
-  const folderMatch = baseFilename.match(/^(benchmark_\d+simusers_[\d-]+start_[\d-]+end_\d+min)/)
-  if (folderMatch) {
-    const folderName = folderMatch[1]
-    const subDirPath = join(__dirname, 'data', folderName, `${baseFilename}.json`)
-    if (existsSync(subDirPath)) {
-      return subDirPath
-    }
-  }
-
-  throw new Error(`Benchmark file not found: ${filename}. Tried:\n  - ${directPath}\n  - ${join(__dirname, 'data', folderMatch?.[1] || 'unknown', `${baseFilename}.json`)}`)
-}
 
 // Create results folder and return the path
 export function createResultsFolder(benchmarkName: string, evalTimestamp: string): string {
@@ -235,79 +211,6 @@ export function saveEvaluationResults(
   console.log(`Evaluation results saved to: ${summaryPath}`)
 
   return validatedResults
-}
-
-// Find all benchmark files in a folder
-export function findAllBenchmarkFiles(folderName: string): string[] {
-  const folderPath = join(__dirname, 'data', folderName)
-
-  if (!existsSync(folderPath)) {
-    throw new Error(`Benchmark folder not found: ${folderName} at ${folderPath}`)
-  }
-
-  try {
-    const files = readdirSync(folderPath)
-    const benchmarkFiles = files
-      .filter((file) => file.endsWith('.json') && file.includes('_gen'))
-      .map((file) => join(folderPath, file))
-      .sort() // Sort files alphabetically for consistent processing order
-
-    if (benchmarkFiles.length === 0) {
-      throw new Error(`No benchmark files found in folder: ${folderName}`)
-    }
-
-    return benchmarkFiles
-  } catch (error) {
-    throw new Error(`Error reading benchmark folder ${folderName}: ${String(error)}`)
-  }
-}
-
-// Find all multigroup benchmark subfolders (returns subfolder paths, not individual files)
-export function findAllMultigroupBenchmarkFolders(folderName: string): string[] {
-  const folderPath = join(__dirname, 'data', folderName)
-
-  if (!existsSync(folderPath)) {
-    throw new Error(`Multigroup benchmark folder not found: ${folderName} at ${folderPath}`)
-  }
-
-  try {
-    // Look for multigroup_benchmark_gen* subfolders
-    const subFolders = readdirSync(folderPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('multigroup_benchmark_gen'))
-      .map(dirent => join(folderPath, dirent.name))
-      .sort() // Sort subfolders alphabetically for consistent processing order
-
-    if (subFolders.length === 0) {
-      throw new Error(`No multigroup benchmark subfolders found in: ${folderName}`)
-    }
-
-    return subFolders
-  } catch (error) {
-    throw new Error(`Error reading multigroup benchmark folder ${folderName}: ${String(error)}`)
-  }
-}
-
-// Find all benchmark files within a multigroup subfolder
-export function findAllFilesInMultigroupFolder(subFolderPath: string): string[] {
-  if (!existsSync(subFolderPath)) {
-    throw new Error(`Multigroup subfolder not found: ${subFolderPath}`)
-  }
-
-  try {
-    const files = readdirSync(subFolderPath)
-    const benchmarkFiles = files
-      .filter((file) => file.endsWith('.json') && file.includes('_group') && file.includes('_gen'))
-      .map((file) => join(subFolderPath, file))
-      .sort() // Sort files alphabetically for consistent processing order
-
-    if (benchmarkFiles.length === 0) {
-      throw new Error(`No multigroup benchmark files found in subfolder: ${subFolderPath}`)
-    }
-
-    return benchmarkFiles
-  } catch (error) {
-    throw new Error(`Error reading multigroup subfolder ${subFolderPath}: ${String(error)}`)
-  }
 }
 
 // Check if a string looks like a specific benchmark file (contains gen + timestamp OR ends with .json)
