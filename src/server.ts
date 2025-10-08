@@ -69,5 +69,5 @@ if (isDevEnv()) {
 }
 
 startAutoMessageCron(slackClient)
-startMeetingSummaryCron(slackClient)
+startMeetingSummaryCron()
 console.log(`Webserver running on port ${PORT}...`)

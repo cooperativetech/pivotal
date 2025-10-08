@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gt, isNull, lt, or, sql } from 'drizzle-orm'
 import type { calendar_v3 } from 'googleapis'
 
 import db from './db/engine'
-import { meetingArtifactTable } from './db/schema/main'
+import { meetingArtifactTable, topicTable } from './db/schema/main'
 import type { MeetingArtifact } from './db/schema/main'
 import type { TopicWithState } from '@shared/api-types'
 import { getTopicWithState } from './utils'
@@ -116,15 +116,23 @@ export async function deleteMeetingArtifactByEvent(calendarId: string, eventId: 
     ))
 }
 
-export async function getPendingMeetingSummaries(limit: number = 10): Promise<MeetingArtifact[]> {
+export type PendingMeetingArtifact = MeetingArtifact & {
+  slackTeamId: string
+}
+
+export async function getPendingMeetingSummaries(limit: number = 10): Promise<PendingMeetingArtifact[]> {
   const now = new Date()
   const withinTranscriptCheckWindow = or(
     isNull(meetingArtifactTable.transcriptLastCheckedAt),
     sql`${meetingArtifactTable.transcriptLastCheckedAt} <= ${meetingArtifactTable.endTime} + interval '1 day'`,
   )
   const rows = await db
-    .select()
+    .select({
+      artifact: meetingArtifactTable,
+      slackTeamId: topicTable.slackTeamId,
+    })
     .from(meetingArtifactTable)
+    .innerJoin(topicTable, eq(meetingArtifactTable.topicId, topicTable.id))
     .where(and(
       isNull(meetingArtifactTable.summaryPostedAt),
       lt(meetingArtifactTable.startTime, now),
@@ -133,7 +141,10 @@ export async function getPendingMeetingSummaries(limit: number = 10): Promise<Me
     .orderBy(asc(meetingArtifactTable.endTime))
     .limit(limit)
 
-  return rows
+  return rows.map(({ artifact, slackTeamId }) => ({
+    ...artifact,
+    slackTeamId,
+  }))
 }
 
 export interface MeetingSummaryProcessingUpdate {
