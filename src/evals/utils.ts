@@ -204,8 +204,7 @@ export function findBenchmarkFile(filename: string): string {
 }
 
 // Create results folder and return the path
-export function createResultsFolder(benchmarkFileName: string): string {
-  const evalTimestamp = formatTimestamp()
+export function createResultsFolder(benchmarkFileName: string, evalTimestamp: string): string {
 
   // Remove .json extension from benchmark filename if present
   const baseFileName = benchmarkFileName.replace(/\.json$/, '')

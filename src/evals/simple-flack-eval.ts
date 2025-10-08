@@ -787,8 +787,11 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     const allUsersCanAttend = groupFeasibilityResults.every((g) => !g.hasSuggestedEvent || g.allUsersCanAttend)
 
+    // Generate unified timestamp for this evaluation
+    const evalTimestamp = formatTimestamp()
+
     const resultsData: SavedEvaluationResults = {
-      evalTimestamp: formatTimestamp(),
+      evalTimestamp,
       benchmarkFile: benchmarkName,
       genTimestamp,
       suggestedEvents: result.suggestedEvents.map((event) => event ? {
@@ -811,7 +814,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     }
 
     // Create results folder
-    const evalFolderPath = createResultsFolder(benchmarkName)
+    const evalFolderPath = createResultsFolder(benchmarkName, evalTimestamp)
 
     // Save evaluation results
     const savedResults = saveEvaluationResults(evalFolderPath, resultsData)
