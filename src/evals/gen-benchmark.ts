@@ -131,12 +131,12 @@ function parseArguments() {
       startTimeOffset: {
         type: 'string',
         short: 's',
-        default: '1',
+        default: '1.25',
       },
       endTimeOffset: {
         type: 'string',
         short: 'e',
-        default: '2',
+        default: '1.75',
       },
       meetingLength: {
         type: 'string',
