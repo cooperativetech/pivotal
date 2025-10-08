@@ -476,7 +476,7 @@ export async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<
     // Find all benchmark_*_gen* folders within the top-level folder
     const subFolders = readdirSync(folderPath, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory() && dirent.name.includes('_gen'))
-      .map(dirent => dirent.name)
+      .map(dirent => join(benchmarkSetFolder, dirent.name))
       .sort()
 
     if (subFolders.length === 0) {
