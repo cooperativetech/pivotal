@@ -245,7 +245,7 @@ async function generateMultiGroupBenchmarks() {
     } else {
       // Create new folder with new timestamp using current parameters
       useTimestamp = formatTimestamp()
-      const folderName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
+      const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
 
       targetFolder = join(benchmarksPath, folderName)
       await mkdir(targetFolder, { recursive: true })

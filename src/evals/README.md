@@ -67,14 +67,14 @@ pnpm run gen-benchmark --nGroups=3 --nSimUsers=6
 
 ```
 src/evals/data/benchmarks/
-├── benchmark_2simusers_1groups_1start_2end_60min_gen20251008150702575/
+├── benchmark_2simusers_1start_2end_60min_gen20251008150702575/
 │   ├── benchmark_2simusers_1groups_1start_2end_60min_group1_gen20251008150702575.json
 │   ├── benchmark_2simusers_1groups_1start_2end_60min_group2_gen20251008150702575.json
-│   └── benchmark_2simusers_1groups_1start_2end_60min_group3_gen20251008150702575.json
-├── benchmark_4simusers_2groups_1-5start_3end_90min_gen20251008150745123/
+│   └── benchmark_4simusers_2groups_1start_2end_60min_group3_gen20251008150702575.json
+├── benchmark_4simusers_1-5start_3end_90min_gen20251008150745123/
 │   ├── benchmark_4simusers_2groups_1-5start_3end_90min_group1_gen20251008150745123.json
-│   └── benchmark_4simusers_2groups_1-5start_3end_90min_group2_gen20251008150745123.json
-└── benchmark_3simusers_1groups_2start_4end_30min_gen20251008150800456/
+│   └── benchmark_6simusers_3groups_1-5start_3end_90min_group2_gen20251008150745123.json
+└── benchmark_3simusers_2start_4end_30min_gen20251008150800456/
     └── benchmark_3simusers_1groups_2start_4end_30min_group1_gen20251008150800456.json
 ```
 
@@ -102,7 +102,7 @@ pnpm run eval --benchmarkSet=benchmarks
 pnpm run eval --benchmarkSet=my_custom_benchmarks
 
 # Run a single specific benchmark folder
-pnpm run eval --benchmark=benchmark_2simusers_1groups_1start_2end_60min_gen20251008150702575
+pnpm run eval --benchmark=benchmark_2simusers_1start_2end_60min_gen20251008150702575
 
 # Run multiple repetitions for statistical analysis
 pnpm run eval --benchmarkSet=benchmarks --nReps=5
@@ -136,19 +136,19 @@ pnpm run eval --benchmarkSet=benchmarks --topicRouting
 
 ```
 src/evals/results/
-├── benchmark_2simusers_1groups_1start_2end_60min/
+├── benchmark_2simusers_1start_2end_60min/
 │   └── gen20251008150702575/
 │       ├── eval20251008151045123/
 │       │   ├── eval_results.json
-│       │   ├── benchmark_2simusers_1groups_1start_2end_60min_eval20251008151045123_group0_topic.json
-│       │   └── benchmark_2simusers_1groups_1start_2end_60min_eval20251008151045123_group1_topic.json
+│       │   ├── benchmark_2simusers_1start_2end_60min_eval20251008151045123_group0_topic.json
+│       │   └── benchmark_2simusers_1start_2end_60min_eval20251008151045123_group1_topic.json
 │       └── eval20251008151100456/
 │           └── eval_results.json
-└── benchmark_4simusers_2groups_1-5start_3end_90min/
+└── benchmark_4simusers_1-5start_3end_90min/
     └── gen20251008150745123/
         └── eval20251008151200789/
             ├── eval_results.json
-            └── benchmark_4simusers_2groups_1-5start_3end_90min_eval20251008151200789_group0_topic.json
+            └── benchmark_4simusers_1-5start_3end_90min_eval20251008151200789_group0_topic.json
 ```
 
 ### Evaluation Metrics
@@ -166,7 +166,7 @@ src/evals/results/
 ```bash
 # 1. Generate initial benchmark set
 pnpm run gen-benchmark --nSimUsers=3 --nGroups=2 --meetingLength=60
-# Creates: benchmarks/benchmark_3simusers_2groups_1start_2end_60min_gen20251008150702575/
+# Creates: benchmarks/benchmark_3simusers_1start_2end_60min_gen20251008150702575/
 #   - benchmark_3simusers_2groups_1start_2end_60min_group1_gen20251008150702575.json
 #   - benchmark_3simusers_2groups_1start_2end_60min_group2_gen20251008150702575.json
 
@@ -196,7 +196,7 @@ pnpm run gen-benchmark --genTimestamp=20251008151000123 --meetingLength=30 --nSi
 #   - benchmark_3simusers_1groups_1-5start_2end_30min_group4_gen20251008151000123.json
 
 # 4. Evaluate the specific batch
-pnpm run eval --benchmark=benchmark_4simusers_1groups_1-5start_2end_90min_gen20251008151000123
+pnpm run eval --benchmark=benchmark_4simusers_1-5start_2end_90min_gen20251008151000123
 ```
 
 ### Example 3: Statistical Analysis with Multiple Repetitions
