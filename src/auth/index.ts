@@ -7,16 +7,17 @@ import { slackTeamPlugin } from './slack-team-plugin'
 import { googleCalendarCallbackPlugin } from './google-calendar-callback-plugin'
 import { slackAppInstallationPlugin, SLACK_APP_SCOPES } from './slack-app-installation-plugin'
 import { githubAppInstallationPlugin } from './github-app-installation-plugin'
+import { isLocalEnv, isProdEnv } from '../utils'
 
 export { SLACK_APP_SCOPES, slackAppInstallationPlugin, githubAppInstallationPlugin }
 
 export const baseURL = (
-  process.env.PV_NODE_ENV === 'local' ?
+  isLocalEnv() ?
   'https://localhost:5173' :
   process.env.PV_BASE_URL || 'https://localhost:3009'
 )
 
-if (process.env.PV_NODE_ENV === 'prod' && !process.env.PV_BETTER_AUTH_SECRET) {
+if (isProdEnv() && !process.env.PV_BETTER_AUTH_SECRET) {
   throw new Error('PV_BETTER_AUTH_SECRET required for production')
 }
 

@@ -41,6 +41,18 @@ export function tsToDate(ts: string): Date {
   return new Date(Number(ts) * 1000)
 }
 
+export function isLocalEnv() {
+  return process.env.PV_NODE_ENV === 'local'
+}
+
+export function isDevEnv() {
+  return process.env.PV_NODE_ENV === 'dev'
+}
+
+export function isProdEnv() {
+  return process.env.PV_NODE_ENV === 'prod'
+}
+
 export async function getTopicWithState(topicId: string): Promise<TopicWithState> {
   // Get the topic along with its most recent state
   const [row] = await db

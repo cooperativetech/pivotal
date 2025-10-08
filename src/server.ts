@@ -9,18 +9,10 @@ import { readFileSync } from 'fs'
 
 import { connectSlackClient } from './slack-bot.ts'
 import { upsertFakeUser, mockSlackClient, BOT_USER_ID } from './local-helpers.ts'
-import { startAutoMessageCron } from './utils'
+import { isLocalEnv, isDevEnv, startAutoMessageCron } from './utils'
 import { startMeetingSummaryCron } from './meeting-summary-worker'
 import { apiRoutes } from './routes/api'
 import { localRoutes } from './routes/local'
-
-function isLocalEnv() {
-  return process.env.PV_NODE_ENV === 'local'
-}
-
-function isDevEnv() {
-  return process.env.PV_NODE_ENV === 'dev'
-}
 
 const PORT = isLocalEnv() ? 3001 : 3009
 const slackClient = isLocalEnv() ? mockSlackClient : await connectSlackClient()
