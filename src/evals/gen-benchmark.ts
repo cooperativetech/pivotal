@@ -147,11 +147,6 @@ function parseArguments() {
         short: 'a',
         default: '2',
       },
-      nCases: {
-        type: 'string',
-        short: 'c',
-        default: '1',
-      },
       nGroups: {
         type: 'string',
         short: 'g',
@@ -176,8 +171,7 @@ function parseArguments() {
     console.log('  -e, --endTimeOffset     End time offset in days from reference date (default: 2)')
     console.log('  -l, --meetingLength     Meeting length in minutes (default: 60)')
     console.log('  -a, --nSimUsers         Number of simulated users (default: 2)')
-    console.log('  -c, --nCases            Number of benchmark cases to generate (default: 1)')
-    console.log('  -g, --nGroups           Number of groups to divide users into (default: 1)')
+    console.log('  -g, --nGroups           Number of groups to generate (default: 1)')
     console.log('  -t, --genTimestamp      Use existing generation timestamp (appends to existing folder)')
     console.log('  -h, --help              Show this help message')
     process.exit(0)
@@ -188,79 +182,74 @@ function parseArguments() {
     endTimeOffset: parseFloat(values.endTimeOffset),
     meetingLength: parseInt(values.meetingLength, 10),
     nSimUsers: parseInt(values.nSimUsers, 10),
-    nCases: parseInt(values.nCases, 10),
     nGroups: parseInt(values.nGroups, 10),
     genTimestamp: values.genTimestamp || null,
   }
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nCases, nGroups, genTimestamp } = parseArguments()
-console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nCases=${nCases}, nGroups=${nGroups}, genTimestamp=${genTimestamp || 'new'}`)
+const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups, genTimestamp } = parseArguments()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nGroups=${nGroups}, genTimestamp=${genTimestamp || 'new'}`)
 
 async function generateMultiGroupBenchmarks() {
-  console.log(`\nGenerating ${nCases} benchmark case(s)...`)
+  console.log(`\nGenerating benchmark with ${nGroups} group(s)...`)
 
-  for (let i = 1; i <= nCases; i++) {
-    console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
+  // Setup folder structure under benchmarks directory
+  const benchmarksPath = join(__dirname, 'data', 'benchmarks')
+  let targetFolder: string
+  let nextGroupNumber = 1
+  let useTimestamp: string
 
-    // Setup folder structure under benchmarks directory
-    const benchmarksPath = join(__dirname, 'data', 'benchmarks')
-    let targetFolder: string
-    let nextGroupNumber = 1
-    let useTimestamp: string
-
-    // Ensure benchmarks directory exists
-    if (!existsSync(benchmarksPath)) {
-      await mkdir(benchmarksPath, { recursive: true })
-      console.log(`Created benchmarks directory`)
-    }
-
-    if (genTimestamp) {
-      // Use provided timestamp - find any existing folder with this genTimestamp
-      useTimestamp = genTimestamp
-
-      const existingFolders = readdirSync(benchmarksPath)
-      const matchingFolder = existingFolders.find(folder => folder.endsWith(`_gen${useTimestamp}`))
-
-      if (!matchingFolder) {
-        throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. No folder ending with _gen${genTimestamp} found in benchmarks directory.`)
-      }
-
-      targetFolder = join(benchmarksPath, matchingFolder)
-      // Count existing files to determine next group number
-      const existingFiles = readdirSync(targetFolder)
-      nextGroupNumber = existingFiles.length + 1
-      console.log(`Using existing folder: ${matchingFolder}, next group will be ${nextGroupNumber}`)
-    } else {
-      // Create new folder with new timestamp using current parameters
-      useTimestamp = formatTimestamp()
-      const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
-
-      targetFolder = join(benchmarksPath, folderName)
-      await mkdir(targetFolder, { recursive: true })
-      console.log(`Created new folder: ${folderName}`)
-    }
-
-    // Create nGroups independent benchmark groups
-    for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
-      console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
-
-      // Call createBenchmark for each group
-      const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, useTimestamp, nGroups, groupIndex)
-
-      // Save with group-specific filename using nextGroupNumber
-      const actualGroupNumber = nextGroupNumber + groupIndex
-      const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-      const filename = `${baseName}_group${actualGroupNumber}_gen${useTimestamp}.json`
-      const filePath = join(targetFolder, filename)
-
-      await writeFile(filePath, JSON.stringify(exportData, null, 2))
-      console.log(`Group ${groupIndex + 1} benchmark saved to ${filePath}`)
-    }
+  // Ensure benchmarks directory exists
+  if (!existsSync(benchmarksPath)) {
+    await mkdir(benchmarksPath, { recursive: true })
+    console.log(`Created benchmarks directory`)
   }
 
-  console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
+  if (genTimestamp) {
+    // Use provided timestamp - find any existing folder with this genTimestamp
+    useTimestamp = genTimestamp
+
+    const existingFolders = readdirSync(benchmarksPath)
+    const matchingFolder = existingFolders.find(folder => folder.endsWith(`_gen${useTimestamp}`))
+
+    if (!matchingFolder) {
+      throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. No folder ending with _gen${genTimestamp} found in benchmarks directory.`)
+    }
+
+    targetFolder = join(benchmarksPath, matchingFolder)
+    // Count existing files to determine next group number
+    const existingFiles = readdirSync(targetFolder)
+    nextGroupNumber = existingFiles.length + 1
+    console.log(`Using existing folder: ${matchingFolder}, next group will be ${nextGroupNumber}`)
+  } else {
+    // Create new folder with new timestamp using current parameters
+    useTimestamp = formatTimestamp()
+    const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
+
+    targetFolder = join(benchmarksPath, folderName)
+    await mkdir(targetFolder, { recursive: true })
+    console.log(`Created new folder: ${folderName}`)
+  }
+
+  // Create nGroups independent benchmark groups
+  for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
+    console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
+
+    // Call createBenchmark for each group
+    const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, useTimestamp, nGroups, groupIndex)
+
+    // Save with group-specific filename using nextGroupNumber
+    const actualGroupNumber = nextGroupNumber + groupIndex
+    const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+    const filename = `${baseName}_group${actualGroupNumber}_gen${useTimestamp}.json`
+    const filePath = join(targetFolder, filename)
+
+    await writeFile(filePath, JSON.stringify(exportData, null, 2))
+    console.log(`Group ${groupIndex + 1} benchmark saved to ${filePath}`)
+  }
+
+  console.log(`\n✅ Successfully generated benchmark with ${nGroups} group(s)`)
 }
 
 generateMultiGroupBenchmarks().catch(console.error)

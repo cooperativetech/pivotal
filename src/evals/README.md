@@ -15,7 +15,7 @@ pnpm run gen-benchmark --genTimestamp=20251008150702575
 pnpm run eval
 
 # Run evaluation with specific parameters
-pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nCases=5
+pnpm run gen-benchmark --startTimeOffset=1 --endTimeOffset=2 --meetingLength=60 --nSimUsers=3 --nGroups=2
 pnpm run eval --benchmarkSet=benchmarks --nReps=3
 
 # Generate one-liner test cases
@@ -36,7 +36,7 @@ Creates realistic scheduling scenarios with AI-generated calendar events.
 pnpm run gen-benchmark
 
 # With command line arguments
-pnpm run gen-benchmark --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nCases=10
+pnpm run gen-benchmark --startTimeOffset=1.5 --endTimeOffset=3 --meetingLength=90 --nSimUsers=4 --nGroups=3
 
 # Add to existing generation batch (appends to existing folder)
 pnpm run gen-benchmark --genTimestamp=20251008150702575 --nSimUsers=4
@@ -51,7 +51,6 @@ pnpm run gen-benchmark --nGroups=3 --nSimUsers=6
 - `--endTimeOffset` / `-e`: Days offset from Jan 1, 2025 midnight EST for benchmark end (supports decimals, default: 2)
 - `--meetingLength` / `-l`: Meeting duration in minutes (default: 60)
 - `--nSimUsers` / `-a`: Number of simulated users to create (default: 2)
-- `--nCases` / `-c`: Number of benchmark cases to generate (default: 1)
 - `--nGroups` / `-g`: Number of groups to divide users into (default: 1)
 - `--genTimestamp` / `-t`: Use existing generation timestamp (appends to existing folder)
 
@@ -203,8 +202,8 @@ pnpm run eval --benchmark=benchmark_4simusers_1-5start_2end_90min_gen20251008151
 
 ```bash
 # 1. Generate diverse benchmark set
-pnpm run gen-benchmark --nCases=3 --nSimUsers=3
-pnpm run gen-benchmark --nCases=2 --nSimUsers=4 --meetingLength=120
+pnpm run gen-benchmark --nGroups=3 --nSimUsers=3
+pnpm run gen-benchmark --nGroups=2 --nSimUsers=4 --meetingLength=120
 
 # 2. Run comprehensive evaluation with repetitions
 pnpm run eval --benchmarkSet=benchmarks --nReps=5 --topicRouting
