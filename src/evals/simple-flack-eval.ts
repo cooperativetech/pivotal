@@ -109,7 +109,7 @@ async function createUsersFromSimUsers(simUsers: Record<string, BaseScheduleUser
 }
 
 // Process bot message responses and add them to appropriate simUser buffers
-async function processBotMessages(messageResult: Record<string, unknown>, simUsers: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
+async function processBotMessages(messageResult: Record<string, unknown>, simUsers: Record<string, BaseScheduleUser>): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
     console.log('⚠️ Bot did not reply - no resMessages in response')
     return null
@@ -146,7 +146,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
       if (!channelRes.ok) {
         console.error(`Failed to get channel info: ${resMessage.channelId as string}`)
         // Fallback: send to all simUsers if we can't get channel info
-        for (const simUser of simUsers) {
+        for (const simUser of Object.values(simUsers)) {
           simUser.receive(resMessage.text as string)
         }
         continue
@@ -155,15 +155,15 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
       const { userIds } = await channelRes.json()
 
       // Only send message to simUsers whose names match the channel userIds
-      for (const simUser of simUsers) {
-        if (userIds.includes(simUser.name)) {
-          simUser.receive(resMessage.text as string)
+      for (const userId of userIds) {
+        if (simUsers[userId]) {
+          simUsers[userId].receive(resMessage.text as string)
         }
       }
     } catch (error) {
       console.error(`Error processing bot message for channel ${resMessage.channelId as string}:`, error)
       // Fallback: send to all simUsers if there's an error
-      for (const simUser of simUsers) {
+      for (const simUser of Object.values(simUsers)) {
         simUser.receive(resMessage.text as string)
       }
     }
