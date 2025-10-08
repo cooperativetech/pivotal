@@ -30,8 +30,9 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     'Yasmin', 'Zachary',
   ]
 
-  // Subsample the first nSimUsers names
-  const simUserNames = possibleSimUserNames.slice(0, nSimUsers)
+  // Randomly sample nSimUsers names
+  const shuffledNames = [...possibleSimUserNames].sort(() => Math.random() - 0.5)
+  const simUserNames = shuffledNames.slice(0, nSimUsers)
 
   // Generate fake calendars for all simUsers
   const calendarEvents = await Promise.all(
