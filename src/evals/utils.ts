@@ -236,8 +236,11 @@ export function createAggregatedSummary(
   const timestamp = formatTimestamp()
 
   // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
+  console.log(`DEBUG: createAggregatedSummary received benchmarkName: ${benchmarkName}`)
+
   // Extract the benchmark folder name (last part of the path)
   const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
+  console.log(`DEBUG: benchmarkFolderName: ${benchmarkFolderName}`)
 
   // Extract gen timestamp from folder name for metadata
   const genMatch = benchmarkFolderName.match(/^(.+)_gen(\d{17})$/)
@@ -278,6 +281,7 @@ export function createAggregatedSummary(
   const resultsPath = join(__dirname, 'results', benchmarkName)
   const summaryFileName = `runs${timestamp}_summary.json`
   const summaryPath = join(resultsPath, summaryFileName)
+  console.log(`DEBUG: aggregated summary will be saved to: ${summaryPath}`)
 
   // Create folder if it doesn't exist
   if (!existsSync(resultsPath)) {
