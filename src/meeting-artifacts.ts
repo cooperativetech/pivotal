@@ -144,6 +144,9 @@ export interface MeetingSummaryProcessingUpdate {
   transcriptAttemptCount?: number
   geminiSummary?: string | null
   geminiModel?: string | null
+  actionItemsProcessedAt?: Date | null
+  actionItemsCommitSha?: string | null
+  actionItemsError?: string | null
 }
 
 export async function updateMeetingSummaryProcessing(
@@ -161,6 +164,9 @@ export async function updateMeetingSummaryProcessing(
   }
   if ('geminiSummary' in updates) setValues.geminiSummary = updates.geminiSummary
   if ('geminiModel' in updates) setValues.geminiModel = updates.geminiModel
+  if ('actionItemsProcessedAt' in updates) setValues.actionItemsProcessedAt = updates.actionItemsProcessedAt
+  if ('actionItemsCommitSha' in updates) setValues.actionItemsCommitSha = updates.actionItemsCommitSha
+  if ('actionItemsError' in updates) setValues.actionItemsError = updates.actionItemsError
 
   if (Object.keys(setValues).length === 0) {
     return
