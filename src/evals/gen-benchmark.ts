@@ -15,7 +15,6 @@ import { formatTimestamp } from './utils'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-
 async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, genTimestamp: string, nGroups?: number, groupIndex?: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
@@ -205,15 +204,6 @@ async function generateMultiGroupBenchmarks() {
   for (let i = 1; i <= nCases; i++) {
     console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
 
-    // Validate nGroups parameter for multi-group case
-    if (nGroups > 1) {
-      const minUsersPerGroup = 2
-      const minRequiredUsers = nGroups * minUsersPerGroup
-      if (nSimUsers < minRequiredUsers) {
-        throw new Error(`Cannot divide ${nSimUsers} users into ${nGroups} groups with at least ${minUsersPerGroup} users each. Need at least ${minRequiredUsers} users.`)
-      }
-    }
-
     // Setup folder structure under benchmarks directory
     const benchmarksPath = join(__dirname, 'data', 'benchmarks')
     let targetFolder: string
@@ -252,7 +242,7 @@ async function generateMultiGroupBenchmarks() {
       console.log(`Created new folder: ${folderName}`)
     }
 
-    // Create nGroups independent benchmarks
+    // Create nGroups independent benchmark groups
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
 
