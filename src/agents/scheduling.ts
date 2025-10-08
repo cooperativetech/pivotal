@@ -113,11 +113,11 @@ const formatTimeSlots = tool({
   parameters: z.strictObject({
     slots: z.array(z.strictObject({
       start: z.string().describe('ISO 8601 start timestamp (e.g., "2025-03-12T18:00:00Z")'),
-      end: z.string().describe('ISO 8601 end timestamp (must be after start)') ,
+      end: z.string().describe('ISO 8601 end timestamp (must be after start)'),
       label: z.string().optional().describe('Optional human-readable label for this slot'),
     })).min(1),
   }),
-  execute: async ({ slots }, runContext?: RunContext<ConversationContext>) => {
+  execute: ({ slots }, runContext?: RunContext<ConversationContext>) => {
     if (!runContext) throw new Error('runContext not provided')
     const { topic, userMap, callingUserTimezone } = runContext.context
 
@@ -147,7 +147,7 @@ const formatTimeSlots = tool({
             const tz = participant.tz || fallbackTz
             return `  - ${participant.realName}: ${formatTimestampWithTimezone(start, tz)} → ${formatTimestampWithTimezone(end, tz)}`
           })
-        : [`  - (No other human participants recorded)`]
+        : ['  - (No other human participants recorded)']
 
       return { header, participantLines }
     })
