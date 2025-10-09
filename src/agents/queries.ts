@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { tool } from './agent-sdk'
 import type { RunContext } from './agent-sdk'
 import type { ConversationContext } from './conversation-utils'
-import { ConversationAgent, ConversationRes } from './conversation-utils'
+import { makeConversationAgent } from './conversation-utils'
 import { isGoogleCalendarConnected } from '../integrations/google'
 import { findMeetingsForUsers } from '../meeting-artifacts'
 import { getUserCalendarStructured } from '../calendar-service'
@@ -534,14 +534,22 @@ Guidelines:
 - When you lack sufficient information, say so explicitly and suggest the next step the platform or user could take to obtain it.
 - Reference the evidence you used ("conversation history", tool names, etc.) when it helps the user understand your answer.
 - Avoid fabricating details or making assumptions beyond what is supported.
-- When checking calendar status, call checkCalendarConnection and keep the response concise (✅/❌). If you can’t identify the linked account from the data available, tell the user to check their account settings.
+- When checking calendar status, call checkCalendarConnection and keep the response concise (✅/❌). If you can't identify the linked account from the data available, tell the user to check their account settings.
 - For meeting-related questions (next meeting, meeting link, meeting purpose), call lookupPivotalMeetings to check Pivotal-managed meetings, and call getCalendarEvents when you need the full calendar (busy slots, external events) within a specific time window.
 - For cross-user availability or mutual free-time questions, call findCommonAvailability with an explicit ISO start and end window and include every person that should be considered.
-- For status updates (“Did Ben respond?”, “Who are we waiting on?”) or before sending follow-up nudges, call getParticipantResponseStatus and use its JSON payload to ground your answer and determine who still needs a ping.
+- For status updates ("Did Ben respond?", "Who are we waiting on?") or before sending follow-up nudges, call getParticipantResponseStatus and use its JSON payload to ground your answer and determine who still needs a ping.
 - When sending nudges, only include users who are actually outstanding according to the latest status data, and respect user requests when crafting the DM text.
-- When a user explicitly asks for the connection buttons—or clearly agrees that they want them—include "promptCalendarButtons": { "userName": "Exact Real Name" } in your final JSON so the platform knows who to prompt. Use the exact real name from the User Directory (e.g., "Anand Shah").`
+- When a user explicitly asks for the connection buttons—or clearly agrees that they want them—include "promptCalendarButtons": { "userName": "Exact Real Name" } in your final JSON so the platform knows who to prompt. Use the exact real name from the User Directory (e.g., "Anand Shah").
 
-export const queryAgent = new ConversationAgent({
+Response Format:
+- When calling ANY tool (including the \\\`output\\\` tool): Output NOTHING - just call the tool
+- CRITICAL: Do NOT output any text, explanation, or commentary when calling the \\\`output\\\` tool
+- When ready to provide your final response: Call the \\\`output\\\` tool with the appropriate fields (replyMessage, messagesToUsers, groupMessage, promptCalendarButtons, reasoning, etc.)
+- Common mistakes to avoid:
+  * Outputting text or explanation when calling the \\\`output\\\` tool (output NOTHING)
+  * Forgetting to call the \\\`output\\\` tool when ready to respond`
+
+export const queryAgent = makeConversationAgent({
   name: 'queryAgent',
   model: 'anthropic/claude-sonnet-4',
   modelSettings: {
@@ -555,7 +563,6 @@ export const queryAgent = new ConversationAgent({
     findCommonAvailability,
     getParticipantResponseStatus,
   ],
-  outputType: ConversationRes,
   instructions: (runContext: RunContext<ConversationContext>) => {
     const { topic, userMap } = runContext.context
     const userDirectory = Array.from(userMap.values())
