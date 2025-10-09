@@ -1,7 +1,6 @@
 import OpenAI from 'openai'
 import {
   Agent,
-  RunContext,
   Runner,
   run,
   tool,
@@ -10,6 +9,7 @@ import {
   setOpenAIAPI,
   setTraceProcessors,
 } from '@openai/agents'
+import type { AgentOptions, RunContext } from '@openai/agents'
 import { Langfuse } from 'langfuse'
 
 import { LangfuseTracingExporter } from './langfuse-tracing-exporter'
@@ -35,4 +35,5 @@ setOpenAIAPI('chat_completions')
 setTraceProcessors([traceProcessor])
 
 // Re-export openai agent sdk types
-export { Agent, RunContext, Runner, run, tool }
+export type { AgentOptions, RunContext }
+export { Agent, Runner, run, tool }

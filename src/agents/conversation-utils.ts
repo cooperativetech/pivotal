@@ -3,7 +3,7 @@ import { RRuleTemporal } from 'rrule-temporal'
 import { toText } from 'rrule-temporal/totext'
 import { Temporal } from '@js-temporal/polyfill'
 
-import type { RunContext } from './agent-sdk'
+import type { AgentOptions, RunContext } from './agent-sdk'
 import { Agent, Runner, tool } from './agent-sdk'
 import db from '../db/engine'
 import type { SlackMessage, SlackUser, AutoMessageInsert } from '../db/schema/main'
@@ -27,144 +27,64 @@ export interface ConversationContext {
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
-export const ConversationRes = z.strictObject({
-  replyMessage: z.string().optional().nullable(),
-  markTopicInactive: z.boolean().optional().nullable(),
+
+const ConversationRes = z.strictObject({
+  replyMessage: z.string().optional().nullable().describe('Optional message text to reply to the user in the current channel/thread'),
+  markTopicInactive: z.boolean().optional().nullable().describe('Set to true when the topic is complete and should be marked as inactive'),
   messagesToUsers: z.array(z.strictObject({
-    userNames: z.array(z.string()),
-    text: z.string(),
-  })).optional().nullable(),
-  groupMessage: z.string().optional().nullable(),
-  finalizedEvent: CalendarEvent.optional().nullable(),
-  cancelEvent: z.boolean().optional().nullable(),
+    userNames: z.array(z.string()).describe('Exact full names from User Directory to send this message to as individual 1-1 DMs'),
+    text: z.string().describe('The message text to send to each user as a private DM'),
+  })).optional().nullable().describe('Array of private 1-1 DM messages to send to specific users'),
+  groupMessage: z.string().optional().nullable().describe('Message to send to the shared channel with all topic participants'),
+  finalizedEvent: CalendarEvent.optional().nullable().describe('Calendar event details when finalizing a meeting time (includes start, end, summary)'),
+  cancelEvent: z.boolean().optional().nullable().describe('Set to true when cancelling an existing calendar event'),
   promptCalendarButtons: z.strictObject({
-    userName: z.string().optional().nullable(),
-    contextMessage: z.string().optional().nullable(),
-  }).optional().nullable(),
-  reasoning: z.string(),
+    userName: z.string().optional().nullable().describe('Exact real name from User Directory of the user to prompt for calendar connection'),
+    contextMessage: z.string().optional().nullable().describe('Optional context message to show with the calendar connection buttons'),
+  }).optional().nullable().describe('Prompt a user to connect their calendar with connection buttons'),
+  reasoning: z.string().describe('Brief explanation of your decision (REQUIRED)'),
 })
-export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
-export type ConversationRes = z.infer<typeof ConversationRes>
+type ConversationRes = z.infer<typeof ConversationRes>
+
+const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
 
-type AgentsErrorWithState = Error & { state?: Record<string, unknown> }
+const conversationOutputTool = tool({
+  name: 'output',
+  description: 'Return your final response. Always call this tool as your final output, without outputting any other text.',
+  parameters: ConversationRes,
+  execute: (params) => params,
+})
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function extractAssistantOutputFromState(state: unknown): string | undefined {
-  if (!isRecord(state)) return undefined
-  const response = state._lastTurnResponse
-  if (!isRecord(response)) return undefined
-  const output = response.output
-  if (!Array.isArray(output)) return undefined
-
-  const outputItems: unknown[] = output
-
-  for (let i = outputItems.length - 1; i >= 0; i -= 1) {
-    const item = outputItems[i]
-    if (!isRecord(item)) continue
-    const messageCandidate = item as {
-      type?: unknown,
-      role?: unknown,
-      content?: unknown,
-    }
-    if (messageCandidate.type !== 'message') continue
-    if (messageCandidate.role !== 'assistant') continue
-    const content = messageCandidate.content
-    if (!Array.isArray(content) || content.length === 0) continue
-    const contentItems: unknown[] = content
-    const lastChunk = contentItems[contentItems.length - 1]
-    if (!isRecord(lastChunk)) continue
-    const chunkCandidate = lastChunk as {
-      type?: unknown,
-      text?: unknown,
-    }
-    if (chunkCandidate.type !== 'output_text') continue
-    if (typeof chunkCandidate.text === 'string') {
-      return chunkCandidate.text
-    }
+export function makeConversationAgent(
+  config: AgentOptions<ConversationContext, typeof ConversationRes>,
+): ConversationAgent {
+  // Validate that conflicting properties are not set
+  if (config.modelSettings && 'toolChoice' in config.modelSettings) {
+    throw new Error(
+      'makeConversationAgent automatically sets modelSettings.toolChoice. ' +
+      'This property cannot be manually specified.',
+    )
+  }
+  if ('outputType' in config || 'toolUseBehavior' in config || 'resetToolChoice' in config) {
+    throw new Error(
+      'makeConversationAgent automatically sets outputType, toolUseBehavior, and resetToolChoice. ' +
+      'These properties cannot be manually specified.',
+    )
   }
 
-  return undefined
-}
-
-function sanitizeFencedJson(raw: string): string {
-  const trimmed = raw.trim()
-  if (!trimmed.startsWith('```')) return trimmed
-  const withoutFence = trimmed.replace(/^```[a-zA-Z]*\s*/, '')
-  const closingIndex = withoutFence.lastIndexOf('```')
-  if (closingIndex === -1) return withoutFence
-  return withoutFence.slice(0, closingIndex).trim()
-}
-
-type InvalidOutputAnalysis = {
-  preview?: string,
-  issues: string[],
-}
-
-const INVALID_PREVIEW_LIMIT = 600
-
-function analyseInvalidStructuredOutput(rawText?: string): InvalidOutputAnalysis {
-  if (!rawText) {
-    return {
-      preview: undefined,
-      issues: ['No assistant JSON output was returned.'],
-    }
-  }
-
-  const preview = rawText.length > INVALID_PREVIEW_LIMIT
-    ? `${rawText.slice(0, INVALID_PREVIEW_LIMIT)}…`
-    : rawText
-
-  const issues: string[] = []
-
-  const sanitised = sanitizeFencedJson(rawText)
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(sanitised)
-  } catch (error) {
-    issues.push(`Response was not valid JSON (${error instanceof Error ? error.message : 'unknown parse error'})`)
-    return { preview, issues }
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    issues.push('Response must be a JSON object matching the schema.')
-    return { preview, issues }
-  }
-
-  const reasoning = (parsed as { reasoning?: unknown }).reasoning
-  if (typeof reasoning !== 'string') {
-    issues.push('`reasoning` is required and must be a string (use a short explanation).')
-  }
-
-  if ('replyMessage' in parsed) {
-    const replyMessage = (parsed as { replyMessage: unknown }).replyMessage
-    const validReply = typeof replyMessage === 'string' || replyMessage === null
-    if (!validReply) {
-      issues.push('`replyMessage` must be a string (use "" when waiting) or null.')
-    }
-  }
-
-  return { preview, issues }
-}
-
-function formatRetryGuidance(preview?: string, issues: string[] = []): string {
-  if (!preview && issues.length === 0) return ''
-  const hints: string[] = []
-  if (preview) {
-    hints.push(`Your previous response was:
-${preview}`)
-  }
-  if (issues.length > 0) {
-    hints.push(`Fix the following problems before responding again: ${issues.join(' ')}`)
-  }
-  return `
-
-Additional guidance based on your last response:
-${hints.join('\n\n')}`
+  // Pass through the config with modifications
+  return new ConversationAgent({
+    ...config,
+    tools: [...(config.tools || []), conversationOutputTool],
+    outputType: ConversationRes,
+    modelSettings: {
+      ...config.modelSettings,
+      toolChoice: 'required',
+    },
+    resetToolChoice: false,
+    toolUseBehavior: { stopAtToolNames: ['output'] },
+  })
 }
 
 export async function runConversationAgent(
@@ -201,16 +121,10 @@ Based on the conversation history and current message, determine the next step i
   console.log(`User prompt: ${userPrompt}`)
 
   const MAX_ATTEMPTS = 2
-  const retryReminder = '\n\nIMPORTANT: Your previous response was not valid structured output.\n- If you still need information from a tool, call the tool now and output nothing else.\n- Otherwise, return ONLY the JSON object that matches the required schema (replyMessage, markTopicInactive, messagesToUsers, groupMessage, finalizedEvent, cancelEvent, reasoning).\n- replyMessage must be a string (use "" when you have nothing to add) and reasoning is ALWAYS required.\n- Never mix tool calls with JSON in the same response, and do not include any extra text before or after the JSON.'
-
-  let lastInvalidPreview: string | undefined
-  let lastInvalidIssues: string[] = []
+  const retryReminder = '\n\nIMPORTANT: You must call the `output` tool to provide your response. Do not output anything else. If you need to call other tools first, do so, then call the `output` tool.'
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const retryDetails = attempt === 0 ? '' : formatRetryGuidance(lastInvalidPreview, lastInvalidIssues)
-    const promptToUse = attempt === 0
-      ? userPrompt
-      : `${userPrompt}${retryReminder}${retryDetails}`
+    const promptToUse = attempt === 0 ? userPrompt : `${userPrompt}${retryReminder}`
 
     try {
       const runner = new Runner({ groupId: `topic-${topic.id}` })
@@ -224,45 +138,23 @@ Based on the conversation history and current message, determine the next step i
       }
       return result.finalOutput
     } catch (error) {
-      const isInvalidOutput = error instanceof Error && error.message.includes('Invalid output type')
-      const errorSummary = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
-      const stackPreview = error instanceof Error && typeof error.stack === 'string'
-        ? error.stack.split('\n').slice(0, 5).join('\n')
-        : 'No stack trace'
-
-      if (isInvalidOutput) {
-        const state = (error as AgentsErrorWithState).state
-        const rawOutput = extractAssistantOutputFromState(state)
-        const analysis = analyseInvalidStructuredOutput(rawOutput)
-        lastInvalidPreview = analysis.preview
-        lastInvalidIssues = analysis.issues
-
-        if (analysis.preview) {
-          console.warn('[ConversationAgent] Invalid output preview (truncated):', analysis.preview)
-        }
-        if (analysis.issues.length > 0) {
-          console.warn('[ConversationAgent] Detected structured output issues:', analysis.issues.join(' '))
-        }
-
-        console.warn(`[ConversationAgent] Invalid structured output (attempt ${attempt + 1}/${MAX_ATTEMPTS}). Summary: ${errorSummary}`)
-        console.warn('[ConversationAgent] Stack preview:', stackPreview)
-        if (attempt === 0) {
-          console.warn('[ConversationAgent] Retrying with explicit JSON instructions.')
-          continue
-        }
-      }
-
-      console.error('=== ERROR IN runConversationAgent ===')
+      console.error(`=== ERROR IN runConversationAgent (attempt ${attempt + 1}/${MAX_ATTEMPTS}) ===`)
       console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
       console.error('Error message:', error instanceof Error ? error.message : String(error))
-      console.error('Stack trace:', stackPreview)
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
       console.error('Full error object:', JSON.stringify(error, null, 2))
       console.error('=================================')
 
-      return {
-        replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
-        reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      // If this was the last attempt, return error response
+      if (attempt === MAX_ATTEMPTS - 1) {
+        return {
+          replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+          reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        }
       }
+
+      // Otherwise, retry with the reminder
+      console.warn('[ConversationAgent] Retrying with output tool reminder')
     }
   }
 

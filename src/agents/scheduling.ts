@@ -6,7 +6,7 @@ import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
-import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
+import { updateSummary, updateUserNames, makeConversationAgent } from './conversation-utils'
 import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
 import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
@@ -307,11 +307,10 @@ You have access to FOUR tools and can call multiple tools in sequence within the
 
 ## Response Format
 When calling a tool:
-- Do NOT return any JSON or text content
-- Simply call the tool and let it execute
+- Output NOTHING - just call the tool
 - The tool response will be handled automatically
 
-When NOT calling a tool, return ONLY a JSON object with these fields:
+When ready to provide your final response, call the \`output\` tool with these fields:
 {
   "replyMessage": "Message text",  // Optional: Include to reply to the sent message
   "markTopicInactive": true,      // Optional: Include to mark topic as inactive
@@ -336,17 +335,20 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
+CRITICAL: Output NOTHING when calling the \`output\` tool - just call the tool with the parameters
+- Do not include any text or explanation before or after calling the \`output\` tool
+
 IMPORTANT:
-- Any time you are not calling a tool, you MUST return well-formed JSON that exactly matches the schema above. Do not return plain text or partial structures. Always include the reasoning field, even if replyMessage is an empty string.
-- When calling tools: Output NOTHING - just call the tool
-- When not calling tools: Return ONLY the JSON object above
-- Do not include any text before or after the JSON
+- When calling ANY tool (including the \`output\` tool): Output NOTHING - just call the tool
+- When ready to provide your final response: Call the \`output\` tool with the fields above
+- CRITICAL: Do NOT output any text, explanation, or commentary when calling the \`output\` tool
+- The \`output\` tool accepts the same structure as before - just call it instead of returning JSON directly
 - Common mistakes to avoid:
-  * Forgetting to include the "reasoning" field
-  * Mixing tool calls and JSON in the same response
-  * Returning acknowledgements or prose instead of JSON
-- Example waiting response:
-  {
+  * Outputting text or explanation when calling the \`output\` tool (output NOTHING)
+  * Forgetting to call the \`output\` tool when ready to respond
+  * Mixing tool calls with text output in the same response
+- Example waiting response (call the output tool):
+  output({
     "replyMessage": "",
     "markTopicInactive": false,
     "messagesToUsers": null,
@@ -354,7 +356,7 @@ IMPORTANT:
     "finalizedEvent": null,
     "cancelEvent": null,
     "reasoning": "Waiting for Bob to confirm availability"
-  }`
+  })`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
 
@@ -439,15 +441,14 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
   return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
 }
 
-export const schedulingAgent = new ConversationAgent({
+export const schedulingAgent = makeConversationAgent({
   name: 'schedulingAgent',
   model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,
-    parallelToolCalls: false, // Only allow one tool call at a time
+    parallelToolCalls: false,
   },
   tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
-  outputType: ConversationRes,
   instructions: schedulingInstructions,
 })
