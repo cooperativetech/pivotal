@@ -108,6 +108,11 @@ type InvalidOutputAnalysis = {
 const INVALID_PREVIEW_LIMIT = 600
 
 function analyseInvalidStructuredOutput(rawText?: string): InvalidOutputAnalysis {
+  if (rawText) {
+    const previewLog = rawText.length > 1000 ? `${rawText.slice(0, 1000)}…` : rawText
+    console.warn('[ConversationAgent] Raw assistant output:', previewLog)
+  }
+
   if (!rawText) {
     return {
       preview: undefined,

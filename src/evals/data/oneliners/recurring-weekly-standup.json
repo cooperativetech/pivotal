@@ -1,0 +1,100 @@
+{
+  "topic": {
+    "id": "recurring-weekly-standup",
+    "botUserId": "UBOT",
+    "workflowType": "scheduling",
+    "createdAt": "2025-10-08T06:15:00.000Z"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "topicId": "recurring-weekly-standup",
+      "userIds": ["UINITIATOR", "UALICE", "UBOB"],
+      "summary": "Need a weekly 45 minute standup for Alice Smith and Bob Johnson during the fall.",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "msg-0",
+      "createdAt": "2025-10-08T06:15:00.000Z",
+      "createdByMessageRawTs": "1759875300.000000"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-0",
+      "topicId": "recurring-weekly-standup",
+      "userId": "UINITIATOR",
+      "channelId": "CSTANDUP",
+      "text": "We need a weekly standup with Alice and Bob this fall.",
+      "timestamp": "2025-10-08T06:14:30.000Z",
+      "rawTs": "1759875270.000000",
+      "threadTs": null,
+      "raw": {}
+    },
+    {
+      "id": "msg-1",
+      "topicId": "recurring-weekly-standup",
+      "userId": "UINITIATOR",
+      "channelId": "CSTANDUP",
+      "text": "Pivotal, can you schedule a 45 minute weekly standup with Alice and Bob for the next 12 weeks starting next Tuesday?",
+      "timestamp": "2025-10-08T06:15:51.000Z",
+      "rawTs": "1759875351.000000",
+      "threadTs": null,
+      "raw": {}
+    }
+  ],
+  "users": [
+    {
+      "id": "UINITIATOR",
+      "teamId": "TTEST",
+      "realName": "Alex Initiator",
+      "email": "alex@example.com",
+      "tz": "America/Los_Angeles",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-08T06:15:51.000Z",
+      "raw": {}
+    },
+    {
+      "id": "UALICE",
+      "teamId": "TTEST",
+      "realName": "Alice Smith",
+      "email": "alice@example.com",
+      "tz": "America/Los_Angeles",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-08T06:15:51.000Z",
+      "raw": {}
+    },
+    {
+      "id": "UBOB",
+      "teamId": "TTEST",
+      "realName": "Bob Johnson",
+      "email": "bob@example.com",
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-08T06:15:51.000Z",
+      "raw": {}
+    },
+    {
+      "id": "UBOT",
+      "teamId": "TTEST",
+      "realName": "Pivotal",
+      "email": null,
+      "tz": "America/Los_Angeles",
+      "isBot": true,
+      "deleted": false,
+      "updated": "2025-10-08T06:15:51.000Z",
+      "raw": {}
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "CSTANDUP",
+      "userIds": ["UINITIATOR", "UALICE", "UBOB"]
+    }
+  ],
+  "loadUpToId": "msg-1",
+  "expectedBehavior": "Assistant should call findRecurringSlots and propose the best weekly slot."
+}

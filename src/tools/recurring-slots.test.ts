@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import type { CalendarEvent, RecurringSlotDescriptor } from '@shared/api-types'
 import { scoreRecurringSlots } from './recurring-slots'
 
-test('scoreRecurringSlots handles weekly slots without conflicts', () => {
+void test('scoreRecurringSlots handles weekly slots without conflicts', () => {
   const slot: RecurringSlotDescriptor = { dayOfWeek: 'MO', time: '10:00', timezone: 'America/Los_Angeles' }
   const result = scoreRecurringSlots({
     slots: [slot],
@@ -27,7 +27,7 @@ test('scoreRecurringSlots handles weekly slots without conflicts', () => {
   assert.equal(score.tradeoffSummary, 'Works great for everyone — no conflicts detected.')
 })
 
-test('scoreRecurringSlots surfaces dominant blocker', () => {
+void test('scoreRecurringSlots surfaces dominant blocker', () => {
   const slot: RecurringSlotDescriptor = { dayOfWeek: 'TU', time: '09:00', timezone: 'America/New_York' }
   const busyEvent: CalendarEvent = {
     start: '2025-01-07T14:00:00.000Z',
@@ -55,4 +55,26 @@ test('scoreRecurringSlots surfaces dominant blocker', () => {
   assert.ok(score.tradeoffSummary.includes('Alice Smith'))
   assert.equal(score.perPersonConflicts['Alice Smith'], 2)
   assert.equal(score.perPersonConflicts['Bob Jones'], 0)
+})
+
+void test('scoreRecurringSlots treats missing calendars as unknown', () => {
+  const slot: RecurringSlotDescriptor = { dayOfWeek: 'FR', time: '11:00', timezone: 'Europe/London' }
+  const result = scoreRecurringSlots({
+    slots: [slot],
+    durationMinutes: 45,
+    frequency: 'WEEKLY',
+    startDate: '2025-01-03',
+    endDate: '2025-02-07',
+    sampleWeeks: 4,
+    userCalendars: new Map<string, CalendarEvent[] | null>([
+      ['Charlie Smith', null],
+      ['Alice Smith', []],
+    ]),
+  })
+
+  assert.equal(result.length, 1)
+  const [score] = result
+  assert.equal(score.percentAvailable, 0)
+  assert.ok(score.tradeoffSummary.includes('Waiting on availability from Charlie Smith'))
+  assert.deepEqual(score.unknownParticipants, ['Charlie Smith'])
 })

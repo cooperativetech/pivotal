@@ -6,6 +6,7 @@ import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWi
 import { unserializeTopicData } from '@shared/api-types'
 import type { UserProfile } from '@shared/api-types'
 import { getShortTimezoneFromIANA, getShortTimezone, compactTopicSummary } from '@shared/utils'
+import { getWeekdayLabel, getRecurringRecommendationLabel } from '@shared/recurrence'
 import { useLocalMode } from './LocalModeContext'
 import { Button } from '@shared/components/ui/button'
 import { Badge } from '@shared/components/ui/badge'
@@ -80,6 +81,38 @@ function Topic() {
     () => compactTopicSummary(topicState?.summary ?? ''),
     [topicState?.summary],
   )
+
+  const recurringInsights = useMemo(() => {
+    if (!topicState?.recurringMetadata) return null
+    const metadata = topicState.recurringMetadata
+    if (!metadata.candidateSlots || metadata.candidateSlots.length === 0) return null
+
+    const blockerNames = (metadata.blockerUserIds ?? [])
+      .map((id) => userMap.get(id))
+      .filter((name): name is string => Boolean(name))
+
+    const slots = metadata.candidateSlots.slice(0, 3).map((score) => {
+      const dayName = getWeekdayLabel(score.slot.dayOfWeek)
+      const timezoneShort = getShortTimezoneFromIANA(score.slot.timezone)
+      return {
+        key: `${score.slot.dayOfWeek}-${score.slot.time}-${score.slot.timezone}`,
+        label: `${dayName} ${score.slot.time}`,
+        timezone: timezoneShort,
+        percent: Number(score.percentAvailable.toFixed(1)),
+        summary: score.tradeoffSummary,
+        waitingOn: score.unknownParticipants ?? [],
+      }
+    })
+
+    return {
+      recommendation: metadata.recommendation ?? null,
+      recommendationLabel: getRecurringRecommendationLabel(metadata.recommendation),
+      lastAnalyzedAt: metadata.lastAnalyzedAt ?? null,
+      missingCalendars: metadata.missingCalendars ?? [],
+      blockers: blockerNames,
+      slots,
+    }
+  }, [topicState?.recurringMetadata, userMap])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -776,6 +809,50 @@ function Topic() {
           </div>
         </div>
         <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:w-[260px] sm:items-end sm:justify-self-end">
+          {recurringInsights && (
+            <Card className="w-full rounded-xl border border-token bg-surface px-4 py-3 text-xs text-foreground shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="heading-label text-muted-foreground/80">Recurring analysis</div>
+                {recurringInsights.recommendationLabel && (
+                  <Badge variant="secondary" className="bg-secondary/60 text-secondary-foreground">
+                    {recurringInsights.recommendationLabel}
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+                {recurringInsights.lastAnalyzedAt && (
+                  <div>
+                    Analyzed {new Date(recurringInsights.lastAnalyzedAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                )}
+                {recurringInsights.missingCalendars.length > 0 && (
+                  <div>Waiting on calendars: {recurringInsights.missingCalendars.join(', ')}</div>
+                )}
+                {recurringInsights.blockers.length > 0 && (
+                  <div>Blockers flagged: {recurringInsights.blockers.join(', ')}</div>
+                )}
+              </div>
+              <ul className="mt-3 space-y-2">
+                {recurringInsights.slots.map((slot) => (
+                  <li key={slot.key} className="rounded-lg border border-token/70 bg-muted/20 p-3">
+                    <div className="flex items-center justify-between text-xs font-medium text-foreground">
+                      <span>{slot.label} <span className="text-muted-foreground/70">({slot.timezone})</span></span>
+                      <span className="text-muted-foreground">{slot.percent}% free</span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{slot.summary}</div>
+                    {slot.waitingOn.length > 0 && (
+                      <div className="mt-1 text-[11px] text-muted-foreground/80">Need availability from {slot.waitingOn.join(', ')}</div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <Button
             type="button"
             variant={topicState.isActive ? 'outline' : 'default'}

@@ -20,7 +20,7 @@ export type WorkflowType = z.infer<typeof WorkflowType>
 
 export const RecurrencePattern = z.strictObject({
   frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).describe('Recurrence frequency'),
-  byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional().describe('Days of week for recurrence'),
+  byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional().nullable().describe('Days of week for recurrence'),
   interval: z.number().default(1).describe('Recurrence interval, e.g. every N weeks'),
   until: z.string().describe('ISO timestamp indicating when the recurrence ends'),
   timezone: z.string().describe('IANA timezone identifier the recurrence anchors to'),
@@ -52,6 +52,7 @@ export interface RecurringSlotScore {
   percentAvailable: number
   conflictWeeks: string[]
   tradeoffSummary: string
+  unknownParticipants?: string[]
 }
 
 export interface UserContext {
@@ -85,6 +86,7 @@ export interface RecurringMetadata {
   recommendation?: 'dm_blocker' | 'present_options' | 'proceed' | 'suggest_alternatives'
   selectedSlot?: RecurringSlotDescriptor | null
   lastAnalyzedAt?: string
+  missingCalendars?: string[]
 }
 
 export interface GithubRepo {

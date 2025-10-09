@@ -12,6 +12,7 @@ import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
 import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
 import { addCoHostsViaAutomation } from './meet-cohost-automation'
+import { normalizeRecurrencePattern } from './utils/recurrence'
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -47,20 +48,22 @@ function buildServiceAccountCalendarClient() {
 }
 
 function buildRRule(pattern: RecurrencePattern): string {
-  const segments: string[] = [`FREQ=${pattern.frequency}`]
+  const normalized = normalizeRecurrencePattern(pattern)
+  const freqForRule = normalized.frequency === 'BIWEEKLY' ? 'WEEKLY' : normalized.frequency
+  const segments: string[] = [`FREQ=${freqForRule}`]
 
-  if (pattern.interval && pattern.interval > 1) {
-    segments.push(`INTERVAL=${pattern.interval}`)
+  if (normalized.interval && normalized.interval > 1) {
+    segments.push(`INTERVAL=${normalized.interval}`)
   }
 
-  if (pattern.byDay && pattern.byDay.length > 0) {
-    segments.push(`BYDAY=${pattern.byDay.join(',')}`)
+  if (normalized.byDay && normalized.byDay.length > 0) {
+    segments.push(`BYDAY=${normalized.byDay.join(',')}`)
   }
 
-  if (pattern.until) {
-    const untilIso = new Date(pattern.until).toISOString()
-    const normalized = untilIso.replace(/[-:]/g, '').split('.')[0] + 'Z'
-    segments.push(`UNTIL=${normalized}`)
+  if (normalized.until) {
+    const untilIso = new Date(normalized.until).toISOString()
+    const formattedUntil = untilIso.replace(/[-:]/g, '').split('.')[0] + 'Z'
+    segments.push(`UNTIL=${formattedUntil}`)
   }
 
   return `RRULE:${segments.join(';')}`
@@ -235,15 +238,24 @@ export async function createCalendarInviteFromBot(
     const start = new Date(finalizedEvent.start)
     const end = new Date(finalizedEvent.end)
 
+    let normalizedRecurrence: RecurrencePattern | null = null
+    if (finalizedEvent.recurrencePattern) {
+      try {
+        normalizedRecurrence = normalizeRecurrencePattern(finalizedEvent.recurrencePattern)
+      } catch (error) {
+        console.error('Invalid recurrence pattern on finalizedEvent:', error)
+      }
+    }
+
     const requestBody: calendar_v3.Schema$Event = {
       summary,
       start: {
         dateTime: start.toISOString(),
-        timeZone: finalizedEvent.recurrencePattern?.timezone,
+        timeZone: normalizedRecurrence?.timezone,
       },
       end: {
         dateTime: end.toISOString(),
-        timeZone: finalizedEvent.recurrencePattern?.timezone,
+        timeZone: normalizedRecurrence?.timezone,
       },
       attendees,
       // Tag event so we can recover it later by topic id
@@ -261,8 +273,8 @@ export async function createCalendarInviteFromBot(
       },
     }
 
-    if (finalizedEvent.recurrencePattern) {
-      requestBody.recurrence = [buildRRule(finalizedEvent.recurrencePattern)]
+    if (normalizedRecurrence) {
+      requestBody.recurrence = [buildRRule(normalizedRecurrence)]
     }
 
     const insertRes = await calendar.events.insert({

@@ -27,7 +27,7 @@ type ScoreParams = {
   startDate: string
   endDate: string
   sampleWeeks?: number
-  userCalendars: Map<string, CalendarEvent[]>
+  userCalendars: Map<string, CalendarEvent[] | null>
 }
 
 const DEFAULT_SAMPLE_WEEKS = 12
@@ -35,7 +35,7 @@ const DEFAULT_SAMPLE_WEEKS = 12
 function clampEndDate(start: Temporal.PlainDate, end: Temporal.PlainDate, sampleWeeks: number): Temporal.PlainDate {
   if (sampleWeeks <= 0) return end
   const limit = start.add({ days: sampleWeeks * 7 })
-  return limit < end ? limit : end
+  return Temporal.PlainDate.compare(limit, end) < 0 ? limit : end
 }
 
 function parseTime(time: string): { hour: number; minute: number } {
@@ -72,7 +72,7 @@ function enumerateOccurrences(
   const occurrences: Occurrence[] = []
   const stepDays = frequency === 'BIWEEKLY' ? 14 : 7
 
-  while (cursor <= end) {
+  while (Temporal.PlainDate.compare(cursor, end) <= 0) {
     const zonedStart = Temporal.ZonedDateTime.from({
       timeZone: slot.timezone,
       year: cursor.year,
@@ -127,11 +127,29 @@ function describeIndividual(name: string, rate: number): string {
   return `${name} would miss about half of the meetings`
 }
 
-function buildTradeoffSummary(totalOccurrences: number, perPersonConflicts: Record<string, number>): string {
+function buildTradeoffSummary(
+  totalOccurrences: number,
+  perPersonConflicts: Record<string, number>,
+  participantCount: number,
+  unknownParticipants: string[],
+): string {
+  if (participantCount === 0) {
+    if (unknownParticipants.length === 0) {
+      return 'No calendar data available to evaluate this slot.'
+    }
+    return `Need availability from ${unknownParticipants.join(', ')} before we can score this slot.`
+  }
+
   if (totalOccurrences === 0) return 'No viable occurrences within the sampled range.'
 
   const totalConflicts = Object.values(perPersonConflicts).reduce((acc, value) => acc + value, 0)
-  if (totalConflicts === 0) return 'Works great for everyone — no conflicts detected.'
+  if (totalConflicts === 0) {
+    const base = 'Works great for everyone — no conflicts detected.'
+    if (unknownParticipants.length > 0) {
+      return `${base} Waiting on availability from ${unknownParticipants.join(', ')}.`
+    }
+    return base
+  }
 
   const rate = totalConflicts / totalOccurrences
   const entries = Object.entries(perPersonConflicts)
@@ -158,6 +176,10 @@ function buildTradeoffSummary(totalOccurrences: number, perPersonConflicts: Reco
     }
   }
 
+  if (unknownParticipants.length > 0) {
+    lines.push(`Still need input from ${unknownParticipants.join(', ')}.`)
+  }
+
   return lines.join(' ')
 }
 
@@ -179,8 +201,12 @@ export function scoreRecurringSlots({
   const rawEnd = Temporal.PlainDate.from(endDate)
   const effectiveEnd = clampEndDate(start, rawEnd, sampleWeeks)
 
+  const entries = Array.from(userCalendars.entries())
+  const knownEntries = entries.filter(([, events]) => events !== null) as Array<[string, CalendarEvent[]]>
+  const unknownParticipants = entries.filter(([, events]) => events === null).map(([name]) => name)
+
   const busyRanges = new Map<string, BusyRange[]>(
-    Array.from(userCalendars.entries()).map(([name, events]) => [name, toBusyRanges(events)]),
+    knownEntries.map(([name, events]) => [name, toBusyRanges(events)]),
   )
 
   return slots.flatMap((slot) => {
@@ -213,10 +239,22 @@ export function scoreRecurringSlots({
       }
     }
 
-    const percentAvailable = Math.max(0, ((occurrences.length * busyRanges.size) - totalConflicts)) /
-      Math.max(1, occurrences.length * busyRanges.size) * 100
+    const participantCount = busyRanges.size
+    const maxAttendanceSlots = occurrences.length * participantCount
+    let percentAvailable = participantCount === 0
+      ? 0
+      : Math.max(0, maxAttendanceSlots - totalConflicts) / Math.max(1, maxAttendanceSlots) * 100
 
-    const tradeoffSummary = buildTradeoffSummary(occurrences.length, perPersonConflicts)
+    if (unknownParticipants.length > 0) {
+      percentAvailable = 0
+    }
+
+    const tradeoffSummary = buildTradeoffSummary(
+      occurrences.length,
+      perPersonConflicts,
+      participantCount,
+      unknownParticipants,
+    )
 
     const score: RecurringSlotScore = {
       slot,
@@ -227,6 +265,7 @@ export function scoreRecurringSlots({
       percentAvailable,
       conflictWeeks: Array.from(conflictWeeks).sort(),
       tradeoffSummary,
+      unknownParticipants: unknownParticipants.length > 0 ? unknownParticipants : undefined,
     }
 
     return [score]
