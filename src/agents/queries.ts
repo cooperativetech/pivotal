@@ -544,7 +544,7 @@ Guidelines:
 Response Format:
 - When calling ANY tool (including the \\\`output\\\` tool): Output NOTHING - just call the tool
 - CRITICAL: Do NOT output any text, explanation, or commentary when calling the \\\`output\\\` tool
-- When ready to provide your final response: Call the \\\`output\\\` tool with the appropriate fields (replyMessage, messagesToUsers, groupMessage, promptCalendarButtons, reasoning, etc.)
+- When ready to provide your final response: Call the \\\`output\\\` tool with the appropriate fields (replyMessage, messagesToUsers, groupMessage, promptCalendarButtons, etc.)
 - Common mistakes to avoid:
   * Outputting text or explanation when calling the \\\`output\\\` tool (output NOTHING)
   * Forgetting to call the \\\`output\\\` tool when ready to respond`

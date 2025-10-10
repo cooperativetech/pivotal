@@ -21,7 +21,6 @@ const AnalyzeTopicRes = z.strictObject({
   suggestedNewTopic: z.string().optional().nullable(),
   workflowType: WorkflowType.optional().nullable(),
   confidence: z.number().min(0).max(1),
-  reasoning: z.string(),
 })
 type AnalyzeTopicRes = z.infer<typeof AnalyzeTopicRes>
 
@@ -74,8 +73,7 @@ The JSON structure must be:
   "relevantTopicId": "e55a48d1-bf81-4f7f-8848-d0f69b74ff85",  // Include the full UUID from "Topic ID: ..." if message is relevant to existing topic
   "suggestedNewTopic": "New topic summary",                   // Include only if relevantTopicId is not populated
   "workflowType": "scheduling",                               // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", "queries", or "other"
-  "confidence": 0.85,                                         // Confidence level between 0 and 1
-  "reasoning": "Brief explanation"                            // One sentence explaining the decision
+  "confidence": 0.85                                          // Confidence level between 0 and 1
 }
 
 IMPORTANT:
@@ -188,6 +186,5 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   // Return a safe default response
   return {
     confidence: 0,
-    reasoning: '',
   }
 }
