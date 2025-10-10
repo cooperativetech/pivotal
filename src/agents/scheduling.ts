@@ -246,7 +246,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 - When you revise the topic summary or finalizedEvent summary, list every confirmed attendee explicitly (include the scheduler/initiator so the meeting title reads like 'Meeting with Alice, Bob, and Taylor').
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
 - CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
-- ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
+- ALWAYS return a well-formed JSON object that matches the required schema.
 - ALWAYS use exact full names from the User Directory when specifying updateUserNames or userNames in messagesToUsers
 - CRITICAL: Always execute promised actions immediately - if you say you'll reach out to users, include those messages in the current response
 - Never defer actions to a future response - everything mentioned in replyMessage must be actioned in the same response
@@ -333,7 +333,6 @@ When ready to provide your final response, call the \`output\` tool with these f
     "summary": "Meeting with Alice, Bob, and Chris" // Must list every confirmed participant, including the scheduler
   },
   "cancelEvent": true,              // OPTIONAL: Set true when the meeting is cancelled and the calendar invite should be deleted
-  "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
 CRITICAL: Output NOTHING when calling the \`output\` tool - just call the tool with the parameters
@@ -356,7 +355,6 @@ IMPORTANT:
     "groupMessage": null,
     "finalizedEvent": null,
     "cancelEvent": null,
-    "reasoning": "Waiting for Bob to confirm availability"
   })`
 
   const { topic, userMap, callingUserTimezone } = runContext.context

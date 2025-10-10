@@ -194,7 +194,6 @@ When ready to provide your final response, call the \`output\` tool with these f
     }
   ],
   "groupMessage": "Message text",  // Sends to SHARED CHANNEL with ALL users in topic's userIds list (finalize/complete)
-  "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
 CRITICAL: Output NOTHING when calling the \`output\` tool - just call the tool with the parameters

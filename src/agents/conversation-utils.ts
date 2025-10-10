@@ -42,7 +42,6 @@ const ConversationRes = z.strictObject({
     userName: z.string().optional().nullable().describe('Exact real name from User Directory of the user to prompt for calendar connection'),
     contextMessage: z.string().optional().nullable().describe('Optional context message to show with the calendar connection buttons'),
   }).optional().nullable().describe('Prompt a user to connect their calendar with connection buttons'),
-  reasoning: z.string().describe('Brief explanation of your decision (REQUIRED)'),
 })
 type ConversationRes = z.infer<typeof ConversationRes>
 
@@ -149,7 +148,6 @@ Based on the conversation history and current message, determine the next step i
       if (attempt === MAX_ATTEMPTS - 1) {
         return {
           replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
-          reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
         }
       }
 
@@ -161,7 +159,6 @@ Based on the conversation history and current message, determine the next step i
   // Fallback (should not reach here due to return in loop)
   return {
     replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
-    reasoning: 'Error occurred: retry limit reached',
   }
 }
 
