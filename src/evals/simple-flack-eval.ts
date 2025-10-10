@@ -28,9 +28,9 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
         short: 'r',
         default: '1',
       },
-      topicRouting: {
+      noTopicRouting: {
         type: 'boolean',
-        short: 't',
+        short: 'n',
         default: false,
       },
       help: {
@@ -47,7 +47,7 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
     console.log('  -s, --benchmarkSet      Top-level folder containing multiple benchmarks (e.g., "benchmarks" or specific folder)')
     console.log('  -b, --benchmark         Single benchmark folder with timestamped groups (e.g., benchmark_XYZ_gen<timestamp>)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
-    console.log('  -t, --topicRouting      Enable topic routing (default: false)')
+    console.log('  -n, --noTopicRouting    Disable topic routing (default: topic routing is enabled)')
     console.log('  -h, --help              Show this help message')
     console.log('\nIf no arguments are provided, defaults to running all benchmarks in the "benchmarks" folder')
     process.exit(0)
@@ -58,7 +58,7 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
     benchmarkSet: values.benchmarkSet,
     benchmark: values.benchmark || null,
     nReps: parseInt(values.nReps, 10),
-    topicRouting: values.topicRouting || false,
+    topicRouting: !values.noTopicRouting,
   }
 }
 import { BaseScheduleUser } from './sim-users'

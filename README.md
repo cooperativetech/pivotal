@@ -81,10 +81,10 @@ pnpm run eval
 The eval command supports several options:
 ```
 pnpm run eval --help                          # Show all options
-pnpm run eval -f benchmark_file.json          # Run specific benchmark file
-pnpm run eval -d benchmark_folder             # Run all files in folder
-pnpm run eval -r 5                            # Run 5 repetitions per case
-pnpm run eval --topicRouting                  # Enable topic routing (flag only, default: false)
+pnpm run eval -s benchmarks                   # Run all benchmarks in "benchmarks" folder (default)
+pnpm run eval -b benchmark_folder             # Run specific benchmark folder
+pnpm run eval -r 5                            # Run 5 repetitions per case (default: 1)
+pnpm run eval -n                              # Disable topic routing (default: enabled)
 ```
 
 
