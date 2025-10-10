@@ -286,7 +286,7 @@ function Home() {
           searchTerm={search}
         />
       ) : (
-        <div className="grid auto-rows-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid auto-rows-[minmax(0,1fr)] gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {filteredTopics.map((topic) => {
             const isActive = topic.state.isActive
             const users = topic.state.userIds.map((id) => userNameMap[id]).filter(Boolean)
