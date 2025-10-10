@@ -1,0 +1,116 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-06T05:00:00.000Z",
+    "startTimeOffset": 5,
+    "endTime": "2025-01-08T05:00:00.000Z",
+    "endTimeOffset": 7,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251010103116680",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Quinn",
+      "goal": "Schedule a 1-hour meeting between Monday, January 6 at 12:00 AM and Wednesday, January 8 at 12:00 AM with Yasmin",
+      "calendar": [
+        {
+          "start": "2025-01-06T13:00:00.000Z",
+          "end": "2025-01-06T14:30:00.000Z",
+          "summary": "Safety Brief & Site Walk-through"
+        },
+        {
+          "start": "2025-01-06T15:00:00.000Z",
+          "end": "2025-01-06T16:30:00.000Z",
+          "summary": "Puppet Show Design Review - Worker Safety Training"
+        },
+        {
+          "start": "2025-01-06T18:00:00.000Z",
+          "end": "2025-01-06T20:00:00.000Z",
+          "summary": "Puppet Workshop - Equipment Operation Training"
+        },
+        {
+          "start": "2025-01-06T20:30:00.000Z",
+          "end": "2025-01-06T21:30:00.000Z",
+          "summary": "Material Planning & Puppet Prop Sourcing"
+        },
+        {
+          "start": "2025-01-07T12:30:00.000Z",
+          "end": "2025-01-07T13:30:00.000Z",
+          "summary": "Morning Crew Meeting"
+        },
+        {
+          "start": "2025-01-07T14:00:00.000Z",
+          "end": "2025-01-07T15:30:00.000Z",
+          "summary": "Client Meeting - Educational Puppet Show Proposal"
+        },
+        {
+          "start": "2025-01-07T16:00:00.000Z",
+          "end": "2025-01-07T17:00:00.000Z",
+          "summary": "Puppet Character Development Session"
+        },
+        {
+          "start": "2025-01-07T19:00:00.000Z",
+          "end": "2025-01-07T21:00:00.000Z",
+          "summary": "On-site Puppet Performance - Construction Safety Awareness"
+        },
+        {
+          "start": "2025-01-07T21:30:00.000Z",
+          "end": "2025-01-07T22:00:00.000Z",
+          "summary": "Performance Feedback & Documentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Yasmin",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-06T14:00:00.000Z",
+          "end": "2025-01-06T15:30:00.000Z",
+          "summary": "Transit Design Review - Metro Station Wayfinding"
+        },
+        {
+          "start": "2025-01-06T16:00:00.000Z",
+          "end": "2025-01-06T17:30:00.000Z",
+          "summary": "Creative Development - Bus Stop Visual Identity"
+        },
+        {
+          "start": "2025-01-06T19:00:00.000Z",
+          "end": "2025-01-06T20:00:00.000Z",
+          "summary": "Stakeholder Meeting - Airport Signage Strategy"
+        },
+        {
+          "start": "2025-01-06T20:30:00.000Z",
+          "end": "2025-01-06T22:00:00.000Z",
+          "summary": "Concept Sketching - Bike Lane Integration Graphics"
+        },
+        {
+          "start": "2025-01-07T13:30:00.000Z",
+          "end": "2025-01-07T14:30:00.000Z",
+          "summary": "Team Standup - Transportation Design Projects"
+        },
+        {
+          "start": "2025-01-07T15:00:00.000Z",
+          "end": "2025-01-07T16:30:00.000Z",
+          "summary": "Client Presentation - Ferry Terminal Branding Concepts"
+        },
+        {
+          "start": "2025-01-07T18:00:00.000Z",
+          "end": "2025-01-07T19:00:00.000Z",
+          "summary": "Research Session - Accessibility in Transit Design"
+        },
+        {
+          "start": "2025-01-07T19:30:00.000Z",
+          "end": "2025-01-07T21:30:00.000Z",
+          "summary": "Design Workshop - Smart City Mobility Icons"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
