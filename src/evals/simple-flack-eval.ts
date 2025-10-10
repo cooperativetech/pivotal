@@ -10,13 +10,14 @@ import { findCommonFreeTime } from '../tools/time_intersection'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Parse command line arguments for benchmark file or folder
-function parseArguments(): { benchmarkSet: string | null; benchmark: string | null; nReps: number; topicRouting: boolean } {
+function parseArguments(): { benchmarkSet: string; benchmark: string | null; nReps: number; topicRouting: boolean } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
       benchmarkSet: {
         type: 'string',
         short: 's',
+        default: 'benchmarks',
       },
       benchmark: {
         type: 'string',
@@ -59,11 +60,8 @@ function parseArguments(): { benchmarkSet: string | null; benchmark: string | nu
     process.exit(1)
   }
 
-  // Set default to "benchmarks" if no arguments provided
-  const benchmarkSet = values.benchmarkSet || (argCount === 0 ? 'benchmarks' : null)
-
   return {
-    benchmarkSet,
+    benchmarkSet: values.benchmarkSet,
     benchmark: values.benchmark || null,
     nReps: parseInt(values.nReps, 10),
     topicRouting: values.topicRouting || false,
@@ -446,14 +444,14 @@ async function runSimpleEvaluation(): Promise<void> {
     // Step 2: Determine what to run based on arguments
     let benchmarksToRun: string[] = []
 
-    if (benchmarkSet) {
-      // Option 1: Loop over all benchmarks within a top-level folder
+    if (benchmark) {
+      // Option 1: Run single benchmark folder from the specified benchmarkSet
+      console.log(`Using single benchmark: ${benchmark} from set: ${benchmarkSet}`)
+      benchmarksToRun = [`${benchmarkSet}/${benchmark}`]
+    } else {
+      // Option 2: Loop over all benchmarks within the benchmark set folder
       console.log(`Using benchmark set: ${benchmarkSet}`)
       benchmarksToRun = await getBenchmarksFromSet(benchmarkSet)
-    } else if (benchmark) {
-      // Option 2: Run single benchmark folder
-      console.log(`Using single benchmark: ${benchmark}`)
-      benchmarksToRun = [benchmark]
     }
 
     // Run all benchmarks
