@@ -61,8 +61,6 @@ export const EvaluationResults = z.strictObject({
   allSimUsersConfirmed: z.boolean(),
   maxSharedFreeTimes: z.array(z.number()),
   allCanAttends: z.array(z.boolean()),
-  maxSharedFreeTimes: z.array(z.number()),
-  allCanAttends: z.array(z.boolean()),
   evaluationSummary: EvaluationSummary,
 })
 
@@ -249,7 +247,7 @@ export function createAggregatedSummary(
     return
   }
 
-  const [, benchmarkType, genTimestamp] = genMatch
+  const [, , genTimestamp] = genMatch
 
   // Create aggregated summary
   const aggregatedData = {
