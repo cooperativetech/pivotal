@@ -92,7 +92,6 @@ Examples:
       return null
     }
 
-    console.log(`   ✅ Successfully extracted meeting time: ${startDate.toISOString()} - ${endDate.toISOString()}`)
     return {
       start: startDate,
       end: endDate,
