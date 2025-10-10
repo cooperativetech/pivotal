@@ -1,0 +1,2133 @@
+{
+  "loadUpToId": "5ffeaba6-9ac4-4775-b71c-7810c74b1639",
+  "expectedBehavior": "Only suggest times when everyone has said they are free. For instance, multiple users haven't said they are free on Friday at 3pm.",
+  "topic": {
+    "id": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "slackTeamId": "T123456",
+    "createdAt": "2025-10-10T21:12:59.314Z"
+  },
+  "states": [
+    {
+      "id": "74df394b-c62b-4592-bfd5-4f32083be52b",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:12:59.487Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "0ded56c6-eae8-496e-954f-cccf77a5d12e",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:12:59.736Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "d95777a0-0698-4c5d-9f74-b5ff8ea32bdb",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:12:59.773Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "a5072d9a-f899-4c01-9edc-f850632d360e",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:12:59.873Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "2e8256c3-f58e-4547-b2ea-89b71b82c7bb",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:12:59.892Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "21b3caf2-9555-4f5c-9b0a-da4e79634be5",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:00.403Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "768eda1a-312d-4b56-9623-db559937a5a7",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:00.420Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "d297efdb-c003-4050-ba27-20ef21edac5c",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:00.484Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "3dc52658-c175-412d-8880-e03dfc108633",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:00.494Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "65137db1-21ec-450b-8a09-904a627238ef",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Julia, Victoria, and Ulrich between January 8-12",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:02.940Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "2af6924a-df99-4363-900f-1b7fb074d862",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "createdAt": "2025-10-10T21:13:06.084Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "7f732879-896a-4e59-9b05-b66ba36b2eef",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          }
+        }
+      },
+      "createdByMessageId": "1e402a34-6ba7-4777-b8f6-98fd58177854",
+      "createdAt": "2025-10-10T21:13:46.426Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "c7bc539b-3226-4e3f-a2d8-d26ae16634ec",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          }
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "75f0212d-b5c2-4af1-ab46-0289f7365240",
+      "createdAt": "2025-10-10T21:14:13.697Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "da83be89-44ce-4621-8825-43b6fb0eea74",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-08T17:00:00Z",
+              "free": false,
+              "start": "2025-01-08T05:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-08T18:00:00Z",
+              "free": true,
+              "start": "2025-01-08T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-09T05:00:00Z",
+              "free": false,
+              "start": "2025-01-08T18:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-09T19:00:00Z",
+              "free": true,
+              "start": "2025-01-09T17:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T05:00:00Z",
+              "free": true,
+              "start": "2025-01-09T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T18:00:00Z",
+              "free": true,
+              "start": "2025-01-10T16:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-11T05:00:00Z",
+              "free": true,
+              "start": "2025-01-10T21:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00Z",
+              "free": true,
+              "start": "2025-01-12T16:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00Z",
+              "free": true,
+              "start": "2025-01-12T20:30:00Z",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "5ffeaba6-9ac4-4775-b71c-7810c74b1639",
+      "createdAt": "2025-10-10T21:14:40.395Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "2d274376-bfd5-464c-8c66-bb1d92a1d45b",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-08T17:00:00Z",
+              "free": false,
+              "start": "2025-01-08T05:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-08T18:00:00Z",
+              "free": true,
+              "start": "2025-01-08T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-09T05:00:00Z",
+              "free": false,
+              "start": "2025-01-08T18:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-09T19:00:00Z",
+              "free": true,
+              "start": "2025-01-09T17:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T05:00:00Z",
+              "free": true,
+              "start": "2025-01-09T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T18:00:00Z",
+              "free": true,
+              "start": "2025-01-10T16:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-11T05:00:00Z",
+              "free": true,
+              "start": "2025-01-10T21:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00Z",
+              "free": true,
+              "start": "2025-01-12T16:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00Z",
+              "free": true,
+              "start": "2025-01-12T20:30:00Z",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "f28e4f86-62b7-47f5-a9aa-efef6105b5f8",
+      "createdAt": "2025-10-10T21:15:14.039Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "0faddec1-6eae-4468-ab85-279f4df32ef1",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-08T17:00:00Z",
+              "free": false,
+              "start": "2025-01-08T05:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-08T18:00:00Z",
+              "free": true,
+              "start": "2025-01-08T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-09T05:00:00Z",
+              "free": false,
+              "start": "2025-01-08T18:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-09T19:00:00Z",
+              "free": true,
+              "start": "2025-01-09T17:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T05:00:00Z",
+              "free": true,
+              "start": "2025-01-09T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T18:00:00Z",
+              "free": true,
+              "start": "2025-01-10T16:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-11T05:00:00Z",
+              "free": true,
+              "start": "2025-01-10T21:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00Z",
+              "free": true,
+              "start": "2025-01-12T16:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00Z",
+              "free": true,
+              "start": "2025-01-12T20:30:00Z",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "b87ac641-fe8a-4ebb-97a2-6a646476f2fb",
+      "createdAt": "2025-10-10T21:15:28.337Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "893787fd-f0c2-45a1-84fb-4ab28597d663",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-08T17:00:00Z",
+              "free": false,
+              "start": "2025-01-08T05:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-08T18:00:00Z",
+              "free": true,
+              "start": "2025-01-08T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-09T05:00:00Z",
+              "free": false,
+              "start": "2025-01-08T18:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-09T19:00:00Z",
+              "free": true,
+              "start": "2025-01-09T17:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T05:00:00Z",
+              "free": true,
+              "start": "2025-01-09T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T18:00:00Z",
+              "free": true,
+              "start": "2025-01-10T16:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-11T05:00:00Z",
+              "free": true,
+              "start": "2025-01-10T21:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00Z",
+              "free": true,
+              "start": "2025-01-12T16:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00Z",
+              "free": true,
+              "start": "2025-01-12T20:30:00Z",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "30fa8d28-abb8-4406-bb16-fc2440817799",
+      "createdAt": "2025-10-10T21:15:44.593Z",
+      "createdByMessageRawTs": "1760130955.986"
+    },
+    {
+      "id": "ec0133ed-ff90-4667-8660-af3c622a4201",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Helen, Julia, Victoria, and Ulrich between Wednesday, January 8 at 6:00 AM (EDT) and Sunday, January 12 at 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Helen": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.721",
+            "channelId": "D1760130775941"
+          }
+        },
+        "Julia": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130779.848",
+            "channelId": "D1760130779809"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-08T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T18:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T17:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T19:30:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T19:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.478",
+            "channelId": "D1760130780450"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-08T17:00:00Z",
+              "free": false,
+              "start": "2025-01-08T05:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-08T18:00:00Z",
+              "free": true,
+              "start": "2025-01-08T17:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-09T05:00:00Z",
+              "free": false,
+              "start": "2025-01-08T18:00:00Z",
+              "summary": "Busy - blocked"
+            },
+            {
+              "end": "2025-01-09T19:00:00Z",
+              "free": true,
+              "start": "2025-01-09T17:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T05:00:00Z",
+              "free": true,
+              "start": "2025-01-09T22:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T18:00:00Z",
+              "free": true,
+              "start": "2025-01-10T16:30:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-11T05:00:00Z",
+              "free": true,
+              "start": "2025-01-10T21:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00Z",
+              "free": true,
+              "start": "2025-01-12T16:00:00Z",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:00:00Z",
+              "free": true,
+              "start": "2025-01-12T20:30:00Z",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Victoria": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130780.397",
+            "channelId": "D1760130779936"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-09T16:30:00-05:00",
+              "free": false,
+              "start": "2025-01-09T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-09T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-09T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-09T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T15:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T06:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T16:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T15:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-10T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-10T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-10T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-10T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T19:00:00-05:00",
+              "free": false,
+              "start": "2025-01-10T22:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-12T20:30:00-05:00",
+              "free": true,
+              "start": "2025-01-12T19:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-12T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-12T20:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "8c5f7af2-222e-49af-ba55-cc7712e316dc",
+      "createdAt": "2025-10-10T21:15:55.828Z",
+      "createdByMessageRawTs": "1760130955.986"
+    }
+  ],
+  "messages": [
+    {
+      "id": "4c961a55-4041-4fd7-989e-ddde46b63d6a",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Helen",
+      "channelId": "D1760130775941",
+      "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Julia, Victoria, and Ulrich. I'm looking for a time between Wednesday, January 8 at 6:00 AM and Sunday, January 12 at 6:00 PM. Can you help me find when we're all available?",
+      "timestamp": "2025-10-10T21:12:55.943Z",
+      "rawTs": "1760130775.943",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130775.943",
+        "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Julia, Victoria, and Ulrich. I'm looking for a time between Wednesday, January 8 at 6:00 AM and Sunday, January 12 at 6:00 PM. Can you help me find when we're all available?",
+        "type": "message",
+        "user": "Helen",
+        "channel": "D1760130775941",
+        "event_ts": "1760130775.943",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "7c9ffbc2-b32d-48ad-9979-9152d14b745d",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130775941",
+      "text": "I'll help you schedule the meeting with Julia, Victoria, and Ulrich for January 8-12. Since none of you have calendars connected, I'll reach out to each of them to gather their availability during that timeframe.",
+      "timestamp": "2025-10-10T21:13:13.673Z",
+      "rawTs": "1760130793.673",
+      "threadTs": "1760130775.943",
+      "raw": {
+        "ts": "1760130793.673",
+        "text": "I'll help you schedule the meeting with Julia, Victoria, and Ulrich for January 8-12. Since none of you have calendars connected, I'll reach out to each of them to gather their availability during that timeframe.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130775941",
+        "event_ts": "1760130793.673",
+        "thread_ts": "1760130775.943",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "7c07f0a4-0bc9-420e-a105-dae47761fb7d",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130779809",
+      "text": "Hi! Helen is scheduling a 1-hour meeting with you, Victoria, and Ulrich between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+      "timestamp": "2025-10-10T21:13:13.727Z",
+      "rawTs": "1760130793.727",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130793.727",
+        "text": "Hi! Helen is scheduling a 1-hour meeting with you, Victoria, and Ulrich between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130779809",
+        "event_ts": "1760130793.727",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "5c96a813-856d-4dbb-a234-3c796e8b0d13",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130779936",
+      "text": "Hi! Helen is scheduling a 1-hour meeting with you, Julia, and Ulrich between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+      "timestamp": "2025-10-10T21:13:13.742Z",
+      "rawTs": "1760130793.742",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130793.742",
+        "text": "Hi! Helen is scheduling a 1-hour meeting with you, Julia, and Ulrich between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130779936",
+        "event_ts": "1760130793.742",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "559a2acf-254f-4787-88f4-5fc6dd645dcc",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130780450",
+      "text": "Hi! Helen is scheduling a 1-hour meeting with you, Julia, and Victoria between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+      "timestamp": "2025-10-10T21:13:13.758Z",
+      "rawTs": "1760130793.758",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130793.758",
+        "text": "Hi! Helen is scheduling a 1-hour meeting with you, Julia, and Victoria between Wed Jan 8 at 6am (EDT) and Sun Jan 12 at 6pm (EDT). What times work best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130780450",
+        "event_ts": "1760130793.758",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "1ef156fb-39c0-4e09-a5ae-ad984636e93b",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Helen",
+      "channelId": "D1760130775941",
+      "text": "That sounds perfect! I have some availability during that timeframe, so once you gather everyone's schedules we should be able to find a good 1-hour slot that works for all four of us.",
+      "timestamp": "2025-10-10T21:13:22.937Z",
+      "rawTs": "1760130802.937",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130802.937",
+        "text": "That sounds perfect! I have some availability during that timeframe, so once you gather everyone's schedules we should be able to find a good 1-hour slot that works for all four of us.",
+        "type": "message",
+        "user": "Helen",
+        "channel": "D1760130775941",
+        "event_ts": "1760130802.937",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "1e402a34-6ba7-4777-b8f6-98fd58177854",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Julia",
+      "channelId": "D1760130779809",
+      "text": "Hi! Looking at my schedule, I have some availability on Thursday Jan 9 from 10:00-11:00am or 1:00-3:00pm, and Friday Jan 10 from 9:30am-12:00pm or 2:00-3:30pm. Would any of those work for everyone?",
+      "timestamp": "2025-10-10T21:13:36.382Z",
+      "rawTs": "1760130816.382",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130816.382",
+        "text": "Hi! Looking at my schedule, I have some availability on Thursday Jan 9 from 10:00-11:00am or 1:00-3:00pm, and Friday Jan 10 from 9:30am-12:00pm or 2:00-3:30pm. Would any of those work for everyone?",
+        "type": "message",
+        "user": "Julia",
+        "channel": "D1760130779809",
+        "event_ts": "1760130816.382",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "2ceb02e8-cdd2-46c1-8ce5-5e576a3b563f",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130779809",
+      "text": "Perfect! I've noted your availability for Thursday 10-11am (EDT), Thursday 1-3pm (EDT), Friday 9:30am-12pm (EDT), and Friday 2-3:30pm (EDT). Still waiting to hear back from Victoria and Ulrich about their schedules.",
+      "timestamp": "2025-10-10T21:13:52.834Z",
+      "rawTs": "1760130832.834",
+      "threadTs": "1760130816.382",
+      "raw": {
+        "ts": "1760130832.834",
+        "text": "Perfect! I've noted your availability for Thursday 10-11am (EDT), Thursday 1-3pm (EDT), Friday 9:30am-12pm (EDT), and Friday 2-3:30pm (EDT). Still waiting to hear back from Victoria and Ulrich about their schedules.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130779809",
+        "event_ts": "1760130832.834",
+        "thread_ts": "1760130816.382",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "75f0212d-b5c2-4af1-ab46-0289f7365240",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Victoria",
+      "channelId": "D1760130779936",
+      "text": "Hi! Looking at my schedule, I have several options that could work. Thursday Jan 9 between 11:30am-1pm or after 5pm would be good, Friday Jan 10 between 10am-11am, 12:30-2pm, or after 5pm, and Sunday Jan 12 before 2pm or after 3:30pm would all work well for me.",
+      "timestamp": "2025-10-10T21:14:01.125Z",
+      "rawTs": "1760130841.125",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130841.125",
+        "text": "Hi! Looking at my schedule, I have several options that could work. Thursday Jan 9 between 11:30am-1pm or after 5pm would be good, Friday Jan 10 between 10am-11am, 12:30-2pm, or after 5pm, and Sunday Jan 12 before 2pm or after 3:30pm would all work well for me.",
+        "type": "message",
+        "user": "Victoria",
+        "channel": "D1760130779936",
+        "event_ts": "1760130841.125",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "727d64e9-738f-4413-b087-3788e4d66332",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130779936",
+      "text": "Got it! I've noted your availability. Still waiting to hear from Ulrich about his schedule.",
+      "timestamp": "2025-10-10T21:14:20.182Z",
+      "rawTs": "1760130860.182",
+      "threadTs": "1760130841.125",
+      "raw": {
+        "ts": "1760130860.182",
+        "text": "Got it! I've noted your availability. Still waiting to hear from Ulrich about his schedule.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130779936",
+        "event_ts": "1760130860.182",
+        "thread_ts": "1760130841.125",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "5ffeaba6-9ac4-4775-b71c-7810c74b1639",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Ulrich",
+      "channelId": "D1760130780450",
+      "text": "Hi! Looking at my schedule, I have some good availability. Wednesday I'm free from 12:00-1:00pm, Thursday from 12:30-2:00pm or after 5:00pm, Friday from 11:30am-1:00pm or after 4:00pm, and Sunday I'm available from 11:00am-2:00pm or after 3:30pm. Any of those windows work for everyone else?",
+      "timestamp": "2025-10-10T21:14:26.267Z",
+      "rawTs": "1760130866.267",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130866.267",
+        "text": "Hi! Looking at my schedule, I have some good availability. Wednesday I'm free from 12:00-1:00pm, Thursday from 12:30-2:00pm or after 5:00pm, Friday from 11:30am-1:00pm or after 4:00pm, and Sunday I'm available from 11:00am-2:00pm or after 3:30pm. Any of those windows work for everyone else?",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760130780450",
+        "event_ts": "1760130866.267",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "758cb8af-7ea0-4928-8143-e58db3ebbae3",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130780450",
+      "text": "Perfect! I've noted your availability. I found 3 time slots that work for you, Julia, and Victoria. I still need to check with Helen about her specific availability to confirm which of these will work for all four of you.",
+      "timestamp": "2025-10-10T21:14:52.931Z",
+      "rawTs": "1760130892.931",
+      "threadTs": "1760130866.267",
+      "raw": {
+        "ts": "1760130892.931",
+        "text": "Perfect! I've noted your availability. I found 3 time slots that work for you, Julia, and Victoria. I still need to check with Helen about her specific availability to confirm which of these will work for all four of you.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130780450",
+        "event_ts": "1760130892.931",
+        "thread_ts": "1760130866.267",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "6c6ea3f5-2c71-4b0a-a321-8aa84f24515b",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130775941",
+      "text": "Hi! I've gathered everyone's availability and found 3 potential time slots that work for Julia, Victoria, and Ulrich. Which of these work for you?\n\n• Thursday Jan 9, 4:30-6pm (EDT)\n• Friday Jan 10, 3-4pm (EDT) \n• Friday Jan 10, 5:30-7:30pm (EDT)\n\nJust need your preference to finalize!",
+      "timestamp": "2025-10-10T21:14:52.979Z",
+      "rawTs": "1760130892.979",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130892.979",
+        "text": "Hi! I've gathered everyone's availability and found 3 potential time slots that work for Julia, Victoria, and Ulrich. Which of these work for you?\n\n• Thursday Jan 9, 4:30-6pm (EDT)\n• Friday Jan 10, 3-4pm (EDT) \n• Friday Jan 10, 5:30-7:30pm (EDT)\n\nJust need your preference to finalize!",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130775941",
+        "event_ts": "1760130892.979",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f28e4f86-62b7-47f5-a9aa-efef6105b5f8",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Helen",
+      "channelId": "D1760130775941",
+      "text": "Looking at my schedule, Thursday Jan 9, 4:30-6pm works perfectly for me - I finish my equipment maintenance at 6pm so that timing is ideal. Let's go with that slot!",
+      "timestamp": "2025-10-10T21:14:58.075Z",
+      "rawTs": "1760130898.075",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130898.075",
+        "text": "Looking at my schedule, Thursday Jan 9, 4:30-6pm works perfectly for me - I finish my equipment maintenance at 6pm so that timing is ideal. Let's go with that slot!",
+        "type": "message",
+        "user": "Helen",
+        "channel": "D1760130775941",
+        "event_ts": "1760130898.075",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "6d4407d2-19d6-43c8-a84e-50427f2c6d44",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130775941",
+      "text": "Perfect! Thursday Jan 9, 4:30-6pm (EDT) it is.",
+      "timestamp": "2025-10-10T21:15:12.181Z",
+      "rawTs": "1760130912.181",
+      "threadTs": "1760130898.075",
+      "raw": {
+        "ts": "1760130912.181",
+        "text": "Perfect! Thursday Jan 9, 4:30-6pm (EDT) it is.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130775941",
+        "event_ts": "1760130912.181",
+        "thread_ts": "1760130898.075",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "62929254-6ea6-4383-ba24-5b4dbaa9658d",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "C1760130912316",
+      "text": "Locked in Thursday Jan 9, 4:30-6pm (EDT). Invite is on the way.",
+      "timestamp": "2025-10-10T21:15:12.345Z",
+      "rawTs": "1760130912.345",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130912.345",
+        "text": "Locked in Thursday Jan 9, 4:30-6pm (EDT). Invite is on the way.",
+        "type": "message",
+        "user": "",
+        "channel": "C1760130912316",
+        "event_ts": "1760130912.345",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "361f888b-544b-45e9-94b4-cb7c5a08ebbf",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "UTESTBOT",
+      "channelId": "C1760130912316",
+      "text": "Calendar event created for “Meeting with Helen, Julia, Victoria, and Ulrich”! 📅\nWhen: Jan 9, 2025, 4:30 PM (EDT) to 6:00 PM\nGoogle Meet link: https://meet.google.com/kwm-yguj-uay",
+      "timestamp": "2025-10-10T21:15:13.979Z",
+      "rawTs": "1760130913.979",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130913.979",
+        "text": "Calendar event created for “Meeting with Helen, Julia, Victoria, and Ulrich”! 📅\nWhen: Jan 9, 2025, 4:30 PM (EDT) to 6:00 PM\nGoogle Meet link: https://meet.google.com/kwm-yguj-uay",
+        "type": "message",
+        "user": "",
+        "channel": "C1760130912316",
+        "event_ts": "1760130913.979",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "b87ac641-fe8a-4ebb-97a2-6a646476f2fb",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Julia",
+      "channelId": "D1760130779809",
+      "text": "Perfect, thank you! I have it on my calendar for Thursday Jan 9th at 4:30-6pm. Looking forward to connecting with everyone.",
+      "timestamp": "2025-10-10T21:15:18.944Z",
+      "rawTs": "1760130918.944",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130918.944",
+        "text": "Perfect, thank you! I have it on my calendar for Thursday Jan 9th at 4:30-6pm. Looking forward to connecting with everyone.",
+        "type": "message",
+        "user": "Julia",
+        "channel": "D1760130779809",
+        "event_ts": "1760130918.944",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "30fa8d28-abb8-4406-bb16-fc2440817799",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Victoria",
+      "channelId": "D1760130779936",
+      "text": "Perfect! I've got it on my calendar. Looking forward to connecting with everyone on Thursday at 4:30pm.",
+      "timestamp": "2025-10-10T21:15:31.428Z",
+      "rawTs": "1760130931.428",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130931.428",
+        "text": "Perfect! I've got it on my calendar. Looking forward to connecting with everyone on Thursday at 4:30pm.",
+        "type": "message",
+        "user": "Victoria",
+        "channel": "D1760130779936",
+        "event_ts": "1760130931.428",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "8c5f7af2-222e-49af-ba55-cc7712e316dc",
+      "topicId": "c5d20868-8863-4bb5-b350-62bdfd90715c",
+      "userId": "Ulrich",
+      "channelId": "D1760130780450",
+      "text": "Perfect, thank you! I've got it on my calendar for Thursday at 4:30pm. Looking forward to connecting with everyone.",
+      "timestamp": "2025-10-10T21:15:47.379Z",
+      "rawTs": "1760130947.379",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130947.379",
+        "text": "Perfect, thank you! I've got it on my calendar for Thursday at 4:30pm. Looking forward to connecting with everyone.",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760130780450",
+        "event_ts": "1760130947.379",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Helen",
+      "teamId": "T123456",
+      "realName": "Helen",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:12:53.000Z",
+      "raw": {
+        "id": "Helen",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130773,
+        "real_name": "Helen"
+      }
+    },
+    {
+      "id": "Julia",
+      "teamId": "T123456",
+      "realName": "Julia",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:12:53.000Z",
+      "raw": {
+        "id": "Julia",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130773,
+        "real_name": "Julia"
+      }
+    },
+    {
+      "id": "Victoria",
+      "teamId": "T123456",
+      "realName": "Victoria",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:12:53.000Z",
+      "raw": {
+        "id": "Victoria",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130773,
+        "real_name": "Victoria"
+      }
+    },
+    {
+      "id": "Ulrich",
+      "teamId": "T123456",
+      "realName": "Ulrich",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:12:53.000Z",
+      "raw": {
+        "id": "Ulrich",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130773,
+        "real_name": "Ulrich"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "D1760130775941",
+      "userIds": [
+        "Helen"
+      ]
+    },
+    {
+      "id": "C1760130912316",
+      "userIds": [
+        "Helen",
+        "Julia",
+        "Victoria",
+        "Ulrich"
+      ]
+    },
+    {
+      "id": "D1760130779809",
+      "userIds": [
+        "Julia"
+      ]
+    },
+    {
+      "id": "D1760130779936",
+      "userIds": [
+        "Victoria"
+      ]
+    },
+    {
+      "id": "D1760130780450",
+      "userIds": [
+        "Ulrich"
+      ]
+    }
+  ]
+}

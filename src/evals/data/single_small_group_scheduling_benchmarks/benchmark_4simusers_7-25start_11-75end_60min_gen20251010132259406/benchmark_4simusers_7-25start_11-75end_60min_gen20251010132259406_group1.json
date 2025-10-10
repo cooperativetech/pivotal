@@ -1,0 +1,347 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-08T11:00:00.000Z",
+    "startTimeOffset": 7.25,
+    "endTime": "2025-01-12T23:00:00.000Z",
+    "endTimeOffset": 11.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "genTimestamp": "20251010132259406",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Helen",
+      "goal": "Schedule a 1-hour meeting between Wednesday, January 8 at 6:00 AM and Sunday, January 12 at 6:00 PM with Julia, Victoria, Ulrich",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T16:00:00.000Z",
+          "summary": "Venom extraction session - Eastern Diamondback"
+        },
+        {
+          "start": "2025-01-08T18:30:00.000Z",
+          "end": "2025-01-08T19:30:00.000Z",
+          "summary": "Meeting with Restaurant Supply Manager - Venom Quality Review"
+        },
+        {
+          "start": "2025-01-08T20:00:00.000Z",
+          "end": "2025-01-08T22:00:00.000Z",
+          "summary": "Snake handling and milking - Cobra specimens"
+        },
+        {
+          "start": "2025-01-09T13:00:00.000Z",
+          "end": "2025-01-09T15:00:00.000Z",
+          "summary": "Venom processing and packaging for restaurant orders"
+        },
+        {
+          "start": "2025-01-09T15:30:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "Safety protocols review with Veterinarian"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:00:00.000Z",
+          "summary": "Client consultation - Fine dining establishment venom requirements"
+        },
+        {
+          "start": "2025-01-09T21:00:00.000Z",
+          "end": "2025-01-09T23:00:00.000Z",
+          "summary": "Equipment maintenance and terrarium cleaning"
+        },
+        {
+          "start": "2025-01-10T14:30:00.000Z",
+          "end": "2025-01-10T16:30:00.000Z",
+          "summary": "Venom milking session - Viper collection"
+        },
+        {
+          "start": "2025-01-10T18:00:00.000Z",
+          "end": "2025-01-10T19:00:00.000Z",
+          "summary": "Weekly inventory and order planning meeting"
+        },
+        {
+          "start": "2025-01-10T20:30:00.000Z",
+          "end": "2025-01-10T21:30:00.000Z",
+          "summary": "Training session - New extraction techniques"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend extraction prep - Saturday delivery orders"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Research collaboration call - Venom potency analysis"
+        },
+        {
+          "start": "2025-01-12T16:00:00.000Z",
+          "end": "2025-01-12T18:00:00.000Z",
+          "summary": "Weekend shift - Emergency venom extraction for urgent restaurant order"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Julia",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:30:00.000Z",
+          "summary": "Menu Development Session - New TV Show"
+        },
+        {
+          "start": "2025-01-08T21:00:00.000Z",
+          "end": "2025-01-08T23:00:00.000Z",
+          "summary": "Recipe Testing & Kitchen Prep"
+        },
+        {
+          "start": "2025-01-09T00:00:00.000Z",
+          "end": "2025-01-09T03:00:00.000Z",
+          "summary": "Live Cooking Demo Filming"
+        },
+        {
+          "start": "2025-01-09T14:00:00.000Z",
+          "end": "2025-01-09T15:00:00.000Z",
+          "summary": "Cookbook Publisher Meeting"
+        },
+        {
+          "start": "2025-01-09T16:00:00.000Z",
+          "end": "2025-01-09T18:00:00.000Z",
+          "summary": "Celebrity Client Consultation - Private Event"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Food Styling Workshop Prep"
+        },
+        {
+          "start": "2025-01-09T23:00:00.000Z",
+          "end": "2025-01-10T02:00:00.000Z",
+          "summary": "Restaurant Pop-up Event"
+        },
+        {
+          "start": "2025-01-10T13:00:00.000Z",
+          "end": "2025-01-10T14:30:00.000Z",
+          "summary": "Morning Show Interview - Food Network"
+        },
+        {
+          "start": "2025-01-10T17:00:00.000Z",
+          "end": "2025-01-10T19:00:00.000Z",
+          "summary": "Brand Partnership Meeting - Kitchen Equipment"
+        },
+        {
+          "start": "2025-01-10T20:30:00.000Z",
+          "end": "2025-01-10T22:30:00.000Z",
+          "summary": "Social Media Content Creation"
+        },
+        {
+          "start": "2025-01-11T00:00:00.000Z",
+          "end": "2025-01-11T04:00:00.000Z",
+          "summary": "Film Set Catering - Night Shoot"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Farmer's Market Sourcing & Networking"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T21:00:00.000Z",
+          "summary": "Masterclass Video Recording Session"
+        },
+        {
+          "start": "2025-01-12T18:00:00.000Z",
+          "end": "2025-01-12T20:00:00.000Z",
+          "summary": "Industry Awards Gala Menu Planning"
+        },
+        {
+          "start": "2025-01-12T21:00:00.000Z",
+          "end": "2025-01-12T23:00:00.000Z",
+          "summary": "Weekend Meal Prep & Planning"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Victoria",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Script Review - Ocean Documentary"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Marine Accuracy Consultation Call"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Research Block - Coral Reef Behavior Analysis"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Production Meeting - Shark Week Special"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "Aquarium Consultation - Species Selection"
+        },
+        {
+          "start": "2025-01-09T18:00:00.000Z",
+          "end": "2025-01-09T19:00:00.000Z",
+          "summary": "Fact-checking Session - Marine Life Documentary"
+        },
+        {
+          "start": "2025-01-09T20:30:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Field Data Analysis - Deep Sea Footage Review"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Client Check-in - Theme Park Marine Show"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:30:00.000Z",
+          "summary": "Script Writing Session - Educational Content"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T20:30:00.000Z",
+          "summary": "Filming Prep Meeting - Underwater Sequences"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Research Literature Review"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Filming - Tidal Pool Segments"
+        },
+        {
+          "start": "2025-01-11T20:00:00.000Z",
+          "end": "2025-01-11T21:00:00.000Z",
+          "summary": "Post-Production Review Call"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T20:30:00.000Z",
+          "summary": "Weekend Aquarium Visit - Research Observation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Ulrich",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T12:00:00.000Z",
+          "end": "2025-01-08T13:30:00.000Z",
+          "summary": "Morning Farm Inspection & Equipment Check"
+        },
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:00:00.000Z",
+          "summary": "Transportation Logistics Meeting - Regional Distributors"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Sustainable Farming Innovation Workshop"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:30:00.000Z",
+          "summary": "Farm-to-Table Route Planning Session"
+        },
+        {
+          "start": "2025-01-08T20:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Creative Marketing Strategy - Social Media Content"
+        },
+        {
+          "start": "2025-01-09T11:30:00.000Z",
+          "end": "2025-01-09T13:00:00.000Z",
+          "summary": "Greenhouse Management & Crop Monitoring"
+        },
+        {
+          "start": "2025-01-09T14:00:00.000Z",
+          "end": "2025-01-09T15:30:00.000Z",
+          "summary": "Cold Chain Transportation Review"
+        },
+        {
+          "start": "2025-01-09T16:00:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Farmer's Market Coordination Call"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:30:00.000Z",
+          "summary": "Agricultural Technology Demo - Drone Monitoring"
+        },
+        {
+          "start": "2025-01-09T21:00:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Transportation Cost Analysis & Budget Review"
+        },
+        {
+          "start": "2025-01-10T12:30:00.000Z",
+          "end": "2025-01-10T14:00:00.000Z",
+          "summary": "Seasonal Crop Planning & Soil Assessment"
+        },
+        {
+          "start": "2025-01-10T15:00:00.000Z",
+          "end": "2025-01-10T16:30:00.000Z",
+          "summary": "Supply Chain Partnership Meeting"
+        },
+        {
+          "start": "2025-01-10T18:00:00.000Z",
+          "end": "2025-01-10T19:00:00.000Z",
+          "summary": "Creative Content Creation - Farm Photography"
+        },
+        {
+          "start": "2025-01-10T19:30:00.000Z",
+          "end": "2025-01-10T21:00:00.000Z",
+          "summary": "Transportation Fleet Maintenance Planning"
+        },
+        {
+          "start": "2025-01-11T13:00:00.000Z",
+          "end": "2025-01-11T14:00:00.000Z",
+          "summary": "Weekend Farmer's Market Prep"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T22:00:00.000Z",
+          "summary": "Regional Farmer's Market - Booth Management"
+        },
+        {
+          "start": "2025-01-12T14:00:00.000Z",
+          "end": "2025-01-12T16:00:00.000Z",
+          "summary": "Community Supported Agriculture (CSA) Box Assembly"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T20:30:00.000Z",
+          "summary": "Farm Equipment Maintenance & Repair"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

@@ -1,0 +1,749 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-08T11:00:00.000Z",
+    "startTimeOffset": 7.25,
+    "endTime": "2025-01-12T23:00:00.000Z",
+    "endTimeOffset": 11.75,
+    "meetingLength": 60,
+    "nSimUsers": 8,
+    "genTimestamp": "20251010132609189",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Yasmin",
+      "goal": "Schedule a 1-hour meeting between Wednesday, January 8 at 6:00 AM and Sunday, January 12 at 6:00 PM with Helen, Diana, Laura, Charlie, Nina, Patricia, Rachel",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Creative Session - Pet Therapy Music Composition"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Meeting with Veterinary Clinic Partners"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:30:00.000Z",
+          "summary": "Recording Session - Calming Sounds for Anxious Dogs"
+        },
+        {
+          "start": "2025-01-08T21:00:00.000Z",
+          "end": "2025-01-08T22:00:00.000Z",
+          "summary": "Research: Animal Behavior & Sound Frequencies"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Call with Pet Product Development Team"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "Music Production - Interactive Pet Training Sounds"
+        },
+        {
+          "start": "2025-01-09T18:00:00.000Z",
+          "end": "2025-01-09T19:00:00.000Z",
+          "summary": "Lunch Meeting - Animal Shelter Collaboration"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:30:00.000Z",
+          "summary": "Workshop Planning - Music Therapy for Rescue Animals"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Video Call - Pet Care App Integration Discussion"
+        },
+        {
+          "start": "2025-01-10T15:30:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Studio Time - Experimental Sounds for Cat Enrichment"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T20:00:00.000Z",
+          "summary": "Consultation with Animal Behaviorist"
+        },
+        {
+          "start": "2025-01-10T20:30:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Marketing Strategy - Pet Music Platform Launch"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Workshop - Music for Senior Pets"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T21:00:00.000Z",
+          "summary": "Creative Brainstorm - Next Album Concept"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Helen",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Park Patrol and Wildlife Monitoring"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "School Group Environmental Education Program"
+        },
+        {
+          "start": "2025-01-08T18:30:00.000Z",
+          "end": "2025-01-08T19:30:00.000Z",
+          "summary": "Trail Maintenance Planning Meeting"
+        },
+        {
+          "start": "2025-01-08T20:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Visitor Center Interpretation Duties"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Weekly Staff Meeting"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Nature Photography Workshop Development"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:30:00.000Z",
+          "summary": "Youth Conservation Corps Training Session"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T16:00:00.000Z",
+          "summary": "Guided Nature Walk - Winter Ecology"
+        },
+        {
+          "start": "2025-01-10T18:00:00.000Z",
+          "end": "2025-01-10T19:00:00.000Z",
+          "summary": "Educational Program Curriculum Review"
+        },
+        {
+          "start": "2025-01-10T19:30:00.000Z",
+          "end": "2025-01-10T21:30:00.000Z",
+          "summary": "Resource Management Data Collection"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T16:30:00.000Z",
+          "summary": "Weekend Program Planning Session"
+        },
+        {
+          "start": "2025-01-11T18:00:00.000Z",
+          "end": "2025-01-11T19:30:00.000Z",
+          "summary": "Environmental Compliance Training"
+        },
+        {
+          "start": "2025-01-11T20:00:00.000Z",
+          "end": "2025-01-11T22:00:00.000Z",
+          "summary": "Community Outreach Event Preparation"
+        },
+        {
+          "start": "2025-01-12T14:00:00.000Z",
+          "end": "2025-01-12T17:00:00.000Z",
+          "summary": "Family Nature Day Event"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T20:00:00.000Z",
+          "summary": "Equipment Inventory and Maintenance"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T13:00:00.000Z",
+          "end": "2025-01-08T13:30:00.000Z",
+          "summary": "Morning prep and lesson planning"
+        },
+        {
+          "start": "2025-01-08T13:45:00.000Z",
+          "end": "2025-01-08T14:30:00.000Z",
+          "summary": "1st Period - Advanced Biology"
+        },
+        {
+          "start": "2025-01-08T14:35:00.000Z",
+          "end": "2025-01-08T15:20:00.000Z",
+          "summary": "2nd Period - General Biology"
+        },
+        {
+          "start": "2025-01-08T15:25:00.000Z",
+          "end": "2025-01-08T16:10:00.000Z",
+          "summary": "3rd Period - Environmental Science"
+        },
+        {
+          "start": "2025-01-08T16:15:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Planning Period - Grade assessments"
+        },
+        {
+          "start": "2025-01-08T17:35:00.000Z",
+          "end": "2025-01-08T18:20:00.000Z",
+          "summary": "5th Period - General Biology"
+        },
+        {
+          "start": "2025-01-08T18:25:00.000Z",
+          "end": "2025-01-08T19:10:00.000Z",
+          "summary": "6th Period - Study Hall Supervision"
+        },
+        {
+          "start": "2025-01-08T19:15:00.000Z",
+          "end": "2025-01-08T20:00:00.000Z",
+          "summary": "Department Meeting - Science Curriculum Review"
+        },
+        {
+          "start": "2025-01-09T13:00:00.000Z",
+          "end": "2025-01-09T13:30:00.000Z",
+          "summary": "Morning prep and lab setup"
+        },
+        {
+          "start": "2025-01-09T13:45:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "1st Period - Advanced Biology Lab"
+        },
+        {
+          "start": "2025-01-09T14:35:00.000Z",
+          "end": "2025-01-09T15:20:00.000Z",
+          "summary": "2nd Period - General Biology"
+        },
+        {
+          "start": "2025-01-09T15:25:00.000Z",
+          "end": "2025-01-09T16:10:00.000Z",
+          "summary": "3rd Period - Environmental Science"
+        },
+        {
+          "start": "2025-01-09T16:15:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Student tutoring - Sarah M."
+        },
+        {
+          "start": "2025-01-09T17:35:00.000Z",
+          "end": "2025-01-09T18:20:00.000Z",
+          "summary": "5th Period - General Biology Lab"
+        },
+        {
+          "start": "2025-01-09T18:25:00.000Z",
+          "end": "2025-01-09T19:10:00.000Z",
+          "summary": "6th Period - Environmental Science"
+        },
+        {
+          "start": "2025-01-09T20:30:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Science Fair Planning Committee"
+        },
+        {
+          "start": "2025-01-10T13:00:00.000Z",
+          "end": "2025-01-10T13:30:00.000Z",
+          "summary": "Morning prep and equipment check"
+        },
+        {
+          "start": "2025-01-10T13:45:00.000Z",
+          "end": "2025-01-10T14:30:00.000Z",
+          "summary": "1st Period - Advanced Biology"
+        },
+        {
+          "start": "2025-01-10T14:35:00.000Z",
+          "end": "2025-01-10T15:20:00.000Z",
+          "summary": "2nd Period - General Biology"
+        },
+        {
+          "start": "2025-01-10T15:25:00.000Z",
+          "end": "2025-01-10T16:10:00.000Z",
+          "summary": "3rd Period - Environmental Science Field Work"
+        },
+        {
+          "start": "2025-01-10T16:15:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Parent Conference - Johnson Family"
+        },
+        {
+          "start": "2025-01-10T17:35:00.000Z",
+          "end": "2025-01-10T18:20:00.000Z",
+          "summary": "5th Period - General Biology"
+        },
+        {
+          "start": "2025-01-10T18:25:00.000Z",
+          "end": "2025-01-10T19:10:00.000Z",
+          "summary": "6th Period - Study Hall Supervision"
+        },
+        {
+          "start": "2025-01-10T19:15:00.000Z",
+          "end": "2025-01-10T20:00:00.000Z",
+          "summary": "Professional Development - New Teaching Methods"
+        },
+        {
+          "start": "2025-01-11T14:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Science Club - Microscopy Workshop"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T21:00:00.000Z",
+          "summary": "Lesson planning and grading"
+        },
+        {
+          "start": "2025-01-12T15:00:00.000Z",
+          "end": "2025-01-12T17:00:00.000Z",
+          "summary": "Regional Teachers Conference - STEM Education"
+        },
+        {
+          "start": "2025-01-12T20:00:00.000Z",
+          "end": "2025-01-12T22:00:00.000Z",
+          "summary": "Prep work for next week's experiments"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Laura",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T13:00:00.000Z",
+          "end": "2025-01-08T14:00:00.000Z",
+          "summary": "Morning Safety Briefing - Manufacturing Floor"
+        },
+        {
+          "start": "2025-01-08T14:30:00.000Z",
+          "end": "2025-01-08T16:00:00.000Z",
+          "summary": "Environmental Compliance Inspection"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:30:00.000Z",
+          "summary": "Waste Management Protocol Review"
+        },
+        {
+          "start": "2025-01-08T20:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Equipment Maintenance Rounds"
+        },
+        {
+          "start": "2025-01-09T12:30:00.000Z",
+          "end": "2025-01-09T13:30:00.000Z",
+          "summary": "Weekly Planning Meeting"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Emergency Response Training"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:30:00.000Z",
+          "summary": "Air Quality Monitoring Check"
+        },
+        {
+          "start": "2025-01-10T13:30:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Industrial Site Perimeter Inspection"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Monthly Environmental Report Review"
+        },
+        {
+          "start": "2025-01-10T18:30:00.000Z",
+          "end": "2025-01-10T19:30:00.000Z",
+          "summary": "Worker Safety Consultation"
+        },
+        {
+          "start": "2025-01-10T20:30:00.000Z",
+          "end": "2025-01-10T21:30:00.000Z",
+          "summary": "Wildlife Impact Assessment - Adjacent Grounds"
+        },
+        {
+          "start": "2025-01-11T15:30:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Operations Planning"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Stormwater Management Review"
+        },
+        {
+          "start": "2025-01-12T15:00:00.000Z",
+          "end": "2025-01-12T16:30:00.000Z",
+          "summary": "Weekend Patrol - Facility Grounds"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:00:00.000Z",
+          "summary": "Property Market Research - Wellness Centers"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T16:30:00.000Z",
+          "summary": "Client Consultation - Yoga Studio Location"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:00:00.000Z",
+          "summary": "Property Showing - Fitness Center Space"
+        },
+        {
+          "start": "2025-01-08T20:30:00.000Z",
+          "end": "2025-01-08T21:30:00.000Z",
+          "summary": "Contract Review & Documentation"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Morning Networking - Health & Wellness Expo"
+        },
+        {
+          "start": "2025-01-09T16:00:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Virtual Tour Setup - Pilates Studio"
+        },
+        {
+          "start": "2025-01-09T18:30:00.000Z",
+          "end": "2025-01-09T19:30:00.000Z",
+          "summary": "Client Meeting - Spa Expansion Project"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:00:00.000Z",
+          "summary": "Zoning Research - Wellness District"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:30:00.000Z",
+          "summary": "Property Inspection - CrossFit Gym Location"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Financial Analysis - Wellness Center ROI"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T20:30:00.000Z",
+          "summary": "Closing Preparation - Meditation Studio Sale"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Marketing Strategy - Wellness Property Listings"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T16:00:00.000Z",
+          "summary": "Weekend Property Tour - Boutique Fitness Studios"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Open House Preparation - Wellness Center"
+        },
+        {
+          "start": "2025-01-12T14:30:00.000Z",
+          "end": "2025-01-12T16:00:00.000Z",
+          "summary": "Open House - Premium Wellness Facility"
+        },
+        {
+          "start": "2025-01-12T20:00:00.000Z",
+          "end": "2025-01-12T21:00:00.000Z",
+          "summary": "Follow-up Calls - Weekend Prospects"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Nina",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:30:00.000Z",
+          "end": "2025-01-08T15:15:00.000Z",
+          "summary": "Morning standup with craft design team"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Deep work: Q1 product roadmap planning"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:00:00.000Z",
+          "summary": "Customer feedback review - pottery collection"
+        },
+        {
+          "start": "2025-01-08T20:30:00.000Z",
+          "end": "2025-01-08T21:30:00.000Z",
+          "summary": "Artisan partner check-in: Moonlight Ceramics"
+        },
+        {
+          "start": "2025-01-09T13:00:00.000Z",
+          "end": "2025-01-09T14:00:00.000Z",
+          "summary": "Coffee chat with new fiber arts supplier"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "Sprint planning: Handwoven textile line"
+        },
+        {
+          "start": "2025-01-09T18:00:00.000Z",
+          "end": "2025-01-09T19:00:00.000Z",
+          "summary": "Lunch & learn: Traditional Japanese pottery techniques"
+        },
+        {
+          "start": "2025-01-09T19:30:00.000Z",
+          "end": "2025-01-09T21:00:00.000Z",
+          "summary": "Market research deep dive: Sustainable craft trends"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Weekly 1:1 with Head of Design"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:30:00.000Z",
+          "summary": "Product demo prep: Artisan marketplace features"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T20:30:00.000Z",
+          "summary": "Cross-functional: Marketing campaign brainstorm"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Vendor negotiations: Reclaimed wood suppliers"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T21:00:00.000Z",
+          "summary": "Saturday workshop visit: Local glassblowing studio"
+        },
+        {
+          "start": "2025-01-12T15:00:00.000Z",
+          "end": "2025-01-12T16:30:00.000Z",
+          "summary": "Sunday inspiration time: Craft museum research"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Patricia",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:00:00.000Z",
+          "summary": "Morning Workout & Personal Training"
+        },
+        {
+          "start": "2025-01-08T15:30:00.000Z",
+          "end": "2025-01-08T16:30:00.000Z",
+          "summary": "Client Consultation - Yoga Studio Space Requirements"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:30:00.000Z",
+          "summary": "Property Showing - Former CrossFit Gym (3,500 sq ft)"
+        },
+        {
+          "start": "2025-01-08T20:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Market Research - Wellness Real Estate Trends"
+        },
+        {
+          "start": "2025-01-08T21:30:00.000Z",
+          "end": "2025-01-08T22:30:00.000Z",
+          "summary": "Virtual Meeting - Wellness Center Franchise Investor"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Site Visit - Potential Spa Location Downtown"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T16:00:00.000Z",
+          "summary": "Networking Coffee - Fitness Industry Association"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:30:00.000Z",
+          "summary": "Listing Preparation - Pilates Studio Marketing Materials"
+        },
+        {
+          "start": "2025-01-09T21:00:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Client Check-in - Wellness Complex Development Progress"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:30:00.000Z",
+          "summary": "Property Tour - Multi-Use Fitness Facility (8,000 sq ft)"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Strategy Session - Wellness Real Estate Portfolio Review"
+        },
+        {
+          "start": "2025-01-10T18:30:00.000Z",
+          "end": "2025-01-10T19:30:00.000Z",
+          "summary": "Lunch Meeting - Meditation Center Owner"
+        },
+        {
+          "start": "2025-01-10T20:00:00.000Z",
+          "end": "2025-01-10T21:30:00.000Z",
+          "summary": "Contract Review - Boutique Fitness Studio Lease"
+        },
+        {
+          "start": "2025-01-10T22:00:00.000Z",
+          "end": "2025-01-10T23:00:00.000Z",
+          "summary": "Industry Webinar - Future of Wellness Real Estate"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Showing - Luxury Home Gym Installation Consultation"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Personal Development - Wellness Industry Podcast Recording"
+        },
+        {
+          "start": "2025-01-12T16:00:00.000Z",
+          "end": "2025-01-12T18:00:00.000Z",
+          "summary": "Sunday Planning Session - Week Ahead & Wellness Market Analysis"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Rachel",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Game Design Workshop - Level Progression"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "1:1 Student Mentoring - Portfolio Review"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T20:30:00.000Z",
+          "summary": "Unity Programming Lab"
+        },
+        {
+          "start": "2025-01-08T21:00:00.000Z",
+          "end": "2025-01-08T22:00:00.000Z",
+          "summary": "Curriculum Planning - VR Integration"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T15:00:00.000Z",
+          "summary": "Game Production Pipeline Lecture"
+        },
+        {
+          "start": "2025-01-09T15:30:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "Industry Guest Speaker Prep"
+        },
+        {
+          "start": "2025-01-09T18:00:00.000Z",
+          "end": "2025-01-09T19:30:00.000Z",
+          "summary": "Student Game Jam Planning"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:00:00.000Z",
+          "summary": "Research Block - AI in Educational Games"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:30:00.000Z",
+          "summary": "Game Engine Architecture Workshop"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Faculty Meeting - New Gaming Partnerships"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T21:00:00.000Z",
+          "summary": "Capstone Project Reviews"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Gaming Industry Conference Call - Future Trends"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Course Material Review - Unreal Engine 5"
+        },
+        {
+          "start": "2025-01-11T20:30:00.000Z",
+          "end": "2025-01-11T21:30:00.000Z",
+          "summary": "Student Showcase Preparation"
+        },
+        {
+          "start": "2025-01-12T16:00:00.000Z",
+          "end": "2025-01-12T17:00:00.000Z",
+          "summary": "Weekend Workshop Planning - Mobile Game Development"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T20:30:00.000Z",
+          "summary": "Personal Project Time - Indie Game Prototype"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

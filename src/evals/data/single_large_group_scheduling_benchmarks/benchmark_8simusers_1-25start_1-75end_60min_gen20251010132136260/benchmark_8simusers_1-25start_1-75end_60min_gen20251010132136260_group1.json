@@ -1,0 +1,334 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 8,
+    "genTimestamp": "20251010132136260",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Kevin",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Diana, George, Samuel, Quinn, Rachel, William, Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Pre-shift Equipment Safety Check"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Lunar Base Wind Array Maintenance Planning"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Zero-G Turbine Blade Calibration Workshop"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Mars Colony Wind Power Systems Review"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Cosmic Wind Pattern Data Analysis"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Daily Shift Report & Equipment Log Update"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Morning CRM Review & Lead Prioritization"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Client Consultation - Virtual Property Tour (Downtown Tech Hub)"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "PropTech Platform Demo - AI Property Matching System"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Site Visit - Co-working Space Development Project"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Team Sync - Q1 Tech District Market Analysis"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Investor Meeting - Smart Building Investment Opportunities"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Follow-up Calls & Contract Reviews"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "George",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Security Architecture Review - New Game Engine"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Anti-Cheat System Deep Dive"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Vulnerability Assessment - Player Authentication"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Cryptographic Protocol Implementation"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Security Incident Response Planning"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Samuel",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T11:00:00.000Z",
+          "end": "2025-01-02T11:30:00.000Z",
+          "summary": "Morning Equipment Check"
+        },
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T13:00:00.000Z",
+          "summary": "Fire Safety Curriculum Planning"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Elementary School Fire Safety Presentation - Lincoln Elementary"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Training Academy Instructor Meeting"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Emergency Response Simulation - Training Facility"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Fire Prevention Workshop Development"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Community Outreach Program Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Quinn",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning prep and lesson planning"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:15:00.000Z",
+          "summary": "Introduction to Sustainable Farming - Period 1"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T15:15:00.000Z",
+          "summary": "Plant Biology and Genetics - Period 2"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:15:00.000Z",
+          "summary": "Agricultural Technology Lab"
+        },
+        {
+          "start": "2025-01-02T16:15:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Planning period - curriculum development"
+        },
+        {
+          "start": "2025-01-02T17:30:00.000Z",
+          "end": "2025-01-02T18:15:00.000Z",
+          "summary": "Livestock Management - Period 4"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:15:00.000Z",
+          "summary": "Greenhouse Management - Period 5"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:15:00.000Z",
+          "summary": "Farm Business & Economics - Period 6"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:15:00.000Z",
+          "summary": "FFA Chapter Meeting"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:15:00.000Z",
+          "summary": "Meeting with County Extension Agent"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Grading and student feedback"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Rachel",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Lock Analysis - Haunted Victorian Mansion Case"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Client Consultation: Supernatural Lock Mechanisms"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Field Investigation - Asylum Door Anomalies"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Workshop Time - Custom Spirit-Resistant Lock Development"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Team Meeting - Paranormal Investigation Society"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "William",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Daily Safety Briefing"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Turbine #47 Gearbox Inspection - Farm Site B"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Weekly Maintenance Report Review"
+        },
+        {
+          "start": "2025-01-02T19:15:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Blade Bolt Torque Check - Turbines #52-55"
+        },
+        {
+          "start": "2025-01-02T21:45:00.000Z",
+          "end": "2025-01-02T22:15:00.000Z",
+          "summary": "Equipment Inventory & Tool Check"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Morning Creative Planning Session"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Transit Authority Partnership Meeting"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Puppet Character Development Workshop"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Safety Campaign Script Review"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Public Transportation Educational Content Planning"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

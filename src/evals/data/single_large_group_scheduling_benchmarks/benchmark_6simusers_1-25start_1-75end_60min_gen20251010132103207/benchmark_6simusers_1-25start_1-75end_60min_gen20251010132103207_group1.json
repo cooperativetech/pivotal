@@ -1,0 +1,233 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 6,
+    "genTimestamp": "20251010132103207",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Nina, Xara, Victoria, Helen, Ulrich",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning Safety Briefing - Wind Farm Site"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Turbine #7 Gearbox Maintenance"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Pet Therapy Session - Site Office Dogs"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Creative Design Review - Bird-Friendly Blade Modifications"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Equipment Inspection & Documentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Nina",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Guest Experience Analytics Review"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "New Attraction Concept Brainstorm"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Mobile App Feature Prioritization"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Q1 Seasonal Event Planning Session"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Deep Work: Competitive Analysis & Market Research"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Vendor Call: VR Technology Integration"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Xara",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning huddle with nursing team"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Patient care rounds - Mobile clinic"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Grant proposal review - Community health initiative"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Training session: Trauma-informed care"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Community outreach planning meeting"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Documentation and case notes"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Victoria",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T11:00:00.000Z",
+          "end": "2025-01-02T12:30:00.000Z",
+          "summary": "Prep Work - Inventory & Kitchen Setup"
+        },
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T14:00:00.000Z",
+          "summary": "Menu Planning Meeting"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Staff Training - New Seasonal Dishes"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Lunch Service"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Vendor Meeting - Local Farm Suppliers"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Recipe Development & Testing"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Helen",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Client consultation - Solar panel system tattoo design"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Tattoo session - Wind turbine sleeve (session 2/4)"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Design work - Hydroelectric dam back piece sketches"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Equipment maintenance and sterilization"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Tattoo session - Geothermal energy forearm piece"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Ulrich",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning Farm Rounds & Milk Quality Check"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Cheese Production - Curd Formation & Pressing"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Meeting with Local Restaurant Buyers"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Aging Cave Monitoring & Cheese Turning"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Product Development - New Herbed Goat Cheese Recipe"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Farm Equipment Maintenance Check"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

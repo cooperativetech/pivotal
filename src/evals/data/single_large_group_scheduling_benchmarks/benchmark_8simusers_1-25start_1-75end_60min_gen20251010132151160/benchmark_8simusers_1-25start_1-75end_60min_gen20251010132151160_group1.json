@@ -1,0 +1,304 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 8,
+    "genTimestamp": "20251010132151160",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Charlie",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Bob, Samuel, Kevin, Fiona, Alice, Laura, Teresa",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Equipment Check & EMF Calibration"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Client Consultation - Historic Mansion Investigation"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Sketch Session - Spectral Phenomena Documentation"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Team Meeting - Weekend Investigation Planning"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Evidence Review - Audio Analysis"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T11:30:00.000Z",
+          "end": "2025-01-02T12:00:00.000Z",
+          "summary": "Pre-shift briefing and handover"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Morning rounds with attending physician"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Trauma team huddle"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T21:15:00.000Z",
+          "summary": "Patient family consultation"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "End-of-shift documentation and charting"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Samuel",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T13:00:00.000Z",
+          "summary": "Morning Yoga Class - Manufacturing Employees"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:00:00.000Z",
+          "summary": "Class Preparation & Equipment Setup"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Workplace Wellness Committee Meeting"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Ergonomics & Injury Prevention Workshop Prep"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "Lunchtime Mindfulness Session - Factory Floor Workers"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "One-on-One: Stress Management Consultation"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Chair Yoga Class - Office Staff"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Monthly Wellness Program Review"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "Class Schedule Planning & Documentation"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Kevin",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Puzzle Mechanism Testing - Airlock Chamber"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Client Consultation - NASA Educational Outreach"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:30:00.000Z",
+          "summary": "Deep Work: Asteroid Mining Scenario Development"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Team Standup - Mission Control Room Project"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Prototype Review: Zero-G Simulation Puzzles"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Research Block: Mars Habitat Design Constraints"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Fiona",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Creative Strategy Session - Solar Farm Visual Impact Study"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Wind Turbine Aesthetic Design Review"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Focus Time - Community Engagement Visuals"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Stakeholder Presentation Prep - Green Energy Initiative"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Research Block - Sustainable Materials for Installation Art"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Client Consultation - Custom Dragon Sleeve"
+        },
+        {
+          "start": "2025-01-02T15:45:00.000Z",
+          "end": "2025-01-02T17:15:00.000Z",
+          "summary": "Touch-up Session - Movie Prop Tattoos"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Portfolio Review Call - Netflix Series"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Tattoo Session - Celebrity Client"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Laura",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Puppet Show Performance - Metro Station"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Transit Authority Creative Outreach Meeting"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Puppet Maintenance & Repair Block"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Call with Bus Terminal Arts Coordinator"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Safety Training for Transportation Venues"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Teresa",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Farm Equipment Sound Recording Session"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Composing - Harvest Season Symphony Movement 2"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:00:00.000Z",
+          "summary": "Video Call with Sustainable Agriculture Documentary Team"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Farm Visit - Recording Ambient Sounds for Album"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Music Production - Mixing Agricultural Soundscape Project"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Phone Meeting with Farmer's Market Music Series Coordinator"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
