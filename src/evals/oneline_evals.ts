@@ -150,7 +150,7 @@ async function runOnelineEval(filename: string): Promise<boolean | null> {
     if (targetMessage) {
       console.log('\nFound target message:')
       console.log(`Message ID: ${targetMessage.id}`)
-      console.log(`Message Text: ${targetMessage.text}`)
+      console.log(`Message Text: ${targetMessage.text.length > 50 ? targetMessage.text.substring(0, 50) + '...' : targetMessage.text}`)
       console.log(`Message User: ${targetMessage.userId}`)
       console.log(`Message Timestamp: ${targetMessage.timestamp}`)
 
