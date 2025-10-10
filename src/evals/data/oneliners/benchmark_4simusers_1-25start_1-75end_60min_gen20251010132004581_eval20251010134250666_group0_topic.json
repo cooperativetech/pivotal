@@ -1,0 +1,1866 @@
+{
+  "loadUpToId": "9351718e-679d-4768-98ca-313c8f7ff798",
+  "expectedBehavior": "Don't suggest a time when any of the other users are busy. For instance, Samuel is busy from 2pm-6pm.",
+  "topic": {
+    "id": "cea1798d-04e7-49c7-a353-db702537668f",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "slackTeamId": "T123456",
+    "createdAt": "2025-10-10T20:40:18.709Z"
+  },
+  "states": [
+    {
+      "id": "50e5d5e1-a3b9-4cf0-897e-1cedfe727ede",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.714Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "3a57581a-eef1-4475-a170-949c98b486a6",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.728Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "b214f278-976f-4fae-88a7-3a4dc64b91d5",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.730Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "7a4e6078-aeb9-4991-b5bd-13b4883a733c",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Samuel": {
+          "calendarPrompted": true
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.737Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "aa730f6a-e696-4eff-929e-628db1175c6e",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.738Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "bf4d765b-a230-4047-a6fd-cf745ff3511c",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.744Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "5488ae13-550f-4065-9407-a6f6bd486866",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          }
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.746Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "11852fea-8af0-4e71-95d3-3d586bb8990e",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          }
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.752Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "e7673164-ecac-41f6-8088-b443de91b5e0",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          }
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:18.754Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "72eaf92f-7060-45f0-8229-c7527d96ebc1",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          }
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "createdAt": "2025-10-10T20:40:21.481Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "78f4d435-cc16-49ed-a9a2-298b48b93905",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "231287e2-f9d9-41f0-aee0-230346113270",
+      "createdAt": "2025-10-10T20:41:01.305Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "6c03738b-d1f2-47b4-a420-538040f799ca",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "e5b67cbf-2b69-4b9f-ac55-4fcf9a71f4eb",
+      "createdAt": "2025-10-10T20:41:22.273Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "ec26e76c-a6c8-4111-9386-8a394ddb2521",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T18:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T22:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "9351718e-679d-4768-98ca-313c8f7ff798",
+      "createdAt": "2025-10-10T20:41:40.637Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "bef5adaf-5e0b-430a-bed4-b83def9c0554",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T18:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T22:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "69b24ef5-a990-4969-ab61-fb9be01d2b44",
+      "createdAt": "2025-10-10T20:42:10.487Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "8b9a37b6-eb77-4912-881f-abefecdc0bfe",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T18:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T22:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "3ede2cb4-0679-4a0c-ac50-7e1c1d35cd03",
+      "createdAt": "2025-10-10T20:42:24.292Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "9ae6fd73-7645-4180-8cfc-a4e71e8ab6d6",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T18:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T22:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "eae2faf1-8c06-42ae-a762-8d5bd4ebde70",
+      "createdAt": "2025-10-10T20:42:39.526Z",
+      "createdByMessageRawTs": "1760128970.676"
+    },
+    {
+      "id": "1a02ebc1-a27b-416c-b0c4-14d80b2a1921",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "Quinn": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.743",
+            "channelId": "D1760128818741"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T12:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T15:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T16:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T16:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Samuel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.736",
+            "channelId": "D1760128818733"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:45:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-03T04:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T23:00:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.751",
+            "channelId": "D1760128818749"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T05:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T18:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:59-05:00",
+              "free": false,
+              "start": "2025-01-02T22:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128818.727",
+            "channelId": "D1760128815404"
+          }
+        }
+      },
+      "createdByMessageId": "9c527a6c-1ed5-42d8-b95c-889dd61f2489",
+      "createdAt": "2025-10-10T20:42:50.654Z",
+      "createdByMessageRawTs": "1760128970.676"
+    }
+  ],
+  "messages": [
+    {
+      "id": "0cc77067-0993-4519-b202-03aab210dc9a",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Yasmin",
+      "channelId": "D1760128815404",
+      "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM. Can you help me find a time that works for everyone?",
+      "timestamp": "2025-10-10T20:40:15.408Z",
+      "rawTs": "1760128815.408",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128815.408",
+        "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Quinn, Samuel, and Ulrich for Thursday, January 2nd between 6:00 AM and 6:00 PM. Can you help me find a time that works for everyone?",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760128815404",
+        "event_ts": "1760128815.408",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "5fbf8f1c-0ff2-4b62-b47d-876f9722cbe4",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128815404",
+      "text": "I'll help you schedule that meeting for Thursday, January 2nd. Since none of you have calendars connected, I'll reach out to Quinn, Samuel, and Ulrich to gather their availability for that day between 6am-6pm (EDT).",
+      "timestamp": "2025-10-10T20:40:28.001Z",
+      "rawTs": "1760128828.001",
+      "threadTs": "1760128815.408",
+      "raw": {
+        "ts": "1760128828.001",
+        "text": "I'll help you schedule that meeting for Thursday, January 2nd. Since none of you have calendars connected, I'll reach out to Quinn, Samuel, and Ulrich to gather their availability for that day between 6am-6pm (EDT).",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128815404",
+        "event_ts": "1760128828.001",
+        "thread_ts": "1760128815.408",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e6290858-aacb-4d10-9253-29670bbcb0d2",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818741",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:40:28.020Z",
+      "rawTs": "1760128828.02",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128828.02",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818741",
+        "event_ts": "1760128828.02",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9e141092-1f57-4b43-b9eb-0cdb20979ed8",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818733",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:40:28.025Z",
+      "rawTs": "1760128828.025",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128828.025",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818733",
+        "event_ts": "1760128828.025",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "dddaa7e1-4542-48b7-be84-a7aad2ec7de9",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818749",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:40:28.029Z",
+      "rawTs": "1760128828.029",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128828.029",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6am-6pm (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818749",
+        "event_ts": "1760128828.029",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "3429a76e-e9a1-4b8d-9299-43d25b4bfdaa",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Yasmin",
+      "channelId": "D1760128815404",
+      "text": "Thank you! That sounds perfect. I have some availability gaps on January 2nd, so I'm looking forward to hearing back from Quinn, Samuel, and Ulrich about their schedules.",
+      "timestamp": "2025-10-10T20:40:34.769Z",
+      "rawTs": "1760128834.769",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128834.769",
+        "text": "Thank you! That sounds perfect. I have some availability gaps on January 2nd, so I'm looking forward to hearing back from Quinn, Samuel, and Ulrich about their schedules.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760128815404",
+        "event_ts": "1760128834.769",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "231287e2-f9d9-41f0-aee0-230346113270",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Quinn",
+      "channelId": "D1760128818741",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 6am-9am, 10:30am-11am, 12pm-1pm, 2:30pm-3pm, 4pm-4:30pm, or after 5:30pm. Any of those windows work for Yasmin?",
+      "timestamp": "2025-10-10T20:40:49.473Z",
+      "rawTs": "1760128849.473",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128849.473",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 6am-9am, 10:30am-11am, 12pm-1pm, 2:30pm-3pm, 4pm-4:30pm, or after 5:30pm. Any of those windows work for Yasmin?",
+        "type": "message",
+        "user": "Quinn",
+        "channel": "D1760128818741",
+        "event_ts": "1760128849.473",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "94ac39c7-3e09-479e-8a73-0d14c1e4d724",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818741",
+      "text": "Got it! I've recorded your availability for Thursday, January 2nd. Still waiting to hear back from Samuel and Ulrich about their schedules.",
+      "timestamp": "2025-10-10T20:41:07.557Z",
+      "rawTs": "1760128867.557",
+      "threadTs": "1760128849.473",
+      "raw": {
+        "ts": "1760128867.557",
+        "text": "Got it! I've recorded your availability for Thursday, January 2nd. Still waiting to hear back from Samuel and Ulrich about their schedules.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818741",
+        "event_ts": "1760128867.557",
+        "thread_ts": "1760128849.473",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e5b67cbf-2b69-4b9f-ac55-4fcf9a71f4eb",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Samuel",
+      "channelId": "D1760128818733",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 12:45-2:00pm or after 6:00pm. Would either of those windows work for Yasmin's meeting?",
+      "timestamp": "2025-10-10T20:41:11.918Z",
+      "rawTs": "1760128871.918",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128871.918",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 12:45-2:00pm or after 6:00pm. Would either of those windows work for Yasmin's meeting?",
+        "type": "message",
+        "user": "Samuel",
+        "channel": "D1760128818733",
+        "event_ts": "1760128871.918",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "31a3fc32-b7d3-4932-97df-38da3068312f",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818733",
+      "text": "Got it! I've recorded your availability for Thursday, January 2nd. Still waiting to hear back from Ulrich about his schedule.",
+      "timestamp": "2025-10-10T20:41:28.023Z",
+      "rawTs": "1760128888.023",
+      "threadTs": "1760128871.918",
+      "raw": {
+        "ts": "1760128888.023",
+        "text": "Got it! I've recorded your availability for Thursday, January 2nd. Still waiting to hear back from Ulrich about his schedule.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818733",
+        "event_ts": "1760128888.023",
+        "thread_ts": "1760128871.918",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9351718e-679d-4768-98ca-313c8f7ff798",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Ulrich",
+      "channelId": "D1760128818749",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few gaps that could work for a 1-hour meeting with Yasmin. I'm available from 12:30-1:30pm or anytime after 5:30pm. Which of those timeframes works better for her?",
+      "timestamp": "2025-10-10T20:41:32.718Z",
+      "rawTs": "1760128892.718",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128892.718",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few gaps that could work for a 1-hour meeting with Yasmin. I'm available from 12:30-1:30pm or anytime after 5:30pm. Which of those timeframes works better for her?",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760128818749",
+        "event_ts": "1760128892.718",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "454fb2b2-3ae9-4b81-b7af-281078f676bc",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128818749",
+      "text": "Perfect! I've recorded your availability. I found that 5:45pm-6:45pm (EDT) works for Quinn, Samuel, and you. I'll check with Yasmin to confirm this time slot works for her as well.",
+      "timestamp": "2025-10-10T20:41:54.494Z",
+      "rawTs": "1760128914.494",
+      "threadTs": "1760128892.718",
+      "raw": {
+        "ts": "1760128914.494",
+        "text": "Perfect! I've recorded your availability. I found that 5:45pm-6:45pm (EDT) works for Quinn, Samuel, and you. I'll check with Yasmin to confirm this time slot works for her as well.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128818749",
+        "event_ts": "1760128914.494",
+        "thread_ts": "1760128892.718",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "4a5e2105-4b0d-4bdd-bf60-92181c2df5e5",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128815404",
+      "text": "Great news! I found a time that works for Quinn, Samuel, and Ulrich: Thursday, January 2nd at 5:45pm-6:45pm (EDT). Does this work for your schedule?",
+      "timestamp": "2025-10-10T20:41:54.511Z",
+      "rawTs": "1760128914.511",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128914.511",
+        "text": "Great news! I found a time that works for Quinn, Samuel, and Ulrich: Thursday, January 2nd at 5:45pm-6:45pm (EDT). Does this work for your schedule?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128815404",
+        "event_ts": "1760128914.511",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "69b24ef5-a990-4969-ab61-fb9be01d2b44",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Yasmin",
+      "channelId": "D1760128815404",
+      "text": "That time works perfectly for me! I'm free from 5:45pm-6:45pm on January 2nd. Please go ahead and confirm the meeting with everyone.",
+      "timestamp": "2025-10-10T20:41:58.507Z",
+      "rawTs": "1760128918.507",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128918.507",
+        "text": "That time works perfectly for me! I'm free from 5:45pm-6:45pm on January 2nd. Please go ahead and confirm the meeting with everyone.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760128815404",
+        "event_ts": "1760128918.507",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "6e75f846-a571-42e2-80fa-f0fcde8ab4c6",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128815404",
+      "text": "Perfect! I'll confirm the meeting with everyone and send out the calendar invite.",
+      "timestamp": "2025-10-10T20:42:08.889Z",
+      "rawTs": "1760128928.889",
+      "threadTs": "1760128918.507",
+      "raw": {
+        "ts": "1760128928.889",
+        "text": "Perfect! I'll confirm the meeting with everyone and send out the calendar invite.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128815404",
+        "event_ts": "1760128928.889",
+        "thread_ts": "1760128918.507",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "2d9a8783-96d9-4019-a1a1-23005ff4b841",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "C1760128928911",
+      "text": "Meeting confirmed for Thursday, January 2nd at 5:45pm-6:45pm (EDT). Calendar invite is on the way!",
+      "timestamp": "2025-10-10T20:42:08.919Z",
+      "rawTs": "1760128928.919",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128928.919",
+        "text": "Meeting confirmed for Thursday, January 2nd at 5:45pm-6:45pm (EDT). Calendar invite is on the way!",
+        "type": "message",
+        "user": "",
+        "channel": "C1760128928911",
+        "event_ts": "1760128928.919",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e58a431c-3efb-4a01-aaa8-281928e80688",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "UTESTBOT",
+      "channelId": "C1760128928911",
+      "text": "Calendar event created for “Meeting with Yasmin, Quinn, Samuel, and Ulrich”! 📅\nWhen: Jan 2, 2025, 5:45 PM (EDT) to 6:45 PM\nGoogle Meet link: https://meet.google.com/qmv-hhok-sup",
+      "timestamp": "2025-10-10T20:42:10.484Z",
+      "rawTs": "1760128930.484",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128930.484",
+        "text": "Calendar event created for “Meeting with Yasmin, Quinn, Samuel, and Ulrich”! 📅\nWhen: Jan 2, 2025, 5:45 PM (EDT) to 6:45 PM\nGoogle Meet link: https://meet.google.com/qmv-hhok-sup",
+        "type": "message",
+        "user": "",
+        "channel": "C1760128928911",
+        "event_ts": "1760128930.484",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "3ede2cb4-0679-4a0c-ac50-7e1c1d35cd03",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Quinn",
+      "channelId": "D1760128818741",
+      "text": "Perfect! 5:45pm works great for me. Thanks for coordinating this - see everyone on Thursday!",
+      "timestamp": "2025-10-10T20:42:15.078Z",
+      "rawTs": "1760128935.078",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128935.078",
+        "text": "Perfect! 5:45pm works great for me. Thanks for coordinating this - see everyone on Thursday!",
+        "type": "message",
+        "user": "Quinn",
+        "channel": "D1760128818741",
+        "event_ts": "1760128935.078",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "eae2faf1-8c06-42ae-a762-8d5bd4ebde70",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Samuel",
+      "channelId": "D1760128818733",
+      "text": "Perfect! That time works well for me - it's right after I wrap up my documentation work. Thanks for coordinating this, and I'll see everyone on the call!",
+      "timestamp": "2025-10-10T20:42:30.758Z",
+      "rawTs": "1760128950.758",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128950.758",
+        "text": "Perfect! That time works well for me - it's right after I wrap up my documentation work. Thanks for coordinating this, and I'll see everyone on the call!",
+        "type": "message",
+        "user": "Samuel",
+        "channel": "D1760128818733",
+        "event_ts": "1760128950.758",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9c527a6c-1ed5-42d8-b95c-889dd61f2489",
+      "topicId": "cea1798d-04e7-49c7-a353-db702537668f",
+      "userId": "Ulrich",
+      "channelId": "D1760128818749",
+      "text": "Perfect, thanks for setting that up! I've got the meeting locked in my calendar and will join via the Google Meet link at 5:45pm on Thursday.",
+      "timestamp": "2025-10-10T20:42:42.908Z",
+      "rawTs": "1760128962.908",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128962.908",
+        "text": "Perfect, thanks for setting that up! I've got the meeting locked in my calendar and will join via the Google Meet link at 5:45pm on Thursday.",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760128818749",
+        "event_ts": "1760128962.908",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Yasmin",
+      "teamId": "T123456",
+      "realName": "Yasmin",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:40:12.000Z",
+      "raw": {
+        "id": "Yasmin",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128812,
+        "real_name": "Yasmin"
+      }
+    },
+    {
+      "id": "Samuel",
+      "teamId": "T123456",
+      "realName": "Samuel",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:40:12.000Z",
+      "raw": {
+        "id": "Samuel",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128812,
+        "real_name": "Samuel"
+      }
+    },
+    {
+      "id": "Quinn",
+      "teamId": "T123456",
+      "realName": "Quinn",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:40:12.000Z",
+      "raw": {
+        "id": "Quinn",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128812,
+        "real_name": "Quinn"
+      }
+    },
+    {
+      "id": "Ulrich",
+      "teamId": "T123456",
+      "realName": "Ulrich",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:40:12.000Z",
+      "raw": {
+        "id": "Ulrich",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128812,
+        "real_name": "Ulrich"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "C1760128928911",
+      "userIds": [
+        "Yasmin",
+        "Samuel",
+        "Quinn",
+        "Ulrich"
+      ]
+    },
+    {
+      "id": "D1760128815404",
+      "userIds": [
+        "Yasmin"
+      ]
+    },
+    {
+      "id": "D1760128818733",
+      "userIds": [
+        "Samuel"
+      ]
+    },
+    {
+      "id": "D1760128818741",
+      "userIds": [
+        "Quinn"
+      ]
+    },
+    {
+      "id": "D1760128818749",
+      "userIds": [
+        "Ulrich"
+      ]
+    }
+  ]
+}

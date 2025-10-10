@@ -1,0 +1,3994 @@
+{
+  "loadUpToId": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+  "expectedBehavior": "The agent should reply with suggestions for times or requests for more information, and not give an error",
+  "topic": {
+    "id": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "slackTeamId": "T123456",
+    "createdAt": "2025-10-10T21:03:54.827Z"
+  },
+  "states": [
+    {
+      "id": "77bb1cfb-4a9a-4f15-872e-3284ea58aabe",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.830Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "390f667f-46ba-4f32-8479-c82b84051376",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Alice": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.839Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "0c4ee61c-f028-439f-a246-eb1ce91c22a4",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.841Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "1015e421-c610-42db-bd43-60262f60c901",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.847Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "eb24e5f6-ca63-4aa1-b3af-d12944d71eb6",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.849Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "01cc9b1d-ac4a-403a-82c7-5232f5aa9a80",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.854Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "a3275883-4612-4682-9880-64b7284fc0a6",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.856Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "0f9c4a07-e8eb-4266-9db3-4b3962c0593a",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.861Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "32f7343e-9b16-4930-9366-e3d10b10b966",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:54.863Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "c4508f2b-d94c-4aa6-ba11-e357693f18d3",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          }
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "createdAt": "2025-10-10T21:03:59.981Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "f56b8beb-e995-4461-951c-f9ed17d70619",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          }
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "38468510-dcf2-4828-b878-373348df2a2d",
+      "createdAt": "2025-10-10T21:04:39.942Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "d63fe5f1-d2b2-4284-bc30-9502919ae2bd",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available - Tuesday"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available - Wednesday"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "886734dc-75c5-4ceb-a419-65fe0b64ea0c",
+      "createdAt": "2025-10-10T21:05:03.068Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "8bad23d8-6cad-44a0-b3e7-f5f21f05c9e8",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available - Tuesday"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available - Wednesday"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available - Saturday"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available - Sunday"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+      "createdAt": "2025-10-10T21:05:30.830Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "8fa493f0-b749-4891-9b9e-8c1d8c9c55b8",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+      "createdAt": "2025-10-10T21:05:39.640Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "4e2c3dc9-21a5-4d29-b388-adab73eceef6",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+      "createdAt": "2025-10-10T21:05:57.690Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "3e9e15c6-31d1-4cdf-a585-0d011e46bf24",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T23:59:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+      "createdAt": "2025-10-10T21:06:04.797Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "5176521f-b52b-4074-b571-2796308774c4",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:00-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T23:59:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "eed8f6a5-ef85-4166-831c-517fa7c08bd6",
+      "createdAt": "2025-10-10T21:06:33.974Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "e9bd7505-4b7c-4cec-aa7e-f750c7948c43",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available Weekend"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "eed8f6a5-ef85-4166-831c-517fa7c08bd6",
+      "createdAt": "2025-10-10T21:06:41.165Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "70566681-d41c-4f34-a702-410b34acfb66",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available Weekend"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "eed8f6a5-ef85-4166-831c-517fa7c08bd6",
+      "createdAt": "2025-10-10T21:07:03.439Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "cef70b58-85c2-4df4-9404-cfc64e2405b7",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "eed8f6a5-ef85-4166-831c-517fa7c08bd6",
+      "createdAt": "2025-10-10T21:07:12.426Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "2abc4618-575a-4b79-a821-d51bb094e91d",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          }
+        }
+      },
+      "createdByMessageId": "74f5f153-1889-4566-9ecf-864dd24321a3",
+      "createdAt": "2025-10-10T21:07:42.730Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "7f85d461-7838-4533-ba93-0a51a15b74e3",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": true,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T15:30:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T16:30:00-05:00",
+              "free": false,
+              "start": "2025-02-04T15:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-04T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T09:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T09:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T16:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T17:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-06T17:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "74f5f153-1889-4566-9ecf-864dd24321a3",
+      "createdAt": "2025-10-10T21:07:52.481Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "5c7ac6e2-e952-45de-8c3b-76e91dc32c8a",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": false,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T15:30:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T16:30:00-05:00",
+              "free": false,
+              "start": "2025-02-04T15:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-04T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T09:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T09:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T16:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T17:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-06T17:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "c099f6dd-5525-4ded-85b9-cb2f6425cbeb",
+      "createdAt": "2025-10-10T21:08:52.915Z",
+      "createdByMessageRawTs": "1760130544.096"
+    },
+    {
+      "id": "6a0fafed-5e19-4844-8a70-7735d88c07be",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ],
+      "summary": "Schedule 1-hour meeting with Fiona, Bob, and Ulrich for February 1-28",
+      "isActive": false,
+      "perUserContext": {
+        "Bob": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.846",
+            "channelId": "D1760130234844"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-01T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-01T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-02T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-01T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-02T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-02T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-08T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-08T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-09T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-08T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-09T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-09T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-15T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-15T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-16T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-15T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-16T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-16T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-22T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-22T00:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-23T00:00:00-05:00",
+              "free": true,
+              "start": "2025-02-22T23:59:59-05:00",
+              "summary": "Available Weekend"
+            },
+            {
+              "end": "2025-02-23T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-23T00:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Alice": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.839",
+            "channelId": "D1760130232231"
+          }
+        },
+        "Fiona": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.854",
+            "channelId": "D1760130234851"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T14:00:00-05:00",
+              "free": true,
+              "start": "2025-02-04T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-04T14:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T09:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T09:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T15:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-05T15:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T13:30:00-05:00",
+              "free": true,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": false,
+              "start": "2025-02-06T13:30:00-05:00",
+              "summary": "Busy"
+            }
+          ]
+        },
+        "Ulrich": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760130234.861",
+            "channelId": "D1760130234858"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-02-04T11:00:00-05:00",
+              "free": false,
+              "start": "2025-02-04T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T15:30:00-05:00",
+              "free": true,
+              "start": "2025-02-04T11:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-04T16:30:00-05:00",
+              "free": false,
+              "start": "2025-02-04T15:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-04T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-04T16:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T10:00:00-05:00",
+              "free": false,
+              "start": "2025-02-05T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T13:00:00-05:00",
+              "free": true,
+              "start": "2025-02-05T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-05T14:30:00-05:00",
+              "free": false,
+              "start": "2025-02-05T13:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-05T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-05T14:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T09:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T11:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T09:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T12:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T16:00:00-05:00",
+              "free": true,
+              "start": "2025-02-06T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-02-06T17:00:00-05:00",
+              "free": false,
+              "start": "2025-02-06T16:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-02-06T23:59:59-05:00",
+              "free": true,
+              "start": "2025-02-06T17:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "9905ecb0-476b-4e93-a3fc-c343776d3500",
+      "createdAt": "2025-10-10T21:09:04.071Z",
+      "createdByMessageRawTs": "1760130544.096"
+    }
+  ],
+  "messages": [
+    {
+      "id": "dec47bb0-63be-446f-be62-27641f1b414d",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Alice",
+      "channelId": "D1760130232231",
+      "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Fiona, Bob, and Ulrich sometime between February 1st and February 28th. Can you help me find a time that works for everyone?",
+      "timestamp": "2025-10-10T21:03:52.234Z",
+      "rawTs": "1760130232.234",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130232.234",
+        "text": "Hi Pivotal, I need to schedule a 1-hour meeting with Fiona, Bob, and Ulrich sometime between February 1st and February 28th. Can you help me find a time that works for everyone?",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1760130232231",
+        "event_ts": "1760130232.234",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "a0441499-b8b9-4baf-8181-1011396804a2",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130232231",
+      "text": "Got it! I'll help you schedule a 1-hour meeting with Fiona, Bob, and Ulrich for February. I'll reach out to them to gather their availability.",
+      "timestamp": "2025-10-10T21:04:06.584Z",
+      "rawTs": "1760130246.584",
+      "threadTs": "1760130232.234",
+      "raw": {
+        "ts": "1760130246.584",
+        "text": "Got it! I'll help you schedule a 1-hour meeting with Fiona, Bob, and Ulrich for February. I'll reach out to them to gather their availability.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130232231",
+        "event_ts": "1760130246.584",
+        "thread_ts": "1760130232.234",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "94a2ae2e-88ec-4366-9b8b-3adc83caae4d",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234851",
+      "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+      "timestamp": "2025-10-10T21:04:06.594Z",
+      "rawTs": "1760130246.594",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130246.594",
+        "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234851",
+        "event_ts": "1760130246.594",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f8add81d-9c73-4e44-b842-7843fca67229",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234844",
+      "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+      "timestamp": "2025-10-10T21:04:06.598Z",
+      "rawTs": "1760130246.598",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130246.598",
+        "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234844",
+        "event_ts": "1760130246.598",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "54d3d34b-f894-4278-ad7b-171b230be448",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234858",
+      "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+      "timestamp": "2025-10-10T21:04:06.601Z",
+      "rawTs": "1760130246.601",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130246.601",
+        "text": "Hi! Alice is trying to schedule a 1-hour meeting with you for sometime in February (Feb 1-28). What days/times work best for you? Please share your availability.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234858",
+        "event_ts": "1760130246.601",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "85cf2a11-2554-45d1-b9e9-ccbeba6b027c",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Alice",
+      "channelId": "D1760130232231",
+      "text": "Perfect, thank you! I'm looking forward to coordinating with everyone to find a time that works for all of us in February.",
+      "timestamp": "2025-10-10T21:04:12.543Z",
+      "rawTs": "1760130252.543",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130252.543",
+        "text": "Perfect, thank you! I'm looking forward to coordinating with everyone to find a time that works for all of us in February.",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1760130232231",
+        "event_ts": "1760130252.543",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "38468510-dcf2-4828-b878-373348df2a2d",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Fiona",
+      "channelId": "D1760130234851",
+      "text": "Hi! Looking at my February schedule, I have some good availability. I'm free Tuesday Feb 4th from 10:00-14:00, Wednesday Feb 5th from 9:30-11:00 and 12:00-15:00, Thursday Feb 6th from 11:00-13:30, and several other slots throughout the month. Would any of those work for Alice's schedule?",
+      "timestamp": "2025-10-10T21:04:24.574Z",
+      "rawTs": "1760130264.574",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130264.574",
+        "text": "Hi! Looking at my February schedule, I have some good availability. I'm free Tuesday Feb 4th from 10:00-14:00, Wednesday Feb 5th from 9:30-11:00 and 12:00-15:00, Thursday Feb 6th from 11:00-13:30, and several other slots throughout the month. Would any of those work for Alice's schedule?",
+        "type": "message",
+        "user": "Fiona",
+        "channel": "D1760130234851",
+        "event_ts": "1760130264.574",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "10da15ab-17eb-4b18-a830-5868d9671f1e",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234851",
+      "text": "Thanks! I've recorded your availability and am waiting to hear back from Bob and Ulrich.",
+      "timestamp": "2025-10-10T21:04:45.499Z",
+      "rawTs": "1760130285.499",
+      "threadTs": "1760130264.574",
+      "raw": {
+        "ts": "1760130285.499",
+        "text": "Thanks! I've recorded your availability and am waiting to hear back from Bob and Ulrich.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234851",
+        "event_ts": "1760130285.499",
+        "thread_ts": "1760130264.574",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "886734dc-75c5-4ceb-a419-65fe0b64ea0c",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Bob",
+      "channelId": "D1760130234844",
+      "text": "Hi! Looking at my February schedule, I have some good availability. I'm completely free on Saturday, Feb 1, Sunday, Feb 2, Saturday, Feb 8, Sunday, Feb 9, and the weekends of Feb 15-16 and Feb 22-23. During weekdays, I have openings like Tuesday, Feb 4 from 11:00 AM-1:00 PM, Wednesday, Feb 5 from 10:00 AM-2:30 PM, and several other slots throughout the month. Would any of these times work for Alice?",
+      "timestamp": "2025-10-10T21:04:51.070Z",
+      "rawTs": "1760130291.07",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130291.07",
+        "text": "Hi! Looking at my February schedule, I have some good availability. I'm completely free on Saturday, Feb 1, Sunday, Feb 2, Saturday, Feb 8, Sunday, Feb 9, and the weekends of Feb 15-16 and Feb 22-23. During weekdays, I have openings like Tuesday, Feb 4 from 11:00 AM-1:00 PM, Wednesday, Feb 5 from 10:00 AM-2:30 PM, and several other slots throughout the month. Would any of these times work for Alice?",
+        "type": "message",
+        "user": "Bob",
+        "channel": "D1760130234844",
+        "event_ts": "1760130291.07",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "d652cfce-76aa-45fc-bf3e-2c0903c06f87",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Ulrich",
+      "channelId": "D1760130234858",
+      "text": "Hi! I'd be happy to meet with Alice. Looking at my February schedule, I have several good options available:\n\n**Week of Feb 3-7:**\n- Tuesday, Feb 4: 11:00-15:30 or after 16:30\n- Wednesday, Feb 5: 10:00-13:00 or after 14:30\n- Thursday, Feb 6: 9:00-11:00, 12:00-16:00, or after 17:00\n- Friday, Feb 7: 11:00-9:30 (next day) or 8:00-9:30\n\n**Week of Feb 10-14:**\n- Monday, Feb 10: 10:30-14:30 or after 16:00\n- Tuesday, Feb 11: 11:30-15:00 or after 16:00\n- Wednesday, Feb 12: 10:00-13:30 or after 15:00\n- Thursday, Feb 13: 9:00-11:00, 12:30-16:00, or after 17:00\n\nI have similar availability the following weeks as well. What time zone is Alice in, and does she have any preference for morning vs. afternoon meetings?",
+      "timestamp": "2025-10-10T21:05:18.596Z",
+      "rawTs": "1760130318.596",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130318.596",
+        "text": "Hi! I'd be happy to meet with Alice. Looking at my February schedule, I have several good options available:\n\n**Week of Feb 3-7:**\n- Tuesday, Feb 4: 11:00-15:30 or after 16:30\n- Wednesday, Feb 5: 10:00-13:00 or after 14:30\n- Thursday, Feb 6: 9:00-11:00, 12:00-16:00, or after 17:00\n- Friday, Feb 7: 11:00-9:30 (next day) or 8:00-9:30\n\n**Week of Feb 10-14:**\n- Monday, Feb 10: 10:30-14:30 or after 16:00\n- Tuesday, Feb 11: 11:30-15:00 or after 16:00\n- Wednesday, Feb 12: 10:00-13:30 or after 15:00\n- Thursday, Feb 13: 9:00-11:00, 12:30-16:00, or after 17:00\n\nI have similar availability the following weeks as well. What time zone is Alice in, and does she have any preference for morning vs. afternoon meetings?",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760130234858",
+        "event_ts": "1760130318.596",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "64f86260-f70d-4c6a-afa1-93527c623f09",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234858",
+      "text": "I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.",
+      "timestamp": "2025-10-10T21:06:15.168Z",
+      "rawTs": "1760130375.168",
+      "threadTs": "1760130318.596",
+      "raw": {
+        "ts": "1760130375.168",
+        "text": "I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234858",
+        "event_ts": "1760130375.168",
+        "thread_ts": "1760130318.596",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "eed8f6a5-ef85-4166-831c-517fa7c08bd6",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Fiona",
+      "channelId": "D1760130234851",
+      "text": "Sounds good! Let me know once you hear back from Bob and Ulrich and we can finalize the timing.",
+      "timestamp": "2025-10-10T21:06:21.758Z",
+      "rawTs": "1760130381.758",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130381.758",
+        "text": "Sounds good! Let me know once you hear back from Bob and Ulrich and we can finalize the timing.",
+        "type": "message",
+        "user": "Fiona",
+        "channel": "D1760130234851",
+        "event_ts": "1760130381.758",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "382fba85-a8b4-40a1-af8d-b2d9938ad176",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234851",
+      "text": "I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.",
+      "timestamp": "2025-10-10T21:07:21.791Z",
+      "rawTs": "1760130441.791",
+      "threadTs": "1760130381.758",
+      "raw": {
+        "ts": "1760130441.791",
+        "text": "I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234851",
+        "event_ts": "1760130441.791",
+        "thread_ts": "1760130381.758",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "74f5f153-1889-4566-9ecf-864dd24321a3",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Ulrich",
+      "channelId": "D1760130234858",
+      "text": "No problem! Let me resend that more concisely. I'm available for a 1-hour meeting with Alice on most weekdays in February - mornings before 9:00, lunch breaks around 11:00-13:00, and evenings after 17:00 work well for me. What's Alice's preferred time and time zone?",
+      "timestamp": "2025-10-10T21:07:29.584Z",
+      "rawTs": "1760130449.584",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130449.584",
+        "text": "No problem! Let me resend that more concisely. I'm available for a 1-hour meeting with Alice on most weekdays in February - mornings before 9:00, lunch breaks around 11:00-13:00, and evenings after 17:00 work well for me. What's Alice's preferred time and time zone?",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760130234858",
+        "event_ts": "1760130449.584",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "524011f6-3aff-408f-9cac-4234a6cbf521",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130234858",
+      "text": "Thanks! I've recorded your availability. Alice is in EDT too. I found several times that work for you, Bob, and Fiona - I just need Alice's availability to finalize the meeting time.",
+      "timestamp": "2025-10-10T21:08:07.508Z",
+      "rawTs": "1760130487.508",
+      "threadTs": "1760130449.584",
+      "raw": {
+        "ts": "1760130487.508",
+        "text": "Thanks! I've recorded your availability. Alice is in EDT too. I found several times that work for you, Bob, and Fiona - I just need Alice's availability to finalize the meeting time.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130234858",
+        "event_ts": "1760130487.508",
+        "thread_ts": "1760130449.584",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "cb937dab-c456-4574-832d-94715820e03a",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130232231",
+      "text": "Hi! I've gathered availability from Bob, Fiona, and Ulrich for your February meeting. Here are some times that work for all three of them:\n\n• Tuesday, Feb 4: 11:00 AM-1:00 PM (EDT)\n• Wednesday, Feb 5: 10:00-11:00 AM or 12:00-1:00 PM (EDT) \n• Thursday, Feb 6: 12:00-1:30 PM (EDT)\n\nWhich of these times work for you?",
+      "timestamp": "2025-10-10T21:08:07.520Z",
+      "rawTs": "1760130487.52",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130487.52",
+        "text": "Hi! I've gathered availability from Bob, Fiona, and Ulrich for your February meeting. Here are some times that work for all three of them:\n\n• Tuesday, Feb 4: 11:00 AM-1:00 PM (EDT)\n• Wednesday, Feb 5: 10:00-11:00 AM or 12:00-1:00 PM (EDT) \n• Thursday, Feb 6: 12:00-1:30 PM (EDT)\n\nWhich of these times work for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130232231",
+        "event_ts": "1760130487.52",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9e8247e0-5ebe-49e6-a6eb-17f089d34f55",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Alice",
+      "channelId": "D1760130232231",
+      "text": "Thanks for gathering everyone's availability! Looking at my schedule, Wednesday, Feb 5 from 12:00-1:00 PM works perfectly for me - I have a gap between my cooler maintenance and the weekly status meeting. Let's go with that time slot.",
+      "timestamp": "2025-10-10T21:08:13.278Z",
+      "rawTs": "1760130493.278",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130493.278",
+        "text": "Thanks for gathering everyone's availability! Looking at my schedule, Wednesday, Feb 5 from 12:00-1:00 PM works perfectly for me - I have a gap between my cooler maintenance and the weekly status meeting. Let's go with that time slot.",
+        "type": "message",
+        "user": "Alice",
+        "channel": "D1760130232231",
+        "event_ts": "1760130493.278",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "5e432962-e68d-4a1b-b8f3-05042b41b305",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "D1760130232231",
+      "text": "Perfect! I'll confirm Wednesday, Feb 5 from 12:00-1:00 PM (EDT) with everyone.",
+      "timestamp": "2025-10-10T21:08:24.457Z",
+      "rawTs": "1760130504.457",
+      "threadTs": "1760130493.278",
+      "raw": {
+        "ts": "1760130504.457",
+        "text": "Perfect! I'll confirm Wednesday, Feb 5 from 12:00-1:00 PM (EDT) with everyone.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760130232231",
+        "event_ts": "1760130504.457",
+        "thread_ts": "1760130493.278",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9dabe316-ac3f-44dd-9f52-2f16237e18d4",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "C1760130504473",
+      "text": "Meeting confirmed: Wednesday, Feb 5 from 12:00-1:00 PM (EDT). Calendar invite coming your way!",
+      "timestamp": "2025-10-10T21:08:24.478Z",
+      "rawTs": "1760130504.478",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130504.478",
+        "text": "Meeting confirmed: Wednesday, Feb 5 from 12:00-1:00 PM (EDT). Calendar invite coming your way!",
+        "type": "message",
+        "user": "",
+        "channel": "C1760130504473",
+        "event_ts": "1760130504.478",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "300db267-a478-415c-b123-b03ee93d4c20",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "UTESTBOT",
+      "channelId": "C1760130504473",
+      "text": "Calendar event created for “Meeting with Alice, Fiona, Bob, and Ulrich”! 📅\nWhen: Feb 5, 2025, 12:00 PM (EDT) to 1:00 PM\nGoogle Meet link: https://meet.google.com/ncj-mvek-yhd",
+      "timestamp": "2025-10-10T21:08:26.069Z",
+      "rawTs": "1760130506.069",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130506.069",
+        "text": "Calendar event created for “Meeting with Alice, Fiona, Bob, and Ulrich”! 📅\nWhen: Feb 5, 2025, 12:00 PM (EDT) to 1:00 PM\nGoogle Meet link: https://meet.google.com/ncj-mvek-yhd",
+        "type": "message",
+        "user": "",
+        "channel": "C1760130504473",
+        "event_ts": "1760130506.069",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "89812733-2994-4e94-a2db-52cce4bcf4c8",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Fiona",
+      "channelId": "D1760130234851",
+      "text": "Perfect! I've got it on my calendar for Wednesday Feb 5th from 12:00-1:00 PM. Looking forward to meeting with everyone - see you all on the Google Meet link!",
+      "timestamp": "2025-10-10T21:08:30.210Z",
+      "rawTs": "1760130510.21",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130510.21",
+        "text": "Perfect! I've got it on my calendar for Wednesday Feb 5th from 12:00-1:00 PM. Looking forward to meeting with everyone - see you all on the Google Meet link!",
+        "type": "message",
+        "user": "Fiona",
+        "channel": "D1760130234851",
+        "event_ts": "1760130510.21",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c099f6dd-5525-4ded-85b9-cb2f6425cbeb",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Bob",
+      "channelId": "D1760130234844",
+      "text": "Perfect! I've got it on my calendar for Wednesday, Feb 5 from 12:00-1:00 PM. Looking forward to meeting with Alice, Fiona, and Ulrich - see you all on the Google Meet!",
+      "timestamp": "2025-10-10T21:08:44.337Z",
+      "rawTs": "1760130524.337",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130524.337",
+        "text": "Perfect! I've got it on my calendar for Wednesday, Feb 5 from 12:00-1:00 PM. Looking forward to meeting with Alice, Fiona, and Ulrich - see you all on the Google Meet!",
+        "type": "message",
+        "user": "Bob",
+        "channel": "D1760130234844",
+        "event_ts": "1760130524.337",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9905ecb0-476b-4e93-a3fc-c343776d3500",
+      "topicId": "7d60e504-834a-4d72-af5d-39f16fef85b4",
+      "userId": "Ulrich",
+      "channelId": "D1760130234858",
+      "text": "Perfect! I've got it on my calendar for Wednesday, Feb 5 at 12:00 PM. Looking forward to meeting with Alice, Fiona, and Bob. See you all on the Google Meet!",
+      "timestamp": "2025-10-10T21:08:55.623Z",
+      "rawTs": "1760130535.623",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760130535.623",
+        "text": "Perfect! I've got it on my calendar for Wednesday, Feb 5 at 12:00 PM. Looking forward to meeting with Alice, Fiona, and Bob. See you all on the Google Meet!",
+        "type": "message",
+        "user": "Ulrich",
+        "channel": "D1760130234858",
+        "event_ts": "1760130535.623",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Alice",
+      "teamId": "T123456",
+      "realName": "Alice",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:03:48.000Z",
+      "raw": {
+        "id": "Alice",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130228,
+        "real_name": "Alice"
+      }
+    },
+    {
+      "id": "Bob",
+      "teamId": "T123456",
+      "realName": "Bob",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:03:48.000Z",
+      "raw": {
+        "id": "Bob",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130228,
+        "real_name": "Bob"
+      }
+    },
+    {
+      "id": "Fiona",
+      "teamId": "T123456",
+      "realName": "Fiona",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:03:48.000Z",
+      "raw": {
+        "id": "Fiona",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130228,
+        "real_name": "Fiona"
+      }
+    },
+    {
+      "id": "Ulrich",
+      "teamId": "T123456",
+      "realName": "Ulrich",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T21:03:48.000Z",
+      "raw": {
+        "id": "Ulrich",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760130228,
+        "real_name": "Ulrich"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "D1760130232231",
+      "userIds": [
+        "Alice"
+      ]
+    },
+    {
+      "id": "D1760130234844",
+      "userIds": [
+        "Bob"
+      ]
+    },
+    {
+      "id": "D1760130234851",
+      "userIds": [
+        "Fiona"
+      ]
+    },
+    {
+      "id": "D1760130234858",
+      "userIds": [
+        "Ulrich"
+      ]
+    },
+    {
+      "id": "C1760130504473",
+      "userIds": [
+        "Alice",
+        "Bob",
+        "Fiona",
+        "Ulrich"
+      ]
+    }
+  ]
+}

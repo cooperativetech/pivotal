@@ -111,6 +111,7 @@ const DumpedTopic = z.strictObject({
   id: z.string(),
   botUserId: z.string(),
   workflowType: z.string(),
+  slackTeamId: z.string().optional(),
   createdAt: z.string(),
 })
 

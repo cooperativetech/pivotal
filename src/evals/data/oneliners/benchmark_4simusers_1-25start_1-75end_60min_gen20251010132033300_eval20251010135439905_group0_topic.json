@@ -1,0 +1,2784 @@
+{
+  "loadUpToId": "ec76d124-4d1e-490f-b6bf-34b72eba8e08",
+  "expectedBehavior": "Don't suggest times when users haven't said they are free. For instance, Zachary hasn't said he's free between 6 and 7am.",
+  "topic": {
+    "id": "babe06a5-e7be-4926-a94e-230088ba6d40",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "slackTeamId": "T123456",
+    "createdAt": "2025-10-10T20:49:44.483Z"
+  },
+  "states": [
+    {
+      "id": "5f579434-2fc6-47e5-8eaa-69f9a5b0fa70",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.486Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "968c8c0f-c89b-4d41-9fd7-08247edbd10a",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.494Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "7f13f1e3-3639-4788-b78b-83f222a7ba45",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.496Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "57a53e32-5a9a-480a-b09b-57331af2f8b9",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.502Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "9e3ee47c-9f09-4686-ba7c-1533558eff47",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.504Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "92448910-ffec-4471-bb68-456c5106f6c1",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.510Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "0d5587da-d32c-4d42-b743-0658f92c53f9",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.512Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "10972ca1-4fbc-4521-a551-dbfa9cc90f8c",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        },
+        "Zachary": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.518Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "38007e41-437a-4a68-b9d3-127563a729c6",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:44.520Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "581e77e8-3d73-4d6e-9c97-92190af6dc23",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with William, George, and Zachary for Thursday, January 2nd",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:46.793Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "4529ea1c-a5fd-4418-ad2c-3bab5ea990a5",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          }
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "createdAt": "2025-10-10T20:49:49.630Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "5d664bf8-62f8-4255-8a5f-89948e1cd052",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          }
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "432bf7c8-dbcf-4415-bf54-caad797e599c",
+      "createdAt": "2025-10-10T20:50:31.589Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "a45f6299-7798-497d-8b11-6aeaba8b2767",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "e1989a91-3921-454e-a29f-8c1a24f8d6d4",
+      "createdAt": "2025-10-10T20:50:54.702Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "e2a26e4a-5d05-4b2c-9df2-36515b8e7a8d",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T18:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "ec76d124-4d1e-490f-b6bf-34b72eba8e08",
+      "createdAt": "2025-10-10T20:51:17.207Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "c36ce0e6-0959-4564-9ebe-b1da30d1c4eb",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          }
+        }
+      },
+      "createdByMessageId": "ec76d124-4d1e-490f-b6bf-34b72eba8e08",
+      "createdAt": "2025-10-10T20:51:21.041Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "cc78f1c9-23d6-4cf1-944b-9f92f1ed01d7",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "ec76d124-4d1e-490f-b6bf-34b72eba8e08",
+      "createdAt": "2025-10-10T20:51:26.871Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "ed14feaf-3a5e-4f1e-907c-3be918f26623",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": true,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "addf1011-1e8f-4882-ae50-e00d222e0f88",
+      "createdAt": "2025-10-10T20:52:33.125Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "601fb086-81f6-4950-a3d2-38e879eb0dfe",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "cf710d1b-d915-4b0e-a4ca-2c496106ab9b",
+      "createdAt": "2025-10-10T20:53:31.027Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "bd32348b-9313-4e16-9738-c91970aca138",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "68dd8e18-8a6a-47f3-a7ac-378acaae3435",
+      "createdAt": "2025-10-10T20:53:48.395Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "43bf829b-75ce-4c79-88c6-b37784a286c2",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "c7679e18-4d5a-4c9f-bbd4-27c392266361",
+      "createdAt": "2025-10-10T20:54:01.659Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "b32839d6-33ce-462b-864e-a82b25c84bf7",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "525ae373-be7a-468b-b7ab-0af898fada28",
+      "createdAt": "2025-10-10T20:54:13.394Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "aa86a74e-9144-4c82-8f5b-e8b269f4d85b",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "c18670cb-57de-4ad7-bc36-9fde91e4c62e",
+      "createdAt": "2025-10-10T20:54:27.969Z",
+      "createdByMessageRawTs": "1760129679.999"
+    },
+    {
+      "id": "86f6922f-5565-40fc-86f5-a27282ac21d9",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ],
+      "summary": "Schedule 1-hour meeting with Yasmin, William, George, and Zachary for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT)",
+      "isActive": false,
+      "perUserContext": {
+        "George": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.51",
+            "channelId": "D1760129384507"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T12:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Yasmin": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.493",
+            "channelId": "D1760129381731"
+          }
+        },
+        "William": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.502",
+            "channelId": "D1760129384499"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T06:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T00:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T09:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T10:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T09:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T13:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T11:00:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T14:30:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T17:30:00-05:00",
+              "free": false,
+              "start": "2025-01-02T14:30:00-05:00",
+              "summary": "Busy"
+            },
+            {
+              "end": "2025-01-02T23:59:00-05:00",
+              "free": true,
+              "start": "2025-01-02T17:30:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Zachary": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760129384.517",
+            "channelId": "D1760129384515"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T08:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T07:00:00-05:00",
+              "summary": "Morning Equipment Calibration"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": false,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Research Session"
+            },
+            {
+              "end": "2025-01-02T17:45:00-05:00",
+              "free": false,
+              "start": "2025-01-02T16:30:00-05:00",
+              "summary": "Equipment Maintenance"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "979ea1be-d91a-4f5c-b11f-2f84fe458e9b",
+      "createdAt": "2025-10-10T20:54:39.812Z",
+      "createdByMessageRawTs": "1760129679.999"
+    }
+  ],
+  "messages": [
+    {
+      "id": "df821133-9640-4f9c-9bb6-71b736ccc8f0",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Yasmin",
+      "channelId": "D1760129381731",
+      "text": "Hi Pivotal, I need to schedule a 1-hour meeting with William, George, and Zachary on Thursday, January 2nd between 6:00 AM and 6:00 PM. Can you help me find a time that works for everyone?",
+      "timestamp": "2025-10-10T20:49:41.733Z",
+      "rawTs": "1760129381.733",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129381.733",
+        "text": "Hi Pivotal, I need to schedule a 1-hour meeting with William, George, and Zachary on Thursday, January 2nd between 6:00 AM and 6:00 PM. Can you help me find a time that works for everyone?",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760129381731",
+        "event_ts": "1760129381.733",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c41b8dab-6df6-43f9-b451-6cc147a461f7",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129381731",
+      "text": "I'll help you schedule the meeting for Thursday, January 2nd. I'll reach out to William, George, and Zachary to gather their availability for that day.",
+      "timestamp": "2025-10-10T20:49:56.731Z",
+      "rawTs": "1760129396.731",
+      "threadTs": "1760129381.733",
+      "raw": {
+        "ts": "1760129396.731",
+        "text": "I'll help you schedule the meeting for Thursday, January 2nd. I'll reach out to William, George, and Zachary to gather their availability for that day.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129381731",
+        "event_ts": "1760129396.731",
+        "thread_ts": "1760129381.733",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "59b2ba37-50e5-4e2b-8907-1e9d8b16d374",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384499",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:49:56.923Z",
+      "rawTs": "1760129396.923",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129396.923",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384499",
+        "event_ts": "1760129396.923",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "1a1dbff4-9e58-47cf-bdc1-7bfeb620f918",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384507",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:49:56.965Z",
+      "rawTs": "1760129396.965",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129396.965",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384507",
+        "event_ts": "1760129396.965",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "4aaeae5d-a3ed-468b-bdcf-e3db10b4d2d9",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384515",
+      "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:49:57.012Z",
+      "rawTs": "1760129397.012",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129397.012",
+        "text": "Hi! Yasmin is scheduling a 1-hour meeting for Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384515",
+        "event_ts": "1760129397.012",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e831276a-6ed7-4632-bd98-084746be346f",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Yasmin",
+      "channelId": "D1760129381731",
+      "text": "Perfect, thank you! I need a 1-hour meeting with all three of them sometime between 6:00 AM and 6:00 PM on Thursday, January 2nd. Let me know what times work for everyone.",
+      "timestamp": "2025-10-10T20:50:06.694Z",
+      "rawTs": "1760129406.694",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129406.694",
+        "text": "Perfect, thank you! I need a 1-hour meeting with all three of them sometime between 6:00 AM and 6:00 PM on Thursday, January 2nd. Let me know what times work for everyone.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760129381731",
+        "event_ts": "1760129406.694",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "30f86efc-65b0-4dca-9c95-99730a2ada09",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129381731",
+      "text": "I've already reached out to William, George, and Zachary to gather their availability for Thursday, January 2nd. Once they respond, I'll find the best time that works for everyone.",
+      "timestamp": "2025-10-10T20:50:16.154Z",
+      "rawTs": "1760129416.154",
+      "threadTs": "1760129406.694",
+      "raw": {
+        "ts": "1760129416.154",
+        "text": "I've already reached out to William, George, and Zachary to gather their availability for Thursday, January 2nd. Once they respond, I'll find the best time that works for everyone.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129381731",
+        "event_ts": "1760129416.154",
+        "thread_ts": "1760129406.694",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "432bf7c8-dbcf-4415-bf54-caad797e599c",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "William",
+      "channelId": "D1760129384499",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 6:00-9:00 AM, 10:30-11:00 AM, 1:00-2:30 PM, or after 5:30 PM. Any of those windows work for Yasmin?",
+      "timestamp": "2025-10-10T20:50:20.901Z",
+      "rawTs": "1760129420.901",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129420.901",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have availability from 6:00-9:00 AM, 10:30-11:00 AM, 1:00-2:30 PM, or after 5:30 PM. Any of those windows work for Yasmin?",
+        "type": "message",
+        "user": "William",
+        "channel": "D1760129384499",
+        "event_ts": "1760129420.901",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "4d475184-8894-44af-be10-cf65d75cc374",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384499",
+      "text": "Got it! I've noted your availability for Thursday, January 2nd. Still waiting to hear back from George and Zachary.",
+      "timestamp": "2025-10-10T20:50:37.605Z",
+      "rawTs": "1760129437.605",
+      "threadTs": "1760129420.901",
+      "raw": {
+        "ts": "1760129437.605",
+        "text": "Got it! I've noted your availability for Thursday, January 2nd. Still waiting to hear back from George and Zachary.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384499",
+        "event_ts": "1760129437.605",
+        "thread_ts": "1760129420.901",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e1989a91-3921-454e-a29f-8c1a24f8d6d4",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "George",
+      "channelId": "D1760129384507",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few windows available: 6:00-7:00 AM, 12:00-2:00 PM, or after 5:30 PM would work best for me. What works for Yasmin?",
+      "timestamp": "2025-10-10T20:50:42.819Z",
+      "rawTs": "1760129442.819",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129442.819",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few windows available: 6:00-7:00 AM, 12:00-2:00 PM, or after 5:30 PM would work best for me. What works for Yasmin?",
+        "type": "message",
+        "user": "George",
+        "channel": "D1760129384507",
+        "event_ts": "1760129442.819",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "d7ad0b68-dd6b-49a7-bbbd-6268087d09a2",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384507",
+      "text": "Thanks! I've noted your availability. Still waiting to hear from Zachary.",
+      "timestamp": "2025-10-10T20:51:01.902Z",
+      "rawTs": "1760129461.902",
+      "threadTs": "1760129442.819",
+      "raw": {
+        "ts": "1760129461.902",
+        "text": "Thanks! I've noted your availability. Still waiting to hear from Zachary.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384507",
+        "event_ts": "1760129461.902",
+        "thread_ts": "1760129442.819",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "ec76d124-4d1e-490f-b6bf-34b72eba8e08",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Zachary",
+      "channelId": "D1760129384515",
+      "text": "Looking at my schedule for Thursday, I have a few windows that could work: 10:00-11:00 AM, 11:45 AM-12:00 PM (though that's only 15 minutes), 2:30-3:00 PM (30 minutes), or 4:30-5:30 PM. The 10:00-11:00 AM or 4:30-5:30 PM slots would give us the full hour Yasmin needs.",
+      "timestamp": "2025-10-10T20:51:07.469Z",
+      "rawTs": "1760129467.469",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129467.469",
+        "text": "Looking at my schedule for Thursday, I have a few windows that could work: 10:00-11:00 AM, 11:45 AM-12:00 PM (though that's only 15 minutes), 2:30-3:00 PM (30 minutes), or 4:30-5:30 PM. The 10:00-11:00 AM or 4:30-5:30 PM slots would give us the full hour Yasmin needs.",
+        "type": "message",
+        "user": "Zachary",
+        "channel": "D1760129384515",
+        "event_ts": "1760129467.469",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c70d668f-b8a7-4cb3-8305-c27bb6082cae",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384515",
+      "text": "Perfect! I found several options that work for everyone. Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you and Yasmin?",
+      "timestamp": "2025-10-10T20:51:36.983Z",
+      "rawTs": "1760129496.983",
+      "threadTs": "1760129467.469",
+      "raw": {
+        "ts": "1760129496.983",
+        "text": "Perfect! I found several options that work for everyone. Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you and Yasmin?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384515",
+        "event_ts": "1760129496.983",
+        "thread_ts": "1760129467.469",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f47da574-f56a-4c4e-8850-09a1012a9b08",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Yasmin",
+      "channelId": "D1760129381731",
+      "text": "Sounds good! I'm looking forward to hearing back from them. Just to confirm, I'm available for the full hour anytime between 6:00 AM and 6:00 PM on Thursday, so hopefully we can find a slot that works for everyone.",
+      "timestamp": "2025-10-10T20:51:40.875Z",
+      "rawTs": "1760129500.875",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129500.875",
+        "text": "Sounds good! I'm looking forward to hearing back from them. Just to confirm, I'm available for the full hour anytime between 6:00 AM and 6:00 PM on Thursday, so hopefully we can find a slot that works for everyone.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760129381731",
+        "event_ts": "1760129500.875",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "7db9755c-d006-47d0-abbf-a1334edc5edf",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129381731",
+      "text": "Great! I've already heard back from everyone. Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+      "timestamp": "2025-10-10T20:51:49.922Z",
+      "rawTs": "1760129509.922",
+      "threadTs": "1760129500.875",
+      "raw": {
+        "ts": "1760129509.922",
+        "text": "Great! I've already heard back from everyone. Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129381731",
+        "event_ts": "1760129509.922",
+        "thread_ts": "1760129500.875",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c003b76d-e531-436d-b7ae-06072a41abe3",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "William",
+      "channelId": "D1760129384499",
+      "text": "Sounds good, thanks for coordinating! Let me know once you hear back from them and we can lock in a time that works for everyone.",
+      "timestamp": "2025-10-10T20:51:53.262Z",
+      "rawTs": "1760129513.262",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129513.262",
+        "text": "Sounds good, thanks for coordinating! Let me know once you hear back from them and we can lock in a time that works for everyone.",
+        "type": "message",
+        "user": "William",
+        "channel": "D1760129384499",
+        "event_ts": "1760129513.262",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "fc369fe7-8462-45ff-ae55-9d04e849414f",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384499",
+      "text": "I've already heard back from everyone! Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+      "timestamp": "2025-10-10T20:52:07.320Z",
+      "rawTs": "1760129527.32",
+      "threadTs": "1760129513.262",
+      "raw": {
+        "ts": "1760129527.32",
+        "text": "I've already heard back from everyone! Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384499",
+        "event_ts": "1760129527.32",
+        "thread_ts": "1760129513.262",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "b38b68e8-66cc-4fe4-888e-06fcb1564252",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "George",
+      "channelId": "D1760129384507",
+      "text": "Sounds good! Let me know once you hear back from Zachary and we can lock in a time that works for everyone.",
+      "timestamp": "2025-10-10T20:52:10.926Z",
+      "rawTs": "1760129530.926",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129530.926",
+        "text": "Sounds good! Let me know once you hear back from Zachary and we can lock in a time that works for everyone.",
+        "type": "message",
+        "user": "George",
+        "channel": "D1760129384507",
+        "event_ts": "1760129530.926",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f74657b2-8fd0-4755-94c4-6ac9e20d960b",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384507",
+      "text": "I've already heard back from everyone! Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+      "timestamp": "2025-10-10T20:52:20.390Z",
+      "rawTs": "1760129540.39",
+      "threadTs": "1760129530.926",
+      "raw": {
+        "ts": "1760129540.39",
+        "text": "I've already heard back from everyone! Here are the best 1-hour slots for Thursday, January 2nd (EDT):\n\n• **6:00-7:00 AM** - Works for everyone\n• **1:00-2:00 PM** - Works for everyone  \n• **5:30-6:30 PM** - Works for everyone\n\nWhich time works best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384507",
+        "event_ts": "1760129540.39",
+        "thread_ts": "1760129530.926",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "addf1011-1e8f-4882-ae50-e00d222e0f88",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Zachary",
+      "channelId": "D1760129384515",
+      "text": "I see some conflicts with my schedule. The 6:00-7:00 AM slot overlaps with my Morning Equipment Calibration at 7:00 AM, and the 1:00-2:00 PM conflicts with my Research Session starting at 1:00 PM. The 5:30-6:30 PM slot would work perfectly though - it starts right after my Equipment Maintenance ends at 5:45 PM.",
+      "timestamp": "2025-10-10T20:52:25.143Z",
+      "rawTs": "1760129545.143",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129545.143",
+        "text": "I see some conflicts with my schedule. The 6:00-7:00 AM slot overlaps with my Morning Equipment Calibration at 7:00 AM, and the 1:00-2:00 PM conflicts with my Research Session starting at 1:00 PM. The 5:30-6:30 PM slot would work perfectly though - it starts right after my Equipment Maintenance ends at 5:45 PM.",
+        "type": "message",
+        "user": "Zachary",
+        "channel": "D1760129384515",
+        "event_ts": "1760129545.143",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "a09ae917-08d4-480c-b5f0-c677bf45bd77",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384515",
+      "text": "Thanks for clarifying! Based on your updated schedule, the 5:30-6:30 PM (EDT) slot is the only 1-hour window that works for everyone. I'll confirm this time with the group.",
+      "timestamp": "2025-10-10T20:52:46.767Z",
+      "rawTs": "1760129566.767",
+      "threadTs": "1760129545.143",
+      "raw": {
+        "ts": "1760129566.767",
+        "text": "Thanks for clarifying! Based on your updated schedule, the 5:30-6:30 PM (EDT) slot is the only 1-hour window that works for everyone. I'll confirm this time with the group.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384515",
+        "event_ts": "1760129566.767",
+        "thread_ts": "1760129545.143",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "3d7df1a4-46b9-4cb6-98ad-0595b1e9a714",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "C1760129566782",
+      "text": "Based on everyone's availability, the only 1-hour slot that works for all four of you is **Thursday, January 2nd from 5:30-6:30 PM (EDT)**. Does this time work for everyone?",
+      "timestamp": "2025-10-10T20:52:46.786Z",
+      "rawTs": "1760129566.786",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129566.786",
+        "text": "Based on everyone's availability, the only 1-hour slot that works for all four of you is **Thursday, January 2nd from 5:30-6:30 PM (EDT)**. Does this time work for everyone?",
+        "type": "message",
+        "user": "",
+        "channel": "C1760129566782",
+        "event_ts": "1760129566.786",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "f43dc7b8-4795-4d6c-895b-852c985d7c5c",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Yasmin",
+      "channelId": "D1760129381731",
+      "text": "That time works perfectly for me! I have an equipment maintenance check scheduled until 6:00 PM, so starting at 5:30 PM gives us a nice 30-minute buffer. Please go ahead and schedule the meeting for 5:30-6:30 PM on Thursday, January 2nd.",
+      "timestamp": "2025-10-10T20:52:51.058Z",
+      "rawTs": "1760129571.058",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129571.058",
+        "text": "That time works perfectly for me! I have an equipment maintenance check scheduled until 6:00 PM, so starting at 5:30 PM gives us a nice 30-minute buffer. Please go ahead and schedule the meeting for 5:30-6:30 PM on Thursday, January 2nd.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760129381731",
+        "event_ts": "1760129571.058",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "420b817d-0c63-4788-997e-3e2997352c5f",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129381731",
+      "text": "Perfect! I'm waiting for William, George, and Zachary to confirm, then I'll finalize the meeting for Thursday, January 2nd from 5:30-6:30 PM (EDT).",
+      "timestamp": "2025-10-10T20:53:00.230Z",
+      "rawTs": "1760129580.23",
+      "threadTs": "1760129571.058",
+      "raw": {
+        "ts": "1760129580.23",
+        "text": "Perfect! I'm waiting for William, George, and Zachary to confirm, then I'll finalize the meeting for Thursday, January 2nd from 5:30-6:30 PM (EDT).",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129381731",
+        "event_ts": "1760129580.23",
+        "thread_ts": "1760129571.058",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "605988c7-a512-4470-88de-656ce74a4a65",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "William",
+      "channelId": "D1760129384499",
+      "text": "Perfect! 5:30-6:30 PM works great for me - that's right after I finish my design work. Thanks for coordinating this!",
+      "timestamp": "2025-10-10T20:53:03.651Z",
+      "rawTs": "1760129583.651",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129583.651",
+        "text": "Perfect! 5:30-6:30 PM works great for me - that's right after I finish my design work. Thanks for coordinating this!",
+        "type": "message",
+        "user": "William",
+        "channel": "D1760129384499",
+        "event_ts": "1760129583.651",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "7760dcd5-9a5f-47ee-8ec5-4946ce5a7a4b",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384499",
+      "text": "Great! Still waiting to hear from George and Zachary, then I'll finalize the meeting.",
+      "timestamp": "2025-10-10T20:53:14.760Z",
+      "rawTs": "1760129594.76",
+      "threadTs": "1760129583.651",
+      "raw": {
+        "ts": "1760129594.76",
+        "text": "Great! Still waiting to hear from George and Zachary, then I'll finalize the meeting.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384499",
+        "event_ts": "1760129594.76",
+        "thread_ts": "1760129583.651",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "cf710d1b-d915-4b0e-a4ca-2c496106ab9b",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "George",
+      "channelId": "D1760129384507",
+      "text": "Perfect! 5:30-6:30 PM works great for me - it's right after I finish my daily specimen inventory. Count me in!",
+      "timestamp": "2025-10-10T20:53:18.918Z",
+      "rawTs": "1760129598.918",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129598.918",
+        "text": "Perfect! 5:30-6:30 PM works great for me - it's right after I finish my daily specimen inventory. Count me in!",
+        "type": "message",
+        "user": "George",
+        "channel": "D1760129384507",
+        "event_ts": "1760129598.918",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c3412ba6-776d-4cf0-b0cc-f30f5b158a99",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384507",
+      "text": "Excellent! That's confirmation from everyone. I'll finalize the meeting now.",
+      "timestamp": "2025-10-10T20:53:29.552Z",
+      "rawTs": "1760129609.552",
+      "threadTs": "1760129598.918",
+      "raw": {
+        "ts": "1760129609.552",
+        "text": "Excellent! That's confirmation from everyone. I'll finalize the meeting now.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384507",
+        "event_ts": "1760129609.552",
+        "thread_ts": "1760129598.918",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "99d8d9da-16c1-4f6a-a157-d8df365f3fbe",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "C1760129566782",
+      "text": "Locked in Thursday, January 2nd from 5:30-6:30 PM (EDT). Invite is on the way.",
+      "timestamp": "2025-10-10T20:53:29.568Z",
+      "rawTs": "1760129609.568",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129609.568",
+        "text": "Locked in Thursday, January 2nd from 5:30-6:30 PM (EDT). Invite is on the way.",
+        "type": "message",
+        "user": "",
+        "channel": "C1760129566782",
+        "event_ts": "1760129609.568",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "302143b6-2b52-4066-b882-70d36d478b97",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "C1760129566782",
+      "text": "Calendar event created for “Meeting with Yasmin, William, George, and Zachary”! 📅\nWhen: Jan 2, 2025, 5:30 PM (EDT) to 6:30 PM\nGoogle Meet link: https://meet.google.com/che-ivve-mcv",
+      "timestamp": "2025-10-10T20:53:31.023Z",
+      "rawTs": "1760129611.023",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129611.023",
+        "text": "Calendar event created for “Meeting with Yasmin, William, George, and Zachary”! 📅\nWhen: Jan 2, 2025, 5:30 PM (EDT) to 6:30 PM\nGoogle Meet link: https://meet.google.com/che-ivve-mcv",
+        "type": "message",
+        "user": "",
+        "channel": "C1760129566782",
+        "event_ts": "1760129611.023",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "68dd8e18-8a6a-47f3-a7ac-378acaae3435",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Zachary",
+      "channelId": "D1760129384515",
+      "text": "Perfect! Thanks for setting that up. I've got it locked in right after my equipment maintenance wraps up at 5:45 PM, so the timing works great.",
+      "timestamp": "2025-10-10T20:53:36.470Z",
+      "rawTs": "1760129616.47",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129616.47",
+        "text": "Perfect! Thanks for setting that up. I've got it locked in right after my equipment maintenance wraps up at 5:45 PM, so the timing works great.",
+        "type": "message",
+        "user": "Zachary",
+        "channel": "D1760129384515",
+        "event_ts": "1760129616.47",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "bbfe0596-7827-44ee-bf7f-8eb39ca2408f",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "UTESTBOT",
+      "channelId": "D1760129384515",
+      "text": "Great! The meeting is all set for Thursday, January 2nd from 5:30-6:30 PM (EDT).",
+      "timestamp": "2025-10-10T20:53:48.357Z",
+      "rawTs": "1760129628.357",
+      "threadTs": "1760129616.47",
+      "raw": {
+        "ts": "1760129628.357",
+        "text": "Great! The meeting is all set for Thursday, January 2nd from 5:30-6:30 PM (EDT).",
+        "type": "message",
+        "user": "",
+        "channel": "D1760129384515",
+        "event_ts": "1760129628.357",
+        "thread_ts": "1760129616.47",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c7679e18-4d5a-4c9f-bbd4-27c392266361",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Yasmin",
+      "channelId": "D1760129381731",
+      "text": "Excellent! Thank you for setting that up. I've got the meeting details saved and I'll see everyone on Thursday at 5:30 PM.",
+      "timestamp": "2025-10-10T20:53:52.497Z",
+      "rawTs": "1760129632.497",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129632.497",
+        "text": "Excellent! Thank you for setting that up. I've got the meeting details saved and I'll see everyone on Thursday at 5:30 PM.",
+        "type": "message",
+        "user": "Yasmin",
+        "channel": "D1760129381731",
+        "event_ts": "1760129632.497",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "525ae373-be7a-468b-b7ab-0af898fada28",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "William",
+      "channelId": "D1760129384499",
+      "text": "Excellent, thanks for setting that up! I've got the meeting details saved and I'll see everyone at 5:30 PM on Thursday.",
+      "timestamp": "2025-10-10T20:54:04.080Z",
+      "rawTs": "1760129644.08",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129644.08",
+        "text": "Excellent, thanks for setting that up! I've got the meeting details saved and I'll see everyone at 5:30 PM on Thursday.",
+        "type": "message",
+        "user": "William",
+        "channel": "D1760129384499",
+        "event_ts": "1760129644.08",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "c18670cb-57de-4ad7-bc36-9fde91e4c62e",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "George",
+      "channelId": "D1760129384507",
+      "text": "Great! I've got it on my calendar. Thanks for coordinating this, Pivotal - looking forward to connecting with everyone tomorrow evening!",
+      "timestamp": "2025-10-10T20:54:15.719Z",
+      "rawTs": "1760129655.719",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129655.719",
+        "text": "Great! I've got it on my calendar. Thanks for coordinating this, Pivotal - looking forward to connecting with everyone tomorrow evening!",
+        "type": "message",
+        "user": "George",
+        "channel": "D1760129384507",
+        "event_ts": "1760129655.719",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "979ea1be-d91a-4f5c-b11f-2f84fe458e9b",
+      "topicId": "babe06a5-e7be-4926-a94e-230088ba6d40",
+      "userId": "Zachary",
+      "channelId": "D1760129384515",
+      "text": "Excellent, thanks for coordinating everything! Looking forward to connecting with the team.",
+      "timestamp": "2025-10-10T20:54:29.986Z",
+      "rawTs": "1760129669.986",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760129669.986",
+        "text": "Excellent, thanks for coordinating everything! Looking forward to connecting with the team.",
+        "type": "message",
+        "user": "Zachary",
+        "channel": "D1760129384515",
+        "event_ts": "1760129669.986",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Yasmin",
+      "teamId": "T123456",
+      "realName": "Yasmin",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:49:39.000Z",
+      "raw": {
+        "id": "Yasmin",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760129379,
+        "real_name": "Yasmin"
+      }
+    },
+    {
+      "id": "William",
+      "teamId": "T123456",
+      "realName": "William",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:49:39.000Z",
+      "raw": {
+        "id": "William",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760129379,
+        "real_name": "William"
+      }
+    },
+    {
+      "id": "George",
+      "teamId": "T123456",
+      "realName": "George",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:49:39.000Z",
+      "raw": {
+        "id": "George",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760129379,
+        "real_name": "George"
+      }
+    },
+    {
+      "id": "Zachary",
+      "teamId": "T123456",
+      "realName": "Zachary",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:49:39.000Z",
+      "raw": {
+        "id": "Zachary",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760129379,
+        "real_name": "Zachary"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "C1760129566782",
+      "userIds": [
+        "Yasmin",
+        "William",
+        "George",
+        "Zachary"
+      ]
+    },
+    {
+      "id": "D1760129381731",
+      "userIds": [
+        "Yasmin"
+      ]
+    },
+    {
+      "id": "D1760129384499",
+      "userIds": [
+        "William"
+      ]
+    },
+    {
+      "id": "D1760129384507",
+      "userIds": [
+        "George"
+      ]
+    },
+    {
+      "id": "D1760129384515",
+      "userIds": [
+        "Zachary"
+      ]
+    }
+  ]
+}

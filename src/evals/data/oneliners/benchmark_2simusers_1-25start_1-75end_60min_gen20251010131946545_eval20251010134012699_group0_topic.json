@@ -1,0 +1,840 @@
+{
+  "loadUpToId": "493969a1-d2e4-4aec-bdcf-4b17370da447",
+  "expectedBehavior": "Only suggest times that fall within the originally requested window of 6am to 6pm",
+  "topic": {
+    "id": "1592f357-4189-4a24-8d30-16c008b09fa8",
+    "botUserId": "UTESTBOT",
+    "workflowType": "scheduling",
+    "slackTeamId": "T123456",
+    "createdAt": "2025-10-10T20:38:18.720Z"
+  },
+  "states": [
+    {
+      "id": "470203e5-de17-4163-bd0f-151a18c7cc97",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {},
+      "createdByMessageId": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "createdAt": "2025-10-10T20:38:18.723Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "7592c535-2768-4035-a0de-6350bdc755e6",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Rachel": {
+          "calendarPrompted": true
+        }
+      },
+      "createdByMessageId": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "createdAt": "2025-10-10T20:38:18.734Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "f434e456-fefa-4cb4-b917-037672418904",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          }
+        }
+      },
+      "createdByMessageId": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "createdAt": "2025-10-10T20:38:18.736Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "b63c122d-de69-4af4-a473-f7e73433911f",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          }
+        }
+      },
+      "createdByMessageId": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "createdAt": "2025-10-10T20:38:18.744Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "dec025f8-f385-490d-8524-6d5886ee2c9f",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          }
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          }
+        }
+      },
+      "createdByMessageId": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "createdAt": "2025-10-10T20:38:18.745Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "578cee0c-cf3d-4c2e-96ca-14d7cb3f5199",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          }
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available for meeting with Xara"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "45e9f8fb-c150-43b0-bedf-6f73208948fb",
+      "createdAt": "2025-10-10T20:38:39.409Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "cc55a3d6-9e33-42d3-95a1-5bf9108baf08",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": true,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T18:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available for meeting with Xara"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "493969a1-d2e4-4aec-bdcf-4b17370da447",
+      "createdAt": "2025-10-10T20:39:00.902Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "999c5f33-a7e8-489e-b6b9-8387bba31b10",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": false,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T18:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available for meeting with Xara"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "2c99c268-a0ba-43ba-adb7-4413c397b3f8",
+      "createdAt": "2025-10-10T20:39:44.800Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "f29b9e3d-1910-4241-94c7-ee4419dc4403",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": false,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T18:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available for meeting with Xara"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "e8aed3cd-2d40-4e3d-a30c-34ee769950aa",
+      "createdAt": "2025-10-10T20:39:57.118Z",
+      "createdByMessageRawTs": "1760128812.709"
+    },
+    {
+      "id": "8ecacc5e-3a56-4e00-834a-4b5fe7d89ad6",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ],
+      "summary": "Schedule 1-hour meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM",
+      "isActive": false,
+      "perUserContext": {
+        "Xara": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.743",
+            "channelId": "D1760128698740"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T07:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T11:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T10:30:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T14:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T13:00:00-05:00",
+              "summary": "Available"
+            },
+            {
+              "end": "2025-01-02T19:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T18:00:00-05:00",
+              "summary": "Available"
+            }
+          ]
+        },
+        "Rachel": {
+          "calendarPrompted": true,
+          "calendarPromptMessage": {
+            "ts": "1760128698.734",
+            "channelId": "D1760128695692"
+          },
+          "calendarManualOverrides": [
+            {
+              "end": "2025-01-02T23:00:00-05:00",
+              "free": true,
+              "start": "2025-01-02T06:00:00-05:00",
+              "summary": "Available for meeting with Xara"
+            }
+          ]
+        }
+      },
+      "createdByMessageId": "afb89897-6094-4993-9283-ca32227b16fa",
+      "createdAt": "2025-10-10T20:40:11.837Z",
+      "createdByMessageRawTs": "1760128812.709"
+    }
+  ],
+  "messages": [
+    {
+      "id": "937d7879-334d-401e-83a6-727a39a3f50c",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Rachel",
+      "channelId": "D1760128695692",
+      "text": "Hi Pivotal! I need to schedule a 1-hour meeting with Xara on Thursday, January 2nd sometime between 6:00 AM and 6:00 PM. Can you help me find a time that works for both of us?",
+      "timestamp": "2025-10-10T20:38:15.696Z",
+      "rawTs": "1760128695.696",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128695.696",
+        "text": "Hi Pivotal! I need to schedule a 1-hour meeting with Xara on Thursday, January 2nd sometime between 6:00 AM and 6:00 PM. Can you help me find a time that works for both of us?",
+        "type": "message",
+        "user": "Rachel",
+        "channel": "D1760128695692",
+        "event_ts": "1760128695.696",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "b3972918-bdc2-4069-9d47-ef8a8859d275",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128695692",
+      "text": "I'll help you schedule that meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). Let me reach out to Xara to check their availability for that day.",
+      "timestamp": "2025-10-10T20:38:27.686Z",
+      "rawTs": "1760128707.686",
+      "threadTs": "1760128695.696",
+      "raw": {
+        "ts": "1760128707.686",
+        "text": "I'll help you schedule that meeting with Xara on Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). Let me reach out to Xara to check their availability for that day.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128695692",
+        "event_ts": "1760128707.686",
+        "thread_ts": "1760128695.696",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "5fa1197a-45a9-496c-8377-a02e72d62490",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128698740",
+      "text": "Hi! Rachel would like to schedule a 1-hour meeting with you on Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+      "timestamp": "2025-10-10T20:38:27.700Z",
+      "rawTs": "1760128707.7",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128707.7",
+        "text": "Hi! Rachel would like to schedule a 1-hour meeting with you on Thursday, January 2nd between 6:00 AM and 6:00 PM (EDT). What times work best for you that day?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128698740",
+        "event_ts": "1760128707.7",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "45e9f8fb-c150-43b0-bedf-6f73208948fb",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Rachel",
+      "channelId": "D1760128695692",
+      "text": "Perfect, thank you! I have some availability gaps throughout the day on January 2nd, so I'm flexible within that timeframe.",
+      "timestamp": "2025-10-10T20:38:32.846Z",
+      "rawTs": "1760128712.846",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128712.846",
+        "text": "Perfect, thank you! I have some availability gaps throughout the day on January 2nd, so I'm flexible within that timeframe.",
+        "type": "message",
+        "user": "Rachel",
+        "channel": "D1760128695692",
+        "event_ts": "1760128712.846",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "2cc1ee58-6e50-4599-89d3-6564d2e05408",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128695692",
+      "text": "Got it! I'm waiting for Xara to confirm their availability for January 2nd, then I'll find a time that works for both of you.",
+      "timestamp": "2025-10-10T20:38:45.247Z",
+      "rawTs": "1760128725.247",
+      "threadTs": "1760128712.846",
+      "raw": {
+        "ts": "1760128725.247",
+        "text": "Got it! I'm waiting for Xara to confirm their availability for January 2nd, then I'll find a time that works for both of you.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128695692",
+        "event_ts": "1760128725.247",
+        "thread_ts": "1760128712.846",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "493969a1-d2e4-4aec-bdcf-4b17370da447",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Xara",
+      "channelId": "D1760128698740",
+      "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few windows that could work for a 1-hour meeting with Rachel: 6:00-7:00 AM, 10:30-11:00 AM (though that's only 30 minutes), 13:00-14:00 PM, or 18:00-19:00 PM. Would any of those times work for her?",
+      "timestamp": "2025-10-10T20:38:49.865Z",
+      "rawTs": "1760128729.865",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128729.865",
+        "text": "Hi! Looking at my schedule for Thursday, January 2nd, I have a few windows that could work for a 1-hour meeting with Rachel: 6:00-7:00 AM, 10:30-11:00 AM (though that's only 30 minutes), 13:00-14:00 PM, or 18:00-19:00 PM. Would any of those times work for her?",
+        "type": "message",
+        "user": "Xara",
+        "channel": "D1760128698740",
+        "event_ts": "1760128729.865",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "aa2cbe39-6b04-4376-a87d-222ad23c1ff0",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128698740",
+      "text": "Perfect! I found several options that work for both you and Rachel. Here are the 1-hour slots available: 6:00-7:00 AM (EDT), 1:00-2:00 PM (EDT), or 6:00-7:00 PM (EDT). Which time would you prefer?",
+      "timestamp": "2025-10-10T20:39:12.285Z",
+      "rawTs": "1760128752.285",
+      "threadTs": "1760128729.865",
+      "raw": {
+        "ts": "1760128752.285",
+        "text": "Perfect! I found several options that work for both you and Rachel. Here are the 1-hour slots available: 6:00-7:00 AM (EDT), 1:00-2:00 PM (EDT), or 6:00-7:00 PM (EDT). Which time would you prefer?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128698740",
+        "event_ts": "1760128752.285",
+        "thread_ts": "1760128729.865",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "bb0eb8da-f0c9-4a14-8d90-d41457c429f6",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128695692",
+      "text": "Great news! Xara has availability on January 2nd. Here are the 1-hour options that work for both of you: 6:00-7:00 AM (EDT), 1:00-2:00 PM (EDT), or 6:00-7:00 PM (EDT). Which time works best for you?",
+      "timestamp": "2025-10-10T20:39:12.300Z",
+      "rawTs": "1760128752.3",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128752.3",
+        "text": "Great news! Xara has availability on January 2nd. Here are the 1-hour options that work for both of you: 6:00-7:00 AM (EDT), 1:00-2:00 PM (EDT), or 6:00-7:00 PM (EDT). Which time works best for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128695692",
+        "event_ts": "1760128752.3",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "3ce54d4f-ac4e-4ca1-be81-2943a65f15b0",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Rachel",
+      "channelId": "D1760128695692",
+      "text": "The 6:00-7:00 PM slot works perfectly for me! Let's go with that time.",
+      "timestamp": "2025-10-10T20:39:16.116Z",
+      "rawTs": "1760128756.116",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128756.116",
+        "text": "The 6:00-7:00 PM slot works perfectly for me! Let's go with that time.",
+        "type": "message",
+        "user": "Rachel",
+        "channel": "D1760128695692",
+        "event_ts": "1760128756.116",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "79b8aef8-d6c5-4720-a437-f7be05c2b37d",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128695692",
+      "text": "Perfect! I'll confirm 6:00-7:00 PM (EDT) with Xara and finalize the meeting.",
+      "timestamp": "2025-10-10T20:39:26.845Z",
+      "rawTs": "1760128766.845",
+      "threadTs": "1760128756.116",
+      "raw": {
+        "ts": "1760128766.845",
+        "text": "Perfect! I'll confirm 6:00-7:00 PM (EDT) with Xara and finalize the meeting.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128695692",
+        "event_ts": "1760128766.845",
+        "thread_ts": "1760128756.116",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "9e773b1b-f7c7-4c77-ba0f-237e4bbaf035",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128698740",
+      "text": "Rachel confirmed 6:00-7:00 PM (EDT) on January 2nd works for her. Does this time still work for you?",
+      "timestamp": "2025-10-10T20:39:26.865Z",
+      "rawTs": "1760128766.865",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128766.865",
+        "text": "Rachel confirmed 6:00-7:00 PM (EDT) on January 2nd works for her. Does this time still work for you?",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128698740",
+        "event_ts": "1760128766.865",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "2c99c268-a0ba-43ba-adb7-4413c397b3f8",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Xara",
+      "channelId": "D1760128698740",
+      "text": "Yes, 6:00-7:00 PM works perfectly for me! That gives me a nice 15-minute buffer after my admin work ends at 6:00 PM. Please go ahead and confirm the meeting with Rachel.",
+      "timestamp": "2025-10-10T20:39:33.846Z",
+      "rawTs": "1760128773.846",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128773.846",
+        "text": "Yes, 6:00-7:00 PM works perfectly for me! That gives me a nice 15-minute buffer after my admin work ends at 6:00 PM. Please go ahead and confirm the meeting with Rachel.",
+        "type": "message",
+        "user": "Xara",
+        "channel": "D1760128698740",
+        "event_ts": "1760128773.846",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "863a1f03-716e-453b-94b7-034986b09ea0",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128698740",
+      "text": "Perfect! Meeting confirmed for 6:00-7:00 PM (EDT) on Thursday, January 2nd.",
+      "timestamp": "2025-10-10T20:39:43.337Z",
+      "rawTs": "1760128783.337",
+      "threadTs": "1760128773.846",
+      "raw": {
+        "ts": "1760128783.337",
+        "text": "Perfect! Meeting confirmed for 6:00-7:00 PM (EDT) on Thursday, January 2nd.",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128698740",
+        "event_ts": "1760128783.337",
+        "thread_ts": "1760128773.846",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "57886098-877d-4d2b-acc2-7807f72505fe",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "C1760128783345",
+      "text": "Locked in Thu Jan 2nd 6:00-7:00 PM (EDT). Invite is on the way.",
+      "timestamp": "2025-10-10T20:39:43.347Z",
+      "rawTs": "1760128783.347",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128783.347",
+        "text": "Locked in Thu Jan 2nd 6:00-7:00 PM (EDT). Invite is on the way.",
+        "type": "message",
+        "user": "",
+        "channel": "C1760128783345",
+        "event_ts": "1760128783.347",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "77b470e6-87f0-4708-97c7-7f2018b65220",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "C1760128783345",
+      "text": "Calendar event created for “Meeting with Rachel and Xara”! 📅\nWhen: Jan 2, 2025, 6:00 PM (EDT) to 7:00 PM\nGoogle Meet link: https://meet.google.com/oig-eaea-ksk",
+      "timestamp": "2025-10-10T20:39:44.795Z",
+      "rawTs": "1760128784.795",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128784.795",
+        "text": "Calendar event created for “Meeting with Rachel and Xara”! 📅\nWhen: Jan 2, 2025, 6:00 PM (EDT) to 7:00 PM\nGoogle Meet link: https://meet.google.com/oig-eaea-ksk",
+        "type": "message",
+        "user": "",
+        "channel": "C1760128783345",
+        "event_ts": "1760128784.795",
+        "channel_type": "channel"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "e8aed3cd-2d40-4e3d-a30c-34ee769950aa",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Rachel",
+      "channelId": "D1760128695692",
+      "text": "Excellent! Thank you for setting that up - I've got the meeting saved and the Google Meet link ready to go.",
+      "timestamp": "2025-10-10T20:39:48.741Z",
+      "rawTs": "1760128788.741",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128788.741",
+        "text": "Excellent! Thank you for setting that up - I've got the meeting saved and the Google Meet link ready to go.",
+        "type": "message",
+        "user": "Rachel",
+        "channel": "D1760128695692",
+        "event_ts": "1760128788.741",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "afb89897-6094-4993-9283-ca32227b16fa",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "Xara",
+      "channelId": "D1760128698740",
+      "text": "Perfect, thank you! I've received the calendar invite and have the Google Meet link saved. Looking forward to connecting with Rachel tomorrow evening!",
+      "timestamp": "2025-10-10T20:40:00.090Z",
+      "rawTs": "1760128800.09",
+      "threadTs": null,
+      "raw": {
+        "ts": "1760128800.09",
+        "text": "Perfect, thank you! I've received the calendar invite and have the Google Meet link saved. Looking forward to connecting with Rachel tomorrow evening!",
+        "type": "message",
+        "user": "Xara",
+        "channel": "D1760128698740",
+        "event_ts": "1760128800.09",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    },
+    {
+      "id": "72dfbb00-290c-48a2-83b5-e31cdb1bfa06",
+      "topicId": "1592f357-4189-4a24-8d30-16c008b09fa8",
+      "userId": "UTESTBOT",
+      "channelId": "D1760128698740",
+      "text": "Great! The meeting is all set for tomorrow at 6:00 PM (EDT).",
+      "timestamp": "2025-10-10T20:40:11.824Z",
+      "rawTs": "1760128811.824",
+      "threadTs": "1760128800.09",
+      "raw": {
+        "ts": "1760128811.824",
+        "text": "Great! The meeting is all set for tomorrow at 6:00 PM (EDT).",
+        "type": "message",
+        "user": "",
+        "channel": "D1760128698740",
+        "event_ts": "1760128811.824",
+        "thread_ts": "1760128800.09",
+        "channel_type": "im"
+      },
+      "autoMessageId": null
+    }
+  ],
+  "users": [
+    {
+      "id": "Rachel",
+      "teamId": "T123456",
+      "realName": "Rachel",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:38:13.000Z",
+      "raw": {
+        "id": "Rachel",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128693,
+        "real_name": "Rachel"
+      }
+    },
+    {
+      "id": "Xara",
+      "teamId": "T123456",
+      "realName": "Xara",
+      "email": null,
+      "tz": "America/New_York",
+      "isBot": false,
+      "deleted": false,
+      "updated": "2025-10-10T20:38:13.000Z",
+      "raw": {
+        "id": "Xara",
+        "tz": "America/New_York",
+        "is_bot": false,
+        "deleted": false,
+        "team_id": "T123456",
+        "updated": 1760128693,
+        "real_name": "Xara"
+      }
+    }
+  ],
+  "userData": [],
+  "channels": [
+    {
+      "id": "C1760128783345",
+      "userIds": [
+        "Rachel",
+        "Xara"
+      ]
+    },
+    {
+      "id": "D1760128695692",
+      "userIds": [
+        "Rachel"
+      ]
+    },
+    {
+      "id": "D1760128698740",
+      "userIds": [
+        "Xara"
+      ]
+    }
+  ]
+}
