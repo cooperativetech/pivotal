@@ -1,0 +1,26 @@
+{
+  "benchmark": {
+    "nSimUsers": 2,
+    "genTimestamp": "20251010162005105",
+    "goal": "Ask a general query about meeting times",
+    "benchmarkType": "free",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Charlie",
+      "goal": "Ask a general query about meeting times",
+      "calendar": [],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Oliver",
+      "goal": "",
+      "calendar": [],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
