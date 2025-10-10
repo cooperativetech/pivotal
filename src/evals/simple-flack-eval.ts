@@ -63,6 +63,7 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
 }
 import { BaseScheduleUser } from './sim-users'
 import { type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
+import { z } from 'zod'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -190,7 +191,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     // Construct inverse mapping: user -> group
     userGroupMapping = {}
     groupUserMapping.forEach((userNames, groupIndex) => {
-      userNames.forEach(userName => {
+      userNames.forEach((userName) => {
         if (userGroupMapping![userName] !== undefined) {
           throw new Error(`When topicRouting is false, users cannot be in multiple groups. User '${userName}' found in both group ${userGroupMapping![userName]} and group ${groupIndex}`)
         }
@@ -325,7 +326,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
                   throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
                 }
 
-                const topicIndex = topicIds.findIndex(topicId => topicId === responseTopicId)
+                const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
                 if (topicIndex === -1) {
                   throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
                 }
@@ -362,7 +363,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
         const groupUserNames = groupUserMapping[groupIndex] || []
-        const groupUsers = groupUserNames.map(name => simUsers[name])
+        const groupUsers = groupUserNames.map((name) => simUsers[name])
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
@@ -401,7 +402,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     if (topicId) {
       // Find a user from this specific group to query the topic
       const groupUserNames = groupUserMapping[i] || []
-      const validUserName = groupUserNames.find(name => simUsers[name])
+      const validUserName = groupUserNames.find((name) => simUsers[name])
       const groupUser = validUserName ? simUsers[validUserName] : null
       if (!groupUser) {
         throw new Error(`No user found for group ${i}`)
@@ -505,10 +506,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     // Step 2: Load benchmark file(s) and agents from benchmark data
     console.log('\nLoading benchmark data...')
 
-    let nGroups: number
-    let groupUserMapping: string[][]
-    let simUsers: Record<string, BaseScheduleUser> = {}
-    let benchmarkData: any
+    const simUsers: Record<string, BaseScheduleUser> = {}
 
     // Load all JSON files from the benchmark folder
     const folderPath = join(__dirname, 'data', benchmarkName)
@@ -518,8 +516,8 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     const files = readdirSync(folderPath)
     const filesToLoad = files
-      .filter(file => file.endsWith('.json'))
-      .map(file => join(folderPath, file))
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => join(folderPath, file))
       .sort()
 
     if (filesToLoad.length === 0) {
@@ -528,7 +526,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     console.log(`Loading benchmark data from ${filesToLoad.length} file(s)`)
 
-    const groupData: Array<{ benchmarkData: any; simUsers: BaseScheduleUser[] }> = []
+    const groupData: Array<{ benchmarkData: z.infer<typeof BenchmarkFileData>; simUsers: BaseScheduleUser[] }> = []
 
     // Load each file
     for (let i = 0; i < filesToLoad.length; i++) {
@@ -575,11 +573,11 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     console.log(`Loaded ${Object.keys(simUsers).length} unique simUsers from ${filesToLoad.length} file(s)`)
 
     // Create groupUserMapping based on loaded groups
-    groupUserMapping = groupData.map(group => group.simUsers.map(simUser => simUser.name))
+    const groupUserMapping = groupData.map((group) => group.simUsers.map((simUser) => simUser.name))
 
     // Use the first group's benchmark data as the template
-    benchmarkData = groupData[0].benchmarkData
-    nGroups = filesToLoad.length
+    const benchmarkData = groupData[0].benchmarkData
+    const nGroups = filesToLoad.length
 
     console.log(`Loaded ${Object.keys(simUsers).length} total simUsers across ${nGroups} groups`)
 
@@ -588,7 +586,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       // Find which group(s) this user belongs to
       const userGroups = groupUserMapping
         .map((userNames, groupIndex) => userNames.includes(simUser.name) ? groupIndex : -1)
-        .filter(groupIndex => groupIndex !== -1)
+        .filter((groupIndex) => groupIndex !== -1)
 
       const groupDisplay = userGroups.length > 0 ? userGroups.join(', ') : 'unknown'
       console.log(`  - ${simUser.name} (Group ${groupDisplay}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
@@ -603,8 +601,8 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       const groupUsers = groupUserMapping[groupIndex]
       const goalUser = groupUsers
-        .map(name => simUsers[name])
-        .find(user => user.goal && user.goal.trim() !== '')
+        .map((name) => simUsers[name])
+        .find((user) => user.goal && user.goal.trim() !== '')
       if (goalUser) {
         groupGoalInitializer.push(goalUser.name)
       } else {
@@ -668,7 +666,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
       // Get users for this group
       const groupUserNames = groupUserMapping[groupIndex] || []
-      const groupUsers = groupUserNames.map(name => simUsers[name])
+      const groupUsers = groupUserNames.map((name) => simUsers[name])
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
       const commonFreeSlots = findCommonFreeTime(groupUsers, benchmarkStartTime, benchmarkEndTime)
