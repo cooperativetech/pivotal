@@ -1,6 +1,6 @@
 {
   "loadUpToId": "5ffeaba6-9ac4-4775-b71c-7810c74b1639",
-  "expectedBehavior": "Only suggest times when everyone has said they are free. For instance, multiple users haven't said they are free on Friday at 3pm.",
+  "expectedBehavior": "Only suggest times when everyone has said they are free. For instance, multiple users haven't said they are free on Friday at 3pm. At the same time, all users have already supplied their availabilities, so the bot shouldn't say it's reaching out to any individual user either.",
   "topic": {
     "id": "c5d20868-8863-4bb5-b350-62bdfd90715c",
     "botUserId": "UTESTBOT",

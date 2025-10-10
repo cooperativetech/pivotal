@@ -436,6 +436,9 @@ async function runSimpleEvaluation(): Promise<void> {
     // Step 1: Parse command line arguments
     const { benchmarkSet, benchmark, nReps, topicRouting } = parseArguments()
 
+    // Clear database once at the beginning
+    await clearDatabase()
+
     // Step 2: Determine what to run based on arguments
     let benchmarksToRun: string[] = []
 
@@ -500,10 +503,7 @@ async function runRepeatedEvaluation(benchmarkName: string, nReps: number, topic
 // Run a single evaluation for a specific benchmark folder
 async function runSingleEvaluation(benchmarkName: string, topicRouting = false): Promise<SavedEvaluationResults | null> {
   try {
-    // Step 1: Clear database
-    await clearDatabase()
-
-    // Step 2: Load benchmark file(s) and agents from benchmark data
+    // Step 1: Load benchmark file(s) and agents from benchmark data
     console.log('\nLoading benchmark data...')
 
     const simUsers: Record<string, BaseScheduleUser> = {}
@@ -592,11 +592,11 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       console.log(`  - ${simUser.name} (Group ${groupDisplay}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
-    // Step 3: Create users in database
+    // Step 2: Create users in database
     console.log('\nCreating users in database...')
     await createUsersFromSimUsers(simUsers)
 
-    // Step 4: Construct groupGoalInitializer (find the user with a goal in each group)
+    // Step 3: Construct groupGoalInitializer (find the user with a goal in each group)
     const groupGoalInitializer: string[] = []
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       const groupUsers = groupUserMapping[groupIndex]
@@ -610,7 +610,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       }
     }
 
-    // Step 5: Run turn-based simulation
+    // Step 4: Run turn-based simulation
     const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, groupUserMapping, groupGoalInitializer)
 
     // Log conversation completion for each group
