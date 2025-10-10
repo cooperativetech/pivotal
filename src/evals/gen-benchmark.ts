@@ -203,7 +203,7 @@ async function generateMultiGroupBenchmarks() {
   // Ensure benchmarks directory exists
   if (!existsSync(benchmarksPath)) {
     await mkdir(benchmarksPath, { recursive: true })
-    console.log(`Created benchmarks directory`)
+    console.log('Created benchmarks directory')
   }
 
   if (genTimestamp) {
@@ -211,7 +211,7 @@ async function generateMultiGroupBenchmarks() {
     useTimestamp = genTimestamp
 
     const existingFolders = readdirSync(benchmarksPath)
-    const matchingFolder = existingFolders.find(folder => folder.endsWith(`_gen${useTimestamp}`))
+    const matchingFolder = existingFolders.find((folder) => folder.endsWith(`_gen${useTimestamp}`))
 
     if (!matchingFolder) {
       throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. No folder ending with _gen${genTimestamp} found in benchmarks directory.`)
