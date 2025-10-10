@@ -1,0 +1,182 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T12:55:12.000Z",
+    "startTimeOffset": 1.33,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "nGroups": 1,
+    "userGroupMapping": {
+      "Alice": 0,
+      "Bob": 0,
+      "Charlie": 0,
+      "Diana": 0
+    },
+    "genTimestamp": "20250930142629648"
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 7:55 AM and Thursday, January 2 at 6:00 PM with Bob, Charlie, Diana",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Client Session - Anxiety Management (Virtual)"
+        },
+        {
+          "start": "2025-01-02T15:15:00.000Z",
+          "end": "2025-01-02T16:15:00.000Z",
+          "summary": "Research Block - AI-Assisted Therapy Tools"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Client Session - Depression Treatment (In-Person)"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Team Meeting - Digital Mental Health Platform Development"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Client Session - Couples Therapy (Virtual)"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Documentation & Notes Review"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Webinar: 'Integrating VR Therapy in Clinical Practice'"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Lab Sample Analysis - Marine Biocompounds"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Team Meeting: Algae-based Drug Discovery Project"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Research Block - Literature Review on Marine Antimicrobials"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Biotech Partnership Call - Coral Reef Therapeutics"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Data Analysis - Clinical Trial Prep for Seaweed Extract"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Grant Application Review - NIH Marine Medicine Initiative"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Farm Site Visit - Winter Crop Documentation"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Agricultural Art Commission Planning"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Studio Work - Botanical Illustration Series"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Video Call - Sustainable Farming Art Exhibition"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Client Consultation - Heritage Seed Packaging Design"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Diana",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Vehicle Pre-Trip Inspection"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:00:00.000Z",
+          "summary": "Route Planning & Documentation Review"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:15:00.000Z",
+          "summary": "Daily Safety Briefing"
+        },
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Medical Supply Delivery - St. Mary's Hospital"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Pharmaceutical Pickup - Johnson & Johnson Distribution"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Temperature-Controlled Delivery - Regional Medical Center"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "End-of-Day Vehicle Inspection & Log Completion"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "DOT Hours Review & Next Day Planning"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

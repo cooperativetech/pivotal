@@ -1,8 +1,9 @@
 import { hc } from 'hono/client'
 import { createAuthClient } from 'better-auth/client'
 import type { BetterAuthClientPlugin } from 'better-auth/client'
+import { organizationClient } from 'better-auth/client/plugins'
 import type { AppType } from '../server'
-import type { githubAppInstallationPlugin } from '../auth'
+import type { githubAppInstallationPlugin, slackAppInstallationPlugin } from '../auth'
 
 // Use relative URL when running frontend code
 // Use direct URL to local server when running outside frontend code (e.g. in evals)
@@ -14,6 +15,16 @@ const appType = hc<AppType>(apiBaseURL)
 export const { api, local_api } = appType
 
 // Better Auth client
+
+function slackAppInstallationPluginClient() {
+  return {
+    id: 'slack-app-installation',
+    $InferServerPlugin: {} as ReturnType<typeof slackAppInstallationPlugin>,
+    pathMethods: {
+      '/slack-app/uninstall': 'POST',
+    },
+  } satisfies BetterAuthClientPlugin
+}
 
 function githubAppInstallationPluginClient() {
   return {
@@ -27,6 +38,8 @@ function githubAppInstallationPluginClient() {
 
 export const authClient = createAuthClient({
   plugins: [
+    organizationClient(),
+    slackAppInstallationPluginClient(),
     githubAppInstallationPluginClient(),
   ],
 })

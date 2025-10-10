@@ -14,8 +14,10 @@ import {
   slackMessageTable,
   topicTable,
 } from './db/schema/main'
+import { organizationTable } from './db/schema/auth'
 
 export const BOT_USER_ID = 'UTESTBOT'
+export const FAKE_TEAM_ID = 'T123456'
 
 export async function getOrCreateChannelForUsers(userIds: string[]): Promise<string> {
   // Sort userIds for consistent comparison (bot is NOT included)
@@ -50,15 +52,29 @@ export async function getOrCreateChannelForUsers(userIds: string[]): Promise<str
   })
 }
 
+async function upsertFakeOrganization(): Promise<void> {
+  await db
+    .insert(organizationTable)
+    .values({
+      id: 'test-org',
+      slackTeamId: FAKE_TEAM_ID,
+      name: 'Test Organization',
+    })
+    .onConflictDoNothing()
+}
+
 export async function upsertFakeUser(params: {
   id: string,
   realName: string,
   isBot?: boolean,
   tz?: string
 }): Promise<SlackUser> {
+  // Ensure fake organization exists before creating user
+  await upsertFakeOrganization()
+
   const userToUpsert: SlackUserInsert = {
     id: params.id,
-    teamId: 'T123456',
+    teamId: FAKE_TEAM_ID,
     realName: params.realName,
     deleted: false,
     isBot: params.isBot || false,

@@ -6,7 +6,7 @@ import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
 import type { ConversationContext } from './conversation-utils'
-import { ConversationAgent, ConversationRes, updateSummary, updateUserNames } from './conversation-utils'
+import { updateSummary, updateUserNames, makeConversationAgent } from './conversation-utils'
 import { getUserCalendarStructured, listBotScheduledEvents, updateTopicUserContext } from '../calendar-service'
 import { isGoogleCalendarConnected } from '../integrations/google'
 import type { UserProfile } from '../tools/time_intersection'
@@ -172,6 +172,9 @@ async function schedulingInstructions(runContext: RunContext<ConversationContext
 - Be explicit about timezone differences when they exist between participants
 - When proposing times to multiple users with different timezones, show the time in each user's timezone
 
+## Responsiveness
+- Always provide a helpful reply whenever the user sends a direct message or addresses you explicitly. Never leave a user query unanswered.
+
 ## Current Context
 You will receive:
 - The current message from a user
@@ -216,6 +219,7 @@ Based on the current state, determine what tools to call (if any) and generate t
   - If all users reply that this time works for them, or they agree to cancel the meeting, set markTopicInactive: true to indicate this topic should be marked inactive
   - When the meeting is cancelled, also set cancelEvent: true so the existing calendar invite is deleted (and normally skip finalizedEvent)
   - When finalizing a specific meeting time, ALSO include a finalizedEvent object with exact ISO start and end fields and a summary. The system will use this to send a calendar invite from the meeting leader.
+  - Set finalizedEvent.summary to 'Meeting with <list of all confirmed human participants>' using the exact full names (include the scheduler/initiator even if they requested the meeting).
   - Pair the finalizedEvent with a short groupMessage confirming the plan (e.g., "Locked in Tue 1pm (EST). Invite is on the way."), but do not include calendar links or restate the full invite details yourself.
 
 - Miscellaneous actions needed
@@ -239,6 +243,7 @@ Based on the current state, determine what tools to call (if any) and generate t
 - When users are in different timezones, show times in each user's local timezone
 - Use common sense for activity timing (coffee = morning/afternoon, dinner = evening)
 - Use the updateSummary tool whenever new information clarifies or changes the meeting details
+- When you revise the topic summary or finalizedEvent summary, list every confirmed attendee explicitly (include the scheduler/initiator so the meeting title reads like 'Meeting with Alice, Bob, and Taylor').
 - messagesToUsers always sends private 1-1 DMs; groupMessage always sends to a shared channel with all topic users
 - CRITICAL: When you include a finalizedEvent, include a concise groupMessage confirming the decision. Let the platform announce the calendar update, and avoid duplicating the invite details or sharing Meet links manually.
 - ALWAYS return a well-formed JSON object that matches the required schema, including the reasoning field.
@@ -271,7 +276,7 @@ Based on the current state, determine what tools to call (if any) and generate t
     * Example: "I'm busy 2-3pm" → ONLY create: 2pm-3pm (busy). Do NOT add any free events.
 
 ## CRITICAL TOOL USAGE
-You have access to FOUR tools, but you can ONLY USE ONE per response:
+You have access to FOUR tools and can call multiple tools in sequence within the same turn. After a tool completes, you'll immediately get another chance to act—keep calling whichever tools you still need until you're ready to send the final JSON response. Only return JSON once all necessary tool calls for this turn are finished; never stop mid-sequence with an empty reply.
 
 1. **findFreeSlots**: Finds mathematically accurate free time slots
    - USE THIS before proposing any meeting times when you have calendar data
@@ -302,11 +307,10 @@ You have access to FOUR tools, but you can ONLY USE ONE per response:
 
 ## Response Format
 When calling a tool:
-- Do NOT return any JSON or text content
-- Simply call the tool and let it execute
+- Output NOTHING - just call the tool
 - The tool response will be handled automatically
 
-When NOT calling a tool, return ONLY a JSON object with these fields:
+When ready to provide your final response, call the \`output\` tool with these fields:
 {
   "replyMessage": "Message text",  // Optional: Include to reply to the sent message
   "markTopicInactive": true,      // Optional: Include to mark topic as inactive
@@ -325,16 +329,34 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
   "finalizedEvent": {               // OPTIONAL: Include ONLY when the exact final time is agreed
     "start": "2025-03-12T18:00:00Z", // ISO string
     "end": "2025-03-12T18:30:00Z",   // ISO string
-    "summary": "Weekly sync"         // Required when object is present
+    "summary": "Meeting with Alice, Bob, and Chris" // Must list every confirmed participant, including the scheduler
   },
   "cancelEvent": true,              // OPTIONAL: Set true when the meeting is cancelled and the calendar invite should be deleted
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
+CRITICAL: Output NOTHING when calling the \`output\` tool - just call the tool with the parameters
+- Do not include any text or explanation before or after calling the \`output\` tool
+
 IMPORTANT:
-- When calling tools: Output NOTHING - just call the tool
-- When not calling tools: Return ONLY the JSON object above
-- Do not include any text before or after the JSON`
+- When calling ANY tool (including the \`output\` tool): Output NOTHING - just call the tool
+- When ready to provide your final response: Call the \`output\` tool with the fields above
+- CRITICAL: Do NOT output any text, explanation, or commentary when calling the \`output\` tool
+- The \`output\` tool accepts the same structure as before - just call it instead of returning JSON directly
+- Common mistakes to avoid:
+  * Outputting text or explanation when calling the \`output\` tool (output NOTHING)
+  * Forgetting to call the \`output\` tool when ready to respond
+  * Mixing tool calls with text output in the same response
+- Example waiting response (call the output tool):
+  output({
+    "replyMessage": "",
+    "markTopicInactive": false,
+    "messagesToUsers": null,
+    "groupMessage": null,
+    "finalizedEvent": null,
+    "cancelEvent": null,
+    "reasoning": "Waiting for Bob to confirm availability"
+  })`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
 
@@ -419,15 +441,14 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
   return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
 }
 
-export const schedulingAgent = new ConversationAgent({
+export const schedulingAgent = makeConversationAgent({
   name: 'schedulingAgent',
   model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,
-    parallelToolCalls: false, // Only allow one tool call at a time
+    parallelToolCalls: false,
   },
   tools: [findFreeSlots, updateUserNames, updateUserCalendar, updateSummary],
-  outputType: ConversationRes,
   instructions: schedulingInstructions,
 })

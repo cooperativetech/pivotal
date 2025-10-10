@@ -1,5 +1,4 @@
 import { CronJob } from 'cron'
-import type { WebClient } from '@slack/web-api'
 import { google } from 'googleapis'
 import type { calendar_v3, docs_v1, drive_v3 } from 'googleapis'
 
@@ -8,7 +7,10 @@ import {
   getPendingMeetingSummaries,
   markMeetingSummaryPosted,
   updateMeetingSummaryProcessing,
+  type PendingMeetingArtifact,
 } from './meeting-artifacts'
+import { processActionItemsForArtifact, buildActionItemsMessage } from './action-items-processor'
+import { getSlackClientForTeam } from './integrations/slack'
 
 const CALENDAR_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
@@ -248,7 +250,7 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
   return sections.join('\n\n')
 }
 
-async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient): Promise<void> {
+async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
   const cutoff = Date.now() - MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
   if (artifact.endTime.getTime() > cutoff) {
     return
@@ -305,7 +307,24 @@ async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient
     }
   }
 
+  // Process action items if transcript text is available
+  let actionItemsResult = null
+  if (text && !artifact.actionItemsProcessedAt) {
+    try {
+      actionItemsResult = await processActionItemsForArtifact(artifact, text)
+    } catch (error) {
+      console.error(`[MeetingSummaryWorker] Action items processing failed for artifact ${artifact.id}:`, error)
+    }
+  }
+
   const message = buildSummaryMessage(text, link, artifact)
+
+  const slackClient = await getSlackClientForTeam(artifact.slackTeamId)
+
+  if (!slackClient) {
+    console.warn(`[MeetingSummaryWorker] No Slack client available for team ${artifact.slackTeamId}, skipping post for artifact ${artifact.id}.`)
+    return
+  }
 
   try {
     const res = await slackClient.chat.postMessage({
@@ -321,6 +340,22 @@ async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient
       return
     }
 
+    // Post action items as separate message in same thread
+    if (actionItemsResult) {
+      const actionItemsMessage = buildActionItemsMessage(actionItemsResult)
+      try {
+        await slackClient.chat.postMessage({
+          channel: artifact.originChannelId,
+          text: actionItemsMessage,
+          thread_ts: artifact.originThreadTs || res.ts,
+          unfurl_links: false,
+          unfurl_media: false,
+        })
+      } catch (error) {
+        console.error(`[MeetingSummaryWorker] Failed to post action items for artifact ${artifact.id}:`, error)
+      }
+    }
+
     await markMeetingSummaryPosted(artifact.id, artifact.originChannelId, res.ts)
   } catch (error) {
     console.error(`[MeetingSummaryWorker] Slack post failed for artifact ${artifact.id}:`, error)
@@ -329,7 +364,7 @@ async function processArtifact(artifact: MeetingArtifact, slackClient: WebClient
 
 let isProcessing = false
 
-async function checkMeetingSummaries(slackClient: WebClient): Promise<void> {
+async function checkMeetingSummaries(): Promise<void> {
   if (isProcessing) return
   isProcessing = true
   try {
@@ -337,7 +372,7 @@ async function checkMeetingSummaries(slackClient: WebClient): Promise<void> {
     if (!pending.length) return
 
     for (const artifact of pending) {
-      await processArtifact(artifact, slackClient)
+      await processArtifact(artifact)
     }
   } catch (error) {
     console.error('[MeetingSummaryWorker] Error while checking meeting summaries:', error)
@@ -346,13 +381,13 @@ async function checkMeetingSummaries(slackClient: WebClient): Promise<void> {
   }
 }
 
-export async function runMeetingSummaryWorkerOnce(slackClient: WebClient): Promise<void> {
-  await checkMeetingSummaries(slackClient)
+export async function runMeetingSummaryWorkerOnce(): Promise<void> {
+  await checkMeetingSummaries()
 }
 
-export function startMeetingSummaryCron(slackClient: WebClient): void {
-  const job = new CronJob('45 * * * * *', () => {
-    void checkMeetingSummaries(slackClient)
+export function startMeetingSummaryCron(): void {
+  const job = new CronJob('*/5 * * * *', () => {
+    void checkMeetingSummaries()
   })
   job.start()
 }

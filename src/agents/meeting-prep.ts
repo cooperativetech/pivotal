@@ -1,19 +1,22 @@
 import type { RunContext } from './agent-sdk'
 import type { ConversationContext } from './conversation-utils'
-import { ConversationAgent, ConversationRes, updateSummary, updateUserNames, scheduleAutoMessage, showUserCalendar } from './conversation-utils'
+import { updateSummary, updateUserNames, scheduleAutoMessage, showUserCalendar, makeConversationAgent } from './conversation-utils'
 import { getOrgActionItems, editOrgActionItems } from './org-context'
 import { isGoogleCalendarConnected } from '../integrations/google'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 
 async function meetingPrepInstructions(runContext: RunContext<ConversationContext>) {
-  const mainPrompt = `You are a meeting preparation assistant that helps create meeting agendas. Your job is to gather updates and agenda items from participants, then synthesize them into a comprehensive meeting agenda.
+const mainPrompt = `You are a meeting preparation assistant that helps create meeting agendas. Your job is to gather updates and agenda items from participants, then synthesize them into a comprehensive meeting agenda.
 
 ## Current Context
 You will receive:
 - The current message from a user
 - The topic information including all users currently involved
 - The topic summary describing what has been prepared so far
+
+## Responsiveness
+- Always send a concise, helpful reply whenever the user pings you directly or mentions you. Do not leave questions unanswered.
 
 ## Your Task
 Based on the current state, determine what tools to call (if any) and generate the appropriate message(s) to users to gather updates and create the meeting agenda
@@ -176,7 +179,7 @@ CRITICAL: When calling a tool:
 - The tool response will be handled automatically
 - DO NOT provide any response content when calling tools
 
-When NOT calling a tool, return ONLY a JSON object with these fields:
+When ready to provide your final response, call the \`output\` tool with these fields:
 {
   "replyMessage": "Message text",  // Optional: Include to reply to the sent message
   "markTopicInactive": true,      // Optional: Include to mark topic as inactive
@@ -194,10 +197,17 @@ When NOT calling a tool, return ONLY a JSON object with these fields:
   "reasoning": "Brief explanation of the decision"  // REQUIRED: Always include reasoning
 }
 
+CRITICAL: Output NOTHING when calling the \`output\` tool - just call the tool with the parameters
+- Do not include any text or explanation before or after calling the \`output\` tool
+
 IMPORTANT:
-- When calling tools: Output NOTHING - just call the tool
-- When not calling tools: Return ONLY the JSON object above
-- Do not include any text before or after the JSON`
+- When calling ANY tool (including the \`output\` tool): Output NOTHING - just call the tool
+- When ready to provide your final response: Call the \`output\` tool with the fields above
+- CRITICAL: Do NOT output any text, explanation, or commentary when calling the \`output\` tool
+- The \`output\` tool accepts the same structure as before - just call it instead of returning JSON directly
+- Common mistakes to avoid:
+  * Outputting text or explanation when calling the \`output\` tool (output NOTHING)
+  * Forgetting to call the \`output\` tool when ready to respond`
 
   const { topic, userMap, callingUserTimezone } = runContext.context
 
@@ -236,15 +246,14 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
   return mainPrompt + userMapAndTopicInfo
 }
 
-export const meetingPrepAgent = new ConversationAgent({
+export const meetingPrepAgent = makeConversationAgent({
   name: 'meetingPrepAgent',
   model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,
-    parallelToolCalls: false, // Only allow one tool call at a time
+    parallelToolCalls: false,
   },
   tools: [updateUserNames, updateSummary, showUserCalendar, scheduleAutoMessage, getOrgActionItems, editOrgActionItems],
-  outputType: ConversationRes,
   instructions: meetingPrepInstructions,
 })

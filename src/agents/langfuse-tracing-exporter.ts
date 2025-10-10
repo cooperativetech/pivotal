@@ -195,6 +195,18 @@ export class LangfuseTracingExporter implements TracingExporter {
       statusMessage: span.error?.message,
     }
 
+    if (span.error?.message?.includes('Invalid output type')) {
+      try {
+        const serialized = typeof data.output === 'string'
+          ? data.output
+          : JSON.stringify(data.output)
+        const preview = serialized.length > 1500 ? `${serialized.slice(0, 1500)}…` : serialized
+        console.warn('[ConversationAgent] Model returned invalid structured output. Preview:', preview)
+      } catch (serializationError) {
+        console.warn('[ConversationAgent] Model returned invalid structured output, but output could not be serialized for logging.', serializationError)
+      }
+    }
+
     if (span.parentId) {
       // If there's a parentId, this is a child of a span, so queue to be exported later
       const parentChildren = this.spanIdToChildrenParams.get(span.parentId) || []

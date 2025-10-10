@@ -11,6 +11,7 @@ import { mergeCalendarWithOverrides } from '@shared/utils'
 import { processSchedulingActions } from './slack-message-handler'
 import { getTopicWithState, updateTopicState } from './utils'
 import { getGoogleCalendar, isGoogleCalendarConnected } from './integrations/google'
+import { addCoHostsViaAutomation } from './meet-cohost-automation'
 
 function getBotCalendarId(): string {
   return process.env.PV_GOOGLE_BOT_CALENDAR_ID || 'primary'
@@ -243,6 +244,32 @@ export async function createCalendarInviteFromBot(
     if (entryPoints && entryPoints.length > 0) {
       const meeting = entryPoints.find((e) => e.entryPointType === 'video') || entryPoints[0]
       meetLink = meeting.uri || meeting.label || undefined
+    }
+
+    // Add co-hosts via headless browser automation (if enabled)
+    if (meetLink && attendees.length > 0) {
+      const organizerEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT
+      const organizerPassword = process.env.PV_GOOGLE_ORGANIZER_PASSWORD
+
+      if (organizerEmail && organizerPassword) {
+        const attendeeEmails = attendees.map((a) => a.email)
+        console.log('[Calendar] Attempting to add co-hosts via browser automation')
+
+        // AWAIT the automation instead of running in background
+        // This ensures the browser process stays alive
+        try {
+          const result = await addCoHostsViaAutomation(meetLink, attendeeEmails, organizerEmail, organizerPassword, event.id || undefined)
+          if (result.success) {
+            console.log('[Calendar] Successfully added all co-hosts via automation')
+          } else {
+            console.warn('[Calendar] Co-host automation completed with errors:', result.errors)
+          }
+        } catch (error) {
+          console.error('[Calendar] Co-host automation failed:', error)
+        }
+      } else {
+        console.log('[Calendar] Skipping co-host automation: PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT or PV_GOOGLE_ORGANIZER_PASSWORD not set')
+      }
     }
 
     return {

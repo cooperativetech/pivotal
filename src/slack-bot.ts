@@ -1,24 +1,66 @@
 // @slack/bolt requires this import syntax for some reason
 const { App } = await import('@slack/bolt')
 import type { WebClient } from '@slack/web-api'
+import { eq } from 'drizzle-orm'
+import { symmetricDecrypt } from 'better-auth/crypto'
 
 import { handleSlackMessage } from './slack-message-handler'
 import { setSuppressCalendarPrompt } from './calendar-service'
+import db from './db/engine'
+import { slackAppInstallationTable } from './db/schema/auth'
+import { SLACK_APP_SCOPES } from './auth'
 
 export async function connectSlackClient(): Promise<WebClient> {
   const slackApp = new App({
-    token: process.env.PV_SLACK_BOT_TOKEN,
-    appToken: process.env.PV_SLACK_APP_TOKEN,
     socketMode: true,
+    appToken: process.env.PV_SLACK_APP_TOKEN,
+    clientId: process.env.PV_SLACK_CLIENT_ID,
+    clientSecret: process.env.PV_SLACK_CLIENT_SECRET,
+    stateSecret: process.env.PV_BETTER_AUTH_SECRET,
+    scopes: SLACK_APP_SCOPES,
+    installationStore: {
+      storeInstallation: async () => {}, // Unused since we handle auth ourselves
+      fetchInstallation: async (installQuery) => {
+        if (installQuery.isEnterpriseInstall && installQuery.enterpriseId) {
+          throw new Error('Enterprise installations are not supported')
+        }
+
+        const teamId = installQuery.teamId
+        if (!teamId) {
+          throw new Error('Team ID is required for installation lookup')
+        }
+
+        // Query installation from database
+        const [{ installation }] = await db.select()
+          .from(slackAppInstallationTable)
+          .where(eq(slackAppInstallationTable.teamId, teamId))
+          .limit(1)
+
+        if (!installation || !installation.bot) {
+          throw new Error(`No valid installation found for team ${teamId}`)
+        }
+
+        installation.bot.token = await symmetricDecrypt({
+          key: process.env.PV_BETTER_AUTH_SECRET!,
+          data: installation.bot.token,
+        })
+
+        // Return Bolt-compatible installation object
+        return installation
+      },
+    },
   })
 
   slackApp.message(async ({ message, context, client }) => {
     if (!context.botUserId) {
       throw new Error('Bot user id not found in context for message')
     }
+    if (!context.teamId) {
+      throw new Error('Team id not found in context for message')
+    }
     // Only handle GenericMessageEvent and BotMessageEvent for now
     if (message.subtype === undefined || message.subtype === 'bot_message') {
-      await handleSlackMessage(message, context.botUserId, client)
+      await handleSlackMessage(message, context.teamId, context.botUserId, client)
     }
   })
 

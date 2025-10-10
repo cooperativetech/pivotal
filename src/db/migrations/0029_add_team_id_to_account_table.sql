@@ -1,0 +1,1 @@
+ALTER TABLE "account" ADD COLUMN "team_id" text;

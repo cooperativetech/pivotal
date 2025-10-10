@@ -683,6 +683,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       const groupMaxSharedFreeTime = commonFreeSlots.length > 0
         ? Math.max(...commonFreeSlots.map((slot) => slot.end.getTime() - slot.start.getTime())) / (1000 * 60) // duration in minutes
         : 0
+      groupMaxSharedFreeTimes.push(groupMaxSharedFreeTime)
 
       const hasCommonFreeTime = groupMaxSharedFreeTime >= benchmarkData.benchmark.meetingLength
       console.log(`  ${hasCommonFreeTime ? '✅' : '❌'} Common availability: ${hasCommonFreeTime ? `Max shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)` : `Insufficient shared free time: ${groupMaxSharedFreeTime} minutes (required: ${benchmarkData.benchmark.meetingLength} minutes)`}`)

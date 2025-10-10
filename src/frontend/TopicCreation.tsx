@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
+import { ArrowLeft } from 'react-feather'
 import { local_api } from '@shared/api-client'
 import type { UserContext, CalendarEvent } from '@shared/api-types'
 import { getShortTimezoneFromIANA } from '@shared/utils'
 import { UserContextView } from './UserContextView'
 import { useLocalMode } from './LocalModeContext'
+import { PageShell } from '@shared/components/page-shell'
+import { LogoMark } from '@shared/components/logo-mark'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card'
+import { Button } from '@shared/components/ui/button'
+import { Label } from '@shared/components/ui/label'
+import { Textarea } from '@shared/components/ui/textarea'
 
 interface User {
   id: string
@@ -33,7 +40,6 @@ function TopicCreation() {
           throw new Error('Failed to fetch users')
         }
         const data = await response.json()
-        // Filter out bot users and sort by real name
         const humanUsers = data.users
           .filter((user) => !user.isBot)
           .sort((a, b) => {
@@ -42,7 +48,6 @@ function TopicCreation() {
             return nameA.localeCompare(nameB)
           })
         setUsers(humanUsers)
-        // Default to first user if available
         if (humanUsers.length > 0) {
           setSelectedUserId(humanUsers[0].id)
         }
@@ -76,12 +81,10 @@ function TopicCreation() {
 
       const data = await response.json()
 
-      // Navigate to the topic page if we have a topicId
       if ('topicId' in data) {
         const topicPath = isLocalMode ? `/local/topic/${data.topicId}` : `/topic/${data.topicId}`
         await navigate(topicPath)
       } else {
-        // Clear form on success
         setMessage('')
         setSelectedUserId('')
       }
@@ -94,97 +97,109 @@ function TopicCreation() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading users...</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
     )
   }
 
   if (error && users.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error}</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Card className="border-destructive/40 bg-destructive/10 px-6 py-4 text-sm text-destructive">
+            Error: {error}
+          </Card>
+        </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
-              ← Back to Topics
-            </Link>
-            <h1 className="text-2xl font-bold">Start a New Conversation</h1>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={(e) => { handleSubmit(e).catch(console.error) }} className="space-y-4">
-            <div>
-              <label htmlFor="user" className="block text-sm font-medium text-gray-700 mb-2">
-                Select User
-              </label>
-              <select
-                id="user"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                disabled={sending}
-                required
-              >
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.realName || user.id} {user.tz ? `(${getShortTimezoneFromIANA(user.tz)})` : ''}
-                  </option>
-                ))}
-              </select>
-              {selectedUserId && (() => {
-                const selectedUser = users.find((u) => u.id === selectedUserId)
-                if (!selectedUser?.context) return null
-
-                return (
-                  <div className="mt-2">
-                    <UserContextView
-                      calendar={selectedUser.calendar}
-                      context={selectedUser.context}
-                      userTimezone={selectedUser.tz}
-                    />
-                  </div>
-                )
-              })()}
-            </div>
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                Message
-              </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Type your message here..."
-                disabled={sending}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={!selectedUserId || !message.trim() || sending}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+    <PageShell>
+      <div className="mx-auto w-full max-w-3xl">
+        <Card className="border-token bg-surface/95 shadow-lg">
+          <CardHeader className="space-y-3">
+            <Link
+              to={isLocalMode ? '/local' : '/'}
+              className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground transition hover:text-foreground"
             >
-              {sending ? 'Sending...' : 'Send Message'}
-            </button>
-          </form>
-        </div>
+              <ArrowLeft size={16} /> Back
+            </Link>
+            <CardTitle className="heading-section text-foreground">Start a new conversation</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Seed a local topic by sending a message as any member of your workspace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {error && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={(e) => {
+              handleSubmit(e).catch(console.error)
+            }} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="user">Select user</Label>
+                <select
+                  id="user"
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full rounded-lg border border-token bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={sending}
+                  required
+                >
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.realName || user.id} {user.tz ? `(${getShortTimezoneFromIANA(user.tz)})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedUserId && (() => {
+                  const selectedUser = users.find((u) => u.id === selectedUserId)
+                  if (!selectedUser?.context) return null
+
+                  return (
+                    <div className="rounded-xl border border-token/60 bg-background/60 px-3 py-2">
+                      <UserContextView
+                        calendar={selectedUser.calendar}
+                        context={selectedUser.context}
+                        userTimezone={selectedUser.tz}
+                      />
+                    </div>
+                  )
+                })()}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={6}
+                  placeholder="Type your message here…"
+                  disabled={sending}
+                  className="resize-none"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={!selectedUserId || !message.trim() || sending}
+                className="w-full"
+              >
+                {sending ? 'Sending…' : 'Send message'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </PageShell>
   )
 }
 

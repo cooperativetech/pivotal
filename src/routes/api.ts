@@ -1,17 +1,18 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { RequestError } from '@octokit/request-error'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import db from '../db/engine'
-import { slackUserTable } from '../db/schema/main'
-import { accountTable } from '../db/schema/auth'
-import type { CalendarEvent } from '@shared/api-types'
-import { auth } from '../auth'
-import { dumpTopic, getTopics } from '../utils'
+import { slackUserTable, slackMessageTable } from '../db/schema/main'
+import { accountTable, slackAppInstallationTable, memberTable, organizationTable, githubAppInstallationTable, userTable } from '../db/schema/auth'
+import type { Organization } from '../db/schema/auth'
+import type { CalendarEvent, GithubRepo } from '@shared/api-types'
+import { auth, baseURL } from '../auth'
+import { dumpTopic, getTopics, getTopicWithState, updateTopicState } from '../utils'
 import { getLinkedSlackAccount } from '../integrations/slack'
 import { getLinkedGoogleAccount, getGoogleCalendar } from '../integrations/google'
-import { getOctokit, getBotOctokit, getLinkedGithubAccount, getAllBotRepositories } from '../integrations/github'
+import { getInstallationOctokit, getBotOctokit, getBotAccessibleRepos, getOrgName, getOrgRepoInfo, getAppOctokit } from '../integrations/github'
 
 interface SessionVars {
   user: typeof auth.$Infer.Session.user | null
@@ -47,14 +48,81 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         email: sessionUser.email,
         name: sessionUser.name,
       }
+
       const slackAccount = await getLinkedSlackAccount(sessionUser.id)
       const googleAccount = await getLinkedGoogleAccount(sessionUser.id)
-      const githubAccount = await getLinkedGithubAccount(sessionUser.id)
+
+      // Type hint required since better-auth return type doesn't include custom slackTeamId column
+      const [rawOrganization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+      if (!rawOrganization) {
+        await auth.api.signOut({ headers: c.req.raw.headers })
+        throw new Error(`No organization found for user ${sessionUser.id}`)
+      }
+
+      // Check if bot is installed for this organization
+      const [slackAppInstallation] = await db.select()
+        .from(slackAppInstallationTable)
+        .where(eq(slackAppInstallationTable.teamId, rawOrganization.slackTeamId))
+        .limit(1)
+
+      // Check if GitHub app is installed for this organization
+      const [githubAppInstallation] = await db.select()
+        .from(githubAppInstallationTable)
+        .where(eq(githubAppInstallationTable.slackTeamId, rawOrganization.slackTeamId))
+        .limit(1)
+
+      let githubOrgName: string | null = null
+      let githubLinkedRepo: GithubRepo | null = null
+      let githubLinkableRepos: GithubRepo[] = []
+      if (githubAppInstallation) {
+        githubOrgName = await getOrgName(githubAppInstallation.installationId)
+        const repoInfo = await getOrgRepoInfo(
+          githubAppInstallation.installationId,
+          githubAppInstallation.repositoryId,
+        )
+        githubLinkedRepo = repoInfo.linkedRepo
+        githubLinkableRepos = repoInfo.linkableRepos
+      }
+
+      // Get the name of the user who connected the org and repository
+      let githubOrgConnectedByUserName: string | null = null
+      let githubRepoConnectedByUserName: string | null = null
+
+      if (githubAppInstallation?.createdByUserId) {
+        const [createdByUser] = await db.select({ name: userTable.name })
+          .from(userTable)
+          .where(eq(userTable.id, githubAppInstallation.createdByUserId))
+          .limit(1)
+        githubOrgConnectedByUserName = createdByUser?.name || null
+      }
+
+      if (githubAppInstallation?.repositoryConnectedByUserId) {
+        const [connectedByUser] = await db.select({ name: userTable.name })
+          .from(userTable)
+          .where(eq(userTable.id, githubAppInstallation.repositoryConnectedByUserId))
+          .limit(1)
+        githubRepoConnectedByUserName = connectedByUser?.name || null
+      }
+
+      const organization = {
+        id: rawOrganization.id,
+        name: rawOrganization.name,
+        slackTeamId: rawOrganization.slackTeamId,
+        slackAppInstalled: !!slackAppInstallation,
+        githubOrgName,
+        githubLinkedRepo,
+        githubLinkableRepos,
+        githubOrgConnectedByUserName,
+        githubRepoConnectedByUserName,
+      }
+
       return c.json({
         user,
         slackAccount,
         googleAccount,
-        githubAccount,
+        organization,
       })
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -69,6 +137,14 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     }
 
     try {
+      // Get user's organization to access slackTeamId
+      const [organization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+      if (!organization) {
+        return c.json({ error: 'No organization found' }, 404)
+      }
+
       // Get user's linked Slack account IDs from auth account table
       const linkedSlackIds = await db
         .select({ slackId: accountTable.accountId })
@@ -85,8 +161,8 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       const slackIdList = linkedSlackIds.map((s) => s.slackId)
       const slackIdSet = new Set(slackIdList)
 
-      // Get all topics (no filtering by bot user ID)
-      const allTopics = await getTopics()
+      // Get all topics for this team
+      const allTopics = await getTopics(organization.slackTeamId)
 
       // Filter topics in TypeScript to include only those with user's Slack IDs
       const userTopics = allTopics.filter((topic) => (
@@ -114,6 +190,52 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       return c.json({ topics: userTopics, userNameMap })
     } catch (error) {
       console.error('Error fetching user topics:', error)
+      return c.json({ error: 'Internal server error' }, 500)
+    }
+  })
+
+  .post('/topics/:topicId/status', zValidator('json', z.object({ isActive: z.boolean() })), async (c) => {
+    const sessionUser = c.get('user')
+    if (!sessionUser) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    const { topicId } = c.req.param()
+    const { isActive } = c.req.valid('json')
+
+    try {
+      const [organization] = (await auth.api.listOrganizations({
+        headers: c.req.raw.headers,
+      })) as Organization[]
+
+      if (!organization) {
+        return c.json({ error: 'No organization found' }, 404)
+      }
+
+      const topic = await getTopicWithState(topicId)
+
+      if (topic.slackTeamId !== organization.slackTeamId) {
+        return c.json({ error: 'Forbidden' }, 403)
+      }
+
+      const [latestMessage] = await db
+        .select({ id: slackMessageTable.id })
+        .from(slackMessageTable)
+        .where(eq(slackMessageTable.topicId, topicId))
+        .orderBy(desc(slackMessageTable.timestamp))
+        .limit(1)
+
+      const messageId = latestMessage?.id ?? topic.state.createdByMessageId
+
+      if (!messageId) {
+        return c.json({ error: 'Unable to determine message context for state change' }, 400)
+      }
+
+      const updatedTopic = await updateTopicState(topic, { isActive }, messageId)
+
+      return c.json({ topic: updatedTopic })
+    } catch (error) {
+      console.error('Error updating topic status:', error)
       return c.json({ error: 'Internal server error' }, 500)
     }
   })
@@ -174,57 +296,42 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     const { repoId } = c.req.valid('json')
 
     try {
-
-      // Get user's GitHub account
-      const [githubAccount] = await db
-        .select()
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'github'),
-        ))
+      // Get user's organization and GitHub app installation
+      const [userOrg] = await db.select({ slackTeamId: organizationTable.slackTeamId })
+        .from(memberTable)
+        .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+        .where(eq(memberTable.userId, sessionUser.id))
         .limit(1)
+      if (!userOrg) {
+        return c.json({ error: 'Organization not found' }, 400)
+      }
 
-      if (!githubAccount) {
-        return c.json({ error: 'GitHub account not linked' }, 400)
+      const [githubAppInstallation] = await db.select()
+        .from(githubAppInstallationTable)
+        .where(eq(githubAppInstallationTable.slackTeamId, userOrg.slackTeamId))
+        .limit(1)
+      if (!githubAppInstallation) {
+        return c.json({ error: 'GitHub app not installed' }, 400)
       }
 
       // Get target repo
-      const botRepos = await getAllBotRepositories()
-      const targetRepo = botRepos.find((r) => r.id === repoId)
-
+      const repos = await getBotAccessibleRepos(githubAppInstallation.installationId)
+      const targetRepo = repos.find((r) => r.id === repoId)
       if (!targetRepo) {
         return c.json({ error: 'Bot does not have access to this repository' }, 403)
       }
 
-      // Get app's octokit instance
-      const octokit = await getOctokit(sessionUser.id, githubAccount.id)
-      if (!octokit) {
-        return c.json({ error: 'Invalid GitHub credentials' }, 401)
-      }
-
-      // Check if the app's octokit has access to the target repository
-      try {
-        await octokit.request('GET /repos/{owner}/{repo}', {
-          owner: targetRepo.owner,
-          repo: targetRepo.name,
-        })
-      } catch (error) {
-        // If we get a 404, the user doesn't have access to the repository
-        if (error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 404) {
-          return c.json({ error: 'App does not have access to this repository' }, 403)
-        }
-        // For other errors, re-throw
-        throw error
-      }
-
       // If bot already has access (not just invitation)
       if (targetRepo.invitationId === null) {
-        // Update the user's account with the repository ID
+        // Update the GitHub app installation with the repository ID
         await db
-          .update(accountTable)
-          .set({ repositoryId: targetRepo.id })
-          .where(eq(accountTable.id, githubAccount.id))
+          .update(githubAppInstallationTable)
+          .set({
+            repositoryId: targetRepo.id,
+            repositoryConnectedByUserId: sessionUser.id,
+            repositoryConnectedAt: new Date(),
+          })
+          .where(eq(githubAppInstallationTable.slackTeamId, userOrg.slackTeamId))
 
         return c.json({ success: true, message: 'Repository connected successfully' })
       }
@@ -232,6 +339,11 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
       // If bot is only invited to the repo, make sure it is empty to avoid clearing an existing repo
       // We are relying on the fact that the commits route in the API will throw a 409 error if the repository is empty
       try {
+        const octokit = await getInstallationOctokit(githubAppInstallation.installationId)
+        if (!octokit) {
+          return c.json({ error: 'Invalid GitHub app installation' }, 401)
+        }
+
         await octokit.request('GET /repos/{owner}/{repo}/commits', {
           owner: targetRepo.owner,
           repo: targetRepo.name,
@@ -255,11 +367,15 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
         invitation_id: parseInt(targetRepo.invitationId),
       })
 
-      // Update the user's account with the repository ID
+      // Update the GitHub app installation with the repository ID
       await db
-        .update(accountTable)
-        .set({ repositoryId: targetRepo.id })
-        .where(eq(accountTable.id, githubAccount.id))
+        .update(githubAppInstallationTable)
+        .set({
+          repositoryId: targetRepo.id,
+          repositoryConnectedByUserId: sessionUser.id,
+          repositoryConnectedAt: new Date(),
+        })
+        .where(eq(githubAppInstallationTable.slackTeamId, userOrg.slackTeamId))
 
       return c.json({
         success: true,
@@ -282,30 +398,39 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     const { repoId } = c.req.valid('json')
 
     try {
-      // Get user's GitHub account
-      const [githubAccount] = await db
-        .select()
-        .from(accountTable)
-        .where(and(
-          eq(accountTable.userId, sessionUser.id),
-          eq(accountTable.providerId, 'github'),
-        ))
+      // Get user's organization
+      const [userOrg] = await db.select({ slackTeamId: organizationTable.slackTeamId })
+        .from(memberTable)
+        .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+        .where(eq(memberTable.userId, sessionUser.id))
         .limit(1)
-
-      if (!githubAccount) {
-        return c.json({ error: 'GitHub account not linked' }, 400)
+      if (!userOrg) {
+        return c.json({ error: 'Organization not found' }, 400)
       }
 
-      // Check if the repoId matches the user's current repositoryId
-      if (githubAccount.repositoryId !== repoId) {
+      // Get GitHub app installation
+      const [githubAppInstallation] = await db.select()
+        .from(githubAppInstallationTable)
+        .where(eq(githubAppInstallationTable.slackTeamId, userOrg.slackTeamId))
+        .limit(1)
+      if (!githubAppInstallation) {
+        return c.json({ error: 'GitHub app not installed' }, 400)
+      }
+
+      // Check if the repoId matches the current linked repository
+      if (githubAppInstallation.repositoryId !== repoId) {
         return c.json({ error: 'Repository ID does not match current linked repository' }, 400)
       }
 
-      // Set the repositoryId to null
+      // Clear the repository fields
       await db
-        .update(accountTable)
-        .set({ repositoryId: null })
-        .where(eq(accountTable.id, githubAccount.id))
+        .update(githubAppInstallationTable)
+        .set({
+          repositoryId: null,
+          repositoryConnectedByUserId: null,
+          repositoryConnectedAt: null,
+        })
+        .where(eq(githubAppInstallationTable.slackTeamId, userOrg.slackTeamId))
 
       return c.json({ success: true, message: 'Repository disconnected successfully' })
     } catch (error) {
@@ -314,28 +439,80 @@ export const apiRoutes = new Hono<{ Variables: SessionVars }>()
     }
   })
 
+  .post('/github/uninstall-app', async (c) => {
+    const sessionUser = c.get('user')
+    if (!sessionUser) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    try {
+      // Get user's organization and GitHub app installation in a single query
+      const [result] = await db
+        .select({
+          slackTeamId: organizationTable.slackTeamId,
+          installationId: githubAppInstallationTable.installationId,
+        })
+        .from(memberTable)
+        .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+        .innerJoin(githubAppInstallationTable, eq(githubAppInstallationTable.slackTeamId, organizationTable.slackTeamId))
+        .where(eq(memberTable.userId, sessionUser.id))
+        .limit(1)
+
+      if (!result) {
+        return c.json({ error: 'Organization or GitHub app installation not found' }, 400)
+      }
+
+      // Call GitHub API to delete the installation
+      const appOctokit = getAppOctokit()
+      await appOctokit.request('DELETE /app/installations/{installation_id}', {
+        installation_id: parseInt(result.installationId),
+      })
+
+      // Delete the installation record from the database
+      await db
+        .delete(githubAppInstallationTable)
+        .where(eq(githubAppInstallationTable.slackTeamId, result.slackTeamId))
+
+      return c.json({ success: true, message: 'GitHub app uninstalled successfully' })
+    } catch (error) {
+      console.error('Error uninstalling GitHub app:', error)
+      return c.json({ error: 'Failed to uninstall GitHub app' }, 500)
+    }
+  })
+
   .get(
     '/google/authorize',
     zValidator('query', z.strictObject({
       callbackURL: z.string().optional(),
       errorCallbackURL: z.string().optional(),
+      team: z.string().optional(),
     })),
     async (c) => {
-      const sessionUser = c.get('user')
+      const { callbackURL, errorCallbackURL, team } = c.req.valid('query')
 
-      // If not logged in, redirect to login screen
+      // If not logged in, redirect to login screen with team parameter
+      const sessionUser = c.get('user')
       if (!sessionUser) {
-        return c.redirect('/login?redirectTo=googleAuthorize')
+        const { team } = c.req.valid('query')
+        const teamParam = team ? `&team=${team}` : ''
+        return c.redirect(`/login?redirectTo=googleAuthorize${teamParam}`)
       }
 
-      const { callbackURL, errorCallbackURL } = c.req.valid('query')
+      // Build callback URL with team parameter if provided
+      let finalCallbackURL = callbackURL || '/profile'
+      if (team) {
+        const url = new URL(finalCallbackURL, baseURL)
+        url.searchParams.set('team', team)
+        finalCallbackURL = url.pathname + url.search
+      }
+      console.log(finalCallbackURL)
 
       // If logged in, initiate the account linking process with linkSocialAccount,
       // and redirect the user to google's authorization flow
       const { url } = await auth.api.linkSocialAccount({
         body: {
           provider: 'google',
-          ...(callbackURL && { callbackURL }),
+          callbackURL: finalCallbackURL,
           ...(errorCallbackURL && { errorCallbackURL }),
         },
         headers: c.req.raw.headers,

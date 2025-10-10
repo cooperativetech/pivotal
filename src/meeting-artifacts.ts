@@ -1,9 +1,11 @@
-import { and, asc, eq, isNull, lt } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, isNull, lt, or, sql } from 'drizzle-orm'
 import type { calendar_v3 } from 'googleapis'
 
 import db from './db/engine'
-import { meetingArtifactTable } from './db/schema/main'
+import { meetingArtifactTable, topicTable } from './db/schema/main'
 import type { MeetingArtifact } from './db/schema/main'
+import type { TopicWithState } from '@shared/api-types'
+import { getTopicWithState } from './utils'
 
 export interface MeetingArtifactUpsertParams {
   topicId: string
@@ -114,19 +116,35 @@ export async function deleteMeetingArtifactByEvent(calendarId: string, eventId: 
     ))
 }
 
-export async function getPendingMeetingSummaries(limit: number = 10): Promise<MeetingArtifact[]> {
+export type PendingMeetingArtifact = MeetingArtifact & {
+  slackTeamId: string
+}
+
+export async function getPendingMeetingSummaries(limit: number = 10): Promise<PendingMeetingArtifact[]> {
   const now = new Date()
+  const withinTranscriptCheckWindow = or(
+    isNull(meetingArtifactTable.transcriptLastCheckedAt),
+    sql`${meetingArtifactTable.transcriptLastCheckedAt} <= ${meetingArtifactTable.endTime} + interval '1 day'`,
+  )
   const rows = await db
-    .select()
+    .select({
+      artifact: meetingArtifactTable,
+      slackTeamId: topicTable.slackTeamId,
+    })
     .from(meetingArtifactTable)
+    .innerJoin(topicTable, eq(meetingArtifactTable.topicId, topicTable.id))
     .where(and(
       isNull(meetingArtifactTable.summaryPostedAt),
-      lt(meetingArtifactTable.endTime, now),
+      lt(meetingArtifactTable.startTime, now),
+      withinTranscriptCheckWindow,
     ))
     .orderBy(asc(meetingArtifactTable.endTime))
     .limit(limit)
 
-  return rows
+  return rows.map(({ artifact, slackTeamId }) => ({
+    ...artifact,
+    slackTeamId,
+  }))
 }
 
 export interface MeetingSummaryProcessingUpdate {
@@ -137,6 +155,9 @@ export interface MeetingSummaryProcessingUpdate {
   transcriptAttemptCount?: number
   geminiSummary?: string | null
   geminiModel?: string | null
+  actionItemsProcessedAt?: Date | null
+  actionItemsCommitSha?: string | null
+  actionItemsError?: string | null
 }
 
 export async function updateMeetingSummaryProcessing(
@@ -154,6 +175,9 @@ export async function updateMeetingSummaryProcessing(
   }
   if ('geminiSummary' in updates) setValues.geminiSummary = updates.geminiSummary
   if ('geminiModel' in updates) setValues.geminiModel = updates.geminiModel
+  if ('actionItemsProcessedAt' in updates) setValues.actionItemsProcessedAt = updates.actionItemsProcessedAt
+  if ('actionItemsCommitSha' in updates) setValues.actionItemsCommitSha = updates.actionItemsCommitSha
+  if ('actionItemsError' in updates) setValues.actionItemsError = updates.actionItemsError
 
   if (Object.keys(setValues).length === 0) {
     return
@@ -182,4 +206,60 @@ export async function markMeetingSummaryPosted(
       updatedAt: new Date(),
     })
     .where(eq(meetingArtifactTable.id, id))
+}
+
+export interface MeetingLookupOptions {
+  userIds: string[],
+  direction?: 'upcoming' | 'past',
+  summaryContains?: string | null,
+  limit?: number,
+}
+
+export interface MeetingLookupResult {
+  artifact: MeetingArtifact,
+  topic: TopicWithState,
+}
+
+export async function findMeetingsForUsers({
+  userIds,
+  direction = 'upcoming',
+  summaryContains,
+  limit = 3,
+}: MeetingLookupOptions): Promise<MeetingLookupResult[]> {
+  if (userIds.length === 0) return []
+
+  const now = new Date()
+  const fetchLimit = Math.max(limit * 5, 10)
+
+  const baseQuery = db.select().from(meetingArtifactTable)
+  const artifacts = await (direction === 'past'
+    ? baseQuery.where(lt(meetingArtifactTable.startTime, now)).orderBy(desc(meetingArtifactTable.startTime))
+    : baseQuery.where(gt(meetingArtifactTable.startTime, now)).orderBy(asc(meetingArtifactTable.startTime)))
+    .limit(fetchLimit)
+  const summaryNeedle = summaryContains?.toLowerCase() ?? null
+  const results: MeetingLookupResult[] = []
+
+  for (const artifact of artifacts) {
+    if (results.length >= limit) break
+
+    let topic: TopicWithState
+    try {
+      topic = await getTopicWithState(artifact.topicId)
+    } catch (error) {
+      console.warn('[MeetingArtifact] Failed to load topic state for', artifact.topicId, error)
+      continue
+    }
+
+    const matchesUser = topic.state.userIds.some((id) => userIds.includes(id))
+    if (!matchesUser) continue
+
+    if (summaryNeedle) {
+      const combined = `${artifact.summary ?? ''} ${topic.state.summary ?? ''}`.toLowerCase()
+      if (!combined.includes(summaryNeedle)) continue
+    }
+
+    results.push({ artifact, topic })
+  }
+
+  return results
 }

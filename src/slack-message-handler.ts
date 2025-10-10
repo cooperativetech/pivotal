@@ -36,15 +36,21 @@ async function upsertSlackChannel(channelId: string, userIds: string[]): Promise
   }
 }
 
+type CalendarPromptOptions = {
+  force?: boolean,
+  contextMessage?: string | null,
+}
+
 async function promptUserToConnectCalendar(
   topicId: string,
   userId: string,
   messageId: string,
   client: WebClient,
+  options: CalendarPromptOptions = {},
 ): Promise<void> {
   try {
     if (userId === 'USLACKBOT') return
-    const shouldPrompt = await shouldShowCalendarButtons(topicId, userId)
+    const shouldPrompt = options.force ? true : await shouldShowCalendarButtons(topicId, userId)
     if (!shouldPrompt) return
 
     const dmResult = await client.conversations.open({ users: userId })
@@ -52,15 +58,21 @@ async function promptUserToConnectCalendar(
 
     await upsertSlackChannel(dmResult.channel.id, [userId])
 
+    const promptText = options.contextMessage?.trim()
+      ? options.contextMessage.trim()
+      : 'To help with scheduling, you can connect your Google Calendar:'
+
+    const topic = await getTopicWithState(topicId)
+
     const dmResponse = await client.chat.postMessage({
       channel: dmResult.channel.id,
-      text: 'To help with scheduling, you can connect your Google Calendar:',
+      text: promptText,
       blocks: [
-        { type: 'section', text: { type: 'mrkdwn', text: 'To help with scheduling, you can connect your Google Calendar:' } },
+        { type: 'section', text: { type: 'mrkdwn', text: promptText } },
         {
           type: 'actions',
           elements: [
-            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize` },
+            { type: 'button', text: { type: 'plain_text', text: 'Connect Google Calendar' }, style: 'primary', url: `${baseURL}/api/google/authorize?team=${topic.slackTeamId}` },
             { type: 'button', text: { type: 'plain_text', text: 'Not now' }, action_id: 'calendar_not_now' },
             { type: 'button', text: { type: 'plain_text', text: "Don't ask this again" }, action_id: 'dont_ask_calendar_again' },
           ],
@@ -69,7 +81,9 @@ async function promptUserToConnectCalendar(
     })
 
     if (dmResponse.ok && dmResponse.ts) {
-      await addPromptedUser(topicId, userId, messageId)
+      if (!options.force) {
+        await addPromptedUser(topicId, userId, messageId)
+      }
       try {
         await updateTopicUserContext(topicId, userId, { calendarPromptMessage: { channelId: dmResult.channel.id, ts: dmResponse.ts } }, messageId)
       } catch (error) {
@@ -241,11 +255,17 @@ export async function processSchedulingActions(
     await promptUnconnectedCalendars(topic, message, client)
     topic = await getTopicWithState(topicId)
 
+    console.log(`Processing topic ${topicId} with stored workflow '${topic.workflowType}'`)
+
     // Check if it's a valid workflow type, i.e. not 'other'
     const workflowAgent = workflowAgentMap.get(topic.workflowType)
     if (!workflowAgent) {
+      // For 'other' workflow types, canned response was already sent during topic creation
+      console.warn(`No workflow agent registered for ${topic.workflowType}; skipping message.`)
       return createdMessages
     }
+
+    console.log(`Running workflow '${topic.workflowType}' for topic ${topicId}`)
 
     // Check if this is a group message (not DM) by looking at the channel's user list
     const [channel] = await db.select()
@@ -259,15 +279,7 @@ export async function processSchedulingActions(
     const isDirectMessage = channel.userIds.length === 1
     const isBotMentioned = message.text.includes(`<@${topic.botUserId}>`)
     if (!isDirectMessage && !isBotMentioned) {
-      try {
-        await client.reactions.add({
-          channel: message.channelId,
-          name: 'thumbsup',
-          timestamp: message.rawTs,
-        })
-      } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
-      }
+      console.log('Skipping message in group channel without bot mention')
       return createdMessages
     }
 
@@ -293,6 +305,24 @@ export async function processSchedulingActions(
       userMap,
     )
     console.log('Next workflow step:', nextStep)
+
+    if (nextStep.promptCalendarButtons) {
+      const targetName = nextStep.promptCalendarButtons.userName?.trim()
+      let targetUserId: string | undefined
+      if (targetName) {
+        for (const [id, user] of userMap.entries()) {
+          if (user.realName && user.realName.localeCompare(targetName, undefined, { sensitivity: 'base' }) === 0) {
+            targetUserId = id
+            break
+          }
+        }
+      }
+      targetUserId = targetUserId || message.userId
+      await promptUserToConnectCalendar(topicId, targetUserId, message.id, client, {
+        force: true,
+        contextMessage: nextStep.promptCalendarButtons.contextMessage ?? null,
+      })
+    }
 
     // Check if the current message sender will receive any DMs
     let senderWillReceiveDM = false
@@ -344,7 +374,7 @@ export async function processSchedulingActions(
           timestamp: message.rawTs,
         })
       } catch (reactionError) {
-        console.error('Error adding thumbs up reaction:', reactionError)
+        console.error('Error adding thumbsup reaction:', reactionError)
       }
     }
 
@@ -664,10 +694,11 @@ async function handleFinalizedEvent(
 }
 
 async function getOrCreateTopic(
+  teamId: string,
   message: SlackMessage,
   botUserId: string,
   client: WebClient,
-  ignoreExistingTopics: boolean = false,
+  ignoreExistingTopics: boolean,
 ): Promise<string | null> {
   // Check if this message is a DM by looking at the channel's user list
   const [channel] = await db.select()
@@ -679,14 +710,29 @@ async function getOrCreateTopic(
 
   const isDirectMessage = channel.userIds.length === 1
   const isBotMentioned = message.text.includes(`<@${botUserId}>`)
+  const shouldExcludeOtherWorkflows = isDirectMessage || isBotMentioned
 
   // Get Slack users for name mapping (including bots to get bot's name)
   const userMap = await getSlackUsers(client)
 
+  // Share canned response helper so we don't duplicate text when the bot can't assist
+  let hasSentUnsupportedMessage = false
+  const sendUnsupportedMessage = async () => {
+    hasSentUnsupportedMessage = true
+    await client.chat.postMessage({
+      channel: message.channelId,
+      thread_ts: message.rawTs,
+      text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
+    })
+  }
+
   // Step 1: Gather active topics and augment with any topics that have recent activity in this channel/thread
   let topics: TopicWithState[] = []
   if (!ignoreExistingTopics) {
-    const activeTopics = await getTopics(botUserId, true)
+    let activeTopics = await getTopics(teamId, botUserId, true)
+    if (shouldExcludeOtherWorkflows) {
+      activeTopics = activeTopics.filter((topic) => topic.workflowType !== 'other')
+    }
     const activeTopicIds = new Set(activeTopics.map((topic) => topic.id))
 
     const recentChannelMessages = await db
@@ -726,9 +772,12 @@ async function getOrCreateTopic(
       }
     }
 
-    const additionalTopics = recentTopicIds.size > 0
-      ? await getTopics(botUserId, false, Array.from(recentTopicIds))
+    let additionalTopics = recentTopicIds.size > 0
+      ? await getTopics(teamId, botUserId, false, Array.from(recentTopicIds))
       : []
+    if (shouldExcludeOtherWorkflows) {
+      additionalTopics = additionalTopics.filter((topic) => topic.workflowType !== 'other')
+    }
 
     topics = [...activeTopics, ...additionalTopics.filter((topic) => !activeTopicIds.has(topic.id))]
   }
@@ -775,6 +824,7 @@ async function getOrCreateTopic(
       // Create new topic with all mentioned users
       const [newTopic] = await db.insert(topicTable).values({
         botUserId: botUserId,
+        slackTeamId: teamId,
         workflowType: analysis.workflowType,
       }).returning()
 
@@ -789,19 +839,20 @@ async function getOrCreateTopic(
       return newTopic.id
     } else {
       // Invalid workflow - send canned response in thread
-      await client.chat.postMessage({
-        channel: message.channelId,
-        thread_ts: message.rawTs,
-        text: 'Sorry, but I\'m only set up for scheduling or meeting preparation requests at the moment. Try something like "plan lunch with the team" or "help us prepare for our standup tomorrow".',
-      })
+      await sendUnsupportedMessage()
       return null
     }
+  }
+
+  if (shouldExcludeOtherWorkflows && !hasSentUnsupportedMessage) {
+    await sendUnsupportedMessage()
   }
 
   return null
 }
 
 async function saveMessageToDummyTopic(
+  teamId: string,
   botUserId: string,
   message: SlackAPIMessage,
   autoMessageId: string | null,
@@ -809,11 +860,12 @@ async function saveMessageToDummyTopic(
 ): Promise<SlackMessage> {
   const DUMMY_SUMMARY = 'dummy topic for uncategorized messages'
 
-  // Check if a dummy topic exists for this bot user
+  // Check if a dummy topic exists for this bot user and team
   const [existingDummyRow] = await db.select()
     .from(topicTable)
     .innerJoin(topicStateTable, eq(topicTable.id, topicStateTable.topicId))
     .where(and(
+      eq(topicTable.slackTeamId, teamId),
       eq(topicTable.botUserId, botUserId),
       eq(topicTable.workflowType, 'other'),
       eq(topicStateTable.summary, DUMMY_SUMMARY),
@@ -826,6 +878,7 @@ async function saveMessageToDummyTopic(
     (await db
       .insert(topicTable)
       .values({
+        slackTeamId: teamId,
         botUserId: botUserId,
         workflowType: 'other',
       })
@@ -897,6 +950,7 @@ interface MessageProcessingRes {
 
 export async function handleSlackMessage(
   apiMessage: SlackAPIMessage,
+  teamId: string,
   botUserId: string,
   client: WebClient,
   presetTopicId: string | null = null,
@@ -919,13 +973,14 @@ export async function handleSlackMessage(
 
   try {
     // Save the message to the dummy topic by default
-    const message = await saveMessageToDummyTopic(botUserId, apiMessage, autoMessageId, client)
+    const message = await saveMessageToDummyTopic(teamId, botUserId, apiMessage, autoMessageId, client)
 
     // Route message to topic (creates topic if necessary)
-    const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(message, botUserId, client, ignoreExistingTopics)
+    const topicId = presetTopicId ? presetTopicId : await getOrCreateTopic(teamId, message, botUserId, client, ignoreExistingTopics)
 
     // If getOrCreateTopic returns null or the dummy topic, leave the message
     // saved to the dummy topic and return
+    // Note: getOrCreateTopic already sends canned response messages for @mentions/DMs
     if (!topicId || topicId === message.topicId) {
       return null
     }

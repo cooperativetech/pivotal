@@ -6,13 +6,12 @@ import { eq } from 'drizzle-orm'
 import db from '../db/engine'
 import type { SlackUser } from '../db/schema/main'
 import { slackChannelTable, slackUserTable, userDataTable } from '../db/schema/main'
-import type { TopicWithState } from '@shared/api-types'
 import { upsertFakeUser, getOrCreateChannelForUsers, cleanupTestData, mockSlackClient, BOT_USER_ID } from '../local-helpers.ts'
 import type { SlackAPIMessage } from '../slack-message-handler'
 import { messageProcessingLock, handleSlackMessage } from '../slack-message-handler'
 import { GetTopicReq, dumpTopic, getTopicWithState, getTopics } from '../utils'
 import { workflowAgentMap, runConversationAgent } from '../agents'
-import { createCalendarInviteFromBot, tryRescheduleTaggedEvent, setSuppressCalendarPrompt } from '../calendar-service'
+import { tryRescheduleTaggedEvent, setSuppressCalendarPrompt } from '../calendar-service'
 import { getGoogleCalendar } from '../integrations/google'
 import type { CalendarEvent } from '@shared/api-types'
 
@@ -48,7 +47,14 @@ export const localRoutes = new Hono()
 
   .get('/topics', async (c) => {
     try {
-      const topics = await getTopics()
+      // Get all teamIds for any slackUser in the database
+      const teams = await db.selectDistinct({ teamId: slackUserTable.teamId })
+        .from(slackUserTable)
+      // Get all topics for each team
+      const allTopics = await Promise.all(
+        teams.map((team) => getTopics(team.teamId)),
+      )
+      const topics = allTopics.flat()
       return c.json({ topics })
     } catch (error) {
       console.error('Error fetching topics:', error)
@@ -195,11 +201,22 @@ export const localRoutes = new Hono()
     const { userId, text, topicId, ignoreExistingTopics = true } = c.req.valid('json')
 
     try {
-      // Get botUserId from the topic if topicId is provided, otherwise use default
+      // Get botUserId and teamId from the topic if topicId is provided, otherwise use default
       let botUserId = BOT_USER_ID
+      let teamId: string
       if (topicId) {
         const topic = await getTopicWithState(topicId)
         botUserId = topic.botUserId
+        teamId = topic.slackTeamId
+      } else {
+        // Query slackUserTable to get user's teamId
+        const [slackUser] = await db.select()
+          .from(slackUserTable)
+          .where(eq(slackUserTable.id, userId))
+        if (!slackUser) {
+          throw new Error(`User ${userId} not found`)
+        }
+        teamId = slackUser.teamId
       }
 
       const channelId = await getOrCreateChannelForUsers([userId])
@@ -219,6 +236,7 @@ export const localRoutes = new Hono()
 
       const result = await handleSlackMessage(
         message,
+        teamId,
         botUserId,
         mockSlackClient,
         topicId || null,
@@ -234,49 +252,6 @@ export const localRoutes = new Hono()
       return c.json({
         error: error instanceof Error ? error.message : 'Internal server error',
       }, 500)
-    }
-  })
-
-  // Create a test Meet link using the bot calendar (no emails sent)
-  .post('/test_meet', zValidator('json', z.strictObject({
-    start: z.string(),
-    end: z.string(),
-    summary: z.string().optional(),
-    userIds: z.array(z.string()).optional(),
-  })), async (c) => {
-    const { start, end, summary, userIds } = c.req.valid('json')
-    try {
-      // Minimal TopicWithState mock for local testing
-      const fakeTopic: TopicWithState = {
-        id: `test-${Date.now()}`,
-        botUserId: BOT_USER_ID,
-        workflowType: 'scheduling',
-        createdAt: new Date(),
-        state: {
-          id: `state-${Date.now()}`,
-          topicId: `test-${Date.now()}`,
-          userIds: userIds || [],
-          summary: summary || 'Test Meeting',
-          isActive: true,
-          perUserContext: {},
-          createdByMessageId: '00000000-0000-0000-0000-000000000000',
-          createdAt: new Date(),
-        },
-      }
-
-      const result = await createCalendarInviteFromBot(fakeTopic, {
-        start,
-        end,
-        summary,
-      })
-
-      if (!result) {
-        return c.json({ error: 'Failed to create bot event. Ensure service account env vars (PV_GOOGLE_SERVICE_ACCOUNT_EMAIL / PV_GOOGLE_SERVICE_ACCOUNT_KEY / PV_GOOGLE_SERVICE_ACCOUNT_SUBJECT) are configured correctly.' }, 500)
-      }
-      return c.json(result)
-    } catch (error) {
-      console.error('Error creating test Meet:', error)
-      return c.json({ error: 'Internal server error' }, 500)
     }
   })
 

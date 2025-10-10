@@ -1,12 +1,19 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router'
+import { ArrowLeft, Calendar as CalendarIcon, ChevronDown } from 'react-feather'
 import { api, local_api, authClient } from '@shared/api-client'
-import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs } from '@shared/api-types'
+import type { CalendarEvent, TopicData, SlackMessage, SlackChannel, TopicStateWithMessageTs, SlackUser } from '@shared/api-types'
 import { unserializeTopicData } from '@shared/api-types'
 import type { UserProfile } from '@shared/api-types'
-import { getShortTimezoneFromIANA, getShortTimezone } from '@shared/utils'
-import { UserContextView } from './UserContextView'
+import { getShortTimezoneFromIANA, getShortTimezone, compactTopicSummary } from '@shared/utils'
 import { useLocalMode } from './LocalModeContext'
+import { Button } from '@shared/components/ui/button'
+import { Badge } from '@shared/components/ui/badge'
+import { Card } from '@shared/components/ui/card'
+import { PageShell } from '@shared/components/page-shell'
+import { LogoMark } from '@shared/components/logo-mark'
+import { LogoMarkInline } from '@shared/components/logo-mark-inline'
+import { Timeline } from '@shared/components/timeline'
 
 interface ChannelGroup {
   channelId: string
@@ -30,14 +37,59 @@ function Topic() {
   const [showPopup, setShowPopup] = useState(false)
   const [chatInputs, setChatInputs] = useState<Map<string, string>>(new Map())
   const [sendingChannels, setSendingChannels] = useState<Set<string>>(new Set())
-  const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set())
   const [topicState, setTopicState] = useState<TopicStateWithMessageTs | null>(null)
   const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set())
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [showCalendarPanel, setShowCalendarPanel] = useState(false)
+  const [thumbPulse, setThumbPulse] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number>(0)
   const dragStartPosition = useRef<number>(0)
   const messageContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const initialLoadRef = useRef(true)
+  const pulseTimeoutRef = useRef<number | null>(null)
+
+  const botUserId = topicData?.topic.botUserId ?? null
+
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!topicData) return map
+
+    topicData.users.forEach((user) => {
+      map.set(user.id, user.realName || user.id)
+    })
+
+    if (topicData.topic.botUserId && !map.has(topicData.topic.botUserId)) {
+      map.set(topicData.topic.botUserId, 'Pivotal')
+    }
+
+    return map
+  }, [topicData])
+
+  const formatSlackText = useCallback(
+    (text: string) =>
+      (text ?? '').replace(/<@([A-Z0-9]+)>/gi, (_, id: string) => {
+        const displayName = userMap.get(id) || (botUserId === id ? 'Pivotal' : id)
+        const normalized = displayName.startsWith('@') ? displayName.slice(1) : displayName
+        return `@${normalized}`
+      }),
+    [userMap, botUserId],
+  )
+
+  const compactSummary = useMemo(
+    () => compactTopicSummary(topicState?.summary ?? ''),
+    [topicState?.summary],
+  )
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const previousTitle = document.title
+    const displayTitle = compactSummary || topicState?.summary || 'Topic'
+    document.title = `Pivotal · ${displayTitle}`
+    return () => {
+      document.title = previousTitle
+    }
+  }, [compactSummary, topicState?.summary])
 
   useEffect(() => {
     const fetchTopicData = async () => {
@@ -52,7 +104,9 @@ function Topic() {
           throw new Error('Failed to fetch topic data')
         }
         const data = await response.json()
-        setTopicData(unserializeTopicData(data.topicData))
+        const deserialized = unserializeTopicData(data.topicData)
+        setTopicData(deserialized)
+        setTopicState(deserialized.states.length > 0 ? deserialized.states[deserialized.states.length - 1] : null)
         setUserCalendars(data.userCalendars)
 
         // Only read query params on initial load
@@ -86,7 +140,7 @@ function Topic() {
   }, [topicId, apiClient, searchParams])
 
   useEffect(() => {
-    const loadProfile = async () => {
+  const loadProfile = async () => {
       try {
         const session = await authClient.getSession()
         if (!session.data?.session?.token) {
@@ -113,12 +167,38 @@ function Topic() {
     loadProfile().catch(console.error)
   }, [isLocalMode])
 
+  const viewerSlackId = profile?.slackAccount?.accountId ?? null
+  const calendarConnected = !!profile?.googleAccount
+  const viewerCalendar = useMemo(() => {
+    if (!viewerSlackId) return null
+    return userCalendars[viewerSlackId] ?? null
+  }, [userCalendars, viewerSlackId])
+
+  const upcomingEvents = useMemo(() => {
+    if (!viewerCalendar) return []
+    const now = Date.now()
+    return viewerCalendar
+      .filter((event) => new Date(event.end).getTime() >= now)
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .slice(0, 3)
+  }, [viewerCalendar])
+
   // Sort all messages by timestamp for timeline
   const sortedMessages = useMemo(() => {
     return topicData?.messages
       ? [...topicData.messages].sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
       : []
   }, [topicData?.messages])
+
+  const timelineEntries = useMemo(
+    () =>
+      sortedMessages.map((msg) => ({
+        id: msg.id,
+        timestamp: msg.timestamp,
+        text: msg.text ?? '',
+      })),
+    [sortedMessages],
+  )
 
   // Filter messages based on timeline position
   const visibleMessageIds = new Set(
@@ -129,12 +209,16 @@ function Topic() {
 
   // Update topicState based on current timeline position
   useEffect(() => {
-    if (!topicData?.states || sortedMessages.length === 0) {
+    if (!topicData?.states || topicData.states.length === 0) {
       setTopicState(null)
       return
     }
 
-    // Get the current message's rawTs based on timeline position
+    if (sortedMessages.length === 0) {
+      setTopicState(topicData.states[topicData.states.length - 1])
+      return
+    }
+
     const currentMessageRawTs = timelinePosition !== null && sortedMessages[timelinePosition]
       ? sortedMessages[timelinePosition].rawTs
       : sortedMessages[sortedMessages.length - 1]?.rawTs
@@ -144,17 +228,13 @@ function Topic() {
       return
     }
 
-    // Find the newest state where createdByMessageRawTs <= currentMessageRawTs
     const applicableStates = topicData.states.filter(
       (state) => Number(state.createdByMessageRawTs) <= Number(currentMessageRawTs),
     )
 
-    // Get the newest applicable state (states are already in chronological order)
-    setTopicState(
-      applicableStates.length > 0
-        ? applicableStates[applicableStates.length - 1]
-        : null,
-    )
+    const fallbackState = topicData.states[topicData.states.length - 1]
+    const nextState = applicableStates.length > 0 ? applicableStates[applicableStates.length - 1] : fallbackState
+    setTopicState(nextState)
   }, [timelinePosition, sortedMessages, topicData?.states])
 
   // Update URL query parameter when timeline position changes (debounced)
@@ -185,7 +265,7 @@ function Topic() {
     }, 10)
 
     return () => clearTimeout(timer)
-  }, [timelinePosition, topicData])
+  }, [timelinePosition, topicData, showCalendarPanel])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -198,12 +278,14 @@ function Topic() {
           if (prev === null) return sortedMessages.length - 1
           return Math.max(0, prev - 1)
         })
+        setThumbPulse(true)
       } else if (e.key === 'ArrowRight') {
         e.preventDefault()
         setTimelinePosition((prev) => {
           if (prev === null) return sortedMessages.length - 1
           return Math.min(sortedMessages.length - 1, prev + 1)
         })
+        setThumbPulse(true)
       }
     }
 
@@ -220,6 +302,7 @@ function Topic() {
     const width = rect.width
     const position = Math.round((x / width) * (sortedMessages.length - 1))
     setTimelinePosition(Math.max(0, Math.min(sortedMessages.length - 1, position)))
+    setThumbPulse(true)
   }, [sortedMessages.length, sendingChannels.size])
 
   // Handle test LLM response
@@ -256,6 +339,7 @@ function Topic() {
     if (!timelineRef.current || sortedMessages.length === 0 || sendingChannels.size > 0) return
 
     setIsDragging(true)
+    setThumbPulse(false)
     dragStartX.current = e.clientX
     dragStartPosition.current = timelinePosition ?? sortedMessages.length - 1
 
@@ -279,6 +363,7 @@ function Topic() {
 
     const handleMouseUp = () => {
       setIsDragging(false)
+      setThumbPulse(true)
     }
 
     document.addEventListener('mousemove', handleMouseMove)
@@ -290,19 +375,99 @@ function Topic() {
     }
   }, [isDragging, sortedMessages.length])
 
-  if (loading) {
+  useEffect(() => {
+    if (!thumbPulse) return
+    if (pulseTimeoutRef.current) window.clearTimeout(pulseTimeoutRef.current)
+    pulseTimeoutRef.current = window.setTimeout(() => {
+      setThumbPulse(false)
+      pulseTimeoutRef.current = null
+    }, 500)
+    return () => {
+      if (pulseTimeoutRef.current) {
+        window.clearTimeout(pulseTimeoutRef.current)
+        pulseTimeoutRef.current = null
+      }
+    }
+  }, [thumbPulse])
+
+  const handleTopicStatusToggle = useCallback(() => {
+    if (!topicId || !topicState) return
+    const nextActive = !topicState.isActive
+    const confirmMessage = nextActive
+      ? 'Mark this topic active again?'
+      : 'Mark this topic inactive?'
+    if (!window.confirm(confirmMessage)) return
+
+    setUpdatingStatus(true)
+
+    fetch(`/api/topics/${topicId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isActive: nextActive }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        let message = 'Failed to update topic status'
+        try {
+          const errorBody: unknown = await response.json()
+          if (typeof errorBody === 'object' && errorBody && 'error' in errorBody) {
+            const maybeError = (errorBody as { error?: string }).error
+            if (maybeError) message = maybeError
+          }
+        } catch {
+          // ignore
+        }
+        setError(message)
+        return
+      }
+
+      setTopicState((prev) => (prev ? { ...prev, isActive: nextActive } : prev))
+      setError(null)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Failed to update topic status')
+    }).finally(() => {
+      setUpdatingStatus(false)
+    })
+  }, [topicId, topicState])
+
+  const redirectToCalendarAuth = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    const currentPath = window.location.pathname + window.location.search
+    const params = new URLSearchParams({
+      callbackURL: currentPath,
+      errorCallbackURL: currentPath,
+    })
+    window.location.href = `/api/google/authorize?${params.toString()}`
+  }, [])
+
+  if (loading && !error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading topic...</div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm">
+          Error: {error}
+        </div>
       </div>
     )
   }
 
-  if (error || !topicData || !topicState) {
+  if (!topicData || !topicState) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error || 'Topic not found'}</div>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LogoMark size={72} withHalo className="animate-spin-slow" />
+        </div>
+      </PageShell>
     )
   }
 
@@ -334,14 +499,13 @@ function Topic() {
     group.messages.sort((a, b) => Number(a.rawTs) - Number(b.rawTs))
   })
 
-  // Create user map for display names
-  const userMap = new Map<string, string>()
-  topicData.users.forEach((user) => {
-    userMap.set(user.id, user.realName || user.id)
-  })
-
   // Check if we're viewing the latest message
   const isViewingLatest = timelinePosition === sortedMessages.length - 1
+
+  const lastMessageDate = sortedMessages.length > 0
+    ? sortedMessages[sortedMessages.length - 1].timestamp
+    : topicState?.createdAt ?? null
+
 
   // Helper to check if a channel is a DM (1 user since bot is not included)
   const isDMChannel = (channelId: string) => {
@@ -353,34 +517,6 @@ function Topic() {
   const getCurrentUserId = (channelId: string) => {
     const channel = topicData.channels?.find((ch) => ch.id === channelId)
     return channel?.userIds[0]
-  }
-
-  // Helper to get DM user info (for channel title)
-  const getDMUserInfo = (channelId: string) => {
-    const channel = topicData.channels?.find((ch) => ch.id === channelId)
-    if (!channel || channel.userIds.length !== 1) return null
-
-    // Get the user details
-    const user = topicData.users.find((u) => u.id === channel.userIds[0])
-    if (!user) return null
-
-    return {
-      realName: user.realName || user.id,
-      timezone: user.tz ? getShortTimezoneFromIANA(user.tz) : '',
-    }
-  }
-
-  // Handle toggling user context expansion
-  const toggleContextExpansion = (channelId: string) => {
-    setExpandedContexts((prev) => {
-      const next = new Set(prev)
-      if (next.has(channelId)) {
-        next.delete(channelId)
-      } else {
-        next.add(channelId)
-      }
-      return next
-    })
   }
 
   // Render Slack-like action buttons (local only)
@@ -426,44 +562,65 @@ function Topic() {
     }
 
     return (
-      <div className="mt-2 flex gap-2 flex-wrap">
+      <div className="mt-2 flex flex-wrap gap-2">
         {actions.elements.map((el, idx: number) => {
           const label = el.text?.text || 'Button'
           if (typeof el.url === 'string') {
             return (
-              <a
+              <Button
                 key={idx}
-                onClick={() => { signOutAndRedirect(el.url as string).catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-white text-blue-700 border border-blue-300 hover:bg-blue-50"
+                onClick={() => {
+                  signOutAndRedirect(el.url as string).catch(console.error)
+                }}
+                variant="secondary"
+                size="sm"
+                className="bg-secondary text-secondary-foreground"
               >
                 {label}
-              </a>
+              </Button>
             )
           }
           if (el.action_id === 'calendar_not_now') {
             return (
-              <button
+              <Button
                 key={idx}
                 onClick={onNotNow}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+                variant="ghost"
+                size="sm"
               >
                 {label}
-              </button>
+              </Button>
             )
           }
           if (el.action_id === 'dont_ask_calendar_again') {
             return (
-              <button
+              <Button
                 key={idx}
-                onClick={() => { onDontAskAgain().catch(console.error) }}
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200"
+                onClick={() => {
+                  onDontAskAgain().catch(console.error)
+                }}
+                variant="ghost"
+                size="sm"
               >
                 {label}
-              </button>
+              </Button>
             )
           }
           return null
         })}
+        {isLocalMode && (
+          <Button
+            key="llm-test"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              handleTestLlmResponse(msg.id).catch(console.error)
+            }}
+            disabled={testingMessageId === msg.id}
+          >
+            {testingMessageId === msg.id ? 'Testing…' : 'Test LLM response'}
+          </Button>
+        )}
       </div>
     )
   }
@@ -569,147 +726,190 @@ function Topic() {
   }
 
   return (
-    <div className="h-full min-h-0 bg-gray-50 p-4 flex flex-col overflow-hidden">
-      <div className="flex-shrink-0">
-        <div className="flex items-center gap-3 mb-1">
-          <Link to={isLocalMode ? '/local' : '/'} className="text-blue-600 hover:underline text-sm">
-            ← Back to Topics
-          </Link>
-          <h1 className="text-xl font-bold">{topicState.summary}</h1>
-        </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
-            {topicData.topic.workflowType}
-          </span>
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-              topicState.isActive
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 px-4 py-6 sm:px-6 lg:px-10">
+      <div className="gap-4 border-b border-token pb-4 sm:grid sm:grid-cols-[minmax(0,1fr)_260px] sm:items-start sm:gap-6">
+        <div className="space-y-2">
+          <Link
+            to={isLocalMode ? '/local' : '/'}
+            className="inline-flex items-center gap-2 heading-label text-muted-foreground transition hover:text-foreground"
           >
-            {topicState.isActive ? 'Active' : 'Inactive'}
-          </span>
-          <span className="text-sm text-gray-600">
-            Updated: {new Date(topicState.createdAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })}
-          </span>
-          {sortedMessages.length > 0 && timelinePosition !== null && (
-            <span className="text-sm text-gray-600">
-              Showing {timelinePosition + 1} of {sortedMessages.length} messages
+            <ArrowLeft size={16} /> Back
+          </Link>
+          <h1 className="heading-section text-foreground" title={topicState.summary}>
+            {compactSummary || topicState.summary}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
+              {topicData.topic.workflowType}
+            </Badge>
+            <Badge
+              variant={topicState.isActive ? undefined : 'outline'}
+              className={
+                topicState.isActive
+                  ? 'badge-active border-transparent px-2.5 py-1 transition-colors hover:bg-primary/75 hover:text-primary-foreground'
+                  : 'border-border px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground'
+              }
+            >
+              {topicState.isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            <span>
+              {lastMessageDate
+                ? `Last message ${new Date(lastMessageDate).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}`
+                : 'No messages yet'}
             </span>
+            {sortedMessages.length > 0 && timelinePosition !== null && (
+              <span>
+                Showing {timelinePosition + 1} of {sortedMessages.length} messages
+              </span>
+            )}
+            {!isViewingLatest && (
+              <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/80">
+                Historic view
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:w-[260px] sm:items-end sm:justify-self-end">
+          <Button
+            type="button"
+            variant={topicState.isActive ? 'outline' : 'default'}
+            className={`w-full ${topicState.isActive ? 'border-border text-muted-foreground hover:bg-muted' : ''}`}
+            onClick={handleTopicStatusToggle}
+            disabled={updatingStatus}
+          >
+            {updatingStatus
+              ? 'Saving…'
+              : topicState.isActive
+              ? 'Mark inactive'
+              : 'Mark active'}
+          </Button>
+          {profile && (
+            <button
+              type="button"
+              onClick={() => setShowCalendarPanel((prev) => !prev)}
+              aria-expanded={showCalendarPanel}
+              className={`group w-full cursor-pointer rounded-xl border border-token bg-surface px-4 py-3 text-left text-xs text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
+                showCalendarPanel ? 'ring-2 ring-accent/60 ring-offset-2 ring-offset-background' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between text-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-full bg-[color:rgba(95,115,67,0.15)] p-1.5 text-[color:var(--p-leaf)] transition-colors group-hover:bg-primary/15 group-hover:text-primary">
+                    <CalendarIcon size={16} />
+                  </div>
+                  <div className="heading-label text-left text-muted-foreground/80">Calendar</div>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-muted-foreground transition-transform duration-200 ${showCalendarPanel ? 'rotate-180 text-foreground' : 'group-hover:text-foreground'}`}
+                />
+              </div>
+              <p className="mt-2 text-left text-xs text-muted-foreground">
+                Showing all times in {getShortTimezone()}.
+              </p>
+            </button>
           )}
         </div>
       </div>
-
       {channelGroups.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500">No conversations found for this topic</div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="rounded-xl border border-token bg-surface px-4 py-3 text-sm text-muted-foreground shadow-sm">
+            No conversations found for this topic
+          </div>
         </div>
-        ) : (
-        <div className="flex-1 min-h-0 grid gap-2 md:grid-cols-2 lg:grid-cols-3 overflow-hidden pb-2">
+      ) : (
+        <div className="flex-1 min-h-0 grid gap-2 overflow-hidden pb-2 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`min-h-0 grid grid-cols-1 gap-2 md:col-span-2 ${
+              showCalendarPanel ? 'lg:col-span-2 lg:grid-cols-2' : 'lg:col-span-3 lg:grid-cols-3'
+            }`}
+          >
             {channelGroups.map((channel) => {
-              const isExpanded = expandedContexts.has(channel.channelId)
-              const isDM = isDMChannel(channel.channelId)
-              const userId = isDM ? getCurrentUserId(channel.channelId) : null
-              const user = userId ? topicData.users.find((u) => u.id === userId) : null
-              const userCalendar = userId ? userCalendars[userId] || null : null
-              const userData = userId ? topicData.userData?.find((ud) => ud.slackUserId === userId) : null
-              const topicUserContext = userId ? topicState.perUserContext[userId] : null
+            const isDM = isDMChannel(channel.channelId)
+            const userId = isDM ? getCurrentUserId(channel.channelId) : null
+            const user = userId ? topicData.users.find((u) => u.id === userId) : null
+            const channelInfo = topicData.channels?.find((ch) => ch.id === channel.channelId)
+            const participantNames = (channelInfo?.userIds ?? [])
+              .map((id) => topicData.users.find((u) => u.id === id))
+              .filter((participant): participant is SlackUser => Boolean(participant))
 
-              return (
-                <div
-                  key={channel.channelId}
-                  className="bg-white rounded-lg shadow-md p-2 flex flex-col min-h-0"
-                >
-                  <div
-                    className={`flex-shrink-0 mb-2 pb-1 border-b border-gray-200 flex items-center justify-between -m-2 p-2 mb-0 rounded-t-lg ${
-                      isDM ? 'cursor-pointer hover:bg-gray-200 transition-colors' : ''
-                    }`}
-                    onClick={isDM ? () => toggleContextExpansion(channel.channelId) : undefined}
-                  >
-                    <div className="text-xs font-medium text-gray-700">
-                      {isDM ? (
-                        (() => {
-                          const userInfo = getDMUserInfo(channel.channelId)
-                          return userInfo ? (
-                            <>
-                              {userInfo.realName}
-                              {userInfo.timezone && ` (${userInfo.timezone})`}
-                              <span className="text-gray-400 ml-1">
-                                (#{channel.channelId})
-                              </span>
-                            </>
-                          ) : (
-                            `#${channel.channelId}`
-                          )
-                        })()
-                      ) : (
-                        `#${channel.channelId}`
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-gray-500">
-                        {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
-                      </div>
-                      {isDM && (
-                        <svg
-                          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
+            const otherParticipants = participantNames
+              .filter((participant) => participant.id !== viewerSlackId)
+              .map((participant) => participant.realName?.trim() || participant.id)
+              .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+
+            const viewerParticipant = viewerSlackId
+              ? participantNames.find((participant) => participant.id === viewerSlackId)
+              : null
+            const viewerName = viewerParticipant?.realName?.trim()
+            const includeViewer = Boolean(viewerParticipant)
+
+            const displayNames = isDM
+              ? [user?.realName || 'Direct message']
+              : includeViewer
+              ? [...otherParticipants, viewerName || 'You']
+              : otherParticipants
+
+            const humanLabel = displayNames.length > 0
+              ? displayNames.join(', ')
+              : `Channel ${channel.channelId}`
+            return (
+              <Card
+                key={channel.channelId}
+                className="flex min-h-0 flex-col border-token bg-surface/90 shadow-sm"
+              >
+                <div className="flex items-center justify-between border-b border-token/60 px-3 py-2 text-xs text-muted-foreground">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">{humanLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      {channel.messages.length} message{channel.messages.length !== 1 ? 's' : ''}
                     </div>
                   </div>
+                </div>
 
-                  {isExpanded && isDM && (
-                    <div className="mb-2 -mx-2 px-2">
-                      <UserContextView
-                        calendar={userCalendar}
-                        context={userData?.context}
-                        topicContext={topicUserContext}
-                        userTimezone={user?.tz || null}
-                        onConnectClick={userId && topicId && profile?.slackAccount && profile.slackAccount.id === userId ? (() => {
-                          const currentPath = window.location.pathname + window.location.search
-                          const params = new URLSearchParams({
-                            callbackURL: currentPath,
-                            errorCallbackURL: currentPath,
-                          })
-                          window.location.href = `/api/google/authorize?${params.toString()}`
-                        }) : null}
-                      />
-                    </div>
-                  )}
-
-              <div
-                className="flex-1 space-y-3 overflow-y-auto px-1 py-1"
-                ref={(el) => {
-                  if (el) {
-                    messageContainerRefs.current.set(channel.channelId, el)
-                  }
-                }}
-              >
+                <div
+                  className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
+                  ref={(el) => {
+                    if (el) {
+                      messageContainerRefs.current.set(channel.channelId, el)
+                    }
+                  }}
+                >
                   {channel.messages.map((msg) => {
-                    const userName = userMap.get(msg.userId) || 'Pivotal'
-                    const isBot = !userMap.has(msg.userId)
-                    // Check if this is the latest message overall based on timeline position
+                    const baseUserName = userMap.get(msg.userId) || 'Pivotal'
+                    const isBot = msg.userId === topicData.topic.botUserId || !userMap.has(msg.userId)
+                    const isViewer = viewerSlackId ? msg.userId === viewerSlackId : false
+                    const userName = isBot
+                      ? (
+                          <span className="inline-flex items-center gap-1 text-[color:var(--p-stem)]">
+                            <LogoMarkInline size={14} />
+                            Pivotal
+                          </span>
+                        )
+                      : baseUserName
                     const isLatestOverall = timelinePosition !== null &&
                       sortedMessages[timelinePosition]?.id === msg.id
 
                     return (
                       <div key={msg.id} className="space-y-2">
                         <div
-                          className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${isViewer ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer hover:opacity-90 transition-opacity ${
-                              isBot
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-900'
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 cursor-pointer transition-opacity hover:opacity-95 ${
+                              isViewer
+                                ? 'bg-accent text-accent-foreground'
+                                : 'bg-card text-foreground shadow-sm'
                             } ${
-                              isLatestOverall ? 'ring-2 ring-offset-2 ring-amber-500' : ''
+                              isLatestOverall ? 'ring-2 ring-accent/60 ring-offset-2 ring-offset-background' : ''
                             }`}
                             onClick={() => {
                               if (sendingChannels.size === 0) {
@@ -721,19 +921,19 @@ function Topic() {
                             }}
                           >
                             <div
-                              className={`text-xs mb-1 ${
-                                isBot ? 'text-blue-100' : 'text-gray-600'
+                              className={`mb-1 text-xs ${
+                                isBot ? 'text-accent-foreground/80' : 'text-muted-foreground'
                               }`}
                             >
                               {userName}
                             </div>
                             <div className="text-sm whitespace-pre-wrap break-words">
-                              {msg.text}
+                              {formatSlackText(msg.text ?? '')}
                               {renderActionButtons(msg, channel.channelId)}
                             </div>
                             <div
-                              className={`text-xs mt-1 ${
-                                isBot ? 'text-blue-100' : 'text-gray-500'
+                              className={`mt-1 text-xs ${
+                                isBot ? 'text-accent-foreground/70' : 'text-muted-foreground'
                               }`}
                             >
                               {isLatestOverall ? (
@@ -747,7 +947,8 @@ function Topic() {
                                     const timezoneString = isDM && user?.tz
                                       ? getShortTimezoneFromIANA(user.tz)
                                       : getShortTimezone()
-                                    return `${timeString} (${timezoneString}) (${msg.id})`
+                                    const idSuffix = isLocalMode ? ` (${msg.id})` : ''
+                                    return `${timeString} (${timezoneString})${idSuffix}`
                                   })()}
                                 </div>
                               ) : (
@@ -765,41 +966,30 @@ function Topic() {
                                       return `${timeString} (${timezoneString})`
                                     })()}
                                   </span>
-                                  <span className="truncate">
-                                    ({msg.id})
-                                  </span>
+                                  {isLocalMode && (
+                                    <span className="truncate text-muted-foreground/70">{msg.id}</span>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
-                        {isLocalMode && !isBot && isLatestOverall && (
-                          <div className={`flex ${isBot ? 'justify-end' : 'justify-start'}`}>
-                            <button
-                              onClick={() => { handleTestLlmResponse(msg.id).catch(console.error) }}
-                              disabled={testingMessageId === msg.id}
-                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            >
-                              {testingMessageId === msg.id ? 'Testing...' : 'Test LLM Response'}
-                            </button>
-                          </div>
-                        )}
+
+                        {isLocalMode && renderActionButtons(msg, channel.channelId)}
                       </div>
                     )
                   })}
                 </div>
 
-                {/* Chat Bar for DM Channels */}
                 {isLocalMode && isDM && isViewingLatest && (
-                  <div className="mt-2 -mx-2 -mb-2">
-                    <div className="flex">
+                  <div className="border-t border-token/60 px-3 py-3">
+                    <div className="flex items-center gap-2">
                       <input
-                        type="text"
                         value={chatInputs.get(channel.channelId) || ''}
-                        onChange={(e) => {
+                        onChange={(event) => {
                           setChatInputs((prev) => {
                             const next = new Map(prev)
-                            next.set(channel.channelId, e.target.value)
+                            next.set(channel.channelId, event.target.value)
                             return next
                           })
                         }}
@@ -811,87 +1001,134 @@ function Topic() {
                         }}
                         placeholder="Type a message..."
                         disabled={sendingChannels.has(channel.channelId)}
-                        className="flex-1 px-3 py-1.5 text-sm border-t border-l border-b border-gray-200 rounded-bl-lg focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="flex-1 rounded-lg border border-token bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:bg-muted disabled:text-muted-foreground"
                       />
-                      <button
-                        onClick={() => { handleSendMessage(channel.channelId).catch(console.error) }}
+                      <Button
+                        onClick={() => {
+                          handleSendMessage(channel.channelId).catch(console.error)
+                        }}
                         disabled={sendingChannels.has(channel.channelId) || !(chatInputs.get(channel.channelId) || '').trim()}
-                        className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0"
                       >
-                        {sendingChannels.has(channel.channelId) ? '...' : 'Send'}
-                      </button>
+                        {sendingChannels.has(channel.channelId) ? 'Sending…' : 'Send'}
+                      </Button>
                     </div>
                   </div>
                 )}
-                </div>
-              )
+              </Card>
+            )
             })}
           </div>
+          {showCalendarPanel && profile && (
+            <Card
+              key="calendar-overview"
+              className="flex min-h-0 flex-col border-[color:var(--p-leaf)] bg-surface/95 shadow-[0_12px_36px_-30px_rgba(13,38,24,0.35)] md:col-span-2 lg:col-span-1 lg:col-start-3 lg:row-span-full lg:self-stretch"
+            >
+              <div className="flex items-center justify-between border-b border-token/60 px-4 py-3 text-sm font-medium text-foreground">
+                <span className="flex items-center gap-2"><CalendarIcon size={16} className="text-[color:var(--p-leaf)]" />Calendar overview</span>
+                <Badge
+                  role={calendarConnected ? undefined : 'button'}
+                  tabIndex={calendarConnected ? undefined : 0}
+                  onClick={calendarConnected ? undefined : redirectToCalendarAuth}
+                  onKeyDown={calendarConnected
+                    ? undefined
+                    : (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          redirectToCalendarAuth()
+                        }
+                      }}
+                  variant={calendarConnected ? undefined : 'outline'}
+                  className={
+                    calendarConnected
+                      ? 'badge-active border-transparent px-2.5 py-1'
+                      : 'cursor-pointer border-[color:rgba(191,69,42,0.35)] px-2.5 py-1 text-[color:var(--p-ember)] transition-colors duration-200 hover:border-[color:rgba(191,69,42,0.5)] hover:bg-[color:rgba(191,69,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgba(191,69,42,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                  }
+                >
+                  {calendarConnected ? 'Google Calendar connected' : 'Connect Google Calendar'}
+                </Badge>
+              </div>
+              <div className="flex flex-1 flex-col gap-3 px-4 py-4 text-sm text-muted-foreground overflow-hidden">
+                <div className="rounded-lg border border-token/60 bg-background/70 p-3">
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground/70">User timezone</div>
+                  <div className="mt-1 text-sm font-medium text-foreground">{getShortTimezone()}</div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto rounded-lg border border-dashed border-token/60 bg-background/60 p-3">
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Upcoming</div>
+                    {upcomingEvents.length === 0 ? (
+                      <div className="mt-2 text-xs">
+                        {viewerCalendar
+                          ? 'No upcoming calendar holds detected.'
+                          : 'Calendar data will appear here once connected.'}
+                      </div>
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        {upcomingEvents.map((event) => {
+                          const start = new Date(event.start)
+                          const end = new Date(event.end)
+                          const sameDay = start.toDateString() === end.toDateString()
+                          const dayFormatter = new Intl.DateTimeFormat('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                          const timeFormatter = new Intl.DateTimeFormat('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })
+                          const rangeLabel = sameDay
+                            ? `${dayFormatter.format(start)} · ${timeFormatter.format(start)} – ${timeFormatter.format(end)}`
+                            : `${dayFormatter.format(start)} ${timeFormatter.format(start)} → ${timeFormatter.format(end)} ${timeFormatter.format(end)}`
+
+                          return (
+                            <div key={`${event.start}-${event.end}-${event.summary}`} className="rounded border border-token/60 bg-surface/80 p-3">
+                              <div className="flex items-center justify-between text-sm font-medium text-foreground">
+                                <span>{event.summary || 'Scheduled hold'}</span>
+                                {event.free && (
+                                  <span className="text-xs font-semibold text-[color:var(--status-active-text)]">
+                                    Open
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 text-xs text-muted-foreground">{rangeLabel}</div>
+                              {event.participantEmails && event.participantEmails.length > 0 && (
+                                <div className="mt-2 text-xs text-muted-foreground/80">
+                                  With {event.participantEmails.slice(0, 3).join(', ')}
+                                  {event.participantEmails.length > 3 ? '…' : ''}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Timeline Component */}
       {sortedMessages.length > 0 && (
-        <div className="flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-md p-2">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-sm font-medium text-gray-700">Message Timeline</div>
-              <div className="text-xs text-gray-500">
-                Use arrow keys (← →) or drag to navigate
-              </div>
+        <div className="mt-6 flex-shrink-0">
+          <div className="rounded-xl border border-token bg-surface p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-medium text-foreground">Message timeline</div>
+              <div className="text-xs text-muted-foreground">Use arrow keys or drag to navigate</div>
             </div>
-            <div
-              ref={timelineRef}
-              className={`relative h-8 bg-gray-100 rounded-lg select-none ${
-                sendingChannels.size > 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
-              onClick={handleTimelineClick}
-              onMouseDown={handleDragStart}
-            >
-              {/* Timeline track */}
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-300 rounded-full" />
-
-              {/* Timeline ticks */}
-              {sortedMessages.map((msg, index) => {
-                const position = (index / (sortedMessages.length - 1)) * 100
-                const isActive = timelinePosition !== null && index <= timelinePosition
-                const isCurrent = index === timelinePosition
-
-                return (
-                  <div
-                    key={msg.id}
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${position}%` }}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full -translate-x-1/2 transition-all ${
-                        isCurrent
-                          ? 'w-3 h-3 bg-blue-600 ring-2 ring-blue-300'
-                          : isActive
-                          ? 'bg-blue-500'
-                          : 'bg-gray-400'
-                      }`}
-                      title={`${new Date(msg.timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} - ${msg.text.substring(0, 50)}...`}
-                    />
-                  </div>
-                )
-              })}
-
-              {/* Current position indicator/thumb */}
-              {timelinePosition !== null && (
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 transition-none"
-                  style={{
-                    left: `${(timelinePosition / (sortedMessages.length - 1)) * 100}%`,
-                  }}
-                >
-                  <div
-                    className={`w-5 h-5 bg-blue-600 rounded-full -translate-x-1/2 shadow-lg ring-2 ring-white cursor-grab ${
-                      isDragging ? 'cursor-grabbing scale-110' : ''
-                    }`}
-                  />
-                </div>
-              )}
-            </div>
+            <Timeline
+              entries={timelineEntries}
+              position={timelinePosition}
+              disabled={sendingChannels.size > 0}
+              isDragging={isDragging}
+              thumbPulse={thumbPulse}
+              timelineRef={timelineRef}
+              onTrackClick={handleTimelineClick}
+              onDragStart={handleDragStart}
+            />
           </div>
         </div>
       )}
@@ -899,26 +1136,26 @@ function Topic() {
       {/* JSON Response Popup */}
       {showPopup && (
         <div
-          className="fixed inset-0 bg-gray-600/60 flex items-center justify-center z-50 p-4 cursor-pointer"
+          className="fixed inset-0 z-modal flex cursor-pointer items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
           onClick={() => setShowPopup(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[80vh] w-full overflow-hidden flex flex-col cursor-auto"
+            className="flex max-h-[80vh] w-full max-w-4xl cursor-auto flex-col overflow-hidden rounded-xl border border-token bg-surface shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">LLM Response</h2>
+            <div className="flex items-center justify-between border-b border-token/60 px-4 py-3">
+              <h2 className="heading-card text-foreground">LLM response</h2>
               <button
                 onClick={() => setShowPopup(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-4">
-              <pre className="text-xs font-mono whitespace-pre-wrap">
+            <div className="flex-1 overflow-auto bg-background px-4 py-3">
+              <pre className="font-mono text-xs text-muted-foreground whitespace-pre-wrap">
                 {llmResponse}
               </pre>
             </div>

@@ -3,7 +3,7 @@ import { RRuleTemporal } from 'rrule-temporal'
 import { toText } from 'rrule-temporal/totext'
 import { Temporal } from '@js-temporal/polyfill'
 
-import type { RunContext } from './agent-sdk'
+import type { AgentOptions, RunContext } from './agent-sdk'
 import { Agent, Runner, tool } from './agent-sdk'
 import db from '../db/engine'
 import type { SlackMessage, SlackUser, AutoMessageInsert } from '../db/schema/main'
@@ -27,21 +27,65 @@ export interface ConversationContext {
   userMap: Map<string, SlackUser>,
   callingUserTimezone: string,
 }
-export const ConversationRes = z.strictObject({
-  replyMessage: z.string().optional().nullable(),
-  markTopicInactive: z.boolean().optional().nullable(),
+
+const ConversationRes = z.strictObject({
+  replyMessage: z.string().optional().nullable().describe('Optional message text to reply to the user in the current channel/thread'),
+  markTopicInactive: z.boolean().optional().nullable().describe('Set to true when the topic is complete and should be marked as inactive'),
   messagesToUsers: z.array(z.strictObject({
-    userNames: z.array(z.string()),
-    text: z.string(),
-  })).optional().nullable(),
-  groupMessage: z.string().optional().nullable(),
-  finalizedEvent: CalendarEvent.optional().nullable(),
-  cancelEvent: z.boolean().optional().nullable(),
-  reasoning: z.string(),
+    userNames: z.array(z.string()).describe('Exact full names from User Directory to send this message to as individual 1-1 DMs'),
+    text: z.string().describe('The message text to send to each user as a private DM'),
+  })).optional().nullable().describe('Array of private 1-1 DM messages to send to specific users'),
+  groupMessage: z.string().optional().nullable().describe('Message to send to the shared channel with all topic participants'),
+  finalizedEvent: CalendarEvent.optional().nullable().describe('Calendar event details when finalizing a meeting time (includes start, end, summary)'),
+  cancelEvent: z.boolean().optional().nullable().describe('Set to true when cancelling an existing calendar event'),
+  promptCalendarButtons: z.strictObject({
+    userName: z.string().optional().nullable().describe('Exact real name from User Directory of the user to prompt for calendar connection'),
+    contextMessage: z.string().optional().nullable().describe('Optional context message to show with the calendar connection buttons'),
+  }).optional().nullable().describe('Prompt a user to connect their calendar with connection buttons'),
+  reasoning: z.string().describe('Brief explanation of your decision (REQUIRED)'),
 })
-export const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
-export type ConversationRes = z.infer<typeof ConversationRes>
+type ConversationRes = z.infer<typeof ConversationRes>
+
+const ConversationAgent = Agent<ConversationContext, typeof ConversationRes>
 export type ConversationAgent = InstanceType<typeof ConversationAgent>
+
+const conversationOutputTool = tool({
+  name: 'output',
+  description: 'Return your final response. Always call this tool as your final output, without outputting any other text.',
+  parameters: ConversationRes,
+  execute: (params) => params,
+})
+
+export function makeConversationAgent(
+  config: AgentOptions<ConversationContext, typeof ConversationRes>,
+): ConversationAgent {
+  // Validate that conflicting properties are not set
+  if (config.modelSettings && 'toolChoice' in config.modelSettings) {
+    throw new Error(
+      'makeConversationAgent automatically sets modelSettings.toolChoice. ' +
+      'This property cannot be manually specified.',
+    )
+  }
+  if ('outputType' in config || 'toolUseBehavior' in config || 'resetToolChoice' in config) {
+    throw new Error(
+      'makeConversationAgent automatically sets outputType, toolUseBehavior, and resetToolChoice. ' +
+      'These properties cannot be manually specified.',
+    )
+  }
+
+  // Pass through the config with modifications
+  return new ConversationAgent({
+    ...config,
+    tools: [...(config.tools || []), conversationOutputTool],
+    outputType: ConversationRes,
+    modelSettings: {
+      ...config.modelSettings,
+      toolChoice: 'required',
+    },
+    resetToolChoice: false,
+    toolUseBehavior: { stopAtToolNames: ['output'] },
+  })
+}
 
 export async function runConversationAgent(
   agent: ConversationAgent,
@@ -76,30 +120,48 @@ Based on the conversation history and current message, determine the next step i
 
   console.log(`User prompt: ${userPrompt}`)
 
-  try {
-    const runner = new Runner({ groupId: `topic-${topic.id}` })
-    const result = await runner.run(
-      agent,
-      userPrompt,
-      { context: { message, topic, userMap, callingUserTimezone } },
-    )
-    if (!result.finalOutput) {
-      throw new Error('No finalOutput generated')
-    }
-    return result.finalOutput
-  } catch (error) {
-    console.error('=== ERROR IN runConversationAgent ===')
-    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Full error object:', JSON.stringify(error, null, 2))
-    console.error('=================================')
+  const MAX_ATTEMPTS = 2
+  const retryReminder = '\n\nIMPORTANT: You must call the `output` tool to provide your response. Do not output anything else. If you need to call other tools first, do so, then call the `output` tool.'
 
-    // Return a safe default response
-    return {
-      replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
-      reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const promptToUse = attempt === 0 ? userPrompt : `${userPrompt}${retryReminder}`
+
+    try {
+      const runner = new Runner({ groupId: `topic-${topic.id}` })
+      const result = await runner.run(
+        agent,
+        promptToUse,
+        { context: { message, topic, userMap, callingUserTimezone } },
+      )
+      if (!result.finalOutput) {
+        throw new Error('No finalOutput generated')
+      }
+      return result.finalOutput
+    } catch (error) {
+      console.error(`=== ERROR IN runConversationAgent (attempt ${attempt + 1}/${MAX_ATTEMPTS}) ===`)
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+      console.error('Error message:', error instanceof Error ? error.message : String(error))
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('Full error object:', JSON.stringify(error, null, 2))
+      console.error('=================================')
+
+      // If this was the last attempt, return error response
+      if (attempt === MAX_ATTEMPTS - 1) {
+        return {
+          replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+          reasoning: `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        }
+      }
+
+      // Otherwise, retry with the reminder
+      console.warn('[ConversationAgent] Retrying with output tool reminder')
     }
+  }
+
+  // Fallback (should not reach here due to return in loop)
+  return {
+    replyMessage: 'I encountered an error processing your message. Please try sending it again. If the issue persists, contact support.',
+    reasoning: 'Error occurred: retry limit reached',
   }
 }
 

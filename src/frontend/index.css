@@ -1,1 +1,226 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap");
 @import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------- Design tokens (palette, radii) ---------- */
+:root {
+  /* Brand palette */
+  --p-root:    #0D2618; /* deep canopy */
+  --p-stem:    #194026; /* structural surface */
+  --p-leaf:    #5F7343; /* active/hover/selection */
+  --p-sand:    #F2E9D8; /* light neutral */
+  --p-ember:   #BF452A; /* CTA accent */
+
+  /* Semantic tokens used by shadcn/ui */
+  --background:           var(--p-sand);
+  --foreground:           var(--p-root);
+
+  --card:                 color-mix(in srgb, var(--p-sand) 92%, white);
+  --card-foreground:      var(--p-root);
+
+  --popover:              var(--card);
+  --popover-foreground:   var(--p-root);
+
+  --primary:              var(--p-ember);
+  --primary-foreground:   var(--p-sand);
+
+  --secondary:            color-mix(in srgb, var(--p-leaf) 12%, white);
+  --secondary-foreground: var(--p-root);
+
+  --accent:               color-mix(in srgb, var(--p-leaf) 18%, var(--p-sand));
+  --accent-foreground:    var(--p-root);
+
+  --muted:                color-mix(in srgb, var(--p-stem) 10%, var(--p-sand));
+  --muted-foreground:     color-mix(in srgb, var(--p-root) 65%, white);
+
+  --destructive:          #D92D20;
+  --destructive-foreground:#ffffff;
+
+  --border:               color-mix(in srgb, var(--p-stem) 24%, white);
+  --input:                var(--border);
+  --ring:                 var(--p-leaf);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+
+  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Data viz + sidebar tokens (used by future shadcn components) */
+  --chart-1: color-mix(in srgb, var(--p-ember) 72%, white);
+  --chart-2: color-mix(in srgb, var(--p-leaf) 65%, white);
+  --chart-3: color-mix(in srgb, var(--p-stem) 70%, white);
+  --chart-4: color-mix(in srgb, var(--p-root) 55%, white);
+  --chart-5: color-mix(in srgb, var(--p-leaf) 45%, var(--p-ember) 25%, white);
+
+  --sidebar:                 color-mix(in srgb, var(--p-stem) 35%, var(--p-root));
+  --sidebar-foreground:      var(--p-sand);
+  --sidebar-primary:         var(--p-ember);
+  --sidebar-primary-foreground: var(--p-sand);
+  --sidebar-accent:          color-mix(in srgb, var(--p-leaf) 35%, var(--p-stem));
+  --sidebar-accent-foreground: var(--p-sand);
+  --sidebar-border:          color-mix(in srgb, var(--p-root) 45%, var(--p-stem));
+  --sidebar-ring:            var(--p-leaf);
+
+  --status-active-bg:   color-mix(in srgb, var(--p-leaf) 22%, white);
+  --status-active-text: color-mix(in srgb, var(--p-leaf) 80%, var(--p-root) 10%);
+  --status-active-ring: color-mix(in srgb, var(--p-leaf) 55%, white 15%);
+  --hover-ember:        color-mix(in srgb, var(--p-ember) 88%, black 8%);
+
+  --spacing-container:  1.5rem;
+  --width-filter-toggle: 24rem;
+
+  --z-modal:    50;
+  --z-dropdown: 40;
+  --z-header:   30;
+}
+
+/* Dark (logged-in app shell) */
+:root.dark {
+  --background:           var(--p-root);
+  --foreground:           var(--p-sand);
+
+  --card:                 color-mix(in srgb, var(--p-stem) 82%, black);
+  --card-foreground:      var(--p-sand);
+
+  --popover:              color-mix(in srgb, var(--p-stem) 78%, black);
+  --popover-foreground:   var(--p-sand);
+
+  --primary:              var(--p-ember);
+  --primary-foreground:   var(--p-sand);
+
+  --secondary:            color-mix(in srgb, var(--p-root) 65%, var(--p-stem));
+  --secondary-foreground: var(--p-sand);
+
+  --accent:               color-mix(in srgb, var(--p-leaf) 55%, var(--p-root));
+  --accent-foreground:    var(--p-sand);
+
+  --muted:                color-mix(in srgb, var(--p-root) 70%, var(--p-stem));
+  --muted-foreground:     color-mix(in srgb, var(--p-sand) 75%, white);
+
+  --border:               color-mix(in srgb, var(--p-stem) 52%, var(--p-root));
+  --input:                var(--border);
+  --ring:                 color-mix(in srgb, var(--p-leaf) 75%, white 10%);
+
+  --sidebar:              color-mix(in srgb, var(--p-root) 88%, black);
+  --sidebar-foreground:   var(--p-sand);
+  --sidebar-primary:      var(--p-ember);
+  --sidebar-primary-foreground: var(--p-sand);
+  --sidebar-accent:       color-mix(in srgb, var(--p-stem) 70%, var(--p-root));
+  --sidebar-accent-foreground: var(--p-sand);
+  --sidebar-border:       color-mix(in srgb, var(--p-stem) 60%, var(--p-root));
+  --sidebar-ring:         var(--p-leaf);
+
+  --status-active-bg:   color-mix(in srgb, var(--p-leaf) 26%, var(--p-root));
+  --status-active-text: color-mix(in srgb, var(--p-leaf) 82%, white 15%);
+  --status-active-ring: color-mix(in srgb, var(--p-leaf) 60%, white 10%);
+  --hover-ember:        color-mix(in srgb, var(--p-ember) 82%, black 12%);
+
+  --spacing-container:  1.5rem;
+  --width-filter-toggle: 24rem;
+
+  --z-modal:    50;
+  --z-dropdown: 40;
+  --z-header:   30;
+}
+
+/* Base */
+html, body, #root { height: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* ---------- Semantic utilities (roots vs leaves) ---------- */
+@layer utilities {
+  .bg-surface     { background-color: var(--card); }
+  .text-muted     { color: var(--muted-foreground); }
+  .border-token   { border-color: var(--border); }
+  .ring-token     { --tw-ring-color: var(--ring); }
+  .elev-1 { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--p-root) 10%, transparent); }
+  .elev-2 { box-shadow: 0 4px 10px -2px color-mix(in srgb, var(--p-root) 20%, transparent); }
+  .animate-spin-slow { animation: spin 3s linear infinite; }
+  .heading-hero { @apply text-4xl font-semibold tracking-tight sm:text-5xl; }
+  .heading-section { @apply text-2xl font-semibold tracking-tight sm:text-3xl; }
+  .heading-card { @apply text-lg font-semibold tracking-tight; }
+  .heading-label { @apply text-xs font-medium uppercase tracking-[0.3em]; }
+  .login-gradient {
+    background-image: linear-gradient(180deg, rgba(13, 38, 24, 0.9) 0%, rgba(25, 64, 38, 0.7) 35%, rgba(242, 233, 216, 0.95) 85%);
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  .filter-toggle-shell {
+    border: 1px solid color-mix(in srgb, var(--p-stem) 28%, var(--p-sand));
+    background-color: color-mix(in srgb, var(--p-sand) 82%, var(--p-leaf) 18%);
+    box-shadow: 0 18px 36px -28px rgba(13, 38, 24, 0.55);
+    backdrop-filter: blur(6px);
+  }
+  .filter-toggle-thumb {
+    background-color: color-mix(in srgb, var(--p-sand) 70%, var(--p-leaf) 24%);
+    box-shadow: 0 12px 24px -20px rgba(13, 38, 24, 0.6);
+    pointer-events: none;
+  }
+  .max-w-filter-toggle { max-width: var(--width-filter-toggle); }
+  .badge-active {
+    background-color: var(--status-active-bg);
+    color: var(--status-active-text);
+    box-shadow: 0 0 0 1px var(--status-active-ring);
+  }
+  .hover-ember { transition: background-color 0.2s ease; }
+  .hover-ember:hover { background-color: var(--hover-ember); }
+  .z-modal { z-index: var(--z-modal); }
+  .z-dropdown { z-index: var(--z-dropdown); }
+  .z-header { z-index: var(--z-header); }
+}
+
+/* shadcn's CSS variable bridge */
+@theme inline {
+  --radius-sm:    calc(var(--radius) - 4px);
+  --radius-md:    calc(var(--radius) - 2px);
+  --radius-lg:    var(--radius);
+  --radius-xl:    calc(var(--radius) + 4px);
+  --color-background:    var(--background);
+  --color-foreground:    var(--foreground);
+  --color-card:    var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:    var(--popover);
+  --color-popover-foreground:    var(--popover-foreground);
+  --color-primary:    var(--primary);
+  --color-primary-foreground:    var(--primary-foreground);
+  --color-secondary:    var(--secondary);
+  --color-secondary-foreground:    var(--secondary-foreground);
+  --color-muted:    var(--muted);
+  --color-muted-foreground:    var(--muted-foreground);
+  --color-accent:    var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:    var(--destructive);
+  --color-border:    var(--border);
+  --color-input:    var(--input);
+  --color-ring:    var(--ring);
+  --color-chart-1:    var(--chart-1);
+  --color-chart-2:    var(--chart-2);
+  --color-chart-3:    var(--chart-3);
+  --color-chart-4:    var(--chart-4);
+  --color-chart-5:    var(--chart-5);
+  --color-sidebar:    var(--sidebar);
+  --color-sidebar-foreground:    var(--sidebar-foreground);
+  --color-sidebar-primary:    var(--sidebar-primary);
+  --color-sidebar-primary-foreground:    var(--sidebar-primary-foreground);
+  --color-sidebar-accent:    var(--sidebar-accent);
+  --color-sidebar-accent-foreground:    var(--sidebar-accent-foreground);
+  --color-sidebar-border:    var(--sidebar-border);
+  --color-sidebar-ring:    var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

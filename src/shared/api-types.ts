@@ -15,7 +15,7 @@ export type TopicStateWithMessageTs = TopicState & {
   createdByMessageRawTs: string
 }
 
-export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'other'])
+export const WorkflowType = z.enum(['scheduling', 'meeting-prep', 'queries', 'other'])
 export type WorkflowType = z.infer<typeof WorkflowType>
 
 export const CalendarEvent = z.strictObject({
@@ -41,7 +41,7 @@ export interface TopicUserContext {
   calendarPromptMessage?: { channelId: string, ts: string }
 }
 
-export interface BotRepository {
+export interface GithubRepo {
   id: string
   name: string
   owner: string
@@ -49,19 +49,16 @@ export interface BotRepository {
   invitationId: string | null
 }
 
-export interface GithubAccount {
-  accountId: string
-  username: string
-  orgName: string | null
-  linkedRepo: BotRepository | null
-  linkableRepos: BotRepository[]
-}
-
-export interface SlackAccount {
+export interface ProfileOrg {
   id: string
-  realName: string | null
-  teamId: string
-  teamName?: string | null
+  name: string
+  slackTeamId: string
+  slackAppInstalled: boolean
+  githubOrgName: string | null
+  githubOrgConnectedByUserName: string | null
+  githubLinkedRepo: GithubRepo | null
+  githubLinkableRepos: GithubRepo[]
+  githubRepoConnectedByUserName: string | null
 }
 
 export interface UserProfile {
@@ -70,9 +67,9 @@ export interface UserProfile {
     email: string
     name: string
   }
-  slackAccount: SlackAccount | null
+  slackAccount: { accountId: string } | null
   googleAccount: { accountId: string } | null
-  githubAccount: GithubAccount | null
+  organization: ProfileOrg
 }
 
 export interface AutoMessageDeactivation {

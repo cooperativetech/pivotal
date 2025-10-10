@@ -1,13 +1,14 @@
 import { and, eq } from 'drizzle-orm'
+import { symmetricDecrypt } from 'better-auth/crypto'
 import { WebClient } from '@slack/web-api'
 import db from '../db/engine'
-import { accountTable } from '../db/schema/auth'
-import { slackUserTable } from '../db/schema/main'
-import type { SlackAccount } from '@shared/api-types'
+import { accountTable, memberTable, organizationTable, slackAppInstallationTable } from '../db/schema/auth'
+import { mockSlackClient } from '../local-helpers'
 
-export async function getLinkedSlackAccount(userId: string): Promise<SlackAccount | null> {
-  const linkedSlackIds = await db
-    .select({ slackId: accountTable.accountId })
+const teamClientCache = new Map<string, WebClient>()
+
+export async function getLinkedSlackAccount(userId: string) {
+  const [linkedSlackAccount] = await db.select()
     .from(accountTable)
     .where(and(
       eq(accountTable.userId, userId),
@@ -15,44 +16,76 @@ export async function getLinkedSlackAccount(userId: string): Promise<SlackAccoun
     ))
     .limit(1)
 
-  if (linkedSlackIds.length === 0) {
+  if (!linkedSlackAccount) {
     return null
   }
 
-  const slackId = linkedSlackIds[0].slackId
+  return {
+    accountId: linkedSlackAccount.accountId,
+  }
+}
 
-  // Get Slack user details
-  const [slackUser] = await db
-    .select({
-      id: slackUserTable.id,
-      realName: slackUserTable.realName,
-      teamId: slackUserTable.teamId,
-    })
-    .from(slackUserTable)
-    .where(eq(slackUserTable.id, slackId))
+export async function getSlackClient(userId: string) {
+  const [res] = await db.select({ installation: slackAppInstallationTable.installation })
+    .from(memberTable)
+    .innerJoin(organizationTable, eq(memberTable.organizationId, organizationTable.id))
+    .innerJoin(slackAppInstallationTable, eq(organizationTable.slackTeamId, slackAppInstallationTable.teamId))
+    .where(eq(memberTable.userId, userId))
     .limit(1)
 
-  const teamId = slackUser?.teamId ?? 'unknown'
-
-  // Best-effort team name using bot token (only resolves current workspace)
-  let teamName: string | null = null
-  try {
-    if (process.env.PV_SLACK_BOT_TOKEN && teamId !== 'unknown') {
-      const client = new WebClient(process.env.PV_SLACK_BOT_TOKEN)
-      const info = await client.team.info()
-      if (info.ok && info.team?.id === teamId && info.team?.name) {
-        teamName = info.team.name
-      }
-    }
-  } catch (err) {
-    console.warn('team.info failed:', err)
+  if (!res || !res.installation.bot) {
+    return null
   }
 
-  // Return the slack account info, mirroring the structure from api.ts
-  return {
-    id: slackId,
-    realName: slackUser?.realName ?? null,
-    teamId,
-    teamName,
+  const botToken = await symmetricDecrypt({
+    key: process.env.PV_BETTER_AUTH_SECRET!,
+    data: res.installation.bot.token,
+  })
+
+  return new WebClient(botToken)
+}
+
+export async function getSlackClientForTeam(teamId: string): Promise<WebClient | null> {
+  if (process.env.PV_NODE_ENV === 'local') {
+    return mockSlackClient
+  }
+
+  if (!teamId) {
+    return null
+  }
+
+  const cached = teamClientCache.get(teamId)
+  if (cached) {
+    return cached
+  }
+
+  const [res] = await db.select({ installation: slackAppInstallationTable.installation })
+    .from(slackAppInstallationTable)
+    .where(eq(slackAppInstallationTable.teamId, teamId))
+    .limit(1)
+
+  const encryptedToken = res?.installation.bot?.token
+  if (!encryptedToken) {
+    return null
+  }
+
+  const secret = process.env.PV_BETTER_AUTH_SECRET
+  if (!secret) {
+    console.warn('[Slack] Missing PV_BETTER_AUTH_SECRET while fetching team Slack client.')
+    return null
+  }
+
+  try {
+    const botToken = await symmetricDecrypt({
+      key: secret,
+      data: encryptedToken,
+    })
+
+    const client = new WebClient(botToken)
+    teamClientCache.set(teamId, client)
+    return client
+  } catch (error) {
+    console.error(`[Slack] Failed to decrypt bot token for team ${teamId}:`, error)
+    return null
   }
 }
