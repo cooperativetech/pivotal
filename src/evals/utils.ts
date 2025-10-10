@@ -355,7 +355,7 @@ export async function clearDatabase(): Promise<void> {
 }
 
 // Get benchmark folders from a benchmark set
-export async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<string[]> {
+export function getBenchmarksFromSet(benchmarkSetFolder: string): string[] {
   const folderPath = join(__dirname, 'data', benchmarkSetFolder)
 
   if (!existsSync(folderPath)) {
@@ -365,8 +365,8 @@ export async function getBenchmarksFromSet(benchmarkSetFolder: string): Promise<
   try {
     // Find all benchmark_*_gen* folders within the top-level folder
     const subFolders = readdirSync(folderPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory() && dirent.name.includes('_gen'))
-      .map(dirent => join(benchmarkSetFolder, dirent.name))
+      .filter((dirent) => dirent.isDirectory() && dirent.name.includes('_gen'))
+      .map((dirent) => join(benchmarkSetFolder, dirent.name))
       .sort()
 
     if (subFolders.length === 0) {

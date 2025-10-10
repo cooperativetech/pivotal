@@ -63,7 +63,7 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
 }
 import { BaseScheduleUser } from './sim-users'
 import { type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
-import { z } from 'zod'
+import type { z } from 'zod'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -446,7 +446,7 @@ async function runSimpleEvaluation(): Promise<void> {
     } else {
       // Option 2: Loop over all benchmarks within the benchmark set folder
       console.log(`Using benchmark set: ${benchmarkSet}`)
-      benchmarksToRun = await getBenchmarksFromSet(benchmarkSet)
+      benchmarksToRun = getBenchmarksFromSet(benchmarkSet)
     }
 
     // Run all benchmarks
