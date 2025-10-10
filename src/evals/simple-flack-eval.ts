@@ -53,12 +53,6 @@ function parseArguments(): { benchmarkSet: string; benchmark: string | null; nRe
     process.exit(0)
   }
 
-  // Validate arguments - only one option should be specified
-  const argCount = [values.benchmarkSet, values.benchmark].filter(Boolean).length
-  if (argCount > 1) {
-    console.error('Error: Cannot specify both --benchmarkSet and --benchmark')
-    process.exit(1)
-  }
 
   return {
     benchmarkSet: values.benchmarkSet,
