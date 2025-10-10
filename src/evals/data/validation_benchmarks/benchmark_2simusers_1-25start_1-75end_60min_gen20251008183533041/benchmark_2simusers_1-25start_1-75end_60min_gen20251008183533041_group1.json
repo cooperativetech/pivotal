@@ -1,0 +1,86 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251008183533041",
+    "nGroups": 2,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Rachel",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Team Check-in with Restaurant Staff"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Individual Therapy Session - Server Burnout"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Group Therapy - Kitchen Stress Management"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Consultation: Workplace Wellness Program Design"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Documentation & Case Notes Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Morning Trail Safety Check"
+        },
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Park Transportation Coordination Meeting"
+        },
+        {
+          "start": "2025-01-02T15:30:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Visitor Education Program Planning"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Shuttle Route Optimization Review"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Interpretive Trail Design Workshop"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Daily Activity Report & Park Closure"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
