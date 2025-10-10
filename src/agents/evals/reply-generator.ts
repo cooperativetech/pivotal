@@ -15,9 +15,10 @@ const generateReplyAgent = new Agent({
 Guidelines:
 - Be brief and professional
 - Consider the user's calendar when discussing scheduling
-- Stay true to the user's goal and personality
+- Stay true to the user's goal and personality - NEVER deviate from specified time constraints
 - Respond naturally to the conversation context
-- Keep responses concise (1-2 sentences typically)`,
+- Keep responses concise (1-2 sentences typically)
+- If the user has time constraints in their goal, they must STRICTLY follow them and reject any meeting times outside those bounds`,
 })
 
 export async function generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: HistoryMessage[]): Promise<string> {
@@ -35,7 +36,7 @@ export async function generateReply(userName: string, goal: string, calendar: Si
     ? history.map((h) => `${h.sender === 'bot' ? 'Bot' : userName}: ${h.message}`).join('\n')
     : 'No previous conversation'
 
-  const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\nDo NOT accept any meetings outside of this timeframe.\n\n` : ''
+  const goalContext = goal && goal.trim() !== '' ? `Your goal is: ${goal}\n\nIMPORTANT: You MUST strictly adhere to your goal's time constraints. NEVER accept or agree to any meeting time that falls outside the specific timeframe mentioned in your goal. If a time is suggested outside your constraints, politely decline and redirect to times within your specified range.\n\n` : ''
   const prompt = `You are ${userName}. You are engaged in a scheduling conversation mediated by a bot named Pivotal. ${goalContext}Your calendar: ${calendarText}
 
 Conversation history:
@@ -45,8 +46,13 @@ Current messages to respond to: ${messageBuffer.join(' | ')}
 
 Respond naturally to: "${latestMessage}"
 
-Do NOT offer to schedule an appointment when there is a calendar conflict. However, DO accept meetings that are adjacent to existing appointments without time overlap (i.e., a meeting can
-start immediately when another ends, or end immediately before another starts). Generate only the reply text, nothing else.`
+CRITICAL RULES:
+1. If you have a goal with specific time constraints, NEVER accept meetings outside those times
+2. Do NOT offer to schedule an appointment when there is a calendar conflict
+3. DO accept meetings that are adjacent to existing appointments without time overlap (i.e., a meeting can start immediately when another ends, or end immediately before another starts)
+4. If a suggested time violates your goal's timeframe, politely decline and suggest alternative times within your constraints
+
+Generate only the reply text, nothing else.`
 
   try {
     const result = await run(generateReplyAgent, prompt)

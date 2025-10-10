@@ -1,0 +1,1674 @@
+{
+  "benchmark": {
+    "startTime": "2025-02-01T05:00:00.000Z",
+    "startTimeOffset": 31,
+    "endTime": "2025-02-28T05:00:00.000Z",
+    "endTimeOffset": 58,
+    "meetingLength": 60,
+    "nSimUsers": 8,
+    "genTimestamp": "20251010133149708",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Charlie",
+      "goal": "Schedule a 1-hour meeting between Saturday, February 1 at 12:00 AM and Friday, February 28 at 12:00 AM with Bob, Fiona, Helen, Teresa, Xara, Yasmin, Alice",
+      "calendar": [
+        {
+          "start": "2025-02-03T11:00:00.000Z",
+          "end": "2025-02-03T23:00:00.000Z",
+          "summary": "Long Haul Route - NYC to Atlanta"
+        },
+        {
+          "start": "2025-02-04T12:00:00.000Z",
+          "end": "2025-02-05T00:00:00.000Z",
+          "summary": "Return Route - Atlanta to NYC"
+        },
+        {
+          "start": "2025-02-05T14:00:00.000Z",
+          "end": "2025-02-05T15:00:00.000Z",
+          "summary": "Fleet Safety Meeting"
+        },
+        {
+          "start": "2025-02-05T19:00:00.000Z",
+          "end": "2025-02-05T20:30:00.000Z",
+          "summary": "Technology Integration Discussion - Smart Fleet Solutions"
+        },
+        {
+          "start": "2025-02-06T10:30:00.000Z",
+          "end": "2025-02-06T22:30:00.000Z",
+          "summary": "Regional Route - Philadelphia to Boston"
+        },
+        {
+          "start": "2025-02-07T11:00:00.000Z",
+          "end": "2025-02-07T21:00:00.000Z",
+          "summary": "Boston to NYC Return Route"
+        },
+        {
+          "start": "2025-02-10T13:00:00.000Z",
+          "end": "2025-02-10T14:30:00.000Z",
+          "summary": "DOT Compliance Review"
+        },
+        {
+          "start": "2025-02-10T18:00:00.000Z",
+          "end": "2025-02-10T19:00:00.000Z",
+          "summary": "Driver Mentorship Program Planning"
+        },
+        {
+          "start": "2025-02-11T10:00:00.000Z",
+          "end": "2025-02-12T00:00:00.000Z",
+          "summary": "Cross-Country Haul - NYC to Chicago"
+        },
+        {
+          "start": "2025-02-12T11:00:00.000Z",
+          "end": "2025-02-13T01:00:00.000Z",
+          "summary": "Chicago to NYC Return Haul"
+        },
+        {
+          "start": "2025-02-13T15:00:00.000Z",
+          "end": "2025-02-13T16:30:00.000Z",
+          "summary": "Innovation Workshop - Autonomous Vehicle Trends"
+        },
+        {
+          "start": "2025-02-14T13:00:00.000Z",
+          "end": "2025-02-14T14:00:00.000Z",
+          "summary": "Vehicle Inspection and Maintenance Review"
+        },
+        {
+          "start": "2025-02-14T20:00:00.000Z",
+          "end": "2025-02-14T21:00:00.000Z",
+          "summary": "Route Optimization Strategy Meeting"
+        },
+        {
+          "start": "2025-02-17T12:00:00.000Z",
+          "end": "2025-02-17T22:00:00.000Z",
+          "summary": "Local Delivery Route - NYC Metro Area"
+        },
+        {
+          "start": "2025-02-18T11:00:00.000Z",
+          "end": "2025-02-18T23:00:00.000Z",
+          "summary": "Regional Haul - NYC to Washington DC"
+        },
+        {
+          "start": "2025-02-19T14:00:00.000Z",
+          "end": "2025-02-19T15:30:00.000Z",
+          "summary": "Industry Conference Call - Future of Transportation"
+        },
+        {
+          "start": "2025-02-19T19:00:00.000Z",
+          "end": "2025-02-19T20:00:00.000Z",
+          "summary": "New Driver Training Session"
+        },
+        {
+          "start": "2025-02-20T10:30:00.000Z",
+          "end": "2025-02-20T22:30:00.000Z",
+          "summary": "DC to Baltimore to NYC Circuit"
+        },
+        {
+          "start": "2025-02-21T13:00:00.000Z",
+          "end": "2025-02-21T14:00:00.000Z",
+          "summary": "Fuel Efficiency Analysis Review"
+        },
+        {
+          "start": "2025-02-24T12:00:00.000Z",
+          "end": "2025-02-24T21:00:00.000Z",
+          "summary": "Short Haul Route - NYC to Hartford"
+        },
+        {
+          "start": "2025-02-25T14:00:00.000Z",
+          "end": "2025-02-25T16:00:00.000Z",
+          "summary": "Quarterly Performance Review"
+        },
+        {
+          "start": "2025-02-25T18:30:00.000Z",
+          "end": "2025-02-25T19:30:00.000Z",
+          "summary": "Supply Chain Innovation Brainstorm"
+        },
+        {
+          "start": "2025-02-26T11:00:00.000Z",
+          "end": "2025-02-26T23:00:00.000Z",
+          "summary": "Long Distance Route - NYC to Richmond"
+        },
+        {
+          "start": "2025-02-27T13:00:00.000Z",
+          "end": "2025-02-27T22:00:00.000Z",
+          "summary": "Richmond to NYC Return Route"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Family Consultation - Pre-arrangement Services"
+        },
+        {
+          "start": "2025-02-03T18:30:00.000Z",
+          "end": "2025-02-03T20:00:00.000Z",
+          "summary": "Body Preparation & Care Documentation"
+        },
+        {
+          "start": "2025-02-03T20:30:00.000Z",
+          "end": "2025-02-03T21:30:00.000Z",
+          "summary": "Medical Records Review & Transfer Coordination"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T15:00:00.000Z",
+          "summary": "Staff Meeting - Infection Control Protocols"
+        },
+        {
+          "start": "2025-02-04T19:00:00.000Z",
+          "end": "2025-02-04T21:00:00.000Z",
+          "summary": "Grief Counseling Session - Johnson Family"
+        },
+        {
+          "start": "2025-02-05T15:00:00.000Z",
+          "end": "2025-02-05T16:30:00.000Z",
+          "summary": "Medical Equipment Inspection & Maintenance"
+        },
+        {
+          "start": "2025-02-05T18:00:00.000Z",
+          "end": "2025-02-05T19:30:00.000Z",
+          "summary": "Embalming Preparation Assistance"
+        },
+        {
+          "start": "2025-02-06T14:00:00.000Z",
+          "end": "2025-02-06T16:00:00.000Z",
+          "summary": "Continuing Education - Thanatology Workshop"
+        },
+        {
+          "start": "2025-02-06T19:00:00.000Z",
+          "end": "2025-02-06T20:00:00.000Z",
+          "summary": "Hospice Transfer Coordination"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T14:00:00.000Z",
+          "summary": "Daily Health & Safety Checklist"
+        },
+        {
+          "start": "2025-02-07T16:00:00.000Z",
+          "end": "2025-02-07T17:30:00.000Z",
+          "summary": "Family Support Meeting - Memorial Planning"
+        },
+        {
+          "start": "2025-02-08T15:00:00.000Z",
+          "end": "2025-02-08T16:00:00.000Z",
+          "summary": "Weekend On-Call Preparation"
+        },
+        {
+          "start": "2025-02-10T14:30:00.000Z",
+          "end": "2025-02-10T16:00:00.000Z",
+          "summary": "Funeral Service Support - St. Michael's Church"
+        },
+        {
+          "start": "2025-02-10T18:00:00.000Z",
+          "end": "2025-02-10T19:00:00.000Z",
+          "summary": "Post-Service Family Check-in"
+        },
+        {
+          "start": "2025-02-11T13:30:00.000Z",
+          "end": "2025-02-11T15:30:00.000Z",
+          "summary": "Coroner's Office Coordination Meeting"
+        },
+        {
+          "start": "2025-02-11T19:30:00.000Z",
+          "end": "2025-02-11T21:00:00.000Z",
+          "summary": "Bereavement Support Group Facilitation"
+        },
+        {
+          "start": "2025-02-12T14:00:00.000Z",
+          "end": "2025-02-12T15:30:00.000Z",
+          "summary": "Quality Assurance Review - Care Standards"
+        },
+        {
+          "start": "2025-02-12T20:00:00.000Z",
+          "end": "2025-02-12T21:30:00.000Z",
+          "summary": "Medical History Documentation & Filing"
+        },
+        {
+          "start": "2025-02-13T15:00:00.000Z",
+          "end": "2025-02-13T17:00:00.000Z",
+          "summary": "Emergency Response Training - CPR Recertification"
+        },
+        {
+          "start": "2025-02-13T18:30:00.000Z",
+          "end": "2025-02-13T20:00:00.000Z",
+          "summary": "Viewing Preparation & Family Comfort Setup"
+        },
+        {
+          "start": "2025-02-14T14:00:00.000Z",
+          "end": "2025-02-14T15:00:00.000Z",
+          "summary": "Valentine's Memorial Service Planning"
+        },
+        {
+          "start": "2025-02-14T19:00:00.000Z",
+          "end": "2025-02-14T20:30:00.000Z",
+          "summary": "Compassionate Care Consultation"
+        },
+        {
+          "start": "2025-02-17T13:30:00.000Z",
+          "end": "2025-02-17T15:00:00.000Z",
+          "summary": "Weekly Team Huddle - Case Reviews"
+        },
+        {
+          "start": "2025-02-17T16:00:00.000Z",
+          "end": "2025-02-17T17:30:00.000Z",
+          "summary": "Autopsy Coordination & Medical Report Review"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T20:00:00.000Z",
+          "summary": "Insurance Documentation & Claims Processing"
+        },
+        {
+          "start": "2025-02-18T14:30:00.000Z",
+          "end": "2025-02-18T16:00:00.000Z",
+          "summary": "Pre-Need Counseling Session"
+        },
+        {
+          "start": "2025-02-18T18:00:00.000Z",
+          "end": "2025-02-18T19:30:00.000Z",
+          "summary": "Tissue Donation Coordination"
+        },
+        {
+          "start": "2025-02-19T13:00:00.000Z",
+          "end": "2025-02-19T14:30:00.000Z",
+          "summary": "Facility Hygiene & Sanitization Rounds"
+        },
+        {
+          "start": "2025-02-19T15:30:00.000Z",
+          "end": "2025-02-19T17:00:00.000Z",
+          "summary": "Cremation Process Oversight"
+        },
+        {
+          "start": "2025-02-19T20:00:00.000Z",
+          "end": "2025-02-19T21:00:00.000Z",
+          "summary": "Grief Counselor Collaboration Meeting"
+        },
+        {
+          "start": "2025-02-20T14:00:00.000Z",
+          "end": "2025-02-20T16:00:00.000Z",
+          "summary": "Professional Development - Death Care Ethics Seminar"
+        },
+        {
+          "start": "2025-02-20T18:30:00.000Z",
+          "end": "2025-02-20T20:00:00.000Z",
+          "summary": "Emergency Call Response Planning"
+        },
+        {
+          "start": "2025-02-21T13:30:00.000Z",
+          "end": "2025-02-21T14:30:00.000Z",
+          "summary": "Weekend Duty Assignment Briefing"
+        },
+        {
+          "start": "2025-02-21T19:00:00.000Z",
+          "end": "2025-02-21T20:30:00.000Z",
+          "summary": "Memorial Garden Consultation"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T15:30:00.000Z",
+          "summary": "Monthly Safety Compliance Review"
+        },
+        {
+          "start": "2025-02-24T16:30:00.000Z",
+          "end": "2025-02-24T18:00:00.000Z",
+          "summary": "Veteran Services Coordination"
+        },
+        {
+          "start": "2025-02-24T19:30:00.000Z",
+          "end": "2025-02-24T21:00:00.000Z",
+          "summary": "Advanced Directives Consultation"
+        },
+        {
+          "start": "2025-02-25T13:00:00.000Z",
+          "end": "2025-02-25T14:00:00.000Z",
+          "summary": "Morning Facility Inspection"
+        },
+        {
+          "start": "2025-02-25T15:00:00.000Z",
+          "end": "2025-02-25T16:30:00.000Z",
+          "summary": "Interfaith Clergy Coordination Meeting"
+        },
+        {
+          "start": "2025-02-25T18:00:00.000Z",
+          "end": "2025-02-25T19:00:00.000Z",
+          "summary": "Supply Inventory & Medical Equipment Check"
+        },
+        {
+          "start": "2025-02-26T14:30:00.000Z",
+          "end": "2025-02-26T16:00:00.000Z",
+          "summary": "Community Outreach - Senior Center Health Talk"
+        },
+        {
+          "start": "2025-02-26T19:00:00.000Z",
+          "end": "2025-02-26T20:30:00.000Z",
+          "summary": "Pharmacy Coordination - Pain Management Consultation"
+        },
+        {
+          "start": "2025-02-27T13:30:00.000Z",
+          "end": "2025-02-27T15:00:00.000Z",
+          "summary": "Peer Support Group - Death Care Professionals"
+        },
+        {
+          "start": "2025-02-27T16:00:00.000Z",
+          "end": "2025-02-27T17:00:00.000Z",
+          "summary": "Monthly Reporting & Documentation Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Fiona",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Weekly Creative Team Meeting"
+        },
+        {
+          "start": "2025-02-03T16:00:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Puppet Maintenance Review"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T22:00:00.000Z",
+          "summary": "Spring Show Rehearsal - Main Stage"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T14:30:00.000Z",
+          "summary": "Character Development Workshop"
+        },
+        {
+          "start": "2025-02-04T15:00:00.000Z",
+          "end": "2025-02-04T16:30:00.000Z",
+          "summary": "New Puppet Design Review"
+        },
+        {
+          "start": "2025-02-04T18:00:00.000Z",
+          "end": "2025-02-04T20:00:00.000Z",
+          "summary": "Training Session - Advanced Puppetry Techniques"
+        },
+        {
+          "start": "2025-02-05T14:00:00.000Z",
+          "end": "2025-02-05T15:00:00.000Z",
+          "summary": "Operations Sync - Show Scheduling"
+        },
+        {
+          "start": "2025-02-05T19:30:00.000Z",
+          "end": "2025-02-05T21:30:00.000Z",
+          "summary": "Performance Quality Review"
+        },
+        {
+          "start": "2025-02-06T13:00:00.000Z",
+          "end": "2025-02-06T14:00:00.000Z",
+          "summary": "Safety Protocol Training"
+        },
+        {
+          "start": "2025-02-06T15:30:00.000Z",
+          "end": "2025-02-06T17:00:00.000Z",
+          "summary": "Puppet Rigging and Setup"
+        },
+        {
+          "start": "2025-02-06T20:00:00.000Z",
+          "end": "2025-02-06T22:00:00.000Z",
+          "summary": "Guest Interaction Training"
+        },
+        {
+          "start": "2025-02-07T14:30:00.000Z",
+          "end": "2025-02-07T16:00:00.000Z",
+          "summary": "Budget Planning - Puppet Department"
+        },
+        {
+          "start": "2025-02-07T18:30:00.000Z",
+          "end": "2025-02-07T20:30:00.000Z",
+          "summary": "Weekend Show Prep"
+        },
+        {
+          "start": "2025-02-08T16:00:00.000Z",
+          "end": "2025-02-08T18:00:00.000Z",
+          "summary": "Weekend Performance - Family Show"
+        },
+        {
+          "start": "2025-02-09T19:00:00.000Z",
+          "end": "2025-02-09T21:00:00.000Z",
+          "summary": "Sunday Matinee Performance"
+        },
+        {
+          "start": "2025-02-10T13:30:00.000Z",
+          "end": "2025-02-10T15:00:00.000Z",
+          "summary": "Weekly Team Standup"
+        },
+        {
+          "start": "2025-02-10T16:00:00.000Z",
+          "end": "2025-02-10T17:30:00.000Z",
+          "summary": "Costume Fitting Session"
+        },
+        {
+          "start": "2025-02-10T19:00:00.000Z",
+          "end": "2025-02-10T21:00:00.000Z",
+          "summary": "Strategic Planning - Spring Season"
+        },
+        {
+          "start": "2025-02-11T14:00:00.000Z",
+          "end": "2025-02-11T15:30:00.000Z",
+          "summary": "Vendor Meeting - Puppet Supplies"
+        },
+        {
+          "start": "2025-02-11T18:00:00.000Z",
+          "end": "2025-02-11T20:00:00.000Z",
+          "summary": "Technology Integration Workshop"
+        },
+        {
+          "start": "2025-02-12T13:00:00.000Z",
+          "end": "2025-02-12T14:30:00.000Z",
+          "summary": "Emergency Response Drill"
+        },
+        {
+          "start": "2025-02-12T15:30:00.000Z",
+          "end": "2025-02-12T17:00:00.000Z",
+          "summary": "Puppet Storage Inventory"
+        },
+        {
+          "start": "2025-02-12T19:30:00.000Z",
+          "end": "2025-02-12T21:30:00.000Z",
+          "summary": "Performance Analysis Meeting"
+        },
+        {
+          "start": "2025-02-13T14:30:00.000Z",
+          "end": "2025-02-13T16:00:00.000Z",
+          "summary": "Cross-Department Collaboration"
+        },
+        {
+          "start": "2025-02-13T18:00:00.000Z",
+          "end": "2025-02-13T20:00:00.000Z",
+          "summary": "Puppet Repair Workshop"
+        },
+        {
+          "start": "2025-02-14T15:00:00.000Z",
+          "end": "2025-02-14T16:30:00.000Z",
+          "summary": "Valentine's Day Special Show Prep"
+        },
+        {
+          "start": "2025-02-14T20:00:00.000Z",
+          "end": "2025-02-14T22:00:00.000Z",
+          "summary": "Valentine's Day Performance"
+        },
+        {
+          "start": "2025-02-15T18:00:00.000Z",
+          "end": "2025-02-15T20:00:00.000Z",
+          "summary": "Weekend Family Workshop"
+        },
+        {
+          "start": "2025-02-17T13:30:00.000Z",
+          "end": "2025-02-17T15:00:00.000Z",
+          "summary": "Presidents Day Planning"
+        },
+        {
+          "start": "2025-02-18T14:00:00.000Z",
+          "end": "2025-02-18T15:30:00.000Z",
+          "summary": "Quarterly Performance Review"
+        },
+        {
+          "start": "2025-02-18T16:00:00.000Z",
+          "end": "2025-02-18T17:30:00.000Z",
+          "summary": "Innovation Brainstorming Session"
+        },
+        {
+          "start": "2025-02-18T19:00:00.000Z",
+          "end": "2025-02-18T21:00:00.000Z",
+          "summary": "Equipment Maintenance Training"
+        },
+        {
+          "start": "2025-02-19T13:00:00.000Z",
+          "end": "2025-02-19T14:30:00.000Z",
+          "summary": "Morning Show Rehearsal"
+        },
+        {
+          "start": "2025-02-19T15:30:00.000Z",
+          "end": "2025-02-19T17:00:00.000Z",
+          "summary": "Guest Feedback Review"
+        },
+        {
+          "start": "2025-02-19T19:30:00.000Z",
+          "end": "2025-02-19T21:30:00.000Z",
+          "summary": "Script Development Workshop"
+        },
+        {
+          "start": "2025-02-20T14:00:00.000Z",
+          "end": "2025-02-20T15:30:00.000Z",
+          "summary": "Puppet Movement Masterclass"
+        },
+        {
+          "start": "2025-02-20T18:00:00.000Z",
+          "end": "2025-02-20T20:00:00.000Z",
+          "summary": "Seasonal Transition Planning"
+        },
+        {
+          "start": "2025-02-21T15:00:00.000Z",
+          "end": "2025-02-21T16:30:00.000Z",
+          "summary": "Professional Development - Industry Trends"
+        },
+        {
+          "start": "2025-02-21T19:00:00.000Z",
+          "end": "2025-02-21T21:00:00.000Z",
+          "summary": "End of Month Review"
+        },
+        {
+          "start": "2025-02-22T16:00:00.000Z",
+          "end": "2025-02-22T18:00:00.000Z",
+          "summary": "Weekend Special Event"
+        },
+        {
+          "start": "2025-02-24T13:30:00.000Z",
+          "end": "2025-02-24T15:00:00.000Z",
+          "summary": "Monthly Team Meeting"
+        },
+        {
+          "start": "2025-02-24T16:00:00.000Z",
+          "end": "2025-02-24T17:00:00.000Z",
+          "summary": "Equipment Inspection"
+        },
+        {
+          "start": "2025-02-24T19:30:00.000Z",
+          "end": "2025-02-24T21:30:00.000Z",
+          "summary": "March Show Prep Meeting"
+        },
+        {
+          "start": "2025-02-25T14:30:00.000Z",
+          "end": "2025-02-25T16:00:00.000Z",
+          "summary": "Puppet Design Consultation"
+        },
+        {
+          "start": "2025-02-25T18:00:00.000Z",
+          "end": "2025-02-25T20:00:00.000Z",
+          "summary": "Performance Technique Workshop"
+        },
+        {
+          "start": "2025-02-26T13:00:00.000Z",
+          "end": "2025-02-26T14:30:00.000Z",
+          "summary": "Morning Team Huddle"
+        },
+        {
+          "start": "2025-02-26T15:30:00.000Z",
+          "end": "2025-02-26T17:00:00.000Z",
+          "summary": "Puppet Storage Reorganization"
+        },
+        {
+          "start": "2025-02-26T19:00:00.000Z",
+          "end": "2025-02-26T21:00:00.000Z",
+          "summary": "Guest Experience Enhancement Meeting"
+        },
+        {
+          "start": "2025-02-27T14:00:00.000Z",
+          "end": "2025-02-27T15:30:00.000Z",
+          "summary": "Final February Review"
+        },
+        {
+          "start": "2025-02-27T18:30:00.000Z",
+          "end": "2025-02-27T20:30:00.000Z",
+          "summary": "March Launch Strategy"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Helen",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Family Consultation - Johnson Memorial Service"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T21:00:00.000Z",
+          "summary": "Cemetery Grounds Inspection - Wildlife Impact Assessment"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T14:30:00.000Z",
+          "summary": "Pre-Service Setup - Memorial Garden"
+        },
+        {
+          "start": "2025-02-04T16:00:00.000Z",
+          "end": "2025-02-04T17:00:00.000Z",
+          "summary": "Memorial Service - Eleanor Martinez"
+        },
+        {
+          "start": "2025-02-05T12:00:00.000Z",
+          "end": "2025-02-05T14:00:00.000Z",
+          "summary": "Morning Wildlife Survey - Cemetery Perimeter"
+        },
+        {
+          "start": "2025-02-05T18:00:00.000Z",
+          "end": "2025-02-05T19:30:00.000Z",
+          "summary": "Staff Meeting - Environmental Protocols"
+        },
+        {
+          "start": "2025-02-06T15:00:00.000Z",
+          "end": "2025-02-06T16:30:00.000Z",
+          "summary": "Burial Site Preparation - Section C"
+        },
+        {
+          "start": "2025-02-06T20:00:00.000Z",
+          "end": "2025-02-06T21:00:00.000Z",
+          "summary": "Family Meeting - Thompson Funeral Planning"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T15:00:00.000Z",
+          "summary": "Tree Maintenance - Oak Grove Memorial Section"
+        },
+        {
+          "start": "2025-02-07T19:30:00.000Z",
+          "end": "2025-02-07T20:30:00.000Z",
+          "summary": "Graveside Service - Robert Chen"
+        },
+        {
+          "start": "2025-02-08T14:00:00.000Z",
+          "end": "2025-02-08T16:00:00.000Z",
+          "summary": "Weekend Trail Maintenance - Memorial Pathway"
+        },
+        {
+          "start": "2025-02-10T14:30:00.000Z",
+          "end": "2025-02-10T15:30:00.000Z",
+          "summary": "City Planning Commission - Cemetery Expansion Review"
+        },
+        {
+          "start": "2025-02-10T19:00:00.000Z",
+          "end": "2025-02-10T20:30:00.000Z",
+          "summary": "Environmental Impact Assessment Meeting"
+        },
+        {
+          "start": "2025-02-11T13:00:00.000Z",
+          "end": "2025-02-11T14:00:00.000Z",
+          "summary": "Morning Security Rounds - Perimeter Check"
+        },
+        {
+          "start": "2025-02-11T16:00:00.000Z",
+          "end": "2025-02-11T17:30:00.000Z",
+          "summary": "Memorial Service - Patricia Williams"
+        },
+        {
+          "start": "2025-02-12T12:30:00.000Z",
+          "end": "2025-02-12T14:30:00.000Z",
+          "summary": "Bird Migration Monitoring - Dawn Survey"
+        },
+        {
+          "start": "2025-02-12T18:00:00.000Z",
+          "end": "2025-02-12T19:00:00.000Z",
+          "summary": "Grief Counselor Coordination Meeting"
+        },
+        {
+          "start": "2025-02-13T15:00:00.000Z",
+          "end": "2025-02-13T16:30:00.000Z",
+          "summary": "Burial Service - Michael O'Connor"
+        },
+        {
+          "start": "2025-02-13T20:00:00.000Z",
+          "end": "2025-02-13T21:30:00.000Z",
+          "summary": "Habitat Restoration Planning - Native Species"
+        },
+        {
+          "start": "2025-02-14T14:00:00.000Z",
+          "end": "2025-02-14T15:00:00.000Z",
+          "summary": "Valentine's Memorial Event Setup"
+        },
+        {
+          "start": "2025-02-14T19:00:00.000Z",
+          "end": "2025-02-14T20:00:00.000Z",
+          "summary": "Valentine's Remembrance Ceremony"
+        },
+        {
+          "start": "2025-02-15T13:00:00.000Z",
+          "end": "2025-02-15T15:00:00.000Z",
+          "summary": "Weekend Grounds Inspection - Storm Damage Assessment"
+        },
+        {
+          "start": "2025-02-17T14:00:00.000Z",
+          "end": "2025-02-17T15:30:00.000Z",
+          "summary": "Family Consultation - Davis Memorial Planning"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T21:00:00.000Z",
+          "summary": "Invasive Species Removal - Section B"
+        },
+        {
+          "start": "2025-02-18T13:30:00.000Z",
+          "end": "2025-02-18T14:30:00.000Z",
+          "summary": "Equipment Maintenance Check - Grounds Vehicles"
+        },
+        {
+          "start": "2025-02-18T16:00:00.000Z",
+          "end": "2025-02-18T17:00:00.000Z",
+          "summary": "Memorial Service - James Rodriguez"
+        },
+        {
+          "start": "2025-02-19T12:00:00.000Z",
+          "end": "2025-02-19T14:00:00.000Z",
+          "summary": "Water Quality Testing - Pond and Streams"
+        },
+        {
+          "start": "2025-02-19T18:30:00.000Z",
+          "end": "2025-02-19T19:30:00.000Z",
+          "summary": "Monthly Safety Training - Staff Meeting"
+        },
+        {
+          "start": "2025-02-20T15:00:00.000Z",
+          "end": "2025-02-20T16:00:00.000Z",
+          "summary": "Burial Site Blessing - Thompson Family"
+        },
+        {
+          "start": "2025-02-20T20:00:00.000Z",
+          "end": "2025-02-20T21:30:00.000Z",
+          "summary": "Wildlife Photography Documentation"
+        },
+        {
+          "start": "2025-02-21T13:00:00.000Z",
+          "end": "2025-02-21T15:00:00.000Z",
+          "summary": "Trail Clearing - Memorial Walking Path"
+        },
+        {
+          "start": "2025-02-24T14:30:00.000Z",
+          "end": "2025-02-24T15:30:00.000Z",
+          "summary": "Vendor Meeting - Landscaping Services"
+        },
+        {
+          "start": "2025-02-24T19:00:00.000Z",
+          "end": "2025-02-24T20:30:00.000Z",
+          "summary": "Soil Testing - New Burial Sections"
+        },
+        {
+          "start": "2025-02-25T13:00:00.000Z",
+          "end": "2025-02-25T14:00:00.000Z",
+          "summary": "Morning Grounds Patrol - Security Check"
+        },
+        {
+          "start": "2025-02-25T16:30:00.000Z",
+          "end": "2025-02-25T17:30:00.000Z",
+          "summary": "Graveside Service - Mary Anderson"
+        },
+        {
+          "start": "2025-02-26T12:30:00.000Z",
+          "end": "2025-02-26T14:30:00.000Z",
+          "summary": "Deer Population Survey - Early Morning Count"
+        },
+        {
+          "start": "2025-02-26T18:00:00.000Z",
+          "end": "2025-02-26T19:30:00.000Z",
+          "summary": "Memorial Garden Redesign Planning"
+        },
+        {
+          "start": "2025-02-27T14:00:00.000Z",
+          "end": "2025-02-27T15:30:00.000Z",
+          "summary": "Family Consultation - Parker Memorial Service"
+        },
+        {
+          "start": "2025-02-27T20:00:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Monthly Report Compilation - Environmental Data"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Teresa",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:00:00.000Z",
+          "summary": "Product Team Standup"
+        },
+        {
+          "start": "2025-02-03T15:30:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Recipe Algorithm Development"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T20:30:00.000Z",
+          "summary": "Food Tech Integration Meeting"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T14:30:00.000Z",
+          "summary": "Nutrition Data Analysis"
+        },
+        {
+          "start": "2025-02-04T16:00:00.000Z",
+          "end": "2025-02-04T17:00:00.000Z",
+          "summary": "Kitchen Equipment IoT Review"
+        },
+        {
+          "start": "2025-02-04T20:00:00.000Z",
+          "end": "2025-02-04T21:00:00.000Z",
+          "summary": "Customer Feedback Analysis - Recipe App"
+        },
+        {
+          "start": "2025-02-05T14:00:00.000Z",
+          "end": "2025-02-05T15:30:00.000Z",
+          "summary": "AI Menu Planning Sprint Planning"
+        },
+        {
+          "start": "2025-02-05T18:00:00.000Z",
+          "end": "2025-02-05T20:00:00.000Z",
+          "summary": "Food Safety Protocol Documentation"
+        },
+        {
+          "start": "2025-02-06T15:00:00.000Z",
+          "end": "2025-02-06T16:30:00.000Z",
+          "summary": "Smart Kitchen Demo Preparation"
+        },
+        {
+          "start": "2025-02-06T19:30:00.000Z",
+          "end": "2025-02-06T21:00:00.000Z",
+          "summary": "Culinary API Testing Session"
+        },
+        {
+          "start": "2025-02-07T14:30:00.000Z",
+          "end": "2025-02-07T16:00:00.000Z",
+          "summary": "Tech-Enhanced Recipe Development"
+        },
+        {
+          "start": "2025-02-07T18:30:00.000Z",
+          "end": "2025-02-07T19:30:00.000Z",
+          "summary": "Weekly Engineering Sync"
+        },
+        {
+          "start": "2025-02-10T14:00:00.000Z",
+          "end": "2025-02-10T15:00:00.000Z",
+          "summary": "Product Team Standup"
+        },
+        {
+          "start": "2025-02-10T16:00:00.000Z",
+          "end": "2025-02-10T17:30:00.000Z",
+          "summary": "Food Tech Vendor Meeting"
+        },
+        {
+          "start": "2025-02-10T20:00:00.000Z",
+          "end": "2025-02-10T21:30:00.000Z",
+          "summary": "Mobile App Recipe Testing"
+        },
+        {
+          "start": "2025-02-11T13:00:00.000Z",
+          "end": "2025-02-11T14:00:00.000Z",
+          "summary": "Kitchen Equipment Calibration"
+        },
+        {
+          "start": "2025-02-11T15:30:00.000Z",
+          "end": "2025-02-11T17:00:00.000Z",
+          "summary": "Food Photography Tech Setup"
+        },
+        {
+          "start": "2025-02-11T19:00:00.000Z",
+          "end": "2025-02-11T20:00:00.000Z",
+          "summary": "Dietary Restriction Algorithm Review"
+        },
+        {
+          "start": "2025-02-12T14:30:00.000Z",
+          "end": "2025-02-12T16:00:00.000Z",
+          "summary": "Smart Pantry Integration Planning"
+        },
+        {
+          "start": "2025-02-12T18:00:00.000Z",
+          "end": "2025-02-12T19:30:00.000Z",
+          "summary": "Cooking Tutorial Video Recording"
+        },
+        {
+          "start": "2025-02-13T15:00:00.000Z",
+          "end": "2025-02-13T16:30:00.000Z",
+          "summary": "Food Delivery Tech Integration"
+        },
+        {
+          "start": "2025-02-13T20:00:00.000Z",
+          "end": "2025-02-13T21:00:00.000Z",
+          "summary": "Recipe Database Optimization"
+        },
+        {
+          "start": "2025-02-14T14:00:00.000Z",
+          "end": "2025-02-14T15:30:00.000Z",
+          "summary": "Valentine's Day Menu Algorithm Testing"
+        },
+        {
+          "start": "2025-02-14T19:00:00.000Z",
+          "end": "2025-02-14T20:00:00.000Z",
+          "summary": "Weekly Engineering Sync"
+        },
+        {
+          "start": "2025-02-18T14:00:00.000Z",
+          "end": "2025-02-18T15:00:00.000Z",
+          "summary": "Product Team Standup"
+        },
+        {
+          "start": "2025-02-18T16:00:00.000Z",
+          "end": "2025-02-18T17:30:00.000Z",
+          "summary": "Meal Planning AI Training Session"
+        },
+        {
+          "start": "2025-02-18T19:30:00.000Z",
+          "end": "2025-02-18T21:00:00.000Z",
+          "summary": "Kitchen Automation Demo"
+        },
+        {
+          "start": "2025-02-19T13:30:00.000Z",
+          "end": "2025-02-19T15:00:00.000Z",
+          "summary": "Inventory Management System Review"
+        },
+        {
+          "start": "2025-02-19T18:00:00.000Z",
+          "end": "2025-02-19T19:00:00.000Z",
+          "summary": "Food Waste Reduction Analytics"
+        },
+        {
+          "start": "2025-02-19T20:30:00.000Z",
+          "end": "2025-02-19T21:30:00.000Z",
+          "summary": "Chef Community Platform Meeting"
+        },
+        {
+          "start": "2025-02-20T14:30:00.000Z",
+          "end": "2025-02-20T16:00:00.000Z",
+          "summary": "Smart Recipe Scaling Algorithm"
+        },
+        {
+          "start": "2025-02-20T19:00:00.000Z",
+          "end": "2025-02-20T20:30:00.000Z",
+          "summary": "Food Quality Sensors Integration"
+        },
+        {
+          "start": "2025-02-21T15:00:00.000Z",
+          "end": "2025-02-21T16:30:00.000Z",
+          "summary": "Nutritional Analysis API Development"
+        },
+        {
+          "start": "2025-02-21T18:30:00.000Z",
+          "end": "2025-02-21T19:30:00.000Z",
+          "summary": "Weekly Engineering Sync"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T15:00:00.000Z",
+          "summary": "Product Team Standup"
+        },
+        {
+          "start": "2025-02-24T16:30:00.000Z",
+          "end": "2025-02-24T18:00:00.000Z",
+          "summary": "Voice-Controlled Recipe Assistant Testing"
+        },
+        {
+          "start": "2025-02-24T20:00:00.000Z",
+          "end": "2025-02-24T21:00:00.000Z",
+          "summary": "Food Safety Compliance Review"
+        },
+        {
+          "start": "2025-02-25T13:00:00.000Z",
+          "end": "2025-02-25T14:30:00.000Z",
+          "summary": "Kitchen Equipment Performance Analysis"
+        },
+        {
+          "start": "2025-02-25T15:30:00.000Z",
+          "end": "2025-02-25T17:00:00.000Z",
+          "summary": "Recipe Recommendation Engine Tuning"
+        },
+        {
+          "start": "2025-02-25T19:30:00.000Z",
+          "end": "2025-02-25T20:30:00.000Z",
+          "summary": "Food Photography AI Enhancement"
+        },
+        {
+          "start": "2025-02-26T14:30:00.000Z",
+          "end": "2025-02-26T16:00:00.000Z",
+          "summary": "Smart Grocery List Integration"
+        },
+        {
+          "start": "2025-02-26T18:00:00.000Z",
+          "end": "2025-02-26T19:30:00.000Z",
+          "summary": "Cooking Time Prediction Model Review"
+        },
+        {
+          "start": "2025-02-27T15:00:00.000Z",
+          "end": "2025-02-27T16:30:00.000Z",
+          "summary": "Temperature Control System Testing"
+        },
+        {
+          "start": "2025-02-27T20:00:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Monthly Tech-Chef Innovation Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Xara",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Marine Ecosystem Research Review"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T21:00:00.000Z",
+          "summary": "Artisanal Coral Sculpture Workshop"
+        },
+        {
+          "start": "2025-02-04T15:00:00.000Z",
+          "end": "2025-02-04T16:00:00.000Z",
+          "summary": "Grant Proposal Planning - Ocean Conservation"
+        },
+        {
+          "start": "2025-02-04T20:30:00.000Z",
+          "end": "2025-02-04T22:00:00.000Z",
+          "summary": "Sustainable Materials Sourcing Meeting"
+        },
+        {
+          "start": "2025-02-05T13:30:00.000Z",
+          "end": "2025-02-05T17:00:00.000Z",
+          "summary": "Field Research - Coastal Habitat Documentation"
+        },
+        {
+          "start": "2025-02-06T16:00:00.000Z",
+          "end": "2025-02-06T17:30:00.000Z",
+          "summary": "Artisan Collective Strategy Session"
+        },
+        {
+          "start": "2025-02-06T19:00:00.000Z",
+          "end": "2025-02-06T20:30:00.000Z",
+          "summary": "Bio-inspired Design Consultation"
+        },
+        {
+          "start": "2025-02-07T14:00:00.000Z",
+          "end": "2025-02-07T15:00:00.000Z",
+          "summary": "Weekly Lab Team Meeting"
+        },
+        {
+          "start": "2025-02-07T18:00:00.000Z",
+          "end": "2025-02-07T21:00:00.000Z",
+          "summary": "Deep Focus: Data Analysis & Craft Design"
+        },
+        {
+          "start": "2025-02-08T15:00:00.000Z",
+          "end": "2025-02-08T17:00:00.000Z",
+          "summary": "Ocean Arts Exhibition Planning"
+        },
+        {
+          "start": "2025-02-10T14:30:00.000Z",
+          "end": "2025-02-10T16:00:00.000Z",
+          "summary": "Peer Review - Marine Biology Journal"
+        },
+        {
+          "start": "2025-02-10T19:30:00.000Z",
+          "end": "2025-02-10T21:00:00.000Z",
+          "summary": "Handcraft Techniques Workshop"
+        },
+        {
+          "start": "2025-02-11T13:00:00.000Z",
+          "end": "2025-02-11T15:00:00.000Z",
+          "summary": "Underwater Photography Session"
+        },
+        {
+          "start": "2025-02-11T20:00:00.000Z",
+          "end": "2025-02-11T21:00:00.000Z",
+          "summary": "Conservation Initiative Collaboration"
+        },
+        {
+          "start": "2025-02-12T15:30:00.000Z",
+          "end": "2025-02-12T17:00:00.000Z",
+          "summary": "Research Presentation Prep"
+        },
+        {
+          "start": "2025-02-12T19:00:00.000Z",
+          "end": "2025-02-12T22:00:00.000Z",
+          "summary": "Artisan Studio Time - Kelp Weaving Project"
+        },
+        {
+          "start": "2025-02-13T14:00:00.000Z",
+          "end": "2025-02-13T16:00:00.000Z",
+          "summary": "Scientific Conference Call - Marine Biodiversity"
+        },
+        {
+          "start": "2025-02-14T16:00:00.000Z",
+          "end": "2025-02-14T17:30:00.000Z",
+          "summary": "Collaborative Project Review"
+        },
+        {
+          "start": "2025-02-14T20:00:00.000Z",
+          "end": "2025-02-14T21:30:00.000Z",
+          "summary": "Sustainable Craft Materials Testing"
+        },
+        {
+          "start": "2025-02-17T13:30:00.000Z",
+          "end": "2025-02-17T17:00:00.000Z",
+          "summary": "Marine Sanctuary Site Visit"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T20:30:00.000Z",
+          "summary": "Artisan Network Monthly Meeting"
+        },
+        {
+          "start": "2025-02-18T15:00:00.000Z",
+          "end": "2025-02-18T16:30:00.000Z",
+          "summary": "Equipment Maintenance & Lab Check"
+        },
+        {
+          "start": "2025-02-18T18:30:00.000Z",
+          "end": "2025-02-18T21:00:00.000Z",
+          "summary": "Creative Workshop - Ocean-Inspired Textiles"
+        },
+        {
+          "start": "2025-02-19T14:00:00.000Z",
+          "end": "2025-02-19T15:30:00.000Z",
+          "summary": "Student Mentoring Session"
+        },
+        {
+          "start": "2025-02-19T19:30:00.000Z",
+          "end": "2025-02-19T22:00:00.000Z",
+          "summary": "Research Documentation & Analysis"
+        },
+        {
+          "start": "2025-02-20T16:00:00.000Z",
+          "end": "2025-02-20T17:00:00.000Z",
+          "summary": "Publishing Strategy Discussion"
+        },
+        {
+          "start": "2025-02-20T20:00:00.000Z",
+          "end": "2025-02-20T21:30:00.000Z",
+          "summary": "Craft Fair Planning Committee"
+        },
+        {
+          "start": "2025-02-21T13:00:00.000Z",
+          "end": "2025-02-21T16:00:00.000Z",
+          "summary": "Tidal Pool Research Expedition"
+        },
+        {
+          "start": "2025-02-21T18:00:00.000Z",
+          "end": "2025-02-21T20:00:00.000Z",
+          "summary": "Craft Technique Documentation"
+        },
+        {
+          "start": "2025-02-24T14:30:00.000Z",
+          "end": "2025-02-24T16:00:00.000Z",
+          "summary": "Cross-Disciplinary Innovation Meeting"
+        },
+        {
+          "start": "2025-02-24T19:00:00.000Z",
+          "end": "2025-02-24T21:30:00.000Z",
+          "summary": "Seaweed Fiber Processing Workshop"
+        },
+        {
+          "start": "2025-02-25T15:00:00.000Z",
+          "end": "2025-02-25T17:00:00.000Z",
+          "summary": "Marine Conservation Policy Briefing"
+        },
+        {
+          "start": "2025-02-25T20:30:00.000Z",
+          "end": "2025-02-25T22:00:00.000Z",
+          "summary": "Artisan Market Research Analysis"
+        },
+        {
+          "start": "2025-02-26T13:30:00.000Z",
+          "end": "2025-02-26T15:00:00.000Z",
+          "summary": "Sample Collection & Processing"
+        },
+        {
+          "start": "2025-02-26T18:00:00.000Z",
+          "end": "2025-02-26T21:00:00.000Z",
+          "summary": "Marine Art Installation Design Session"
+        },
+        {
+          "start": "2025-02-27T14:00:00.000Z",
+          "end": "2025-02-27T15:30:00.000Z",
+          "summary": "Weekly Research Progress Review"
+        },
+        {
+          "start": "2025-02-27T19:30:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Sustainable Craft Business Development"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Yasmin",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T13:00:00.000Z",
+          "end": "2025-02-03T14:30:00.000Z",
+          "summary": "Marine Environmental Impact Assessment - Downtown Harbor Project"
+        },
+        {
+          "start": "2025-02-03T15:00:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Underwater Construction Site Survey"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T21:00:00.000Z",
+          "summary": "Research & Report Writing - Coral Reef Protection Measures"
+        },
+        {
+          "start": "2025-02-04T12:30:00.000Z",
+          "end": "2025-02-04T13:30:00.000Z",
+          "summary": "Weekly Safety Briefing - Marine Construction Team"
+        },
+        {
+          "start": "2025-02-04T14:00:00.000Z",
+          "end": "2025-02-04T16:00:00.000Z",
+          "summary": "Pier Foundation Inspection - Marine Biology Assessment"
+        },
+        {
+          "start": "2025-02-04T18:00:00.000Z",
+          "end": "2025-02-04T20:00:00.000Z",
+          "summary": "Lab Analysis - Water Quality Testing"
+        },
+        {
+          "start": "2025-02-05T13:30:00.000Z",
+          "end": "2025-02-05T15:00:00.000Z",
+          "summary": "Client Meeting - Coastal Development Environmental Compliance"
+        },
+        {
+          "start": "2025-02-05T19:30:00.000Z",
+          "end": "2025-02-05T22:00:00.000Z",
+          "summary": "Field Work - Marine Life Documentation at Bridge Site"
+        },
+        {
+          "start": "2025-02-06T14:00:00.000Z",
+          "end": "2025-02-06T15:30:00.000Z",
+          "summary": "Construction Phase Planning - Marine Protection Protocols"
+        },
+        {
+          "start": "2025-02-06T16:00:00.000Z",
+          "end": "2025-02-06T17:00:00.000Z",
+          "summary": "Regulatory Review Meeting - EPA Compliance"
+        },
+        {
+          "start": "2025-02-06T20:00:00.000Z",
+          "end": "2025-02-06T21:30:00.000Z",
+          "summary": "Marine Species Migration Data Analysis"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T17:00:00.000Z",
+          "summary": "Underwater Construction Monitoring - Deep Sea Platform Installation"
+        },
+        {
+          "start": "2025-02-07T19:00:00.000Z",
+          "end": "2025-02-07T20:30:00.000Z",
+          "summary": "Equipment Calibration - Marine Monitoring Instruments"
+        },
+        {
+          "start": "2025-02-10T14:00:00.000Z",
+          "end": "2025-02-10T15:00:00.000Z",
+          "summary": "Weekly Project Status - Waterfront Development"
+        },
+        {
+          "start": "2025-02-10T18:30:00.000Z",
+          "end": "2025-02-10T21:00:00.000Z",
+          "summary": "Marine Habitat Restoration Planning Session"
+        },
+        {
+          "start": "2025-02-11T12:45:00.000Z",
+          "end": "2025-02-11T14:15:00.000Z",
+          "summary": "Pre-Construction Marine Survey - Tunnel Bore Site"
+        },
+        {
+          "start": "2025-02-11T15:00:00.000Z",
+          "end": "2025-02-11T16:30:00.000Z",
+          "summary": "Marine Biology Research Review - Construction Impact Study"
+        },
+        {
+          "start": "2025-02-11T19:00:00.000Z",
+          "end": "2025-02-11T21:30:00.000Z",
+          "summary": "Data Collection - Benthic Community Assessment"
+        },
+        {
+          "start": "2025-02-12T13:30:00.000Z",
+          "end": "2025-02-12T17:00:00.000Z",
+          "summary": "Joint Inspection - Marine Construction & Environmental Compliance"
+        },
+        {
+          "start": "2025-02-12T19:30:00.000Z",
+          "end": "2025-02-12T21:00:00.000Z",
+          "summary": "Report Writing - Weekly Environmental Monitoring Summary"
+        },
+        {
+          "start": "2025-02-13T14:30:00.000Z",
+          "end": "2025-02-13T16:00:00.000Z",
+          "summary": "Stakeholder Meeting - Community Impact Assessment"
+        },
+        {
+          "start": "2025-02-13T18:00:00.000Z",
+          "end": "2025-02-13T20:30:00.000Z",
+          "summary": "Marine Equipment Testing - New Underwater Sensors"
+        },
+        {
+          "start": "2025-02-14T13:00:00.000Z",
+          "end": "2025-02-14T15:30:00.000Z",
+          "summary": "Construction Progress Review - Marine Environment Impact"
+        },
+        {
+          "start": "2025-02-14T20:00:00.000Z",
+          "end": "2025-02-14T21:30:00.000Z",
+          "summary": "Research Planning - Seasonal Marine Life Patterns"
+        },
+        {
+          "start": "2025-02-17T14:00:00.000Z",
+          "end": "2025-02-17T15:00:00.000Z",
+          "summary": "Monday Team Standup - Marine Biology Division"
+        },
+        {
+          "start": "2025-02-17T16:00:00.000Z",
+          "end": "2025-02-17T18:00:00.000Z",
+          "summary": "Site Visit - New Marina Construction Environmental Assessment"
+        },
+        {
+          "start": "2025-02-17T20:00:00.000Z",
+          "end": "2025-02-17T22:00:00.000Z",
+          "summary": "Lab Work - Marine Sample Analysis"
+        },
+        {
+          "start": "2025-02-18T13:30:00.000Z",
+          "end": "2025-02-18T15:00:00.000Z",
+          "summary": "Safety Protocol Review - Underwater Construction Operations"
+        },
+        {
+          "start": "2025-02-18T18:30:00.000Z",
+          "end": "2025-02-18T21:00:00.000Z",
+          "summary": "Environmental Monitoring - Port Expansion Project"
+        },
+        {
+          "start": "2025-02-19T14:00:00.000Z",
+          "end": "2025-02-19T16:30:00.000Z",
+          "summary": "Construction Material Impact Study - Marine Ecosystem Effects"
+        },
+        {
+          "start": "2025-02-19T19:00:00.000Z",
+          "end": "2025-02-19T20:30:00.000Z",
+          "summary": "Data Analysis - Tidal Flow Impact Assessment"
+        },
+        {
+          "start": "2025-02-20T13:00:00.000Z",
+          "end": "2025-02-20T17:00:00.000Z",
+          "summary": "Field Research - Underwater Construction Site Marine Life Survey"
+        },
+        {
+          "start": "2025-02-20T19:30:00.000Z",
+          "end": "2025-02-20T21:00:00.000Z",
+          "summary": "Client Presentation - Marine Environmental Impact Report"
+        },
+        {
+          "start": "2025-02-21T14:30:00.000Z",
+          "end": "2025-02-21T16:00:00.000Z",
+          "summary": "Permit Application Review - Marine Construction Authorization"
+        },
+        {
+          "start": "2025-02-21T20:00:00.000Z",
+          "end": "2025-02-21T21:30:00.000Z",
+          "summary": "Research Documentation - Marine Biology Findings"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T15:00:00.000Z",
+          "summary": "Weekly Project Coordination - Multi-Site Marine Construction"
+        },
+        {
+          "start": "2025-02-24T16:00:00.000Z",
+          "end": "2025-02-24T18:00:00.000Z",
+          "summary": "Emergency Response Drill - Marine Construction Incident Protocol"
+        },
+        {
+          "start": "2025-02-24T19:30:00.000Z",
+          "end": "2025-02-24T21:30:00.000Z",
+          "summary": "Advanced Marine Research - Deep Water Construction Impact Study"
+        },
+        {
+          "start": "2025-02-25T13:30:00.000Z",
+          "end": "2025-02-25T15:30:00.000Z",
+          "summary": "Technical Consultation - Innovative Marine Construction Methods"
+        },
+        {
+          "start": "2025-02-25T18:00:00.000Z",
+          "end": "2025-02-25T20:00:00.000Z",
+          "summary": "Environmental Compliance Audit - Marine Construction Standards"
+        },
+        {
+          "start": "2025-02-26T14:00:00.000Z",
+          "end": "2025-02-26T17:00:00.000Z",
+          "summary": "Comprehensive Site Assessment - Offshore Wind Farm Marine Impact"
+        },
+        {
+          "start": "2025-02-26T19:00:00.000Z",
+          "end": "2025-02-26T21:00:00.000Z",
+          "summary": "Monthly Report Compilation - Marine Biology & Construction Integration"
+        },
+        {
+          "start": "2025-02-27T13:00:00.000Z",
+          "end": "2025-02-27T15:00:00.000Z",
+          "summary": "Professional Development - Marine Conservation Construction Techniques"
+        },
+        {
+          "start": "2025-02-27T18:30:00.000Z",
+          "end": "2025-02-27T20:30:00.000Z",
+          "summary": "Final Project Review - Waterfront Development Environmental Clearance"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Property Site Visit - Downtown Development"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T20:00:00.000Z",
+          "summary": "Client Consultation - Investment Property"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T15:00:00.000Z",
+          "summary": "Construction Progress Review"
+        },
+        {
+          "start": "2025-02-04T16:00:00.000Z",
+          "end": "2025-02-04T17:00:00.000Z",
+          "summary": "Lead Generation & Market Research"
+        },
+        {
+          "start": "2025-02-05T15:00:00.000Z",
+          "end": "2025-02-05T16:30:00.000Z",
+          "summary": "Property Showing - Luxury Condo"
+        },
+        {
+          "start": "2025-02-05T20:30:00.000Z",
+          "end": "2025-02-05T21:30:00.000Z",
+          "summary": "Contractor Bid Review Meeting"
+        },
+        {
+          "start": "2025-02-06T14:00:00.000Z",
+          "end": "2025-02-06T15:00:00.000Z",
+          "summary": "Permit Application Follow-up"
+        },
+        {
+          "start": "2025-02-06T18:00:00.000Z",
+          "end": "2025-02-06T19:30:00.000Z",
+          "summary": "Investment Property Analysis"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T14:30:00.000Z",
+          "summary": "Construction Site Inspection"
+        },
+        {
+          "start": "2025-02-07T19:00:00.000Z",
+          "end": "2025-02-07T20:00:00.000Z",
+          "summary": "Client Check-in Call"
+        },
+        {
+          "start": "2025-02-08T15:00:00.000Z",
+          "end": "2025-02-08T17:00:00.000Z",
+          "summary": "Open House Preparation"
+        },
+        {
+          "start": "2025-02-10T14:30:00.000Z",
+          "end": "2025-02-10T16:00:00.000Z",
+          "summary": "Zoning Board Meeting"
+        },
+        {
+          "start": "2025-02-10T19:00:00.000Z",
+          "end": "2025-02-10T20:30:00.000Z",
+          "summary": "Property Valuation Assessment"
+        },
+        {
+          "start": "2025-02-11T13:30:00.000Z",
+          "end": "2025-02-11T15:00:00.000Z",
+          "summary": "Material Supplier Meeting"
+        },
+        {
+          "start": "2025-02-11T16:00:00.000Z",
+          "end": "2025-02-11T17:00:00.000Z",
+          "summary": "Networking - Real Estate Investors Club"
+        },
+        {
+          "start": "2025-02-12T14:00:00.000Z",
+          "end": "2025-02-12T15:30:00.000Z",
+          "summary": "Property Marketing Strategy"
+        },
+        {
+          "start": "2025-02-12T20:00:00.000Z",
+          "end": "2025-02-12T21:00:00.000Z",
+          "summary": "Construction Timeline Review"
+        },
+        {
+          "start": "2025-02-13T15:00:00.000Z",
+          "end": "2025-02-13T16:30:00.000Z",
+          "summary": "Client Property Tour"
+        },
+        {
+          "start": "2025-02-13T18:30:00.000Z",
+          "end": "2025-02-13T19:30:00.000Z",
+          "summary": "Contract Negotiation Call"
+        },
+        {
+          "start": "2025-02-14T14:00:00.000Z",
+          "end": "2025-02-14T15:00:00.000Z",
+          "summary": "Building Code Compliance Check"
+        },
+        {
+          "start": "2025-02-17T13:00:00.000Z",
+          "end": "2025-02-17T14:30:00.000Z",
+          "summary": "Weekly Construction Update"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T20:30:00.000Z",
+          "summary": "Investment Property Showing"
+        },
+        {
+          "start": "2025-02-18T15:00:00.000Z",
+          "end": "2025-02-18T16:00:00.000Z",
+          "summary": "Mortgage Broker Consultation"
+        },
+        {
+          "start": "2025-02-18T20:00:00.000Z",
+          "end": "2025-02-18T21:00:00.000Z",
+          "summary": "Market Analysis Review"
+        },
+        {
+          "start": "2025-02-19T14:30:00.000Z",
+          "end": "2025-02-19T16:00:00.000Z",
+          "summary": "Subcontractor Coordination"
+        },
+        {
+          "start": "2025-02-19T18:00:00.000Z",
+          "end": "2025-02-19T19:00:00.000Z",
+          "summary": "Property Listing Strategy"
+        },
+        {
+          "start": "2025-02-20T13:30:00.000Z",
+          "end": "2025-02-20T15:00:00.000Z",
+          "summary": "Site Safety Meeting"
+        },
+        {
+          "start": "2025-02-20T19:30:00.000Z",
+          "end": "2025-02-20T20:30:00.000Z",
+          "summary": "Client Progress Update"
+        },
+        {
+          "start": "2025-02-21T15:00:00.000Z",
+          "end": "2025-02-21T17:00:00.000Z",
+          "summary": "Property Development Planning"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T15:30:00.000Z",
+          "summary": "Environmental Impact Assessment"
+        },
+        {
+          "start": "2025-02-24T19:00:00.000Z",
+          "end": "2025-02-24T20:00:00.000Z",
+          "summary": "Real Estate Market Briefing"
+        },
+        {
+          "start": "2025-02-25T13:00:00.000Z",
+          "end": "2025-02-25T14:30:00.000Z",
+          "summary": "Construction Quality Control"
+        },
+        {
+          "start": "2025-02-25T16:00:00.000Z",
+          "end": "2025-02-25T17:00:00.000Z",
+          "summary": "Prospecting & Cold Calls"
+        },
+        {
+          "start": "2025-02-26T14:30:00.000Z",
+          "end": "2025-02-26T16:00:00.000Z",
+          "summary": "Property Inspection with Client"
+        },
+        {
+          "start": "2025-02-26T20:00:00.000Z",
+          "end": "2025-02-26T21:00:00.000Z",
+          "summary": "Construction Budget Review"
+        },
+        {
+          "start": "2025-02-27T15:00:00.000Z",
+          "end": "2025-02-27T16:30:00.000Z",
+          "summary": "Closing Preparation Meeting"
+        },
+        {
+          "start": "2025-02-27T19:00:00.000Z",
+          "end": "2025-02-27T20:00:00.000Z",
+          "summary": "Weekly Pipeline Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

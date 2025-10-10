@@ -1,0 +1,337 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-08T11:00:00.000Z",
+    "startTimeOffset": 7.25,
+    "endTime": "2025-01-12T23:00:00.000Z",
+    "endTimeOffset": 11.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "genTimestamp": "20251010132324772",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Oliver",
+      "goal": "Schedule a 1-hour meeting between Wednesday, January 8 at 6:00 AM and Sunday, January 12 at 6:00 PM with Helen, Alice, Bob",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Automotive Lab Setup - Transmission Systems"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Meeting with Curriculum Development Team"
+        },
+        {
+          "start": "2025-01-08T18:30:00.000Z",
+          "end": "2025-01-08T20:00:00.000Z",
+          "summary": "Student Lab Session - Engine Diagnostics"
+        },
+        {
+          "start": "2025-01-08T20:30:00.000Z",
+          "end": "2025-01-08T21:30:00.000Z",
+          "summary": "Equipment Maintenance - Hydraulic Systems"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T15:00:00.000Z",
+          "summary": "Instructor Training Workshop - Electric Vehicle Technology"
+        },
+        {
+          "start": "2025-01-09T15:30:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Hands-on Teaching - Brake System Repair"
+        },
+        {
+          "start": "2025-01-09T19:00:00.000Z",
+          "end": "2025-01-09T20:30:00.000Z",
+          "summary": "Industry Partnership Meeting - Local Dealership Collaboration"
+        },
+        {
+          "start": "2025-01-09T21:00:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Tool Inventory and Ordering"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:30:00.000Z",
+          "summary": "Student Assessment Review"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T17:30:00.000Z",
+          "summary": "Lab Safety Inspection and Updates"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T21:00:00.000Z",
+          "summary": "Advanced Diagnostics Class - Hybrid Systems"
+        },
+        {
+          "start": "2025-01-10T21:30:00.000Z",
+          "end": "2025-01-10T22:30:00.000Z",
+          "summary": "One-on-One Student Mentoring"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T21:00:00.000Z",
+          "summary": "Workshop Equipment Repair - Lift Systems"
+        },
+        {
+          "start": "2025-01-12T15:00:00.000Z",
+          "end": "2025-01-12T16:30:00.000Z",
+          "summary": "Weekend Lab Prep - Transmission Projects"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Helen",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T14:00:00.000Z",
+          "end": "2025-01-08T15:30:00.000Z",
+          "summary": "Animal Welfare Review - Film Set Protocol"
+        },
+        {
+          "start": "2025-01-08T16:00:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Consultation Call - Netflix Animal Documentary"
+        },
+        {
+          "start": "2025-01-08T19:00:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Strategic Planning - Animal Talent Agency Partnership"
+        },
+        {
+          "start": "2025-01-09T13:30:00.000Z",
+          "end": "2025-01-09T14:30:00.000Z",
+          "summary": "Veterinary Standards Committee Meeting"
+        },
+        {
+          "start": "2025-01-09T15:00:00.000Z",
+          "end": "2025-01-09T16:30:00.000Z",
+          "summary": "On-Set Veterinary Assessment - Commercial Shoot"
+        },
+        {
+          "start": "2025-01-09T18:00:00.000Z",
+          "end": "2025-01-09T19:00:00.000Z",
+          "summary": "Client Check-in - Disney Animal Safety Protocol"
+        },
+        {
+          "start": "2025-01-09T20:30:00.000Z",
+          "end": "2025-01-09T22:00:00.000Z",
+          "summary": "Research & Development - New Animal Safety Technologies"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Weekly Team Sync - Entertainment Veterinary Division"
+        },
+        {
+          "start": "2025-01-10T15:30:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Training Session - Animal Behavior on Camera"
+        },
+        {
+          "start": "2025-01-10T19:00:00.000Z",
+          "end": "2025-01-10T20:30:00.000Z",
+          "summary": "Strategy Meeting - Streaming Platform Animal Content Guidelines"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Industry Conference Prep - Animal Welfare in Entertainment"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Production Emergency Coverage"
+        },
+        {
+          "start": "2025-01-12T19:00:00.000Z",
+          "end": "2025-01-12T20:30:00.000Z",
+          "summary": "Sunday Planning Session - Upcoming Week Priorities"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T12:00:00.000Z",
+          "end": "2025-01-08T13:00:00.000Z",
+          "summary": "Pre-flight Safety Check & Aircraft Inspection"
+        },
+        {
+          "start": "2025-01-08T13:30:00.000Z",
+          "end": "2025-01-08T17:00:00.000Z",
+          "summary": "Pet Transport Flight - NYC to Atlanta (Rescue Animals)"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:00:00.000Z",
+          "summary": "Aircraft Maintenance Log Review"
+        },
+        {
+          "start": "2025-01-08T19:30:00.000Z",
+          "end": "2025-01-08T21:30:00.000Z",
+          "summary": "Return Flight - Atlanta to NYC"
+        },
+        {
+          "start": "2025-01-09T11:30:00.000Z",
+          "end": "2025-01-09T12:30:00.000Z",
+          "summary": "Weather Briefing & Flight Planning"
+        },
+        {
+          "start": "2025-01-09T13:00:00.000Z",
+          "end": "2025-01-09T14:00:00.000Z",
+          "summary": "Team Meeting - Pet Care Protocols"
+        },
+        {
+          "start": "2025-01-09T14:30:00.000Z",
+          "end": "2025-01-09T18:30:00.000Z",
+          "summary": "Emergency Veterinary Transport - Boston"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:00:00.000Z",
+          "summary": "Post-Flight Documentation & Animal Care Report"
+        },
+        {
+          "start": "2025-01-09T21:30:00.000Z",
+          "end": "2025-01-09T22:30:00.000Z",
+          "summary": "Aircraft Cleaning & Sanitization"
+        },
+        {
+          "start": "2025-01-10T12:00:00.000Z",
+          "end": "2025-01-10T13:00:00.000Z",
+          "summary": "Monthly Safety Training - Animal Handling"
+        },
+        {
+          "start": "2025-01-10T14:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Client Consultation - Show Dog Transport Requirements"
+        },
+        {
+          "start": "2025-01-10T16:00:00.000Z",
+          "end": "2025-01-10T20:00:00.000Z",
+          "summary": "Charter Flight - Prize Winning Horses to Kentucky"
+        },
+        {
+          "start": "2025-01-10T21:00:00.000Z",
+          "end": "2025-01-10T22:00:00.000Z",
+          "summary": "Equipment Inventory & Supply Check"
+        },
+        {
+          "start": "2025-01-11T15:00:00.000Z",
+          "end": "2025-01-11T17:00:00.000Z",
+          "summary": "Weekend Emergency Standby"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:30:00.000Z",
+          "summary": "Flight Log Review & Compliance Check"
+        },
+        {
+          "start": "2025-01-12T14:00:00.000Z",
+          "end": "2025-01-12T15:00:00.000Z",
+          "summary": "Pilot Certification Renewal Prep"
+        },
+        {
+          "start": "2025-01-12T16:00:00.000Z",
+          "end": "2025-01-12T17:00:00.000Z",
+          "summary": "Animal Care Protocol Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-08T13:00:00.000Z",
+          "end": "2025-01-08T14:00:00.000Z",
+          "summary": "Wind Farm Site Inspection - Turbine Array A"
+        },
+        {
+          "start": "2025-01-08T14:30:00.000Z",
+          "end": "2025-01-08T16:30:00.000Z",
+          "summary": "Preventive Maintenance - Turbine WT-15"
+        },
+        {
+          "start": "2025-01-08T18:00:00.000Z",
+          "end": "2025-01-08T19:00:00.000Z",
+          "summary": "Weekly Safety Briefing"
+        },
+        {
+          "start": "2025-01-08T19:30:00.000Z",
+          "end": "2025-01-08T21:00:00.000Z",
+          "summary": "Gearbox Diagnostics - Turbine WT-08"
+        },
+        {
+          "start": "2025-01-09T12:30:00.000Z",
+          "end": "2025-01-09T13:30:00.000Z",
+          "summary": "Morning Toolbox Talk - Weather Assessment"
+        },
+        {
+          "start": "2025-01-09T14:00:00.000Z",
+          "end": "2025-01-09T17:00:00.000Z",
+          "summary": "Blade Inspection & Repair - Turbine WT-22"
+        },
+        {
+          "start": "2025-01-09T18:30:00.000Z",
+          "end": "2025-01-09T19:30:00.000Z",
+          "summary": "Pet Care Innovation Meeting - Wind Farm Animal Safety"
+        },
+        {
+          "start": "2025-01-09T20:00:00.000Z",
+          "end": "2025-01-09T21:30:00.000Z",
+          "summary": "Turbine Performance Data Analysis"
+        },
+        {
+          "start": "2025-01-10T13:00:00.000Z",
+          "end": "2025-01-10T15:00:00.000Z",
+          "summary": "Emergency Response Training - Nacelle Rescue"
+        },
+        {
+          "start": "2025-01-10T15:30:00.000Z",
+          "end": "2025-01-10T17:00:00.000Z",
+          "summary": "Electrical System Troubleshooting - Turbine WT-11"
+        },
+        {
+          "start": "2025-01-10T18:00:00.000Z",
+          "end": "2025-01-10T19:00:00.000Z",
+          "summary": "Bird & Wildlife Protection Protocol Review"
+        },
+        {
+          "start": "2025-01-10T19:30:00.000Z",
+          "end": "2025-01-10T20:30:00.000Z",
+          "summary": "Monthly Equipment Inventory Check"
+        },
+        {
+          "start": "2025-01-11T15:30:00.000Z",
+          "end": "2025-01-11T17:30:00.000Z",
+          "summary": "Wind Farm Pet Therapy Program Planning"
+        },
+        {
+          "start": "2025-01-11T19:00:00.000Z",
+          "end": "2025-01-11T20:00:00.000Z",
+          "summary": "Turbine Vibration Analysis Review"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

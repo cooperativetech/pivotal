@@ -1,0 +1,842 @@
+{
+  "benchmark": {
+    "startTime": "2025-02-01T05:00:00.000Z",
+    "startTimeOffset": 31,
+    "endTime": "2025-02-28T05:00:00.000Z",
+    "endTimeOffset": 58,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "genTimestamp": "20251010132712735",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Alice",
+      "goal": "Schedule a 1-hour meeting between Saturday, February 1 at 12:00 AM and Friday, February 28 at 12:00 AM with Fiona, Bob, Ulrich",
+      "calendar": [
+        {
+          "start": "2025-02-03T13:00:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Kitchen Equipment Maintenance - Main Fryer & Grill Inspection"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T21:00:00.000Z",
+          "summary": "Preventive Maintenance Planning Session"
+        },
+        {
+          "start": "2025-02-04T14:00:00.000Z",
+          "end": "2025-02-04T15:30:00.000Z",
+          "summary": "Meeting with HVAC Contractor - Ventilation System Upgrade"
+        },
+        {
+          "start": "2025-02-04T18:00:00.000Z",
+          "end": "2025-02-04T22:00:00.000Z",
+          "summary": "Dishwasher System Overhaul - Parts Installation"
+        },
+        {
+          "start": "2025-02-05T12:30:00.000Z",
+          "end": "2025-02-05T16:30:00.000Z",
+          "summary": "Walk-in Cooler Temperature Calibration & Repair"
+        },
+        {
+          "start": "2025-02-05T20:00:00.000Z",
+          "end": "2025-02-05T21:00:00.000Z",
+          "summary": "Weekly Equipment Status Report Meeting"
+        },
+        {
+          "start": "2025-02-06T15:00:00.000Z",
+          "end": "2025-02-06T16:30:00.000Z",
+          "summary": "Vendor Meeting - New Energy-Efficient Equipment Demo"
+        },
+        {
+          "start": "2025-02-06T19:00:00.000Z",
+          "end": "2025-02-06T23:00:00.000Z",
+          "summary": "Ice Machine Deep Clean & Maintenance"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T17:00:00.000Z",
+          "summary": "Gas Line Safety Inspection & Maintenance"
+        },
+        {
+          "start": "2025-02-07T18:30:00.000Z",
+          "end": "2025-02-07T20:00:00.000Z",
+          "summary": "Staff Training - Equipment Operation & Safety Protocols"
+        },
+        {
+          "start": "2025-02-10T14:00:00.000Z",
+          "end": "2025-02-10T18:00:00.000Z",
+          "summary": "Commercial Oven Recalibration & Performance Testing"
+        },
+        {
+          "start": "2025-02-10T20:00:00.000Z",
+          "end": "2025-02-10T21:30:00.000Z",
+          "summary": "Equipment Upgrade Proposal Review"
+        },
+        {
+          "start": "2025-02-11T13:30:00.000Z",
+          "end": "2025-02-11T15:00:00.000Z",
+          "summary": "Supplier Meeting - Replacement Parts Inventory Planning"
+        },
+        {
+          "start": "2025-02-11T19:00:00.000Z",
+          "end": "2025-02-11T22:30:00.000Z",
+          "summary": "Exhaust Hood Deep Cleaning & Filter Replacement"
+        },
+        {
+          "start": "2025-02-12T12:00:00.000Z",
+          "end": "2025-02-12T16:00:00.000Z",
+          "summary": "Emergency Repair - Coffee Machine Malfunction"
+        },
+        {
+          "start": "2025-02-12T19:30:00.000Z",
+          "end": "2025-02-12T21:00:00.000Z",
+          "summary": "Monthly Safety & Compliance Audit"
+        },
+        {
+          "start": "2025-02-13T14:30:00.000Z",
+          "end": "2025-02-13T16:00:00.000Z",
+          "summary": "Innovation Workshop - Smart Kitchen Technology Integration"
+        },
+        {
+          "start": "2025-02-13T18:00:00.000Z",
+          "end": "2025-02-13T21:00:00.000Z",
+          "summary": "Grease Trap Maintenance & Pumping"
+        },
+        {
+          "start": "2025-02-14T15:00:00.000Z",
+          "end": "2025-02-14T19:00:00.000Z",
+          "summary": "Point-of-Sale System Hardware Upgrade"
+        },
+        {
+          "start": "2025-02-17T13:00:00.000Z",
+          "end": "2025-02-17T17:00:00.000Z",
+          "summary": "Refrigeration System Efficiency Assessment"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T20:30:00.000Z",
+          "summary": "Quarterly Equipment Performance Review"
+        },
+        {
+          "start": "2025-02-18T14:00:00.000Z",
+          "end": "2025-02-18T15:30:00.000Z",
+          "summary": "New Equipment Installation Planning - Prep Station Upgrade"
+        },
+        {
+          "start": "2025-02-18T18:30:00.000Z",
+          "end": "2025-02-18T22:00:00.000Z",
+          "summary": "Preventive Maintenance - All Kitchen Equipment Inspection"
+        },
+        {
+          "start": "2025-02-19T12:30:00.000Z",
+          "end": "2025-02-19T16:30:00.000Z",
+          "summary": "Water Filtration System Maintenance & Filter Changes"
+        },
+        {
+          "start": "2025-02-19T19:00:00.000Z",
+          "end": "2025-02-19T20:00:00.000Z",
+          "summary": "Cross-Training Session - Advanced Troubleshooting Techniques"
+        },
+        {
+          "start": "2025-02-20T15:00:00.000Z",
+          "end": "2025-02-20T16:30:00.000Z",
+          "summary": "Industry Conference Call - Restaurant Equipment Innovation Trends"
+        },
+        {
+          "start": "2025-02-20T18:00:00.000Z",
+          "end": "2025-02-20T21:30:00.000Z",
+          "summary": "Deep Fryer Oil Filtration System Upgrade"
+        },
+        {
+          "start": "2025-02-21T13:30:00.000Z",
+          "end": "2025-02-21T17:00:00.000Z",
+          "summary": "Emergency Generator Testing & Maintenance"
+        },
+        {
+          "start": "2025-02-21T19:30:00.000Z",
+          "end": "2025-02-21T21:00:00.000Z",
+          "summary": "Budget Planning Meeting - Equipment Replacement Schedule"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T18:00:00.000Z",
+          "summary": "Sound System & Entertainment Equipment Maintenance"
+        },
+        {
+          "start": "2025-02-24T20:00:00.000Z",
+          "end": "2025-02-24T21:30:00.000Z",
+          "summary": "Sustainability Initiative Planning - Energy Efficient Equipment"
+        },
+        {
+          "start": "2025-02-25T13:00:00.000Z",
+          "end": "2025-02-25T17:00:00.000Z",
+          "summary": "Kitchen Ventilation System Deep Clean & Inspection"
+        },
+        {
+          "start": "2025-02-25T19:00:00.000Z",
+          "end": "2025-02-25T20:30:00.000Z",
+          "summary": "Technology Integration Meeting - IoT Equipment Monitoring"
+        },
+        {
+          "start": "2025-02-26T15:00:00.000Z",
+          "end": "2025-02-26T19:00:00.000Z",
+          "summary": "Comprehensive Equipment Audit - End of Month Report"
+        },
+        {
+          "start": "2025-02-27T14:00:00.000Z",
+          "end": "2025-02-27T15:30:00.000Z",
+          "summary": "March Equipment Maintenance Schedule Planning"
+        },
+        {
+          "start": "2025-02-27T18:00:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Final Equipment Checks - Weekend Prep"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Fiona",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T13:00:00.000Z",
+          "end": "2025-02-03T15:00:00.000Z",
+          "summary": "Microgravity Cheese Fermentation Analysis"
+        },
+        {
+          "start": "2025-02-03T15:30:00.000Z",
+          "end": "2025-02-03T16:30:00.000Z",
+          "summary": "Weekly Space Food Safety Review"
+        },
+        {
+          "start": "2025-02-03T18:00:00.000Z",
+          "end": "2025-02-03T20:00:00.000Z",
+          "summary": "Vacuum Chamber Cheese Testing - Block 1"
+        },
+        {
+          "start": "2025-02-04T14:00:00.000Z",
+          "end": "2025-02-04T15:00:00.000Z",
+          "summary": "NASA Nutritional Requirements Meeting"
+        },
+        {
+          "start": "2025-02-04T19:00:00.000Z",
+          "end": "2025-02-04T21:30:00.000Z",
+          "summary": "Zero-G Aging Process Documentation"
+        },
+        {
+          "start": "2025-02-05T13:30:00.000Z",
+          "end": "2025-02-05T14:30:00.000Z",
+          "summary": "Bacterial Culture Monitoring - Daily Check"
+        },
+        {
+          "start": "2025-02-05T16:00:00.000Z",
+          "end": "2025-02-05T17:00:00.000Z",
+          "summary": "Space Station Food Supply Planning"
+        },
+        {
+          "start": "2025-02-05T20:00:00.000Z",
+          "end": "2025-02-05T22:00:00.000Z",
+          "summary": "Pressure-Resistant Packaging Development"
+        },
+        {
+          "start": "2025-02-06T14:30:00.000Z",
+          "end": "2025-02-06T16:00:00.000Z",
+          "summary": "Calcium Content Analysis for Bone Health"
+        },
+        {
+          "start": "2025-02-06T18:30:00.000Z",
+          "end": "2025-02-06T20:30:00.000Z",
+          "summary": "Temperature Control System Calibration"
+        },
+        {
+          "start": "2025-02-07T15:00:00.000Z",
+          "end": "2025-02-07T16:30:00.000Z",
+          "summary": "International Space Dairy Consortium Call"
+        },
+        {
+          "start": "2025-02-07T19:00:00.000Z",
+          "end": "2025-02-07T21:00:00.000Z",
+          "summary": "Cheese Texture Analysis - Martian Simulation"
+        },
+        {
+          "start": "2025-02-10T13:00:00.000Z",
+          "end": "2025-02-10T14:00:00.000Z",
+          "summary": "Weekly Production Review"
+        },
+        {
+          "start": "2025-02-10T15:30:00.000Z",
+          "end": "2025-02-10T17:00:00.000Z",
+          "summary": "Radiation Exposure Impact on Dairy Products"
+        },
+        {
+          "start": "2025-02-10T19:30:00.000Z",
+          "end": "2025-02-10T21:30:00.000Z",
+          "summary": "Cheddar Prototype Testing - EVA Rations"
+        },
+        {
+          "start": "2025-02-11T14:00:00.000Z",
+          "end": "2025-02-11T15:30:00.000Z",
+          "summary": "Astronaut Taste Panel Feedback Session"
+        },
+        {
+          "start": "2025-02-11T18:00:00.000Z",
+          "end": "2025-02-11T20:00:00.000Z",
+          "summary": "Long-Duration Storage Testing Documentation"
+        },
+        {
+          "start": "2025-02-12T13:30:00.000Z",
+          "end": "2025-02-12T14:30:00.000Z",
+          "summary": "Bacterial Culture Monitoring - Daily Check"
+        },
+        {
+          "start": "2025-02-12T16:00:00.000Z",
+          "end": "2025-02-12T17:30:00.000Z",
+          "summary": "Mars Mission Food Requirements Analysis"
+        },
+        {
+          "start": "2025-02-12T20:00:00.000Z",
+          "end": "2025-02-12T22:00:00.000Z",
+          "summary": "Freeze-Dried Cheese Process Optimization"
+        },
+        {
+          "start": "2025-02-13T14:30:00.000Z",
+          "end": "2025-02-13T16:00:00.000Z",
+          "summary": "Monthly Space Food Research Review"
+        },
+        {
+          "start": "2025-02-13T19:00:00.000Z",
+          "end": "2025-02-13T21:00:00.000Z",
+          "summary": "Low-Gravity Cheese Press Development"
+        },
+        {
+          "start": "2025-02-14T15:00:00.000Z",
+          "end": "2025-02-14T16:30:00.000Z",
+          "summary": "Space Food Safety Certification Review"
+        },
+        {
+          "start": "2025-02-14T18:30:00.000Z",
+          "end": "2025-02-14T20:30:00.000Z",
+          "summary": "Protein Content Optimization Research"
+        },
+        {
+          "start": "2025-02-17T13:00:00.000Z",
+          "end": "2025-02-17T14:00:00.000Z",
+          "summary": "Weekly Production Review"
+        },
+        {
+          "start": "2025-02-17T15:30:00.000Z",
+          "end": "2025-02-17T17:00:00.000Z",
+          "summary": "Space Station Delivery Schedule Planning"
+        },
+        {
+          "start": "2025-02-17T19:00:00.000Z",
+          "end": "2025-02-17T21:30:00.000Z",
+          "summary": "Vacuum Chamber Testing - New Formulation"
+        },
+        {
+          "start": "2025-02-18T14:00:00.000Z",
+          "end": "2025-02-18T15:00:00.000Z",
+          "summary": "Lunar Base Food Storage Consultation"
+        },
+        {
+          "start": "2025-02-18T16:30:00.000Z",
+          "end": "2025-02-18T17:30:00.000Z",
+          "summary": "Quality Control Standards Update"
+        },
+        {
+          "start": "2025-02-18T20:00:00.000Z",
+          "end": "2025-02-18T22:00:00.000Z",
+          "summary": "Mozzarella Zero-G Melting Properties Study"
+        },
+        {
+          "start": "2025-02-19T13:30:00.000Z",
+          "end": "2025-02-19T14:30:00.000Z",
+          "summary": "Bacterial Culture Monitoring - Daily Check"
+        },
+        {
+          "start": "2025-02-19T15:00:00.000Z",
+          "end": "2025-02-19T16:30:00.000Z",
+          "summary": "Emergency Food Supply Protocol Review"
+        },
+        {
+          "start": "2025-02-19T18:30:00.000Z",
+          "end": "2025-02-19T20:30:00.000Z",
+          "summary": "Shelf-Life Extension Research"
+        },
+        {
+          "start": "2025-02-20T14:30:00.000Z",
+          "end": "2025-02-20T16:00:00.000Z",
+          "summary": "Space Agriculture Integration Meeting"
+        },
+        {
+          "start": "2025-02-20T19:00:00.000Z",
+          "end": "2025-02-20T21:00:00.000Z",
+          "summary": "Calcium Crystallization in Microgravity Study"
+        },
+        {
+          "start": "2025-02-21T15:00:00.000Z",
+          "end": "2025-02-21T16:30:00.000Z",
+          "summary": "Monthly R&D Budget Review"
+        },
+        {
+          "start": "2025-02-21T18:00:00.000Z",
+          "end": "2025-02-21T20:00:00.000Z",
+          "summary": "Blue Cheese Spore Behavior Analysis"
+        },
+        {
+          "start": "2025-02-22T14:00:00.000Z",
+          "end": "2025-02-22T16:00:00.000Z",
+          "summary": "Space Food Conference Preparation"
+        },
+        {
+          "start": "2025-02-24T13:00:00.000Z",
+          "end": "2025-02-24T14:00:00.000Z",
+          "summary": "Weekly Production Review"
+        },
+        {
+          "start": "2025-02-24T15:30:00.000Z",
+          "end": "2025-02-24T17:00:00.000Z",
+          "summary": "Next-Gen Space Dairy Equipment Design"
+        },
+        {
+          "start": "2025-02-24T19:30:00.000Z",
+          "end": "2025-02-24T21:30:00.000Z",
+          "summary": "Parmesan Aging Acceleration Testing"
+        },
+        {
+          "start": "2025-02-25T14:00:00.000Z",
+          "end": "2025-02-25T15:30:00.000Z",
+          "summary": "Space Medicine Nutrition Collaboration"
+        },
+        {
+          "start": "2025-02-25T18:00:00.000Z",
+          "end": "2025-02-25T20:00:00.000Z",
+          "summary": "Contamination Prevention Protocol Update"
+        },
+        {
+          "start": "2025-02-26T13:30:00.000Z",
+          "end": "2025-02-26T14:30:00.000Z",
+          "summary": "Bacterial Culture Monitoring - Daily Check"
+        },
+        {
+          "start": "2025-02-26T16:00:00.000Z",
+          "end": "2025-02-26T17:30:00.000Z",
+          "summary": "Deep Space Mission Food Planning"
+        },
+        {
+          "start": "2025-02-26T20:00:00.000Z",
+          "end": "2025-02-26T22:00:00.000Z",
+          "summary": "Lactose-Free Space Cheese Development"
+        },
+        {
+          "start": "2025-02-27T14:30:00.000Z",
+          "end": "2025-02-27T16:00:00.000Z",
+          "summary": "Monthly Quality Assurance Review"
+        },
+        {
+          "start": "2025-02-27T19:00:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Texture Profile Analysis - Final Testing"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Family Consultation - Memorial Planning"
+        },
+        {
+          "start": "2025-02-03T16:00:00.000Z",
+          "end": "2025-02-03T17:00:00.000Z",
+          "summary": "Site Inspection - Memorial Garden Construction"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T21:00:00.000Z",
+          "summary": "Embalming and Preparation Work"
+        },
+        {
+          "start": "2025-02-04T13:30:00.000Z",
+          "end": "2025-02-04T14:30:00.000Z",
+          "summary": "Pre-Construction Meeting - New Mausoleum Project"
+        },
+        {
+          "start": "2025-02-04T15:00:00.000Z",
+          "end": "2025-02-04T16:00:00.000Z",
+          "summary": "Vendor Meeting - Casket Suppliers"
+        },
+        {
+          "start": "2025-02-04T18:00:00.000Z",
+          "end": "2025-02-04T20:00:00.000Z",
+          "summary": "Memorial Service Coordination"
+        },
+        {
+          "start": "2025-02-05T14:00:00.000Z",
+          "end": "2025-02-05T15:00:00.000Z",
+          "summary": "Cemetery Grounds Construction Review"
+        },
+        {
+          "start": "2025-02-05T19:30:00.000Z",
+          "end": "2025-02-05T21:30:00.000Z",
+          "summary": "Administrative Tasks - Permits & Documentation"
+        },
+        {
+          "start": "2025-02-06T15:00:00.000Z",
+          "end": "2025-02-06T17:00:00.000Z",
+          "summary": "Innovative Preservation Techniques Research"
+        },
+        {
+          "start": "2025-02-06T18:30:00.000Z",
+          "end": "2025-02-06T19:30:00.000Z",
+          "summary": "Budget Review - Construction Materials"
+        },
+        {
+          "start": "2025-02-07T13:00:00.000Z",
+          "end": "2025-02-07T14:00:00.000Z",
+          "summary": "Safety Inspection - Construction Site"
+        },
+        {
+          "start": "2025-02-07T16:00:00.000Z",
+          "end": "2025-02-07T18:00:00.000Z",
+          "summary": "Family Consultation - Funeral Arrangements"
+        },
+        {
+          "start": "2025-02-10T14:30:00.000Z",
+          "end": "2025-02-10T16:00:00.000Z",
+          "summary": "Construction Progress Meeting - Crematorium Expansion"
+        },
+        {
+          "start": "2025-02-10T19:00:00.000Z",
+          "end": "2025-02-10T21:00:00.000Z",
+          "summary": "Preparation and Restoration Work"
+        },
+        {
+          "start": "2025-02-11T13:30:00.000Z",
+          "end": "2025-02-11T15:00:00.000Z",
+          "summary": "Material Quality Control - Marble & Granite"
+        },
+        {
+          "start": "2025-02-11T18:00:00.000Z",
+          "end": "2025-02-11T19:00:00.000Z",
+          "summary": "Staff Training - New Embalming Equipment"
+        },
+        {
+          "start": "2025-02-12T15:00:00.000Z",
+          "end": "2025-02-12T16:30:00.000Z",
+          "summary": "Green Burial Initiative Planning"
+        },
+        {
+          "start": "2025-02-12T20:00:00.000Z",
+          "end": "2025-02-12T21:00:00.000Z",
+          "summary": "Technology Integration Review - Digital Memorial Systems"
+        },
+        {
+          "start": "2025-02-13T14:00:00.000Z",
+          "end": "2025-02-13T15:00:00.000Z",
+          "summary": "Structural Engineering Consultation"
+        },
+        {
+          "start": "2025-02-13T19:30:00.000Z",
+          "end": "2025-02-13T22:00:00.000Z",
+          "summary": "Memorial Service - Celebration of Life"
+        },
+        {
+          "start": "2025-02-14T16:00:00.000Z",
+          "end": "2025-02-14T17:00:00.000Z",
+          "summary": "Industry Conference Call - Funeral Innovation Trends"
+        },
+        {
+          "start": "2025-02-17T13:00:00.000Z",
+          "end": "2025-02-17T14:30:00.000Z",
+          "summary": "Construction Crew Briefing - Weekly Safety Meeting"
+        },
+        {
+          "start": "2025-02-17T18:00:00.000Z",
+          "end": "2025-02-17T20:00:00.000Z",
+          "summary": "Client Consultation - Custom Mausoleum Design"
+        },
+        {
+          "start": "2025-02-18T14:30:00.000Z",
+          "end": "2025-02-18T15:30:00.000Z",
+          "summary": "Environmental Impact Assessment Review"
+        },
+        {
+          "start": "2025-02-18T19:00:00.000Z",
+          "end": "2025-02-18T21:30:00.000Z",
+          "summary": "Advanced Preservation Techniques Workshop"
+        },
+        {
+          "start": "2025-02-19T15:00:00.000Z",
+          "end": "2025-02-19T16:00:00.000Z",
+          "summary": "Equipment Maintenance - Construction Machinery"
+        },
+        {
+          "start": "2025-02-19T20:00:00.000Z",
+          "end": "2025-02-19T21:00:00.000Z",
+          "summary": "Monthly Financial Review - Construction Budgets"
+        },
+        {
+          "start": "2025-02-20T13:30:00.000Z",
+          "end": "2025-02-20T15:00:00.000Z",
+          "summary": "Planning Committee - Memorial Park Expansion"
+        },
+        {
+          "start": "2025-02-20T18:30:00.000Z",
+          "end": "2025-02-20T20:30:00.000Z",
+          "summary": "Family Grief Support & Service Planning"
+        },
+        {
+          "start": "2025-02-21T14:00:00.000Z",
+          "end": "2025-02-21T15:30:00.000Z",
+          "summary": "Innovation Lab - Sustainable Burial Solutions"
+        },
+        {
+          "start": "2025-02-24T15:00:00.000Z",
+          "end": "2025-02-24T17:00:00.000Z",
+          "summary": "Construction Site Walkthrough - Quality Inspection"
+        },
+        {
+          "start": "2025-02-24T19:00:00.000Z",
+          "end": "2025-02-24T20:00:00.000Z",
+          "summary": "Regulatory Compliance Meeting - Health Department"
+        },
+        {
+          "start": "2025-02-25T14:00:00.000Z",
+          "end": "2025-02-25T16:00:00.000Z",
+          "summary": "Memorial Design Consultation - Artist Collaboration"
+        },
+        {
+          "start": "2025-02-25T18:00:00.000Z",
+          "end": "2025-02-25T21:00:00.000Z",
+          "summary": "Preparation Work - Multiple Services"
+        },
+        {
+          "start": "2025-02-26T13:00:00.000Z",
+          "end": "2025-02-26T14:00:00.000Z",
+          "summary": "Weekly Team Meeting - Operations & Construction Updates"
+        },
+        {
+          "start": "2025-02-26T19:30:00.000Z",
+          "end": "2025-02-26T21:00:00.000Z",
+          "summary": "Professional Development - Mortuary Science Continuing Education"
+        },
+        {
+          "start": "2025-02-27T15:00:00.000Z",
+          "end": "2025-02-27T16:30:00.000Z",
+          "summary": "Contract Negotiation - Construction Materials Supplier"
+        },
+        {
+          "start": "2025-02-27T20:00:00.000Z",
+          "end": "2025-02-27T21:00:00.000Z",
+          "summary": "Future Planning Session - Next Quarter Construction Projects"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Ulrich",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-02-03T14:00:00.000Z",
+          "end": "2025-02-03T15:30:00.000Z",
+          "summary": "Aerospace Engineering Fundamentals - Class"
+        },
+        {
+          "start": "2025-02-03T19:00:00.000Z",
+          "end": "2025-02-03T20:00:00.000Z",
+          "summary": "NASA Mission Planning Workshop Prep"
+        },
+        {
+          "start": "2025-02-04T15:00:00.000Z",
+          "end": "2025-02-04T16:00:00.000Z",
+          "summary": "Student Project Reviews - Mars Habitat Design"
+        },
+        {
+          "start": "2025-02-04T20:30:00.000Z",
+          "end": "2025-02-04T21:30:00.000Z",
+          "summary": "SpaceX Guest Speaker Coordination"
+        },
+        {
+          "start": "2025-02-05T13:30:00.000Z",
+          "end": "2025-02-05T15:00:00.000Z",
+          "summary": "Orbital Mechanics Lab Session"
+        },
+        {
+          "start": "2025-02-05T18:00:00.000Z",
+          "end": "2025-02-05T19:30:00.000Z",
+          "summary": "Research Paper Writing - Lunar Mining Applications"
+        },
+        {
+          "start": "2025-02-06T16:00:00.000Z",
+          "end": "2025-02-06T17:00:00.000Z",
+          "summary": "Department Meeting - Curriculum Innovation"
+        },
+        {
+          "start": "2025-02-06T21:00:00.000Z",
+          "end": "2025-02-06T22:00:00.000Z",
+          "summary": "Office Hours - Student Consultations"
+        },
+        {
+          "start": "2025-02-07T14:30:00.000Z",
+          "end": "2025-02-07T16:00:00.000Z",
+          "summary": "Rocket Propulsion Systems - Lecture"
+        },
+        {
+          "start": "2025-02-10T14:00:00.000Z",
+          "end": "2025-02-10T15:30:00.000Z",
+          "summary": "Aerospace Engineering Fundamentals - Class"
+        },
+        {
+          "start": "2025-02-10T19:30:00.000Z",
+          "end": "2025-02-10T21:00:00.000Z",
+          "summary": "ISS Research Collaboration Call"
+        },
+        {
+          "start": "2025-02-11T15:00:00.000Z",
+          "end": "2025-02-11T16:30:00.000Z",
+          "summary": "Capstone Project Presentations - Space Suit Design"
+        },
+        {
+          "start": "2025-02-11T20:00:00.000Z",
+          "end": "2025-02-11T21:00:00.000Z",
+          "summary": "Blue Origin Partnership Discussion"
+        },
+        {
+          "start": "2025-02-12T13:30:00.000Z",
+          "end": "2025-02-12T15:00:00.000Z",
+          "summary": "Orbital Mechanics Lab Session"
+        },
+        {
+          "start": "2025-02-12T18:30:00.000Z",
+          "end": "2025-02-12T20:00:00.000Z",
+          "summary": "Grant Proposal Review - Asteroid Mining Research"
+        },
+        {
+          "start": "2025-02-13T16:00:00.000Z",
+          "end": "2025-02-13T17:30:00.000Z",
+          "summary": "Faculty Innovation Workshop"
+        },
+        {
+          "start": "2025-02-13T21:00:00.000Z",
+          "end": "2025-02-13T22:00:00.000Z",
+          "summary": "Office Hours - Student Consultations"
+        },
+        {
+          "start": "2025-02-14T14:30:00.000Z",
+          "end": "2025-02-14T16:00:00.000Z",
+          "summary": "Rocket Propulsion Systems - Lecture"
+        },
+        {
+          "start": "2025-02-14T19:00:00.000Z",
+          "end": "2025-02-14T20:30:00.000Z",
+          "summary": "Space Industry Career Fair Planning"
+        },
+        {
+          "start": "2025-02-17T14:00:00.000Z",
+          "end": "2025-02-17T15:30:00.000Z",
+          "summary": "Aerospace Engineering Fundamentals - Class"
+        },
+        {
+          "start": "2025-02-17T20:00:00.000Z",
+          "end": "2025-02-17T21:30:00.000Z",
+          "summary": "NASA JPL Virtual Tour Preparation"
+        },
+        {
+          "start": "2025-02-18T15:30:00.000Z",
+          "end": "2025-02-18T17:00:00.000Z",
+          "summary": "Thesis Defense Committee Meeting"
+        },
+        {
+          "start": "2025-02-18T19:30:00.000Z",
+          "end": "2025-02-18T20:30:00.000Z",
+          "summary": "Space Exploration Ethics Seminar Prep"
+        },
+        {
+          "start": "2025-02-19T13:30:00.000Z",
+          "end": "2025-02-19T15:00:00.000Z",
+          "summary": "Orbital Mechanics Lab Session"
+        },
+        {
+          "start": "2025-02-19T18:00:00.000Z",
+          "end": "2025-02-19T19:00:00.000Z",
+          "summary": "Planetary Science Conference Call"
+        },
+        {
+          "start": "2025-02-20T16:00:00.000Z",
+          "end": "2025-02-20T17:00:00.000Z",
+          "summary": "Department Meeting - Budget Review"
+        },
+        {
+          "start": "2025-02-20T21:00:00.000Z",
+          "end": "2025-02-20T22:00:00.000Z",
+          "summary": "Office Hours - Student Consultations"
+        },
+        {
+          "start": "2025-02-21T14:30:00.000Z",
+          "end": "2025-02-21T16:00:00.000Z",
+          "summary": "Rocket Propulsion Systems - Lecture"
+        },
+        {
+          "start": "2025-02-21T19:00:00.000Z",
+          "end": "2025-02-21T21:00:00.000Z",
+          "summary": "Space Startup Incubator Mentoring Session"
+        },
+        {
+          "start": "2025-02-24T14:00:00.000Z",
+          "end": "2025-02-24T15:30:00.000Z",
+          "summary": "Aerospace Engineering Fundamentals - Class"
+        },
+        {
+          "start": "2025-02-24T20:30:00.000Z",
+          "end": "2025-02-24T22:00:00.000Z",
+          "summary": "Mars Mission Simulation Workshop Planning"
+        },
+        {
+          "start": "2025-02-25T15:00:00.000Z",
+          "end": "2025-02-25T16:30:00.000Z",
+          "summary": "Student Research Showcase Judging"
+        },
+        {
+          "start": "2025-02-25T19:00:00.000Z",
+          "end": "2025-02-25T20:00:00.000Z",
+          "summary": "ESA Collaboration Video Conference"
+        },
+        {
+          "start": "2025-02-26T13:30:00.000Z",
+          "end": "2025-02-26T15:00:00.000Z",
+          "summary": "Orbital Mechanics Lab Session"
+        },
+        {
+          "start": "2025-02-26T18:30:00.000Z",
+          "end": "2025-02-26T20:00:00.000Z",
+          "summary": "Course Material Development - Space Law Module"
+        },
+        {
+          "start": "2025-02-27T16:00:00.000Z",
+          "end": "2025-02-27T17:30:00.000Z",
+          "summary": "Innovation in STEM Education Conference"
+        },
+        {
+          "start": "2025-02-27T21:00:00.000Z",
+          "end": "2025-02-27T22:00:00.000Z",
+          "summary": "Office Hours - Student Consultations"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
