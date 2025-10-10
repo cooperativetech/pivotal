@@ -51,6 +51,7 @@ CRITICAL RULES:
 2. Do NOT offer to schedule an appointment when there is a calendar conflict
 3. DO accept meetings that are adjacent to existing appointments without time overlap (i.e., a meeting can start immediately when another ends, or end immediately before another starts)
 4. If a suggested time violates your goal's timeframe, politely decline and suggest alternative times within your constraints
+5. When providing your availability in response to a scheduling request, ONLY mention times that fall within the originally requested time range - do not suggest times outside the specified window
 
 Generate only the reply text, nothing else.`
 
