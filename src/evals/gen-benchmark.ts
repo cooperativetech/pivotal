@@ -108,6 +108,7 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     meetingLength,
     nSimUsers,
     genTimestamp,
+    benchmarkType: 'scheduling' as const,
     ...(nGroups !== undefined && { nGroups }),
     ...(groupIndex !== undefined && { groupIndex }),
   }
@@ -120,7 +121,51 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
   return exportData
 }
 
+async function createFreeGoalBenchmark(nSimUsers: number, genTimestamp: string, goal: string, nGroups?: number, groupIndex?: number) {
+  // Possible simUser names (one for each letter of the alphabet)
+  const possibleSimUserNames = [
+    'Alice', 'Bob', 'Charlie', 'Diana', 'Edward', 'Fiona', 'George', 'Helen',
+    'Ian', 'Julia', 'Kevin', 'Laura', 'Michael', 'Nina', 'Oliver', 'Patricia',
+    'Quinn', 'Rachel', 'Samuel', 'Teresa', 'Ulrich', 'Victoria', 'William', 'Xara',
+    'Yasmin', 'Zachary',
+  ]
 
+  // Randomly sample nSimUsers names
+  const shuffledNames = [...possibleSimUserNames].sort(() => Math.random() - 0.5)
+  const simUserNames = shuffledNames.slice(0, nSimUsers)
+
+  // Create simUsers list
+  const simUsers: BaseScheduleUser[] = simUserNames.map((name, index) => {
+    // Randomly assign the goal to one of the users
+    const randomGoalIndex = Math.floor(Math.random() * nSimUsers)
+    const userGoal = index === randomGoalIndex ? goal : ''
+
+    // Create user with empty calendar for free goal benchmarks
+    return new BaseScheduleUser(name, userGoal, [])
+  })
+
+  console.log('Created simUsers:')
+  simUsers.forEach((simUser) => console.log(`${simUser.name}: goal="${simUser.goal}"`))
+
+  // Export simUsers and benchmark parameters
+  const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
+
+  const benchmark = {
+    nSimUsers,
+    genTimestamp,
+    goal,
+    benchmarkType: 'free' as const,
+    ...(nGroups !== undefined && { nGroups }),
+    ...(groupIndex !== undefined && { groupIndex }),
+  }
+
+  const exportData = {
+    benchmark,
+    simUsers: exportedSimUsers,
+  }
+
+  return exportData
+}
 
 // Parse command line arguments
 function parseArguments() {
@@ -156,6 +201,10 @@ function parseArguments() {
         type: 'string',
         short: 't',
       },
+      freeGoal: {
+        type: 'string',
+        short: 'f',
+      },
       help: {
         type: 'boolean',
         short: 'h',
@@ -173,6 +222,7 @@ function parseArguments() {
     console.log('  -a, --nSimUsers         Number of simulated users (default: 2)')
     console.log('  -g, --nGroups           Number of groups to generate (default: 1)')
     console.log('  -t, --genTimestamp      Use existing generation timestamp (appends to existing folder)')
+    console.log('  -f, --freeGoal          Free-form goal string (creates free goal benchmark instead of scheduling)')
     console.log('  -h, --help              Show this help message')
     process.exit(0)
   }
@@ -184,12 +234,13 @@ function parseArguments() {
     nSimUsers: parseInt(values.nSimUsers, 10),
     nGroups: parseInt(values.nGroups, 10),
     genTimestamp: values.genTimestamp || null,
+    freeGoal: values.freeGoal || null,
   }
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups, genTimestamp } = parseArguments()
-console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nGroups=${nGroups}, genTimestamp=${genTimestamp || 'new'}`)
+const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups, genTimestamp, freeGoal } = parseArguments()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nGroups=${nGroups}, genTimestamp=${genTimestamp || 'new'}, freeGoal=${freeGoal || 'none'}`)
 
 async function generateMultiGroupBenchmarks() {
   console.log(`\nGenerating benchmark with ${nGroups} group(s)...`)
@@ -225,7 +276,9 @@ async function generateMultiGroupBenchmarks() {
   } else {
     // Create new folder with new timestamp using current parameters
     useTimestamp = formatTimestamp()
-    const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
+    const folderName = freeGoal
+      ? `benchmark_${nSimUsers}simusers_freegoal_gen${useTimestamp}`
+      : `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
 
     targetFolder = join(benchmarksPath, folderName)
     await mkdir(targetFolder, { recursive: true })
@@ -236,12 +289,16 @@ async function generateMultiGroupBenchmarks() {
   for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
     console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
 
-    // Call createBenchmark for each group
-    const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, useTimestamp, nGroups, groupIndex)
+    // Call appropriate benchmark creation function based on whether freeGoal is provided
+    const exportData = freeGoal
+      ? await createFreeGoalBenchmark(nSimUsers, useTimestamp, freeGoal, nGroups, groupIndex)
+      : await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, useTimestamp, nGroups, groupIndex)
 
     // Save with group-specific filename using nextGroupNumber
     const actualGroupNumber = nextGroupNumber + groupIndex
-    const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+    const baseName = freeGoal
+      ? `benchmark_${nSimUsers}simusers_freegoal`
+      : `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
     const filename = `${baseName}_gen${useTimestamp}_group${actualGroupNumber}.json`
     const filePath = join(targetFolder, filename)
 

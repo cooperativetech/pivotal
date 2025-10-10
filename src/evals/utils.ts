@@ -26,15 +26,17 @@ export const SerializedSimUserData = z.strictObject({
 })
 
 export const BenchmarkData = z.strictObject({
-  startTime: z.string(),
-  startTimeOffset: z.number(),
-  endTime: z.string(),
-  endTimeOffset: z.number(),
-  meetingLength: z.number(),
+  startTime: z.string().optional(),
+  startTimeOffset: z.number().optional(),
+  endTime: z.string().optional(),
+  endTimeOffset: z.number().optional(),
+  meetingLength: z.number().optional(),
   nSimUsers: z.number(),
   nGroups: z.number(),
   groupIndex: z.number(),
   genTimestamp: z.string(),
+  goal: z.string().optional(),
+  benchmarkType: z.enum(['scheduling', 'free']).optional(),
 })
 
 export const BenchmarkFileData = z.strictObject({
