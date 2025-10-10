@@ -100,8 +100,11 @@ pnpm run eval --benchmarkSet=benchmarks
 # Run all benchmarks in a custom benchmark set folder
 pnpm run eval --benchmarkSet=my_custom_benchmarks
 
-# Run a single specific benchmark folder
+# Run a single specific benchmark folder (uses default "benchmarks" folder)
 pnpm run eval --benchmark=benchmark_2simusers_1start_2end_60min_gen20251008150702575
+
+# Run a single benchmark from a custom benchmark set
+pnpm run eval --benchmarkSet=my_custom_benchmarks --benchmark=benchmark_2simusers_1start_2end_60min_gen20251008150702575
 
 # Run multiple repetitions for statistical analysis
 pnpm run eval --benchmarkSet=benchmarks --nReps=5
@@ -120,7 +123,9 @@ pnpm run eval --benchmarkSet=benchmarks --topicRouting
 ### Benchmark Set vs Single Benchmark
 
 - **Benchmark Set**: Runs all benchmark folders within a top-level directory (e.g., all folders in `benchmarks/`)
-- **Single Benchmark**: Runs all files within a specific timestamped benchmark folder
+- **Single Benchmark**: Runs all files within a specific timestamped benchmark folder from the specified benchmark set (defaults to `benchmarks/` if not specified)
+
+Note: You can now combine `--benchmarkSet` and `--benchmark` to run a single benchmark from a custom benchmark set folder.
 
 ### Features
 
@@ -193,7 +198,7 @@ pnpm run gen-benchmark --genTimestamp=20251008151000123 --meetingLength=30 --nSi
 #   - benchmark_6simusers_1-5start_2end_90min_gen20251008151000123_group3.json
 #   - benchmark_3simusers_1-5start_2end_30min_gen20251008151000123_group4.json
 
-# 4. Evaluate the specific batch
+# 4. Evaluate the specific benchmark (checks in the default "benchmarks" folder unless -s is specified)
 pnpm run eval --benchmark=benchmark_4simusers_1-5start_2end_90min_gen20251008151000123
 ```
 
