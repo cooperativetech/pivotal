@@ -1,0 +1,162 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 4,
+    "genTimestamp": "20251010103116680",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Zachary",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Alice, Julia, Bob",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Preparation and embalming - Celebrity client"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Client consultation - Film production company"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Makeup and prosthetics coordination meeting"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Body preparation for tomorrow's viewing"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Documentation and case file updates"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Morning Farm Check & Animal Care"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Craft Workshop Planning - Spring Collection"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Virtual Meeting with Local Artisan Co-op"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Pottery Glazing - Customer Orders"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Farm-to-Table Restaurant Partnership Call"
+        },
+        {
+          "start": "2025-01-02T22:30:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Evening Farm Maintenance & Equipment Check"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Julia",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T12:30:00.000Z",
+          "summary": "Safety briefing and equipment check"
+        },
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Turbine maintenance - Film set wind farm inspection"
+        },
+        {
+          "start": "2025-01-02T16:45:00.000Z",
+          "end": "2025-01-02T17:15:00.000Z",
+          "summary": "Call with entertainment production coordinator"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Wind turbine performance review for theme park"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Preventive maintenance documentation"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "End-of-day equipment secure and report filing"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Bob",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Q1 Ride Experience Enhancement Planning"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:45:00.000Z",
+          "summary": "Guest Satisfaction Data Review - Holiday Season"
+        },
+        {
+          "start": "2025-01-02T17:00:00.000Z",
+          "end": "2025-01-02T18:00:00.000Z",
+          "summary": "New Virtual Queue System - Stakeholder Alignment"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Field Research - Frontierland Attraction Flow Analysis"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Mobile App Feature Prioritization - Spring Release"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Competitive Analysis - New Immersive Experiences"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

@@ -1,24 +1,27 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
-import { findBenchmarkFile, saveEvaluationResults, findAllBenchmarkFiles, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase } from './utils'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
+import { join, dirname } from 'path'
+import { saveEvaluationResults, createAggregatedSummary, createResultsFolder, formatTimestamp, clearDatabase, getBenchmarksFromSet } from './utils'
 import { dumpTopic } from '../utils'
 import { findCommonFreeTime } from '../tools/time_intersection'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 // Parse command line arguments for benchmark file or folder
-function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: string | null; nReps: number; topicRouting: boolean } {
+function parseArguments(): { benchmarkSet: string; benchmark: string | null; nReps: number; topicRouting: boolean } {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      benchmarkFile: {
+      benchmarkSet: {
         type: 'string',
-        short: 'f',
+        short: 's',
+        default: 'benchmarks',
       },
-      benchmarkFolder: {
+      benchmark: {
         type: 'string',
-        short: 'd',
+        short: 'b',
       },
       nReps: {
         type: 'string',
@@ -41,30 +44,26 @@ function parseArguments(): { benchmarkFile: string | null; benchmarkFolder: stri
   if (values.help) {
     console.log('Usage: pnpm run eval [options]')
     console.log('\nOptions:')
-    console.log('  -f, --benchmarkFile     Specific benchmark file (e.g., benchmark_2simusers_1start_2end_60min_gen20250915121553773.json)')
-    console.log('  -d, --benchmarkFolder   Benchmark folder to run all files in (e.g., benchmark_2simusers_1groups_1start_2end_60min)')
+    console.log('  -s, --benchmarkSet      Top-level folder containing multiple benchmarks (e.g., "benchmarks" or specific folder)')
+    console.log('  -b, --benchmark         Single benchmark folder with timestamped groups (e.g., benchmark_XYZ_gen<timestamp>)')
     console.log('  -r, --nReps             Number of repetitions per case (default: 1)')
     console.log('  -t, --topicRouting      Enable topic routing (default: false)')
     console.log('  -h, --help              Show this help message')
-    console.log('\nIf neither file nor folder is specified, defaults to: benchmark_2simusers_1groups_1start_2end_60min')
+    console.log('\nIf no arguments are provided, defaults to running all benchmarks in the "benchmarks" folder')
     process.exit(0)
   }
 
-  // Validate arguments
-  if (values.benchmarkFile && values.benchmarkFolder) {
-    console.error('Error: Cannot specify both --benchmarkFile and --benchmarkFolder')
-    process.exit(1)
-  }
 
   return {
-    benchmarkFile: values.benchmarkFile || null,
-    benchmarkFolder: values.benchmarkFolder || null,
+    benchmarkSet: values.benchmarkSet,
+    benchmark: values.benchmark || null,
     nReps: parseInt(values.nReps, 10),
     topicRouting: values.topicRouting || false,
   }
 }
 import { BaseScheduleUser } from './sim-users'
 import { type SavedEvaluationResults, type BaseScheduleUserData, BenchmarkFileData } from './utils'
+import type { z } from 'zod'
 import { isConfirming, extractSuggestedTime } from '../agents/evals'
 import type { SimpleCalendarEvent } from './sim-users'
 import { local_api } from '../shared/api-client'
@@ -79,15 +78,15 @@ function loadSimUsersFromBenchmarkData(benchmarkSimUsers: BaseScheduleUserData[]
 }
 
 // Create all server-side users based on simUsers
-async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Map<string, BaseScheduleUser>> {
-  const usersToCreate = simUsers.map((simUser) => ({
+async function createUsersFromSimUsers(simUsers: Record<string, BaseScheduleUser>): Promise<Map<string, BaseScheduleUser>> {
+  const usersToCreate = Object.values(simUsers).map((simUser) => ({
     id: simUser.name,
     realName: simUser.name,
     isBot: false,
   }))
 
   const userSimUserMap = new Map<string, BaseScheduleUser>()
-  simUsers.forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
+  Object.values(simUsers).forEach((simUser) => userSimUserMap.set(simUser.name, simUser))
 
   const createUsersRes = await local_api.users.create_fake.$post({
     json: { users: usersToCreate },
@@ -106,7 +105,7 @@ async function createUsersFromSimUsers(simUsers: BaseScheduleUser[]): Promise<Ma
 }
 
 // Process bot message responses and add them to appropriate simUser buffers
-async function processBotMessages(messageResult: Record<string, unknown>, simUsers: BaseScheduleUser[]): Promise<SimpleCalendarEvent | null> {
+async function processBotMessages(messageResult: Record<string, unknown>, simUsers: Record<string, BaseScheduleUser>): Promise<SimpleCalendarEvent | null> {
   if (!messageResult.resMessages || !Array.isArray(messageResult.resMessages)) {
     console.log('⚠️ Bot did not reply - no resMessages in response')
     return null
@@ -143,7 +142,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
       if (!channelRes.ok) {
         console.error(`Failed to get channel info: ${resMessage.channelId as string}`)
         // Fallback: send to all simUsers if we can't get channel info
-        for (const simUser of simUsers) {
+        for (const simUser of Object.values(simUsers)) {
           simUser.receive(resMessage.text as string)
         }
         continue
@@ -152,15 +151,15 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
       const { userIds } = await channelRes.json()
 
       // Only send message to simUsers whose names match the channel userIds
-      for (const simUser of simUsers) {
-        if (userIds.includes(simUser.name)) {
-          simUser.receive(resMessage.text as string)
+      for (const userId of userIds) {
+        if (simUsers[userId]) {
+          simUsers[userId].receive(resMessage.text as string)
         }
       }
     } catch (error) {
       console.error(`Error processing bot message for channel ${resMessage.channelId as string}:`, error)
       // Fallback: send to all simUsers if there's an error
-      for (const simUser of simUsers) {
+      for (const simUser of Object.values(simUsers)) {
         simUser.receive(resMessage.text as string)
       }
     }
@@ -171,44 +170,60 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topicRouting: boolean = false, nGroups: number, userGroupMapping: Record<string, number>): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: Record<string, BaseScheduleUser>, topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][], groupGoalInitializer: string[]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
 
-  if (simUsers.length === 0) {
+  if (Object.keys(simUsers).length === 0) {
     throw new Error('No simUsers provided for conversation')
   }
 
   // Log all simUsers
-  simUsers.forEach((simUser, index) => {
+  Object.values(simUsers).forEach((simUser, index) => {
     console.log(`SimUser ${index + 1}: ${simUser.name} - Goal: "${simUser.goal}"`)
   })
+
+  // Create inverse mapping and validate for topicRouting
+  let userGroupMapping: Record<string, number> | null = null
+
+  if (!topicRouting) {
+    // Construct inverse mapping: user -> group
+    userGroupMapping = {}
+    groupUserMapping.forEach((userNames, groupIndex) => {
+      userNames.forEach((userName) => {
+        if (userGroupMapping![userName] !== undefined) {
+          throw new Error(`When topicRouting is false, users cannot be in multiple groups. User '${userName}' found in both group ${userGroupMapping![userName]} and group ${groupIndex}`)
+        }
+        userGroupMapping![userName] = groupIndex
+      })
+    })
+  } else {
+    // When topicRouting is enabled, users can be in multiple groups
+    userGroupMapping = null
+  }
 
   // Initialize group-based tracking
   const topicIds: (string | null)[] = Array.from({ length: nGroups }, () => null)
   const suggestedEvents: (SimpleCalendarEvent | null)[] = Array.from({ length: nGroups }, () => null)
 
-  // Start conversation: First simUser sends initial message through API
+  // Start conversation: Send initial messages from goal initializers
   console.log('\n--- Starting Conversation ---')
-  // Send initial messages from all simUsers with goals
+  // Send initial messages from goal initializers for each group
 
-  for (const simUser of simUsers) {
+  for (let groupIndex = 0; groupIndex < groupGoalInitializer.length; groupIndex++) {
+    const goalUserName = groupGoalInitializer[groupIndex]
+    const simUser = simUsers[goalUserName]
+
     if (simUser.goal && simUser.goal.trim() !== '') {
       const initialMessage = await simUser.sendInitialMessage()
 
       if (!initialMessage) {
-        console.log(`${simUser.name} has a goal but no initial message to send`)
+        console.log(`${simUser.name} (Group ${groupIndex}) has a goal but no initial message to send`)
         continue
       }
 
-      console.log(`${simUser.name}: ${initialMessage}`)
-
-      // Get the user's group from the mapping
-      const userGroup = userGroupMapping[simUser.name]
-      if (userGroup === undefined) {
-        throw new Error(`User ${simUser.name} not found in userGroupMapping`)
-      }
+      console.log(`${simUser.name} (Group ${groupIndex}): ${initialMessage}`)
 
       // Send initial message through local API
       const initMessageRes = await local_api.message.$post({
@@ -216,7 +231,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
           userId: simUser.name,
           text: initialMessage,
           ignoreExistingTopics: !topicRouting,
-          ...(topicIds[userGroup] && !topicRouting ? { topicId: topicIds[userGroup] } : {}),
+          ...(!topicRouting ? { topicId: topicIds[groupIndex] || undefined } : {}),
         },
       })
       if (!initMessageRes.ok) {
@@ -225,17 +240,17 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
 
       const initResData = await initMessageRes.json()
 
-      // Store topicId for this user's group
-      if (!topicIds[userGroup]) {
-        topicIds[userGroup] = initResData.topicId
-        console.log(`Created topic for group ${userGroup}: ${topicIds[userGroup]}`)
+      // Store topicId for this group
+      if (!topicIds[groupIndex]) {
+        topicIds[groupIndex] = initResData.topicId
+        console.log(`Created topic for group ${groupIndex}: ${topicIds[groupIndex]}`)
       }
 
       // Process bot responses for this initial message and extract suggested event
       const newSuggestedEvent = await processBotMessages(initResData, simUsers)
-      if (newSuggestedEvent && !suggestedEvents[userGroup]) {
-        suggestedEvents[userGroup] = newSuggestedEvent
-        console.log(`  → Initial bot suggestion for group ${userGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+      if (newSuggestedEvent && !suggestedEvents[groupIndex]) {
+        suggestedEvents[groupIndex] = newSuggestedEvent
+        console.log(`  → Initial bot suggestion for group ${groupIndex}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
       }
     }
   }
@@ -247,12 +262,11 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
   // Initialize confirmation tracking for all simUsers
   const confirmations: Record<string, boolean> = {}
   const resetConfirmations = () => {
-    simUsers.forEach((simUser) => {
+    Object.values(simUsers).forEach((simUser) => {
       confirmations[simUser.name] = false
     })
   }
   resetConfirmations()
-
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -265,7 +279,7 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     let anySimUserSpoke = false
 
     // Each simUser replies to messages in their buffer
-    for (const simUser of simUsers) {
+    for (const simUser of Object.values(simUsers)) {
       console.log(`${simUser.name} buffer length: ${simUser.messageBuffer.length}`)
       if (simUser.messageBuffer.length > 0) {
       //if (true) {
@@ -284,19 +298,13 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             }
           }
 
-          // Get the user's group from the mapping
-          const userGroup = userGroupMapping[simUser.name]
-          if (userGroup === undefined) {
-            throw new Error(`User ${simUser.name} not found in userGroupMapping`)
-          }
-
           // Send reply through local API
           const replyRes = await local_api.message.$post({
             json: {
               userId: simUser.name,
               text: reply,
               ignoreExistingTopics: !topicRouting,
-              ...(topicRouting ? {} : topicIds[userGroup] ? { topicId: topicIds[userGroup] } : {}),
+              ...(topicRouting ? {} : topicIds[userGroupMapping![simUser.name]] ? { topicId: topicIds[userGroupMapping![simUser.name]]! } : {}),
             },
           })
 
@@ -305,21 +313,42 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
             // Process bot responses and add to simUser buffers
             const newSuggestedEvent = await processBotMessages(replyData, simUsers)
             if (newSuggestedEvent) {
+              // Determine which group this suggestion belongs to
+              let targetGroup: number
+
+              if (!topicRouting) {
+                // Use userGroupMapping to determine the group
+                targetGroup = userGroupMapping![simUser.name]
+              } else {
+                // Use topicId from response to find the group
+                const responseTopicId = replyData.topicId
+                if (!responseTopicId) {
+                  throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
+                }
+
+                const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
+                if (topicIndex === -1) {
+                  throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
+                }
+                targetGroup = topicIndex
+              }
+
               // Check if this is a new/different suggested event for this group
-              const currentGroupEvent = suggestedEvents[userGroup]
+              const currentGroupEvent = suggestedEvents[targetGroup]
               if (!currentGroupEvent || newSuggestedEvent.start.getTime() !== currentGroupEvent.start.getTime() || newSuggestedEvent.end.getTime() !== currentGroupEvent.end.getTime()) {
-                console.log(`  → Bot suggested new meeting for group ${userGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+                console.log(`  → Bot suggested new meeting for group ${targetGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
                 if (currentGroupEvent) {
-                  console.log(`  → Previous meeting for group ${userGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
-                  console.log(`  → Resetting confirmations for group ${userGroup} due to meeting change`)
+                  console.log(`  → Previous meeting for group ${targetGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
+                  console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
                   // Reset confirmations for users in this group
-                  simUsers.forEach((user) => {
-                    if (userGroupMapping[user.name] === userGroup) {
-                      confirmations[user.name] = false
+                  const groupUserNames = groupUserMapping[targetGroup] || []
+                  groupUserNames.forEach((userName) => {
+                    if (simUsers[userName]) {
+                      confirmations[userName] = false
                     }
                   })
                 }
-                suggestedEvents[userGroup] = newSuggestedEvent
+                suggestedEvents[targetGroup] = newSuggestedEvent
               }
             }
           } else {
@@ -333,7 +362,8 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     let allGroupsConfirmed = true
     for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
       if (suggestedEvents[groupIndex]) {
-        const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
+        const groupUserNames = groupUserMapping[groupIndex] || []
+        const groupUsers = groupUserNames.map((name) => simUsers[name])
         const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
@@ -371,7 +401,9 @@ async function simulateTurnBasedConversation(simUsers: BaseScheduleUser[], topic
     const topicId = topicIds[i]
     if (topicId) {
       // Find a user from this specific group to query the topic
-      const groupUser = simUsers.find((user) => userGroupMapping[user.name] === i)
+      const groupUserNames = groupUserMapping[i] || []
+      const validUserName = groupUserNames.find((name) => simUsers[name])
+      const groupUser = validUserName ? simUsers[validUserName] : null
       if (!groupUser) {
         throw new Error(`No user found for group ${i}`)
       }
@@ -402,31 +434,34 @@ async function runSimpleEvaluation(): Promise<void> {
 
   try {
     // Step 1: Parse command line arguments
-    const { benchmarkFile, benchmarkFolder, nReps, topicRouting } = parseArguments()
+    const { benchmarkSet, benchmark, nReps, topicRouting } = parseArguments()
 
     // Step 2: Determine what to run based on arguments
-    if (benchmarkFile) {
-      // Run specific file
-      console.log(`Using benchmark file: ${benchmarkFile}`)
-      console.log(`Running ${nReps} repetition(s) per case`)
-      await runRepeatedEvaluation(benchmarkFile, false, nReps, topicRouting)
+    let benchmarksToRun: string[] = []
+
+    if (benchmark) {
+      // Option 1: Run single benchmark folder from the specified benchmarkSet
+      console.log(`Using single benchmark: ${benchmark} from set: ${benchmarkSet}`)
+      benchmarksToRun = [`${benchmarkSet}/${benchmark}`]
     } else {
-      // Run folder (either specified or default)
-      const folderName = benchmarkFolder || 'benchmark_2simusers_1groups_1start_2end_60min'
-      console.log(`Using benchmark folder: ${folderName}`)
-      const benchmarkFiles = findAllBenchmarkFiles(folderName)
-      console.log(`Found ${benchmarkFiles.length} benchmark files in folder`)
-      console.log(`Running ${nReps} repetition(s) per case`)
-
-      for (let i = 0; i < benchmarkFiles.length; i++) {
-        console.log(`\n${'='.repeat(80)}`)
-        console.log(`Running evaluation ${i + 1}/${benchmarkFiles.length}`)
-        console.log(`${'='.repeat(80)}`)
-        await runRepeatedEvaluation(benchmarkFiles[i], true, nReps, topicRouting)
-      }
-
-      console.log(`\n✅ Completed all ${benchmarkFiles.length} evaluations (${nReps} reps each)`)
+      // Option 2: Loop over all benchmarks within the benchmark set folder
+      console.log(`Using benchmark set: ${benchmarkSet}`)
+      benchmarksToRun = getBenchmarksFromSet(benchmarkSet)
     }
+
+    // Run all benchmarks
+    console.log(`Running ${benchmarksToRun.length} benchmark(s) with ${nReps} repetition(s) each`)
+
+    for (let i = 0; i < benchmarksToRun.length; i++) {
+      const benchmarkName = benchmarksToRun[i]
+      console.log(`\n${'='.repeat(80)}`)
+      console.log(`Running benchmark ${i + 1}/${benchmarksToRun.length}: ${benchmarkName}`)
+      console.log(`${'='.repeat(80)}`)
+
+      await runRepeatedEvaluation(benchmarkName, nReps, topicRouting)
+    }
+
+    console.log(`\n✅ Completed all ${benchmarksToRun.length} benchmarks (${nReps} reps each)`)
   } catch (error) {
     console.error('\n❌ Evaluation failed:', error)
     process.exit(1)
@@ -434,7 +469,7 @@ async function runSimpleEvaluation(): Promise<void> {
 }
 
 // Wrapper function to run repeated evaluations
-async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: boolean, nReps: number, topicRouting: boolean): Promise<void> {
+async function runRepeatedEvaluation(benchmarkName: string, nReps: number, topicRouting: boolean): Promise<void> {
   const allResults: SavedEvaluationResults[] = []
 
   for (let rep = 1; rep <= nReps; rep++) {
@@ -442,7 +477,7 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
       console.log(`\n--- Repetition ${rep}/${nReps} ---`)
     }
     try {
-      const result = await runSingleEvaluation(benchmarkFileOrPath, isFullPath, topicRouting)
+      const result = await runSingleEvaluation(benchmarkName, topicRouting)
       if (result) {
         allResults.push(result)
       }
@@ -457,44 +492,126 @@ async function runRepeatedEvaluation(benchmarkFileOrPath: string, isFullPath: bo
 
     // Create aggregated summary if we have multiple runs
     if (allResults.length > 1) {
-      const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-      createAggregatedSummary(fileName, allResults, nReps)
+      createAggregatedSummary(benchmarkName, allResults, nReps)
     }
   }
 }
 
-// Run a single evaluation for a specific benchmark file
-async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = false, topicRouting = false): Promise<SavedEvaluationResults | null> {
+// Run a single evaluation for a specific benchmark folder
+async function runSingleEvaluation(benchmarkName: string, topicRouting = false): Promise<SavedEvaluationResults | null> {
   try {
     // Step 1: Clear database
     await clearDatabase()
 
-    // Step 2: Load benchmark file and agents from benchmark data
-    console.log('\nLoading benchmark file...')
-    const dataPath = isFullPath ? benchmarkFileOrPath : findBenchmarkFile(benchmarkFileOrPath)
-    console.log(`Found benchmark file at: ${dataPath}`)
-    const rawData = readFileSync(dataPath, 'utf-8')
-    const parsedData: unknown = JSON.parse(rawData)
+    // Step 2: Load benchmark file(s) and agents from benchmark data
+    console.log('\nLoading benchmark data...')
 
-    // Validate benchmark data structure with Zod
-    const benchmarkData = BenchmarkFileData.parse(parsedData)
-    const benchmarkSimUsers = benchmarkData.simUsers
-    const nGroups = benchmarkData.benchmark.nGroups
-    const userGroupMapping = benchmarkData.benchmark.userGroupMapping
+    const simUsers: Record<string, BaseScheduleUser> = {}
 
-    console.log('Loading simUsers from benchmark data...')
-    const simUsers = loadSimUsersFromBenchmarkData(benchmarkSimUsers)
-    console.log(`Loaded ${simUsers.length} simUsers:`)
-    simUsers.forEach((simUser) => {
-      console.log(`  - ${simUser.name}: ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
+    // Load all JSON files from the benchmark folder
+    const folderPath = join(__dirname, 'data', benchmarkName)
+    if (!existsSync(folderPath)) {
+      throw new Error(`Benchmark folder not found: ${benchmarkName}`)
+    }
+
+    const files = readdirSync(folderPath)
+    const filesToLoad = files
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => join(folderPath, file))
+      .sort()
+
+    if (filesToLoad.length === 0) {
+      throw new Error(`No JSON files found in benchmark folder: ${benchmarkName}`)
+    }
+
+    console.log(`Loading benchmark data from ${filesToLoad.length} file(s)`)
+
+    const groupData: Array<{ benchmarkData: z.infer<typeof BenchmarkFileData>; simUsers: BaseScheduleUser[] }> = []
+
+    // Load each file
+    for (let i = 0; i < filesToLoad.length; i++) {
+      const filePath = filesToLoad[i]
+      console.log(`Loading file ${i + 1}/${filesToLoad.length}: ${filePath}`)
+
+      const rawData = readFileSync(filePath, 'utf-8')
+      const parsedData: unknown = JSON.parse(rawData)
+      const groupBenchmarkData = BenchmarkFileData.parse(parsedData)
+      const groupSimUsers = loadSimUsersFromBenchmarkData(groupBenchmarkData.simUsers)
+
+      groupData.push({
+        benchmarkData: groupBenchmarkData,
+        simUsers: groupSimUsers,
+      })
+
+      // Add users to the dictionary, handling deduplication
+      for (const simUser of groupSimUsers) {
+        const existing = simUsers[simUser.name]
+        if (existing) {
+          const existingHasGoal = existing.goal && existing.goal.trim() !== ''
+          const currentHasGoal = simUser.goal && simUser.goal.trim() !== ''
+
+          // Error if both users have goals - this indicates a data inconsistency
+          if (existingHasGoal && currentHasGoal) {
+            throw new Error(`Data inconsistency: User '${simUser.name}' appears multiple times with different goals. Existing: "${existing.goal}", New: "${simUser.goal}"`)
+          }
+
+          // Keep the user with a goal, or if neither has goals, keep the first one
+          if (currentHasGoal && !existingHasGoal) {
+            simUsers[simUser.name] = simUser
+            console.log(`  Replaced duplicate user '${simUser.name}' - keeping version with goal: "${simUser.goal}"`)
+          } else if (existingHasGoal && !currentHasGoal) {
+            console.log(`  Kept existing user '${simUser.name}' - has goal: "${existing.goal}"`)
+          } else {
+            console.log(`  Kept first version of user '${simUser.name}' (neither has goal)`)
+          }
+        } else {
+          simUsers[simUser.name] = simUser
+        }
+      }
+    }
+
+    console.log(`Loaded ${Object.keys(simUsers).length} unique simUsers from ${filesToLoad.length} file(s)`)
+
+    // Create groupUserMapping based on loaded groups
+    const groupUserMapping = groupData.map((group) => group.simUsers.map((simUser) => simUser.name))
+
+    // Use the first group's benchmark data as the template
+    const benchmarkData = groupData[0].benchmarkData
+    const nGroups = filesToLoad.length
+
+    console.log(`Loaded ${Object.keys(simUsers).length} total simUsers across ${nGroups} groups`)
+
+    // Log all loaded simUsers
+    Object.values(simUsers).forEach((simUser) => {
+      // Find which group(s) this user belongs to
+      const userGroups = groupUserMapping
+        .map((userNames, groupIndex) => userNames.includes(simUser.name) ? groupIndex : -1)
+        .filter((groupIndex) => groupIndex !== -1)
+
+      const groupDisplay = userGroups.length > 0 ? userGroups.join(', ') : 'unknown'
+      console.log(`  - ${simUser.name} (Group ${groupDisplay}): ${simUser.calendar.length} calendar events, goal: "${simUser.goal}"`)
     })
 
     // Step 3: Create users in database
     console.log('\nCreating users in database...')
     await createUsersFromSimUsers(simUsers)
 
-    // Step 4: Run turn-based simulation
-    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, userGroupMapping)
+    // Step 4: Construct groupGoalInitializer (find the user with a goal in each group)
+    const groupGoalInitializer: string[] = []
+    for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
+      const groupUsers = groupUserMapping[groupIndex]
+      const goalUser = groupUsers
+        .map((name) => simUsers[name])
+        .find((user) => user.goal && user.goal.trim() !== '')
+      if (goalUser) {
+        groupGoalInitializer.push(goalUser.name)
+      } else {
+        throw new Error(`No user with a goal found in group ${groupIndex}`)
+      }
+    }
+
+    // Step 5: Run turn-based simulation
+    const result = await simulateTurnBasedConversation(simUsers, topicRouting, nGroups, groupUserMapping, groupGoalInitializer)
 
     // Log conversation completion for each group
     result.topicDatas.forEach((topicData, groupIndex) => {
@@ -515,7 +632,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
 
     // Check confirmations
     const confirmedSimUsers = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
-    const allSimUsersConfirmed = confirmedSimUsers.length === simUsers.length
+    const allSimUsersConfirmed = confirmedSimUsers.length === Object.keys(simUsers).length
 
     console.log('\nConfirmation Status:')
     Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
@@ -525,7 +642,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     if (allSimUsersConfirmed && confirmedSimUsers.length > 0) {
       console.log('🎉 All simUsers have confirmed the meeting suggestion!')
     } else if (confirmedSimUsers.length > 0) {
-      console.log(`⚠️  Only ${confirmedSimUsers.length}/${simUsers.length} simUsers have confirmed`)
+      console.log(`⚠️  Only ${confirmedSimUsers.length}/${Object.keys(simUsers).length} simUsers have confirmed`)
     } else {
       console.log('❌ No confirmations detected from any simUsers')
     }
@@ -548,7 +665,8 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       console.log(`\nFeasibility Check for Group ${groupIndex}:`)
 
       // Get users for this group
-      const groupUsers = simUsers.filter((user) => userGroupMapping[user.name] === groupIndex)
+      const groupUserNames = groupUserMapping[groupIndex] || []
+      const groupUsers = groupUserNames.map((name) => simUsers[name])
 
       // Calculate shared free time for this group regardless of whether there's a suggested event
       const commonFreeSlots = findCommonFreeTime(groupUsers, benchmarkStartTime, benchmarkEndTime)
@@ -655,18 +773,17 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     // Save evaluation results
     console.log('\nSaving evaluation results...')
 
-    // Extract filename from path
-    const fileName = isFullPath ? benchmarkFileOrPath.split('/').pop() || benchmarkFileOrPath : benchmarkFileOrPath
-    const baseFileName = fileName.replace(/\.json$/, '')
-
     // Get genTimestamp directly from benchmark data
     const genTimestamp = benchmarkData.benchmark.genTimestamp || 'unknown'
 
     const allUsersCanAttend = groupFeasibilityResults.every((g) => !g.hasSuggestedEvent || g.allUsersCanAttend)
 
+    // Generate unified timestamp for this evaluation
+    const evalTimestamp = formatTimestamp()
+
     const resultsData: SavedEvaluationResults = {
-      evalTimestamp: formatTimestamp(),
-      benchmarkFile: baseFileName,
+      evalTimestamp,
+      benchmarkFile: benchmarkName,
       genTimestamp,
       suggestedEvents: result.suggestedEvents.map((event) => event ? {
         start: event.start.toISOString(),
@@ -678,7 +795,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
       maxSharedFreeTimes: groupFeasibilityResults.map((g) => g.maxSharedFreeTime),
       allCanAttends: groupFeasibilityResults.map((g) => g.allUsersCanAttend),
       evaluationSummary: {
-        totalSimUsers: simUsers.length,
+        totalSimUsers: Object.keys(simUsers).length,
         confirmedCount: confirmedSimUsers.length,
         hasSuggestedEvents: result.suggestedEvents.every((event) => event !== null),
         allCanAttend: allUsersCanAttend,
@@ -688,7 +805,7 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
     }
 
     // Create results folder
-    const evalFolderPath = createResultsFolder(fileName)
+    const evalFolderPath = createResultsFolder(benchmarkName, evalTimestamp)
 
     // Save evaluation results
     const savedResults = saveEvaluationResults(evalFolderPath, resultsData)
@@ -701,8 +818,9 @@ async function runSingleEvaluation(benchmarkFileOrPath: string, isFullPath = fal
         const topicId = topicData.topic.id
         const fullTopicData = await dumpTopic(topicId)
 
-        // Create topic filename with group info: benchmarkType_gen<timestamp>_eval<timestamp>_group<index>_topic.json
-        const topicFileName = `${baseFileName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
+        // Create topic filename with group info: benchmarkFolderName_eval<timestamp>_group<index>_topic.json
+        const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
+        const topicFileName = `${benchmarkFolderName}_eval${resultsData.evalTimestamp}_group${groupIndex}_topic.json`
         const topicPath = join(evalFolderPath, topicFileName)
         writeFileSync(topicPath, JSON.stringify(fullTopicData, null, 2))
         console.log(`Topic conversation history for group ${groupIndex} saved to: ${topicPath}`)

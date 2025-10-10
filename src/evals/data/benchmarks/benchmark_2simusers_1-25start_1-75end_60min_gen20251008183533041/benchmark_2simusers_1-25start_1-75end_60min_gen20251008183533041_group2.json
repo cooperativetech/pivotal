@@ -1,0 +1,86 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251008183533041",
+    "nGroups": 2,
+    "groupIndex": 1
+  },
+  "simUsers": [
+    {
+      "name": "Diana",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Charlie",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:30:00.000Z",
+          "end": "2025-01-02T15:30:00.000Z",
+          "summary": "Puzzle Testing Session - 'Mindful Maze' Room"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Wellness Center Partnership Meeting"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Design Focus Block - Yoga-Themed Escape Room Concepts"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T20:45:00.000Z",
+          "summary": "Brainstorm: Meditation Puzzle Mechanics"
+        },
+        {
+          "start": "2025-01-02T21:30:00.000Z",
+          "end": "2025-01-02T22:15:00.000Z",
+          "summary": "Client Consultation - Corporate Wellness Escape Experience"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Charlie",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T11:30:00.000Z",
+          "end": "2025-01-02T12:00:00.000Z",
+          "summary": "Pre-trip vehicle inspection"
+        },
+        {
+          "start": "2025-01-02T12:15:00.000Z",
+          "end": "2025-01-02T12:45:00.000Z",
+          "summary": "Production coordinator briefing - equipment transport"
+        },
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T17:00:00.000Z",
+          "summary": "Transport lighting equipment to set location"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T18:30:00.000Z",
+          "summary": "Equipment unload coordination with grip team"
+        },
+        {
+          "start": "2025-01-02T19:00:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Standby for equipment moves between scenes"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:30:00.000Z",
+          "summary": "Safety meeting - night shoot protocols"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}

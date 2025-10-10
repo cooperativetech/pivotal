@@ -8,14 +8,14 @@ import { type BaseScheduleUserData } from './utils'
 import { genFakeCalendar } from '../agents/gen-fake-calendar'
 import { convertCalendarEventsToUserProfile } from '../tools/time_intersection'
 import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { formatTimestamp } from './utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, nGroups: number) {
+async function createBenchmark(startTimeOffset: number, endTimeOffset: number, meetingLength: number, nSimUsers: number, genTimestamp: string, nGroups?: number, groupIndex?: number) {
   // Define date range for fake calendars using offsets from January 1, 2025 midnight EST
   const referenceDate = new Date('2025-01-01T05:00:00Z')
   const startTime = new Date(referenceDate.getTime() + startTimeOffset * 24 * 60 * 60 * 1000)
@@ -29,44 +29,9 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     'Yasmin', 'Zachary',
   ]
 
-  // Subsample the first nSimUsers names
-  const simUserNames = possibleSimUserNames.slice(0, nSimUsers)
-
-  // Validate nGroups parameter
-  if (nGroups > 1) {
-    const minUsersPerGroup = 2
-    const minRequiredUsers = nGroups * minUsersPerGroup
-    if (nSimUsers < minRequiredUsers) {
-      throw new Error(`Cannot divide ${nSimUsers} users into ${nGroups} groups with at least ${minUsersPerGroup} users each. Need at least ${minRequiredUsers} users.`)
-    }
-  }
-
-  // Divide users into groups if nGroups > 1
-  let userGroups: string[][]
-  if (nGroups === 1) {
-    userGroups = [simUserNames]
-  } else {
-    // Initialize empty groups
-    userGroups = Array.from({ length: nGroups }, () => [])
-    const remainingUsers = [...simUserNames]
-
-    // First two passes: give each group two users using nested loop
-    for (let pass = 0; pass < 2; pass++) {
-      for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
-        const randomIndex = Math.floor(Math.random() * remainingUsers.length)
-        const user = remainingUsers.splice(randomIndex, 1)[0]
-        userGroups[groupIndex].push(user)
-      }
-    }
-
-    // Distribute remaining users randomly
-    while (remainingUsers.length > 0) {
-      const randomGroupIndex = Math.floor(Math.random() * nGroups)
-      const randomUserIndex = Math.floor(Math.random() * remainingUsers.length)
-      const user = remainingUsers.splice(randomUserIndex, 1)[0]
-      userGroups[randomGroupIndex].push(user)
-    }
-  }
+  // Randomly sample nSimUsers names
+  const shuffledNames = [...possibleSimUserNames].sort(() => Math.random() - 0.5)
+  const simUserNames = shuffledNames.slice(0, nSimUsers)
 
   // Generate fake calendars for all simUsers
   const calendarEvents = await Promise.all(
@@ -91,78 +56,49 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     return filteredEvents
   })
 
-  // Create simUsers list with group-based goal assignment
+  // Create simUsers list
   const simUsers: BaseScheduleUser[] = simUserNames.map((name, index) => {
     const calendar = convertCalendarEventsToUserProfile(validatedCalendarEvents[index])
 
-    // Determine goal based on group assignment
+    // Only the first simUser gets the scheduling goal
     let goal = ''
+    if (index === 0) {
+      const otherSimUserNames = simUserNames.filter((_, i) => i !== index)
+      const startTimeStr = startTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York',
+      })
+      const endTimeStr = endTime.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York',
+      })
 
-    if (nGroups === 1) {
-      // Original behavior: only the first simUser gets the scheduling goal
-      if (index === 0) {
-        const otherSimUserNames = simUserNames.filter((_, i) => i !== index)
-        goal = createGoalString(otherSimUserNames, startTime, endTime, meetingLength)
-      }
-    } else {
-      // Group-based behavior: first user in each group gets the scheduling goal
-      for (const group of userGroups) {
-        if (group[0] === name) {
-          const otherUsersInGroup = group.slice(1)
-          goal = createGoalString(otherUsersInGroup, startTime, endTime, meetingLength)
-          break
-        }
-      }
+      // Format meeting length appropriately
+      const meetingLengthStr = meetingLength >= 60
+        ? `${meetingLength / 60}-hour`
+        : `${meetingLength}-minute`
+
+      goal = `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherSimUserNames.join(', ')}`
     }
 
     return new BaseScheduleUser(name, goal, calendar)
   })
 
-  // Helper function to create goal string
-  function createGoalString(otherUsers: string[], startTime: Date, endTime: Date, meetingLength: number): string {
-    const startTimeStr = startTime.toLocaleString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/New_York',
-    })
-    const endTimeStr = endTime.toLocaleString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/New_York',
-    })
-
-    // Format meeting length appropriately
-    const meetingLengthStr = meetingLength >= 60
-      ? `${meetingLength / 60}-hour`
-      : `${meetingLength}-minute`
-
-    return `Schedule a ${meetingLengthStr} meeting between ${startTimeStr} and ${endTimeStr} with ${otherUsers.join(', ')}`
-  }
-
   console.log('Created simUsers:')
   simUsers.forEach((simUser) => console.log(`${simUser.name}: ${simUser.calendar.length} events`))
 
-  // Export simUsers and benchmark parameters to JSON file
+  // Export simUsers and benchmark parameters
   const exportedSimUsers: BaseScheduleUserData[] = simUsers.map((simUser) => simUser.export())
-
-  // Create dictionary mapping each sim user to their group index
-  const userGroupMapping: Record<string, number> = {}
-  userGroups.forEach((group, groupIndex) => {
-    group.forEach((userName) => {
-      userGroupMapping[userName] = groupIndex
-    })
-  })
-
-  // Generate timestamp for this benchmark
-  const timestamp = formatTimestamp()
 
   const benchmark = {
     startTime,
@@ -171,9 +107,9 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     endTimeOffset,
     meetingLength,
     nSimUsers,
-    nGroups,
-    userGroupMapping,
-    genTimestamp: timestamp,
+    genTimestamp,
+    ...(nGroups !== undefined && { nGroups }),
+    ...(groupIndex !== undefined && { groupIndex }),
   }
 
   const exportData = {
@@ -181,23 +117,10 @@ async function createBenchmark(startTimeOffset: number, endTimeOffset: number, m
     simUsers: exportedSimUsers,
   }
 
-  // Create folder name and filename with benchmark parameters
-  const folderName = `benchmark_${nSimUsers}simusers_${nGroups}groups_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
-  const filename = `${folderName}_gen${timestamp}.json`
-  const folderPath = join(__dirname, 'data', folderName)
-
-  // Create folder if it doesn't exist
-  if (!existsSync(folderPath)) {
-    await mkdir(folderPath, { recursive: true })
-    console.log(`Created folder: ${folderName}`)
-  }
-
-  const filePath = join(folderPath, filename)
-  await writeFile(filePath, JSON.stringify(exportData, null, 2))
-  console.log(`Agents saved to ${filePath}`)
-
-  return simUsers
+  return exportData
 }
+
+
 
 // Parse command line arguments
 function parseArguments() {
@@ -207,12 +130,12 @@ function parseArguments() {
       startTimeOffset: {
         type: 'string',
         short: 's',
-        default: '1',
+        default: '1.25',
       },
       endTimeOffset: {
         type: 'string',
         short: 'e',
-        default: '2',
+        default: '1.75',
       },
       meetingLength: {
         type: 'string',
@@ -224,15 +147,14 @@ function parseArguments() {
         short: 'a',
         default: '2',
       },
-      nCases: {
-        type: 'string',
-        short: 'c',
-        default: '1',
-      },
       nGroups: {
         type: 'string',
         short: 'g',
         default: '1',
+      },
+      genTimestamp: {
+        type: 'string',
+        short: 't',
       },
       help: {
         type: 'boolean',
@@ -249,8 +171,8 @@ function parseArguments() {
     console.log('  -e, --endTimeOffset     End time offset in days from reference date (default: 2)')
     console.log('  -l, --meetingLength     Meeting length in minutes (default: 60)')
     console.log('  -a, --nSimUsers         Number of simulated users (default: 2)')
-    console.log('  -c, --nCases            Number of benchmark cases to generate (default: 1)')
-    console.log('  -g, --nGroups           Number of groups to divide users into (default: 1)')
+    console.log('  -g, --nGroups           Number of groups to generate (default: 1)')
+    console.log('  -t, --genTimestamp      Use existing generation timestamp (appends to existing folder)')
     console.log('  -h, --help              Show this help message')
     process.exit(0)
   }
@@ -260,24 +182,74 @@ function parseArguments() {
     endTimeOffset: parseFloat(values.endTimeOffset),
     meetingLength: parseInt(values.meetingLength, 10),
     nSimUsers: parseInt(values.nSimUsers, 10),
-    nCases: parseInt(values.nCases, 10),
     nGroups: parseInt(values.nGroups, 10),
+    genTimestamp: values.genTimestamp || null,
   }
 }
 
 // Run the async function with parsed parameters
-const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nCases, nGroups } = parseArguments()
-console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nCases=${nCases}, nGroups=${nGroups}`)
+const { startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups, genTimestamp } = parseArguments()
+console.log(`Running with parameters: startTimeOffset=${startTimeOffset}, endTimeOffset=${endTimeOffset}, meetingLength=${meetingLength}, nSimUsers=${nSimUsers}, nGroups=${nGroups}, genTimestamp=${genTimestamp || 'new'}`)
 
-async function generateMultipleBenchmarks() {
-  console.log(`\nGenerating ${nCases} benchmark case(s)...`)
+async function generateMultiGroupBenchmarks() {
+  console.log(`\nGenerating benchmark with ${nGroups} group(s)...`)
 
-  for (let i = 1; i <= nCases; i++) {
-    console.log(`\n--- Creating benchmark case ${i}/${nCases} ---`)
-    await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, nGroups)
+  // Setup folder structure under benchmarks directory
+  const benchmarksPath = join(__dirname, 'data', 'benchmarks')
+  let targetFolder: string
+  let nextGroupNumber = 1
+  let useTimestamp: string
+
+  // Ensure benchmarks directory exists
+  if (!existsSync(benchmarksPath)) {
+    await mkdir(benchmarksPath, { recursive: true })
+    console.log('Created benchmarks directory')
   }
 
-  console.log(`\n✅ Successfully generated ${nCases} benchmark case(s)`)
+  if (genTimestamp) {
+    // Use provided timestamp - find any existing folder with this genTimestamp
+    useTimestamp = genTimestamp
+
+    const existingFolders = readdirSync(benchmarksPath)
+    const matchingFolder = existingFolders.find((folder) => folder.endsWith(`_gen${useTimestamp}`))
+
+    if (!matchingFolder) {
+      throw new Error(`No existing folder found for genTimestamp ${genTimestamp}. No folder ending with _gen${genTimestamp} found in benchmarks directory.`)
+    }
+
+    targetFolder = join(benchmarksPath, matchingFolder)
+    // Count existing files to determine next group number
+    const existingFiles = readdirSync(targetFolder)
+    nextGroupNumber = existingFiles.length + 1
+    console.log(`Using existing folder: ${matchingFolder}, next group will be ${nextGroupNumber}`)
+  } else {
+    // Create new folder with new timestamp using current parameters
+    useTimestamp = formatTimestamp()
+    const folderName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min_gen${useTimestamp}`
+
+    targetFolder = join(benchmarksPath, folderName)
+    await mkdir(targetFolder, { recursive: true })
+    console.log(`Created new folder: ${folderName}`)
+  }
+
+  // Create nGroups independent benchmark groups
+  for (let groupIndex = 0; groupIndex < nGroups; groupIndex++) {
+    console.log(`\n--- Creating group ${groupIndex + 1}/${nGroups} ---`)
+
+    // Call createBenchmark for each group
+    const exportData = await createBenchmark(startTimeOffset, endTimeOffset, meetingLength, nSimUsers, useTimestamp, nGroups, groupIndex)
+
+    // Save with group-specific filename using nextGroupNumber
+    const actualGroupNumber = nextGroupNumber + groupIndex
+    const baseName = `benchmark_${nSimUsers}simusers_${startTimeOffset.toString().replace('.', '-')}start_${endTimeOffset.toString().replace('.', '-')}end_${meetingLength}min`
+    const filename = `${baseName}_gen${useTimestamp}_group${actualGroupNumber}.json`
+    const filePath = join(targetFolder, filename)
+
+    await writeFile(filePath, JSON.stringify(exportData, null, 2))
+    console.log(`Group ${groupIndex + 1} benchmark saved to ${filePath}`)
+  }
+
+  console.log(`\n✅ Successfully generated benchmark with ${nGroups} group(s)`)
 }
 
-generateMultipleBenchmarks().catch(console.error)
+generateMultiGroupBenchmarks().catch(console.error)

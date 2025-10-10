@@ -33,7 +33,7 @@ export const BenchmarkData = z.strictObject({
   meetingLength: z.number(),
   nSimUsers: z.number(),
   nGroups: z.number(),
-  userGroupMapping: z.record(z.number()),
+  groupIndex: z.number(),
   genTimestamp: z.string(),
 })
 
@@ -178,58 +178,20 @@ export function formatTimestamp(): string {
   return `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}`
 }
 
-// Find the benchmark file in the data directory or subdirectories
-export function findBenchmarkFile(filename: string): string {
-  // Remove .json extension if provided
-  const baseFilename = filename.replace(/\.json$/, '')
-
-  // Try direct file path first
-  const directPath = join(__dirname, 'data', `${baseFilename}.json`)
-  if (existsSync(directPath)) {
-    return directPath
-  }
-
-  // Try looking in subdirectory (for organized benchmark files)
-  // Extract folder name pattern from filename
-  const folderMatch = baseFilename.match(/^(benchmark_\d+simusers_(?:\d+groups_)?[\d-]+start_[\d-]+end_\d+min)/)
-  if (folderMatch) {
-    const folderName = folderMatch[1]
-    const subDirPath = join(__dirname, 'data', folderName, `${baseFilename}.json`)
-    if (existsSync(subDirPath)) {
-      return subDirPath
-    }
-  }
-
-  throw new Error(`Benchmark file not found: ${filename}. Tried:\n  - ${directPath}\n  - ${join(__dirname, 'data', folderMatch?.[1] || 'unknown', `${baseFilename}.json`)}`)
-}
 
 // Create results folder and return the path
-export function createResultsFolder(benchmarkFileName: string): string {
-  const evalTimestamp = formatTimestamp()
+export function createResultsFolder(benchmarkName: string, evalTimestamp: string): string {
+  // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
 
-  // Remove .json extension from benchmark filename if present
-  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
-
-  // Extract benchmark type and gen timestamp from filename
-  // Format: benchmark_2simusers_1start_2end_60min_gen20250915121553773 (or with hyphens: benchmark_2simusers_1-5start_2end_60min)
-  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
-
-  if (!genMatch) {
-    throw new Error(`Invalid benchmark filename format: ${baseFileName}. Expected format: benchmark_type_gen<timestamp>`)
-  }
-
-  const [, benchmarkType, genTimestamp] = genMatch
-
-  // Create 3-level nested folder structure: results/benchmark_type/gen_timestamp/eval_timestamp/
-  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
+  // Create structure preserving the benchmarkSet: results/benchmarks/benchmark_name_gen<timestamp>/eval<timestamp>/
+  const resultsPath = join(__dirname, 'results', benchmarkName)
   const evalFolderName = `eval${evalTimestamp}`
-  const evalFolderPath = join(genTimestampPath, evalFolderName)
+  const evalFolderPath = join(resultsPath, evalFolderName)
 
   // Create folder if it doesn't exist
   if (!existsSync(evalFolderPath)) {
     mkdirSync(evalFolderPath, { recursive: true })
-    console.log(`Created results folder: ${benchmarkType}/gen${genTimestamp}/${evalFolderName}`)
+    console.log(`Created results folder: results/${benchmarkName}/${evalFolderName}`)
   }
 
   return evalFolderPath
@@ -251,31 +213,6 @@ export function saveEvaluationResults(
   return validatedResults
 }
 
-// Find all benchmark files in a folder
-export function findAllBenchmarkFiles(folderName: string): string[] {
-  const folderPath = join(__dirname, 'data', folderName)
-
-  if (!existsSync(folderPath)) {
-    throw new Error(`Benchmark folder not found: ${folderName} at ${folderPath}`)
-  }
-
-  try {
-    const files = readdirSync(folderPath)
-    const benchmarkFiles = files
-      .filter((file) => file.endsWith('.json') && file.includes('_gen'))
-      .map((file) => join(folderPath, file))
-      .sort() // Sort files alphabetically for consistent processing order
-
-    if (benchmarkFiles.length === 0) {
-      throw new Error(`No benchmark files found in folder: ${folderName}`)
-    }
-
-    return benchmarkFiles
-  } catch (error) {
-    throw new Error(`Error reading benchmark folder ${folderName}: ${String(error)}`)
-  }
-}
-
 // Check if a string looks like a specific benchmark file (contains gen + timestamp OR ends with .json)
 export function isSpecificBenchmarkFile(target: string): boolean {
   // Pattern: gen followed by 17 digits (timestamp format: YYYYMMDDhhmmssms) OR ends with .json
@@ -284,7 +221,7 @@ export function isSpecificBenchmarkFile(target: string): boolean {
 
 // Create aggregated summary from multiple evaluation results
 export function createAggregatedSummary(
-  benchmarkFileName: string,
+  benchmarkName: string,
   allResults: SavedEvaluationResults[],
   nReps: number,
 ): void {
@@ -298,23 +235,24 @@ export function createAggregatedSummary(
 
   const timestamp = formatTimestamp()
 
-  // Remove .json extension from benchmark filename if present
-  const baseFileName = benchmarkFileName.replace(/\.json$/, '')
+  // benchmarkName is the relative path from data/, e.g. "benchmarks/benchmark_2simusers_1-25start_1-75end_60min_gen20251008152504730"
+  // Extract the benchmark folder name (last part of the path)
+  const benchmarkFolderName = benchmarkName.includes('/') ? benchmarkName.split('/').pop()! : benchmarkName
 
-  // Extract benchmark type and gen timestamp from filename
-  const genMatch = baseFileName.match(/^(.+)_gen(\d{17})$/)
+  // Extract gen timestamp from folder name for metadata
+  const genMatch = benchmarkFolderName.match(/^(.+)_gen(\d{17})$/)
 
   if (!genMatch) {
-    console.error(`Invalid benchmark filename format: ${baseFileName}. Cannot create aggregated summary.`)
+    console.error(`Invalid benchmark folder name format: ${benchmarkFolderName}. Cannot create aggregated summary.`)
     return
   }
 
-  const [, benchmarkType, genTimestamp] = genMatch
+  const [, , genTimestamp] = genMatch
 
   // Create aggregated summary
   const aggregatedData = {
     summaryTimestamp: timestamp,
-    benchmarkFile: baseFileName,
+    benchmarkFolder: benchmarkFolderName,
     genTimestamp,
     totalRuns: validatedResults.length,
     expectedRuns: nReps,
@@ -336,15 +274,14 @@ export function createAggregatedSummary(
     })),
   }
 
-  // Save aggregated summary to gen timestamp folder
-  const benchmarkTypePath = join(__dirname, 'results', benchmarkType)
-  const genTimestampPath = join(benchmarkTypePath, `gen${genTimestamp}`)
+  // Save aggregated summary to benchmark folder, preserving benchmarkSet structure
+  const resultsPath = join(__dirname, 'results', benchmarkName)
   const summaryFileName = `runs${timestamp}_summary.json`
-  const summaryPath = join(genTimestampPath, summaryFileName)
+  const summaryPath = join(resultsPath, summaryFileName)
 
   // Create folder if it doesn't exist
-  if (!existsSync(genTimestampPath)) {
-    mkdirSync(genTimestampPath, { recursive: true })
+  if (!existsSync(resultsPath)) {
+    mkdirSync(resultsPath, { recursive: true })
   }
 
   writeFileSync(summaryPath, JSON.stringify(aggregatedData, null, 2))
@@ -414,5 +351,31 @@ export async function clearDatabase(): Promise<void> {
   } catch (error) {
     console.error('Warning: Could not clear database:', error)
     throw error
+  }
+}
+
+// Get benchmark folders from a benchmark set
+export function getBenchmarksFromSet(benchmarkSetFolder: string): string[] {
+  const folderPath = join(__dirname, 'data', benchmarkSetFolder)
+
+  if (!existsSync(folderPath)) {
+    throw new Error(`Benchmark set folder not found: ${benchmarkSetFolder} at ${folderPath}`)
+  }
+
+  try {
+    // Find all benchmark_*_gen* folders within the top-level folder
+    const subFolders = readdirSync(folderPath, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory() && dirent.name.includes('_gen'))
+      .map((dirent) => join(benchmarkSetFolder, dirent.name))
+      .sort()
+
+    if (subFolders.length === 0) {
+      throw new Error(`No benchmark folders found in set: ${benchmarkSetFolder}`)
+    }
+
+    console.log(`Found ${subFolders.length} benchmark(s) in set`)
+    return subFolders
+  } catch (error) {
+    throw new Error(`Error reading benchmark set folder ${benchmarkSetFolder}: ${String(error)}`)
   }
 }
