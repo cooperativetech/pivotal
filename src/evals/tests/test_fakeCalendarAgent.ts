@@ -5,7 +5,7 @@ import { Agent, run } from '../../agents/agent-sdk'
 // // Create the original strict agent
 // const fakeCalendarAgent = new Agent({
 //   name: 'fakeCalendarAgent',
-//   model: 'anthropic/claude-sonnet-4',
+//   model: 'anthropic/claude-4.5-sonnet',
 //   modelSettings: {
 //     temperature: 1,
 //   },
@@ -33,7 +33,7 @@ import { Agent, run } from '../../agents/agent-sdk'
 // Create a loose agent to see raw output without strict validation
 const looseFakeCalendarAgent = new Agent({
   name: 'looseFakeCalendarAgent',
-  model: 'anthropic/claude-sonnet-4',
+  model: 'anthropic/claude-4.5-sonnet',
   modelSettings: {
     temperature: 1,
   },
