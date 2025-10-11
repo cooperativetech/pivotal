@@ -485,6 +485,11 @@ export default function Profile() {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-foreground">Organization: <span className="font-mono">{profile.organization.githubOrgName}</span></div>
+                          {profile.organization.githubOrgConnectedByUserName && (
+                            <div className="mt-1">
+                              Connected by: {profile.organization.githubOrgConnectedByUserName}
+                            </div>
+                          )}
                         </div>
                         <Button
                           variant="outline"
