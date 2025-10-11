@@ -60,7 +60,7 @@ export default function Login() {
               handleSlackSignIn().catch(console.error)
             }}
             disabled={loading}
-            className="w-full gap-3 bg-green-600 py-4 text-base text-white transition-colors hover:bg-green-700"
+            className="w-full gap-3 text-base"
             size="lg"
           >
             {loading ? (

@@ -12,8 +12,8 @@ import { LogoMark } from '@shared/components/logo-mark'
 
 function StatusBadge({ connected }: { connected: boolean }) {
   return connected ? (
-    <Badge className="badge-active border-transparent px-3 py-1 whitespace-nowrap pointer-events-none">
-      <CheckCircle size={14} className="mr-1 text-[color:var(--status-active-text)]" /> Connected
+    <Badge className="badge-active border-transparent px-3 py-1 whitespace-nowrap transition-colors hover:bg-primary/75 hover:text-primary-foreground">
+      <CheckCircle size={14} className="mr-1 text-current" /> Connected
     </Badge>
   ) : (
     <Badge variant="outline" className="border-border px-3 py-1 text-muted-foreground whitespace-nowrap pointer-events-none">
@@ -362,7 +362,7 @@ export default function Profile() {
               <CardTitle className="heading-card flex items-center gap-2">
                 <Slack size={18} className="text-[color:var(--p-leaf)]" /> Slack workspace
               </CardTitle>
-              <CardDescription className="mt-2 text-sm text-muted-foreground">Connect Slack so Pivotal can sync your workspace.</CardDescription>
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Connect Slack to sync on topics from your team.</CardDescription>
             </div>
             <StatusBadge connected={!!profile.slackAccount} />
           </CardHeader>
@@ -380,7 +380,7 @@ export default function Profile() {
               onClick={profile.slackAccount ? (() => { handleSlackDisconnect().catch(console.error) }) : (() => { handleSlackConnect().catch(console.error) })}
               disabled={slackBusy}
               variant={profile.slackAccount ? 'outline' : 'default'}
-              className={profile.slackAccount ? 'border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default' : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default'}
+              className={profile.slackAccount ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : undefined}
             >
               {slackBusy ? 'Working…' : profile.slackAccount ? 'Disconnect Slack' : 'Connect Slack'}
             </Button>
@@ -411,7 +411,7 @@ export default function Profile() {
               onClick={calendarConnected ? (() => { handleGoogleDisconnect().catch(console.error) }) : handleGoogleConnect}
               disabled={googleBusy || !profile.slackAccount}
               variant={calendarConnected ? 'outline' : 'default'}
-              className={calendarConnected ? 'border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer disabled:cursor-default' : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default'}
+              className={calendarConnected ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : undefined}
             >
               {googleBusy
                 ? calendarConnected
@@ -430,7 +430,7 @@ export default function Profile() {
               <CardTitle className="heading-card flex items-center gap-2">
                 <LinkIcon size={18} className="text-[color:var(--p-leaf)]" /> Organization
               </CardTitle>
-              <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared by your workspace.</CardDescription>
+              <CardDescription className="mt-2 text-sm text-muted-foreground">Settings shared across your workspace.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 text-sm">
               <div className="space-y-4">
@@ -464,7 +464,7 @@ export default function Profile() {
                           size="sm"
                           onClick={() => { handleSlackAppConnect().catch(console.error) }}
                           disabled={slackAppBusy || !profile.slackAccount}
-                          className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                          variant="default"
                         >
                           {slackAppBusy ? 'Connecting…' : 'Install to Slack'}
                         </Button>
@@ -486,7 +486,9 @@ export default function Profile() {
                         <div>
                           <div className="font-medium text-foreground">Organization: <span className="font-mono">{profile.organization.githubOrgName}</span></div>
                           {profile.organization.githubOrgConnectedByUserName && (
-                            <div className="mt-1">Connected by: {profile.organization.githubOrgConnectedByUserName}</div>
+                            <div className="mt-1">
+                              Connected by: {profile.organization.githubOrgConnectedByUserName}
+                            </div>
                           )}
                         </div>
                         <Button
@@ -524,9 +526,6 @@ export default function Profile() {
                           <div className="flex items-center justify-between text-foreground">
                             <div>
                               <div className="font-mono font-medium">{profile.organization.githubLinkedRepo.fullName}</div>
-                              {profile.organization.githubRepoConnectedByUserName && (
-                                <div className="mt-1 text-muted-foreground">Connected by: {profile.organization.githubRepoConnectedByUserName}</div>
-                              )}
                             </div>
                             <Button
                               variant="outline"
@@ -570,7 +569,7 @@ export default function Profile() {
                                   })
                                 }}
                                 disabled={githubRepoBusy !== null}
-                                className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                                variant="default"
                               >
                                 {githubRepoBusy === repo.id ? 'Connecting…' : 'Connect'}
                               </Button>
@@ -590,7 +589,7 @@ export default function Profile() {
                     <Button
                       onClick={() => { handleGithubConnect().catch(console.error) }}
                       disabled={githubBusy}
-                      className="bg-green-600 text-white hover:bg-green-700 cursor-pointer disabled:cursor-default"
+                      variant="default"
                     >
                       {githubBusy ? 'Connecting…' : 'Connect GitHub'}
                     </Button>
