@@ -17,7 +17,7 @@ const generateCalendarEvents = tool({
 
 const toolBasedCalendarAgent = new Agent({
   name: 'toolBasedCalendarAgent',
-  model: 'anthropic/claude-sonnet-4',
+  model: 'anthropic/claude-sonnet-4.5',
   toolUseBehavior: { stopAtToolNames: ['generateCalendarEvents'] },
   modelSettings: {
     temperature: 1,
