@@ -18,7 +18,7 @@ const generateCalendarEvents = tool({
 
 const fakeCalendarAgent = new Agent({
   name: 'fakeCalendarAgent',
-  model: 'anthropic/claude-sonnet-4',
+  model: 'anthropic/claude-4.5-sonnet',
   toolUseBehavior: { stopAtToolNames: ['generateCalendarEvents'] },
   modelSettings: {
     temperature: 1, // Increase temperature for calendar diversity

@@ -443,7 +443,7 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
 
 export const schedulingAgent = makeConversationAgent({
   name: 'schedulingAgent',
-  model: 'anthropic/claude-sonnet-4',
+  model: 'anthropic/claude-4.5-sonnet',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,
