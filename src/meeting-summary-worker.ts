@@ -251,14 +251,20 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
 }
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
-  const cutoff = Date.now() - MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
-  if (artifact.endTime.getTime() > cutoff) {
+  const nowMs = Date.now()
+  const meetingEndMs = artifact.endTime.getTime()
+
+  if (meetingEndMs > nowMs) {
     return
   }
 
+  const gracePeriodMs = MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
+  const withinGracePeriod = nowMs - meetingEndMs < gracePeriodMs
+  const attemptTimestamp = new Date(nowMs)
+
   if (!artifact.originChannelId) {
     await updateMeetingSummaryProcessing(artifact.id, {
-      transcriptLastCheckedAt: new Date(),
+      transcriptLastCheckedAt: attemptTimestamp,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
     })
     console.warn(`[MeetingSummaryWorker] Missing origin channel for meeting artifact ${artifact.id}, skipping.`)
@@ -266,9 +272,13 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
   }
 
   const { text, link, docId } = await fetchSummaryForArtifact(artifact)
-  const now = new Date()
+  const now = attemptTimestamp
 
   if (!text && !link) {
+    if (withinGracePeriod) {
+      return
+    }
+
     await updateMeetingSummaryProcessing(artifact.id, {
       transcriptLastCheckedAt: now,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
@@ -386,7 +396,7 @@ export async function runMeetingSummaryWorkerOnce(): Promise<void> {
 }
 
 export function startMeetingSummaryCron(): void {
-  const job = new CronJob('*/5 * * * *', () => {
+  const job = new CronJob('* * * * *', () => {
     void checkMeetingSummaries()
   })
   job.start()
