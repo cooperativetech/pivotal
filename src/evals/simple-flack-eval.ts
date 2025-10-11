@@ -646,7 +646,7 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     // Check if all confirmations are true (simplified check)
     const allConfirmed = result.confirmations.every((groupConfirmations) =>
-      Object.values(groupConfirmations).every((confirmed) => confirmed === true)
+      Object.values(groupConfirmations).every((confirmed) => confirmed === true),
     )
     if (allConfirmed && totalUsers > 0) {
       console.log('🎉 All simUsers have confirmed their meeting suggestions!')
