@@ -644,8 +644,11 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
       })
     })
 
-    const allSimUsersConfirmed = totalConfirmed === totalUsers && totalUsers > 0
-    if (allSimUsersConfirmed) {
+    // Check if all confirmations are true (simplified check)
+    const allConfirmed = result.confirmations.every((groupConfirmations) =>
+      Object.values(groupConfirmations).every((confirmed) => confirmed === true)
+    )
+    if (allConfirmed && totalUsers > 0) {
       console.log('🎉 All simUsers have confirmed their meeting suggestions!')
     } else if (totalConfirmed > 0) {
       console.log(`⚠️  Only ${totalConfirmed}/${totalUsers} simUsers have confirmed`)
@@ -784,6 +787,8 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
 
     const allUsersCanAttend = groupFeasibilityResults.every((g) => !g.hasSuggestedEvent || g.allUsersCanAttend)
 
+    // Use the allConfirmed calculated earlier
+
     // Generate unified timestamp for this evaluation
     const evalTimestamp = formatTimestamp()
 
@@ -796,16 +801,16 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
         end: event.end.toISOString(),
         summary: event.summary,
       } : null),
-      confirmedSimUsers: confirmedSimUsers.map(([name]) => name),
-      allSimUsersConfirmed,
+      confirmations: result.confirmations,
       maxSharedFreeTimes: groupFeasibilityResults.map((g) => g.maxSharedFreeTime),
       allCanAttends: groupFeasibilityResults.map((g) => g.allUsersCanAttend),
       evaluationSummary: {
         totalSimUsers: Object.keys(simUsers).length,
-        confirmedCount: confirmedSimUsers.length,
+        confirmedCount: totalConfirmed,
         hasSuggestedEvents: result.suggestedEvents.every((event) => event !== null),
         allCanAttend: allUsersCanAttend,
         withinTimeRange: allWithinTimeRange,
+        allConfirmed,
         evaluationSucceeded,
       },
     }
