@@ -168,7 +168,7 @@ async function processBotMessages(messageResult: Record<string, unknown>, simUse
 
 
 // Simulate a strict turn-based scheduling conversation
-async function simulateTurnBasedConversation(simUsers: Record<string, BaseScheduleUser>, topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][], groupGoalInitializer: string[]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean> }> {
+async function simulateTurnBasedConversation(simUsers: Record<string, BaseScheduleUser>, topicRouting: boolean = false, nGroups: number, groupUserMapping: string[][], groupGoalInitializer: string[]): Promise<{ topicDatas: (TopicData | null)[]; suggestedEvents: (SimpleCalendarEvent | null)[]; confirmations: Record<string, boolean>[] }> {
   console.log('\n' + '='.repeat(60))
   console.log('Starting Turn-Based Scheduling Conversation')
   console.log('='.repeat(60))
@@ -257,14 +257,18 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
     throw new Error('No simUser with a goal was able to start a conversation')
   }
 
-  // Initialize confirmation tracking for all simUsers
-  const confirmations: Record<string, boolean> = {}
-  const resetConfirmations = () => {
-    Object.values(simUsers).forEach((simUser) => {
-      confirmations[simUser.name] = false
+  // Initialize confirmation tracking for all groups
+  const confirmations: Record<string, boolean>[] = Array.from({ length: nGroups }, () => ({}))
+  const resetConfirmations = (groupIndex: number) => {
+    const groupUserNames = groupUserMapping[groupIndex] || []
+    groupUserNames.forEach((userName) => {
+      confirmations[groupIndex][userName] = false
     })
   }
-  resetConfirmations()
+  // Initialize all groups
+  for (let i = 0; i < nGroups; i++) {
+    resetConfirmations(i)
+  }
 
   // Run turn-based conversation for up to 10 rounds
   const maxRounds = 10
@@ -289,15 +293,6 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
           for (const reply of replies) {
             console.log(`${simUser.name}: ${reply}`)
 
-            // Check if this reply is confirming a meeting suggestion
-            if (!confirmations[simUser.name]) {
-              const isConfirmation = await isConfirming(reply)
-              if (isConfirmation) {
-                confirmations[simUser.name] = true
-                console.log(`  → Detected confirmation from ${simUser.name}`)
-              }
-            }
-
             // Send reply through local API
             const replyRes = await local_api.message.$post({
               json: {
@@ -310,29 +305,38 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
 
             if (replyRes.ok) {
               const replyData = await replyRes.json()
+              // Determine which group this suggestion belongs to
+              let targetGroup: number
+
+              if (!topicRouting) {
+                // Use userGroupMapping to determine the group
+                targetGroup = userGroupMapping![simUser.name]
+              } else {
+                // Use topicId from response to find the group
+                const responseTopicId = replyData.topicId
+                if (!responseTopicId) {
+                  throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
+                }
+
+                const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
+                if (topicIndex === -1) {
+                  throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
+                }
+                targetGroup = topicIndex
+              }
+
+              // Check if this reply is confirming a meeting suggestion (now that we know the group)
+              if (!confirmations[targetGroup][simUser.name]) {
+                const isConfirmation = await isConfirming(reply)
+                if (isConfirmation) {
+                  confirmations[targetGroup][simUser.name] = true
+                  console.log(`  → Detected confirmation from ${simUser.name} for group ${targetGroup}`)
+                }
+              }
+
               // Process bot responses and add to simUser buffers
               const newSuggestedEvent = await processBotMessages(replyData, simUsers)
               if (newSuggestedEvent) {
-                // Determine which group this suggestion belongs to
-                let targetGroup: number
-
-                if (!topicRouting) {
-                  // Use userGroupMapping to determine the group
-                  targetGroup = userGroupMapping![simUser.name]
-                } else {
-                  // Use topicId from response to find the group
-                  const responseTopicId = replyData.topicId
-                  if (!responseTopicId) {
-                    throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
-                  }
-
-                  const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
-                  if (topicIndex === -1) {
-                    throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
-                  }
-                  targetGroup = topicIndex
-                }
-
                 // Check if this is a new/different suggested event for this group
                 const currentGroupEvent = suggestedEvents[targetGroup]
                 if (!currentGroupEvent || newSuggestedEvent.start.getTime() !== currentGroupEvent.start.getTime() || newSuggestedEvent.end.getTime() !== currentGroupEvent.end.getTime()) {
@@ -341,12 +345,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
                     console.log(`  → Previous meeting for group ${targetGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
                     console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
                     // Reset confirmations for users in this group
-                    const groupUserNames = groupUserMapping[targetGroup] || []
-                    groupUserNames.forEach((userName) => {
-                      if (simUsers[userName]) {
-                        confirmations[userName] = false
-                      }
-                    })
+                    resetConfirmations(targetGroup)
                   }
                   suggestedEvents[targetGroup] = newSuggestedEvent
                 }
@@ -365,7 +364,7 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
       if (suggestedEvents[groupIndex]) {
         const groupUserNames = groupUserMapping[groupIndex] || []
         const groupUsers = groupUserNames.map((name) => simUsers[name])
-        const groupConfirmed = groupUsers.every((simUser) => confirmations[simUser.name])
+        const groupConfirmed = groupUsers.every((simUser) => confirmations[groupIndex][simUser.name])
         if (!groupConfirmed) {
           allGroupsConfirmed = false
           break
@@ -632,18 +631,24 @@ async function runSingleEvaluation(benchmarkName: string, topicRouting = false):
     })
 
     // Check confirmations
-    const confirmedSimUsers = Object.entries(result.confirmations).filter(([_, confirmed]) => confirmed)
-    const allSimUsersConfirmed = confirmedSimUsers.length === Object.keys(simUsers).length
-
     console.log('\nConfirmation Status:')
-    Object.entries(result.confirmations).forEach(([agentName, confirmed]) => {
-      console.log(`  ${confirmed ? '✅' : '❌'} ${agentName}: ${confirmed ? 'Confirmed' : 'Not confirmed'}`)
+    let totalConfirmed = 0
+    let totalUsers = 0
+
+    result.confirmations.forEach((groupConfirmations, groupIndex) => {
+      console.log(`  Group ${groupIndex}:`)
+      Object.entries(groupConfirmations).forEach(([agentName, confirmed]) => {
+        console.log(`    ${confirmed ? '✅' : '❌'} ${agentName}: ${confirmed ? 'Confirmed' : 'Not confirmed'}`)
+        if (confirmed) totalConfirmed++
+        totalUsers++
+      })
     })
 
-    if (allSimUsersConfirmed && confirmedSimUsers.length > 0) {
-      console.log('🎉 All simUsers have confirmed the meeting suggestion!')
-    } else if (confirmedSimUsers.length > 0) {
-      console.log(`⚠️  Only ${confirmedSimUsers.length}/${Object.keys(simUsers).length} simUsers have confirmed`)
+    const allSimUsersConfirmed = totalConfirmed === totalUsers && totalUsers > 0
+    if (allSimUsersConfirmed) {
+      console.log('🎉 All simUsers have confirmed their meeting suggestions!')
+    } else if (totalConfirmed > 0) {
+      console.log(`⚠️  Only ${totalConfirmed}/${totalUsers} simUsers have confirmed`)
     } else {
       console.log('❌ No confirmations detected from any simUsers')
     }
