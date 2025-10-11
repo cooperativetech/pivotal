@@ -1,7 +1,17 @@
-import { Agent, run } from '../agent-sdk'
+import { z } from 'zod'
+import { Agent, run, tool } from '../agent-sdk'
 import type { SimpleCalendarEvent } from '../../evals/sim-users'
 import type { HistoryMessage } from '../../evals/utils'
 import { formatCalendarEvents } from '../../evals/utils'
+
+const generateMultipleReplies = tool({
+  name: 'generate_replies',
+  description: 'Generate one or more replies. Use multiple replies only when there are distinct topics/meetings being discussed.',
+  parameters: z.object({
+    messages: z.array(z.string()).min(1).describe('Reply messages. Use multiple entries only for distinct conversations, not multiple aspects of the same meeting.'),
+  }),
+  execute: (params) => params,
+})
 
 const generateReplyAgent = new Agent({
   name: 'GenerateReplyAgent',
@@ -9,7 +19,13 @@ const generateReplyAgent = new Agent({
   model: 'anthropic/claude-sonnet-4', // fallback if gemini doesn't work well
   modelSettings: {
     temperature: 0.8,
+    toolChoice: 'required',
   },
+  tools: [generateMultipleReplies],
+  outputType: z.object({
+    messages: z.array(z.string()),
+  }),
+  toolUseBehavior: { stopAtToolNames: ['generate_replies'] },
   instructions: `You are a reply generation agent. Given a user's context (name, goal, calendar, message history), generate a natural and professional reply to the latest message.
 
 Guidelines:
@@ -18,12 +34,17 @@ Guidelines:
 - Stay true to the user's goal and personality - NEVER deviate from specified time constraints
 - Respond naturally to the conversation context
 - Keep responses concise (1-2 sentences typically)
-- If the user has time constraints in their goal, they must STRICTLY follow them and reject any meeting times outside those bounds`,
+- If the user has time constraints in their goal, they must STRICTLY follow them and reject any meeting times outside those bounds
+
+IMPORTANT: Analyze the message buffer to determine if there are multiple distinct conversations or meetings being discussed.
+- If there are multiple different meetings/topics, generate separate replies for each using the generate_replies tool
+- If all messages relate to the same meeting/topic, generate a single comprehensive reply
+- Always call the generate_replies tool to structure your response`,
 })
 
-export async function generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: HistoryMessage[]): Promise<string> {
+export async function generateReply(userName: string, goal: string, calendar: SimpleCalendarEvent[], messageBuffer: string[], history: HistoryMessage[]): Promise<string[]> {
   if (messageBuffer.length === 0) {
-    return ''
+    return []
   }
 
   const latestMessage = messageBuffer[messageBuffer.length - 1]
@@ -57,9 +78,9 @@ Generate only the reply text, nothing else.`
 
   try {
     const result = await run(generateReplyAgent, prompt)
-    return result.finalOutput?.trim() || 'Sure, let me check my calendar and get back to you.'
+    return result.finalOutput?.messages || ['Sure, let me check my calendar and get back to you.']
   } catch (error) {
     console.error('Error generating reply:', error)
-    return 'I unfortunately can\'t access my calendar.'
+    return ['I unfortunately can\'t access my calendar.']
   }
 }

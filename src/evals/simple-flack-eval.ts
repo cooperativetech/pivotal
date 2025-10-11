@@ -281,76 +281,79 @@ async function simulateTurnBasedConversation(simUsers: Record<string, BaseSchedu
       console.log(`${simUser.name} buffer length: ${simUser.messageBuffer.length}`)
       if (simUser.messageBuffer.length > 0) {
       //if (true) {
-        const reply = await simUser.replyBuffer()
+        const replies = await simUser.replyBuffer()
 
-        if (reply) {
-          console.log(`${simUser.name}: ${reply}`)
+        if (replies.length > 0) {
           anySimUserSpoke = true
 
-          // Check if this reply is confirming a meeting suggestion
-          if (!confirmations[simUser.name]) {
-            const isConfirmation = await isConfirming(reply)
-            if (isConfirmation) {
-              confirmations[simUser.name] = true
-              console.log(`  → Detected confirmation from ${simUser.name}`)
-            }
-          }
+          for (const reply of replies) {
+            console.log(`${simUser.name}: ${reply}`)
 
-          // Send reply through local API
-          const replyRes = await local_api.message.$post({
-            json: {
-              userId: simUser.name,
-              text: reply,
-              ignoreExistingTopics: !topicRouting,
-              ...(topicRouting ? {} : topicIds[userGroupMapping![simUser.name]] ? { topicId: topicIds[userGroupMapping![simUser.name]]! } : {}),
-            },
-          })
-
-          if (replyRes.ok) {
-            const replyData = await replyRes.json()
-            // Process bot responses and add to simUser buffers
-            const newSuggestedEvent = await processBotMessages(replyData, simUsers)
-            if (newSuggestedEvent) {
-              // Determine which group this suggestion belongs to
-              let targetGroup: number
-
-              if (!topicRouting) {
-                // Use userGroupMapping to determine the group
-                targetGroup = userGroupMapping![simUser.name]
-              } else {
-                // Use topicId from response to find the group
-                const responseTopicId = replyData.topicId
-                if (!responseTopicId) {
-                  throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
-                }
-
-                const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
-                if (topicIndex === -1) {
-                  throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
-                }
-                targetGroup = topicIndex
-              }
-
-              // Check if this is a new/different suggested event for this group
-              const currentGroupEvent = suggestedEvents[targetGroup]
-              if (!currentGroupEvent || newSuggestedEvent.start.getTime() !== currentGroupEvent.start.getTime() || newSuggestedEvent.end.getTime() !== currentGroupEvent.end.getTime()) {
-                console.log(`  → Bot suggested new meeting for group ${targetGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
-                if (currentGroupEvent) {
-                  console.log(`  → Previous meeting for group ${targetGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
-                  console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
-                  // Reset confirmations for users in this group
-                  const groupUserNames = groupUserMapping[targetGroup] || []
-                  groupUserNames.forEach((userName) => {
-                    if (simUsers[userName]) {
-                      confirmations[userName] = false
-                    }
-                  })
-                }
-                suggestedEvents[targetGroup] = newSuggestedEvent
+            // Check if this reply is confirming a meeting suggestion
+            if (!confirmations[simUser.name]) {
+              const isConfirmation = await isConfirming(reply)
+              if (isConfirmation) {
+                confirmations[simUser.name] = true
+                console.log(`  → Detected confirmation from ${simUser.name}`)
               }
             }
-          } else {
-            console.error(`Failed to send reply from ${simUser.name}: ${replyRes.statusText}`)
+
+            // Send reply through local API
+            const replyRes = await local_api.message.$post({
+              json: {
+                userId: simUser.name,
+                text: reply,
+                ignoreExistingTopics: !topicRouting,
+                ...(topicRouting ? {} : topicIds[userGroupMapping![simUser.name]] ? { topicId: topicIds[userGroupMapping![simUser.name]]! } : {}),
+              },
+            })
+
+            if (replyRes.ok) {
+              const replyData = await replyRes.json()
+              // Process bot responses and add to simUser buffers
+              const newSuggestedEvent = await processBotMessages(replyData, simUsers)
+              if (newSuggestedEvent) {
+                // Determine which group this suggestion belongs to
+                let targetGroup: number
+
+                if (!topicRouting) {
+                  // Use userGroupMapping to determine the group
+                  targetGroup = userGroupMapping![simUser.name]
+                } else {
+                  // Use topicId from response to find the group
+                  const responseTopicId = replyData.topicId
+                  if (!responseTopicId) {
+                    throw new Error(`Topic routing enabled but no topicId in response for user ${simUser.name}`)
+                  }
+
+                  const topicIndex = topicIds.findIndex((topicId) => topicId === responseTopicId)
+                  if (topicIndex === -1) {
+                    throw new Error(`Topic routing error: topicId ${responseTopicId} not found in known topics for user ${simUser.name}`)
+                  }
+                  targetGroup = topicIndex
+                }
+
+                // Check if this is a new/different suggested event for this group
+                const currentGroupEvent = suggestedEvents[targetGroup]
+                if (!currentGroupEvent || newSuggestedEvent.start.getTime() !== currentGroupEvent.start.getTime() || newSuggestedEvent.end.getTime() !== currentGroupEvent.end.getTime()) {
+                  console.log(`  → Bot suggested new meeting for group ${targetGroup}: ${newSuggestedEvent.start.toISOString()} - ${newSuggestedEvent.end.toISOString()} (${newSuggestedEvent.summary})`)
+                  if (currentGroupEvent) {
+                    console.log(`  → Previous meeting for group ${targetGroup} was: ${currentGroupEvent.start.toISOString()} - ${currentGroupEvent.end.toISOString()} (${currentGroupEvent.summary})`)
+                    console.log(`  → Resetting confirmations for group ${targetGroup} due to meeting change`)
+                    // Reset confirmations for users in this group
+                    const groupUserNames = groupUserMapping[targetGroup] || []
+                    groupUserNames.forEach((userName) => {
+                      if (simUsers[userName]) {
+                        confirmations[userName] = false
+                      }
+                    })
+                  }
+                  suggestedEvents[targetGroup] = newSuggestedEvent
+                }
+              }
+            } else {
+              console.error(`Failed to send reply from ${simUser.name}: ${replyRes.statusText}`)
+            }
           }
         }
       }
