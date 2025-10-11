@@ -75,6 +75,12 @@ CRITICAL RULES:
 5. When providing your availability in response to a scheduling request, ONLY mention times that fall within the originally requested time range - do not suggest times outside the specified window
 6. If you have a goal and the bot tells you that there is no time available that matches it and when everyone is free, tell it to cancel the meeting request
 
+TIME FORMAT CLARIFICATION:
+- 12:00 AM = midnight (start of day)
+- 12:00 PM = noon (middle of day)
+- Times between "Wednesday 12:00 AM" and "Thursday 12:00 AM" include the ENTIRE day of Wednesday (all 24 hours)
+- Always carefully check if suggested meeting times fall within your goal's time constraints before rejecting them
+
 Generate only the reply text, nothing else.`
 
   try {
