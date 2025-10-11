@@ -1,7 +1,8 @@
 import { eq, and, desc } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { Agent, run } from './agent-sdk'
+import { Agent, run, tool } from './agent-sdk'
+import type { AgentOptions } from './agent-sdk'
 import db from '../db/engine'
 import type { SlackMessage, SlackUser } from '../db/schema/main'
 import type { TopicWithState } from '@shared/api-types'
@@ -25,14 +26,52 @@ const AnalyzeTopicRes = z.strictObject({
 })
 type AnalyzeTopicRes = z.infer<typeof AnalyzeTopicRes>
 
-const topicAnalysisAgent = new Agent({
+const AnalyzeTopicAgent = Agent<void, typeof AnalyzeTopicRes>
+type AnalyzeTopicAgent = InstanceType<typeof AnalyzeTopicAgent>
+
+const analysisOutputTool = tool({
+  name: 'output',
+  description: 'Return the final topic analysis. Always call this tool as your last step.',
+  parameters: AnalyzeTopicRes,
+  execute: (params) => params,
+})
+
+function makeTopicAnalysisAgent(
+  config: AgentOptions<void, typeof AnalyzeTopicRes>,
+): AnalyzeTopicAgent {
+  if (config.modelSettings && 'toolChoice' in config.modelSettings) {
+    throw new Error(
+      'makeTopicAnalysisAgent automatically sets modelSettings.toolChoice. ' +
+      'This property cannot be manually specified.',
+    )
+  }
+  if ('outputType' in config || 'toolUseBehavior' in config || 'resetToolChoice' in config) {
+    throw new Error(
+      'makeTopicAnalysisAgent automatically sets outputType, toolUseBehavior, and resetToolChoice. ' +
+      'These properties cannot be manually specified.',
+    )
+  }
+
+  return new AnalyzeTopicAgent({
+    ...config,
+    tools: [...(config.tools || []), analysisOutputTool],
+    outputType: AnalyzeTopicRes,
+    modelSettings: {
+      ...config.modelSettings,
+      toolChoice: 'required',
+    },
+    resetToolChoice: false,
+    toolUseBehavior: { stopAtToolNames: ['output'] },
+  })
+}
+
+const topicAnalysisAgent = makeTopicAnalysisAgent({
   name: 'topicAnalysisAgent',
   model: 'anthropic/claude-4.5-sonnet',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0, // Reduce temperature for consistency
   },
-  outputType: AnalyzeTopicRes,
   instructions: `You are a topic analysis assistant. Your job is to analyze whether a given message is relevant to any existing topics or if it could form the basis for a new topic.
 
 ## Your Task
@@ -67,21 +106,19 @@ When suggesting a new topic, also classify its workflow type:
 - "other": All other topics that don't fit the above categories
 
 ## Response Format
-You must respond with ONLY a JSON object - no additional text, markdown formatting, or explanations. Return ONLY valid JSON that can be parsed directly.
-
-The JSON structure must be:
-{
-  "relevantTopicId": "e55a48d1-bf81-4f7f-8848-d0f69b74ff85",  // Include the full UUID from "Topic ID: ..." if message is relevant to existing topic
-  "suggestedNewTopic": "New topic summary",                   // Include only if relevantTopicId is not populated
-  "workflowType": "scheduling",                               // Include only when suggestedNewTopic is present. Must be "scheduling", "meeting-prep", "queries", or "other"
-  "confidence": 0.85,                                         // Confidence level between 0 and 1
-  "reasoning": "Brief explanation"                            // One sentence explaining the decision
-}
-
-IMPORTANT:
-- If the message relates to an existing topic, you MUST use the exact UUID string shown in "Topic ID: ..." (e.g., "e55a48d1-bf81-4f7f-8848-d0f69b74ff85")
-- Do NOT use numbers or any other identifier - only the full UUID
-- Return ONLY the JSON object. Do not include any text before or after the JSON.`,
+- When calling ANY tool (including the \`output\` tool): output nothing else—just call the tool.
+- When ready to provide your final response, call the \`output\` tool with this structure:
+  {
+    "relevantTopicId": "e55a48d1-bf81-4f7f-8848-d0f69b74ff85",
+    "suggestedNewTopic": "New topic summary",
+    "workflowType": "scheduling",
+    "confidence": 0.85,
+    "reasoning": "Brief explanation"
+  }
+- Include \`relevantTopicId\` when the message matches an existing topic (use the exact UUID shown).
+- When suggesting a new topic, provide \`suggestedNewTopic\` and \`workflowType\` ("scheduling", "meeting-prep", "queries", or "other").
+- Always supply \`confidence\` (0-1) and a short \`reasoning\`.
+- Never output text outside the \`output\` tool call.`,
 })
 
 export async function analyzeTopicRelevance(topics: TopicWithState[], message: SlackMessage, userMap: Map<string, SlackUser>, botUserId: string): Promise<AnalyzeTopicRes> {
