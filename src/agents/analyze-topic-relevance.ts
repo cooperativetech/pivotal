@@ -2,7 +2,6 @@ import { eq, and, desc } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { Agent, run, tool } from './agent-sdk'
-import type { AgentOptions } from './agent-sdk'
 import db from '../db/engine'
 import type { SlackMessage, SlackUser } from '../db/schema/main'
 import type { TopicWithState } from '@shared/api-types'
@@ -26,9 +25,6 @@ const AnalyzeTopicRes = z.strictObject({
 })
 type AnalyzeTopicRes = z.infer<typeof AnalyzeTopicRes>
 
-const AnalyzeTopicAgent = Agent<void, typeof AnalyzeTopicRes>
-type AnalyzeTopicAgent = InstanceType<typeof AnalyzeTopicAgent>
-
 const analysisOutputTool = tool({
   name: 'output',
   description: 'Return the final topic analysis. Always call this tool as your last step.',
@@ -36,42 +32,18 @@ const analysisOutputTool = tool({
   execute: (params) => params,
 })
 
-function makeTopicAnalysisAgent(
-  config: AgentOptions<void, typeof AnalyzeTopicRes>,
-): AnalyzeTopicAgent {
-  if (config.modelSettings && 'toolChoice' in config.modelSettings) {
-    throw new Error(
-      'makeTopicAnalysisAgent automatically sets modelSettings.toolChoice. ' +
-      'This property cannot be manually specified.',
-    )
-  }
-  if ('outputType' in config || 'toolUseBehavior' in config || 'resetToolChoice' in config) {
-    throw new Error(
-      'makeTopicAnalysisAgent automatically sets outputType, toolUseBehavior, and resetToolChoice. ' +
-      'These properties cannot be manually specified.',
-    )
-  }
-
-  return new AnalyzeTopicAgent({
-    ...config,
-    tools: [...(config.tools || []), analysisOutputTool],
-    outputType: AnalyzeTopicRes,
-    modelSettings: {
-      ...config.modelSettings,
-      toolChoice: 'required',
-    },
-    resetToolChoice: false,
-    toolUseBehavior: { stopAtToolNames: ['output'] },
-  })
-}
-
-const topicAnalysisAgent = makeTopicAnalysisAgent({
+const topicAnalysisAgent = new Agent<void, typeof AnalyzeTopicRes>({
   name: 'topicAnalysisAgent',
-  model: 'anthropic/claude-4.5-sonnet',
+  model: 'anthropic/claude-sonnet-4.5',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0, // Reduce temperature for consistency
+    toolChoice: 'required',
   },
+  tools: [analysisOutputTool],
+  outputType: AnalyzeTopicRes,
+  resetToolChoice: false,
+  toolUseBehavior: { stopAtToolNames: ['output'] },
   instructions: `You are a topic analysis assistant. Your job is to analyze whether a given message is relevant to any existing topics or if it could form the basis for a new topic.
 
 ## Your Task

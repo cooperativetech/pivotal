@@ -4,7 +4,7 @@ import { Agent, run } from '../../agents/agent-sdk'
 // Create the simplest possible agent to test if API calls work
 const basicAgent = new Agent({
   name: 'basicAgent',
-  model: 'anthropic/claude-4.5-sonnet',
+  model: 'anthropic/claude-sonnet-4.5',
   //outputType: z.string(), // Just expect a string output
   instructions: 'You are a helpful assistant. Just respond with a simple greeting.',
 })

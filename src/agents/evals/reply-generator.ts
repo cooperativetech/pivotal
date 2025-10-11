@@ -6,7 +6,7 @@ import { formatCalendarEvents } from '../../evals/utils'
 const generateReplyAgent = new Agent({
   name: 'GenerateReplyAgent',
   // model: 'google/gemini-2.5-flash',
-  model: 'anthropic/claude-4.5-sonnet', // fallback if gemini doesn't work well
+  model: 'anthropic/claude-sonnet-4.5', // fallback if gemini doesn't work well
   modelSettings: {
     temperature: 0.8,
   },
