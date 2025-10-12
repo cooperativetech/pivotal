@@ -292,10 +292,16 @@ export default function Profile() {
             {'  Manage the roots of your workspace.'}
           </p>
         </div>
-        <Button variant="outline" onClick={() => { handleSignOut().catch((err) => {
-          console.error('Sign out failed:', err)
-          setError('Failed to sign out')
-        }) }} className="self-start cursor-pointer disabled:cursor-default">
+        <Button
+          variant="outline"
+          onClick={() => {
+            handleSignOut().catch((err) => {
+              console.error('Sign out failed:', err)
+              setError('Failed to sign out')
+            })
+          }}
+          className="self-start border-[color:rgba(191,69,42,0.42)] bg-[color:rgba(191,69,42,0.08)] text-[color:rgba(191,69,42,0.82)] transition-colors hover:border-[color:rgba(191,69,42,0.72)] hover:bg-[color:rgba(191,69,42,0.18)] hover:text-[color:rgba(191,69,42,0.94)] hover:shadow-[0_10px_24px_-18px_rgba(191,69,42,0.55)] focus-visible:ring-2 focus-visible:ring-[color:rgba(191,69,42,0.4)] focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:cursor-default"
+        >
           <LogOut size={16} /> Sign out
         </Button>
       </div>

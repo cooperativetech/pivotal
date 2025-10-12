@@ -24,8 +24,9 @@
   --popover:              var(--card);
   --popover-foreground:   var(--p-root);
 
-  --primary:              var(--p-ember);
+  --primary:              var(--p-leaf);
   --primary-foreground:   var(--p-sand);
+  --primary-hover:        color-mix(in srgb, var(--p-leaf) 92%, black 8%);
 
   --secondary:            color-mix(in srgb, var(--p-leaf) 12%, white);
   --secondary-foreground: var(--p-root);
@@ -89,8 +90,9 @@
   --popover:              color-mix(in srgb, var(--p-stem) 78%, black);
   --popover-foreground:   var(--p-sand);
 
-  --primary:              var(--p-ember);
+  --primary:              var(--p-leaf);
   --primary-foreground:   var(--p-sand);
+  --primary-hover:        color-mix(in srgb, var(--p-leaf) 80%, black 12%);
 
   --secondary:            color-mix(in srgb, var(--p-root) 65%, var(--p-stem));
   --secondary-foreground: var(--p-sand);
@@ -154,15 +156,24 @@ body {
     background-size: cover;
   }
   .filter-toggle-shell {
-    border: 1px solid color-mix(in srgb, var(--p-stem) 28%, var(--p-sand));
-    background-color: color-mix(in srgb, var(--p-sand) 82%, var(--p-leaf) 18%);
-    box-shadow: 0 18px 36px -28px rgba(13, 38, 24, 0.55);
+    border: 1px solid color-mix(in srgb, var(--p-leaf) 24%, var(--p-sand));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--p-sand) 92%, white 8%), color-mix(in srgb, var(--p-sand) 88%, rgba(95, 115, 67, 0.12)));
+    box-shadow: 0 16px 38px -30px color-mix(in srgb, var(--p-root) 35%, transparent);
     backdrop-filter: blur(6px);
   }
   .filter-toggle-thumb {
-    background-color: color-mix(in srgb, var(--p-sand) 70%, var(--p-leaf) 24%);
-    box-shadow: 0 12px 24px -20px rgba(13, 38, 24, 0.6);
+    background: linear-gradient(140deg, color-mix(in srgb, var(--p-leaf) 82%, white 14%), color-mix(in srgb, var(--p-leaf) 68%, var(--p-sand) 32%));
+    box-shadow: 0 14px 28px -24px rgba(13, 38, 24, 0.65);
+    border: 1px solid color-mix(in srgb, var(--p-leaf) 40%, white 60%);
     pointer-events: none;
+  }
+  .filter-toggle-option {
+    color: color-mix(in srgb, var(--p-root) 62%, var(--p-stem) 8%);
+    letter-spacing: 0.04em;
+  }
+  .filter-toggle-option[data-active='true'] {
+    color: color-mix(in srgb, var(--p-root) 90%, black 5%);
+    font-weight: 600;
   }
   .max-w-filter-toggle { max-width: var(--width-filter-toggle); }
   .badge-active {
