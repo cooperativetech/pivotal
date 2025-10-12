@@ -24,7 +24,7 @@ const DOC_SCOPES = [
 
 const DEFAULT_FETCH_LIMIT = 5
 const POST_TEXT_CHAR_LIMIT = 3500
-const MINUTES_AFTER_END_BEFORE_PROCESSING = 3
+const SUMMARY_CRON_SCHEDULE = '*/30 * * * * *' // 30-second interval (six-field cron with seconds slot)
 
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -252,14 +252,14 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
   const nowMs = Date.now()
+  const meetingStartMs = artifact.startTime.getTime()
   const meetingEndMs = artifact.endTime.getTime()
 
-  if (meetingEndMs > nowMs) {
+  if (meetingStartMs > nowMs) {
     return
   }
 
-  const gracePeriodMs = MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
-  const withinGracePeriod = nowMs - meetingEndMs < gracePeriodMs
+  const meetingEnded = nowMs >= meetingEndMs
   const attemptTimestamp = new Date(nowMs)
 
   if (!artifact.originChannelId) {
@@ -275,7 +275,7 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
   const now = attemptTimestamp
 
   if (!text && !link) {
-    if (withinGracePeriod) {
+    if (!meetingEnded) {
       return
     }
 
@@ -396,7 +396,7 @@ export async function runMeetingSummaryWorkerOnce(): Promise<void> {
 }
 
 export function startMeetingSummaryCron(): void {
-  const job = new CronJob('* * * * *', () => {
+  const job = new CronJob(SUMMARY_CRON_SCHEDULE, () => {
     void checkMeetingSummaries()
   })
   job.start()
