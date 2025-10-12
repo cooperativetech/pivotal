@@ -24,7 +24,7 @@ const DOC_SCOPES = [
 
 const DEFAULT_FETCH_LIMIT = 5
 const POST_TEXT_CHAR_LIMIT = 3500
-const MINUTES_AFTER_END_BEFORE_PROCESSING = 3
+const TRANSCRIPT_CHECK_INTERVAL_MS = 30 * 1000
 
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -251,8 +251,12 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
 }
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
-  const cutoff = Date.now() - MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
-  if (artifact.endTime.getTime() > cutoff) {
+  const nowMs = Date.now()
+  const lastCheckedMs = artifact.transcriptLastCheckedAt?.getTime()
+  const intervalMs = TRANSCRIPT_CHECK_INTERVAL_MS
+
+  if (lastCheckedMs && nowMs - lastCheckedMs < intervalMs) {
+    // Already checked recently; wait until the next interval.
     return
   }
 
@@ -386,7 +390,7 @@ export async function runMeetingSummaryWorkerOnce(): Promise<void> {
 }
 
 export function startMeetingSummaryCron(): void {
-  const job = new CronJob('*/5 * * * *', () => {
+  const job = new CronJob('*/30 * * * * *', () => {
     void checkMeetingSummaries()
   })
   job.start()
