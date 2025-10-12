@@ -22,7 +22,7 @@ const extractMeetingTime = tool({
 const timeExtractionAgent = new Agent({
   name: 'TimeExtractionAgent',
   model: 'google/gemini-2.5-flash',
-// model: 'anthropic/claude-sonnet-4.5', // fallback if gemini doesn't work well
+// model: 'anthropic/claude-sonnet-4', // fallback if gemini doesn't work well
   toolUseBehavior: {
     stopAtToolNames: ['extractMeetingTime'],
   },

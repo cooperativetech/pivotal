@@ -248,7 +248,7 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
 
 export const meetingPrepAgent = makeConversationAgent({
   name: 'meetingPrepAgent',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,

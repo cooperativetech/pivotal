@@ -108,7 +108,7 @@ const findFreeSlots = tool({
 
 const updateUserCalendar = tool({
   name: 'updateUserCalendar',
-  description: 'Update a user\'s calendar with manual availability overrides. These will be merged with their existing calendar, overwriting any overlapping time periods.',
+  description: 'Update a user\'s calendar with manual availability overrides based on information in the current message being replied to. ONLY call this based on availability info in the current message, NOT from previous messages in the topic. These will be merged with their existing calendar, overwriting any overlapping time periods.',
   parameters: z.strictObject({
     userName: z.string().describe('User name (exact name from User Directory) whose calendar to update'),
     events: z.array(CalendarEvent).describe('List of calendar events to add/update for the user'),
@@ -290,7 +290,8 @@ You have access to FOUR tools and can call multiple tools in sequence within the
    - Use exact names from the User Directory
 
 3. **updateUserCalendar**: Updates a user's calendar with manual availability overrides
-   - USE THIS when a user explicitly tells you their availability or when they're busy/free
+   - CRITICAL: ONLY call this based on availability information in the current "Message To Reply To", NOT from previous messages in the topic
+   - USE THIS when a user explicitly tells you their availability or when they're busy/free IN THE CURRENT MESSAGE
    - Pass the exact user name from the User Directory and a list of CalendarEvent objects
    - Events specify times when the user is busy (default) or free (if free: true is set)
    - IMPORTANT: When user says they're "free" at specific times, create busy blocks for the rest of the ENTIRE day
@@ -443,7 +444,7 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
 
 export const schedulingAgent = makeConversationAgent({
   name: 'schedulingAgent',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.7,

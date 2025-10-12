@@ -29,7 +29,7 @@ The person is an experienced software engineer working in technology.`
 
   try {
     const response = await client.chat.completions.create({
-      model: 'anthropic/claude-sonnet-4.5',
+      model: 'anthropic/claude-sonnet-4',
       messages: [
         {
           role: 'user',

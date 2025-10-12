@@ -20,7 +20,7 @@ const generateDiffs = tool({
 
 const updateFileAgent = new Agent({
   name: 'updateFileAgent',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'anthropic/claude-sonnet-4',
   toolUseBehavior: { stopAtToolNames: ['generateDiffs'] },
   modelSettings: {
     temperature: 0.2,
