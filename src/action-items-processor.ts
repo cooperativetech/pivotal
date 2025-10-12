@@ -61,7 +61,7 @@ IMPORTANT: Call the editOrgActionItems tool to update the action items. The tool
 
   return new Agent({
     name: 'actionItemsParserWithGithub',
-    model: 'anthropic/claude-sonnet-4.5',
+    model: 'anthropic/claude-sonnet-4',
     toolUseBehavior: { stopAtToolNames: ['editOrgActionItems'] },
     modelSettings: {
       maxTokens: 2048,
@@ -91,7 +91,7 @@ IMPORTANT: Call the reportActionItems tool with your findings.`
 
   return new Agent({
     name: 'actionItemsParserWithoutGithub',
-    model: 'anthropic/claude-sonnet-4.5',
+    model: 'anthropic/claude-sonnet-4',
     toolUseBehavior: { stopAtToolNames: ['reportActionItems'] },
     modelSettings: {
       maxTokens: 2048,

@@ -551,7 +551,7 @@ Response Format:
 
 export const queryAgent = makeConversationAgent({
   name: 'queryAgent',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'anthropic/claude-sonnet-4',
   modelSettings: {
     maxTokens: 1024,
     temperature: 0.2,
