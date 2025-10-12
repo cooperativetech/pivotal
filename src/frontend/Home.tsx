@@ -229,10 +229,10 @@ function Home() {
           <button
             type="button"
             onClick={() => setFilter('all')}
-            className={`relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
-              filter === 'all'
-                ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
-                : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
+            data-active={filter === 'all'}
+            aria-pressed={filter === 'all'}
+            className={`filter-toggle-option relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgba(95,115,67,0.35)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
+              filter === 'all' ? 'shadow-[0_8px_16px_-14px_rgba(13,38,24,0.35)]' : 'hover:text-[color:rgba(13,38,24,0.82)]'
             }`}
           >
             All
@@ -240,10 +240,10 @@ function Home() {
           <button
             type="button"
             onClick={() => setFilter('active')}
-            className={`relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
-              filter === 'active'
-                ? 'text-[color:rgba(13,38,24,0.94)] font-semibold'
-                : 'text-[color:rgba(13,38,24,0.6)] hover:text-[color:rgba(13,38,24,0.85)]'
+            data-active={filter === 'active'}
+            aria-pressed={filter === 'active'}
+            className={`filter-toggle-option relative z-10 flex-1 cursor-pointer rounded-full px-5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgba(95,115,67,0.35)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default ${
+              filter === 'active' ? 'shadow-[0_8px_16px_-14px_rgba(13,38,24,0.35)]' : 'hover:text-[color:rgba(13,38,24,0.82)]'
             }`}
           >
             Active
