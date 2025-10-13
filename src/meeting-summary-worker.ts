@@ -24,8 +24,6 @@ const DOC_SCOPES = [
 
 const DEFAULT_FETCH_LIMIT = 5
 const POST_TEXT_CHAR_LIMIT = 3500
-const SUMMARY_CRON_SCHEDULE = '*/30 * * * * *' // 30-second interval (six-field cron with seconds slot)
-
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.PV_GOOGLE_SERVICE_ACCOUNT_KEY
@@ -251,20 +249,17 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
 }
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
-  const nowMs = Date.now()
+  const now = new Date()
+  const nowMs = now.getTime()
   const meetingStartMs = artifact.startTime.getTime()
-  const meetingEndMs = artifact.endTime.getTime()
 
   if (meetingStartMs > nowMs) {
     return
   }
 
-  const meetingEnded = nowMs >= meetingEndMs
-  const attemptTimestamp = new Date(nowMs)
-
   if (!artifact.originChannelId) {
     await updateMeetingSummaryProcessing(artifact.id, {
-      transcriptLastCheckedAt: attemptTimestamp,
+      transcriptLastCheckedAt: now,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
     })
     console.warn(`[MeetingSummaryWorker] Missing origin channel for meeting artifact ${artifact.id}, skipping.`)
@@ -272,13 +267,8 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
   }
 
   const { text, link, docId } = await fetchSummaryForArtifact(artifact)
-  const now = attemptTimestamp
 
   if (!text && !link) {
-    if (!meetingEnded) {
-      return
-    }
-
     await updateMeetingSummaryProcessing(artifact.id, {
       transcriptLastCheckedAt: now,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
@@ -396,7 +386,8 @@ export async function runMeetingSummaryWorkerOnce(): Promise<void> {
 }
 
 export function startMeetingSummaryCron(): void {
-  const job = new CronJob(SUMMARY_CRON_SCHEDULE, () => {
+  // Run every 30 seconds (six-field cron with seconds slot)
+  const job = new CronJob('*/30 * * * * *', () => {
     void checkMeetingSummaries()
   })
   job.start()
