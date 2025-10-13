@@ -12,13 +12,13 @@ const aboutItems: AboutItem[] = [
   {
     title: 'Our mission',
     paragraphs: [
-      "We believe that harnessing humanity's collective intelligence and unlocking group coordination are critical and underexplored approaches to AI safety. Current UI tools across chat, coding, service, and legal advice have focused on one person <-> LLM interactions. We are building the interface for many person <-> LLM use cases.",
+      'We believe that harnessing humanity\'s collective intelligence and unlocking group coordination are critical and underexplored approaches to AI safety. Current UI tools across chat, coding, service, and legal advice have focused on one person <-> LLM interactions. We are building the interface for many person <-> LLM use cases.',
     ],
   },
   {
     title: 'Our product',
     paragraphs: [
-      "We have built a multi-agent orchestration tool for coordination. Pivotal is an activity log, a shared context, and an agent platform for organizations. It integrates with the software you already use, automates workflows that might otherwise fall through the cracks, and keeps your team on track with a cohesive plan. You can use Pivotal to schedule a Google Meet with a single Slack message, and have it automatically update your GitHub work tracker based on everything mentioned in the meeting. Never forget an action item again!",
+      'We have built a multi-agent orchestration tool for coordination. Pivotal is an activity log, a shared context, and an agent platform for organizations. It integrates with the software you already use, automates workflows that might otherwise fall through the cracks, and keeps your team on track with a cohesive plan. You can use Pivotal to schedule a Google Meet with a single Slack message, and have it automatically update your GitHub work tracker based on everything mentioned in the meeting. Never forget an action item again!',
     ],
   },
   {
@@ -123,5 +123,3 @@ export function AboutSection({
     </section>
   )
 }
-
-export const ABOUT_SECTION_ITEMS = aboutItems
