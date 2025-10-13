@@ -13,11 +13,13 @@ import type { AgentOptions, RunContext } from '@openai/agents'
 import { Langfuse } from 'langfuse'
 
 import { LangfuseTracingExporter } from './langfuse-tracing-exporter'
+import { customFetch, PROMPT_CACHE_BOUNDARY } from './custom-fetch'
 
 // Set up global agent configuration
 const client = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   apiKey: process.env.PV_OPENROUTER_API_KEY,
+  fetch: customFetch,
 })
 
 // Set up langfuse for tracing
@@ -36,4 +38,4 @@ setTraceProcessors([traceProcessor])
 
 // Re-export openai agent sdk types
 export type { AgentOptions, RunContext }
-export { Agent, Runner, run, tool }
+export { Agent, Runner, run, tool, PROMPT_CACHE_BOUNDARY }

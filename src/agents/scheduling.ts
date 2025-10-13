@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { RunContext } from './agent-sdk'
-import { tool } from './agent-sdk'
+import { tool, PROMPT_CACHE_BOUNDARY } from './agent-sdk'
 import { formatTimestampWithTimezone } from '../utils'
 import { getShortTimezoneFromIANA, mergeCalendarWithOverrides } from '@shared/utils'
 import { CalendarEvent } from '@shared/api-types'
@@ -355,19 +355,15 @@ IMPORTANT:
     "groupMessage": null,
     "finalizedEvent": null,
     "cancelEvent": null,
-  })`
-
-  const { topic, userMap, callingUserTimezone } = runContext.context
-
-  // Additional concise rules to make rescheduling smooth
-  const rescheduleAddendum = `
+  })
 
 ## Rescheduling Behavior (Important)
 - If there is exactly ONE scheduled meeting in this topic (see the numbered list under "Current Scheduled Events") and the user says "move it" / "reschedule it" or refers to "the meeting", assume they mean that single meeting. Do not ask which meeting; finalize the new time directly.
 - If there are MULTIPLE scheduled meetings and the request is ambiguous, ask a brief clarification referring to the numbered entries (e.g., "[1]" or "[2]") and showing the day/time. If the message clearly references a specific day/time, pick that one directly.
 - To reschedule, just include a new finalizedEvent with the requested start/end; the system will update the existing invite.
-- When participants agree to cancel the meeting entirely, set cancelEvent: true (and normally omit finalizedEvent) so the existing invite is removed, and clearly notify everyone of the cancellation.
-`
+- When participants agree to cancel the meeting entirely, set cancelEvent: true (and normally omit finalizedEvent) so the existing invite is removed, and clearly notify everyone of the cancellation.`
+
+  const { topic, userMap, callingUserTimezone } = runContext.context
 
   let scheduledSection = ''
   try {
@@ -437,7 +433,7 @@ Last updated: ${formatTimestampWithTimezone(topic.state.createdAt, callingUserTi
 
   console.log(`User Map and Topic Info from system prompt: ${userMapAndTopicInfo}`)
 
-  return mainPrompt + rescheduleAddendum + userMapAndTopicInfo
+  return mainPrompt + PROMPT_CACHE_BOUNDARY + userMapAndTopicInfo
 }
 
 export const schedulingAgent = makeConversationAgent({
