@@ -6,6 +6,7 @@ import { LogoMark } from '@shared/components/logo-mark'
 
 const navItems = [
   { href: '/', label: 'Topics' },
+  { href: '/company', label: 'Company', requireSession: true },
   { href: '/profile', label: 'Profile', requireSession: true },
 ]
 

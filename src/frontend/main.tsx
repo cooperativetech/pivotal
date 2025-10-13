@@ -8,6 +8,7 @@ import Topic from './Topic.tsx'
 import TopicCreation from './TopicCreation.tsx'
 import Login from './Login.tsx'
 import Profile from './Profile.tsx'
+import Company from './Company.tsx'
 import { AuthProvider } from './AuthProvider.tsx'
 import ProtectedRoute from './ProtectedRoute.tsx'
 import LocalHome from './LocalHome.tsx'
@@ -32,6 +33,11 @@ createRoot(document.getElementById('root')!).render(
             <Route path="topic/:topicId" element={
               <ProtectedRoute>
                 <Topic />
+              </ProtectedRoute>
+            } />
+            <Route path="company" element={
+              <ProtectedRoute>
+                <Company />
               </ProtectedRoute>
             } />
             {/* Webapp does not support creating topics; available in /local */}

@@ -204,7 +204,7 @@ function Home() {
     <PageShell>
       <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
-          <h1 className="heading-hero text-foreground">Pivotal Topics</h1>
+          <h1 className="heading-hero text-foreground">Your Topics</h1>
           <p className="max-w-xl text-base text-muted-foreground">
             {'A living map of your team\'s conversations.'}
           </p>
