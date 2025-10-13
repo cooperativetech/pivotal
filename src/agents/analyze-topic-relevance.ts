@@ -21,7 +21,6 @@ const AnalyzeTopicRes = z.strictObject({
   suggestedNewTopic: z.string().optional().nullable(),
   workflowType: WorkflowType.optional().nullable(),
   confidence: z.number().min(0).max(1),
-  reasoning: z.string(),
 })
 type AnalyzeTopicRes = z.infer<typeof AnalyzeTopicRes>
 
@@ -84,12 +83,11 @@ When suggesting a new topic, also classify its workflow type:
     "relevantTopicId": "e55a48d1-bf81-4f7f-8848-d0f69b74ff85",
     "suggestedNewTopic": "New topic summary",
     "workflowType": "scheduling",
-    "confidence": 0.85,
-    "reasoning": "Brief explanation"
+    "confidence": 0.85
   }
 - Include \`relevantTopicId\` when the message matches an existing topic (use the exact UUID shown).
 - When suggesting a new topic, provide \`suggestedNewTopic\` and \`workflowType\` ("scheduling", "meeting-prep", "queries", or "other").
-- Always supply \`confidence\` (0-1) and a short \`reasoning\`.
+- Always supply \`confidence\` (0-1).
 - Never output text outside the \`output\` tool call.`,
 })
 
@@ -197,6 +195,5 @@ Analyze whether this message is relevant to any of the existing topics or if it 
   // Return a safe default response
   return {
     confidence: 0,
-    reasoning: '',
   }
 }
