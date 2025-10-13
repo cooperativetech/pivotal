@@ -24,8 +24,6 @@ const DOC_SCOPES = [
 
 const DEFAULT_FETCH_LIMIT = 5
 const POST_TEXT_CHAR_LIMIT = 3500
-const MINUTES_AFTER_END_BEFORE_PROCESSING = 3
-
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.PV_GOOGLE_SERVICE_ACCOUNT_KEY
@@ -251,14 +249,17 @@ function buildSummaryMessage(summary: string | null, link: string | null, artifa
 }
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
-  const cutoff = Date.now() - MINUTES_AFTER_END_BEFORE_PROCESSING * 60 * 1000
-  if (artifact.endTime.getTime() > cutoff) {
+  const now = new Date()
+  const nowMs = now.getTime()
+  const meetingStartMs = artifact.startTime.getTime()
+
+  if (meetingStartMs > nowMs) {
     return
   }
 
   if (!artifact.originChannelId) {
     await updateMeetingSummaryProcessing(artifact.id, {
-      transcriptLastCheckedAt: new Date(),
+      transcriptLastCheckedAt: now,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
     })
     console.warn(`[MeetingSummaryWorker] Missing origin channel for meeting artifact ${artifact.id}, skipping.`)
@@ -266,7 +267,6 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
   }
 
   const { text, link, docId } = await fetchSummaryForArtifact(artifact)
-  const now = new Date()
 
   if (!text && !link) {
     await updateMeetingSummaryProcessing(artifact.id, {
@@ -386,7 +386,8 @@ export async function runMeetingSummaryWorkerOnce(): Promise<void> {
 }
 
 export function startMeetingSummaryCron(): void {
-  const job = new CronJob('*/5 * * * *', () => {
+  // Run every 30 seconds (six-field cron with seconds slot)
+  const job = new CronJob('*/30 * * * * *', () => {
     void checkMeetingSummaries()
   })
   job.start()
