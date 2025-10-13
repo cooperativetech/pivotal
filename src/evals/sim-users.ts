@@ -35,13 +35,13 @@ export class BaseScheduleUser implements UserProfile {
     this.messageBuffer = []
   }
 
-  async replyBuffer(): Promise<string> {
+  async replyBuffer(): Promise<string[]> {
     if (this.messageBuffer.length === 0) {
-      return ''
+      return []
     }
 
-    // Generate reply using both message buffer and history context
-    const reply = await generateReply(this.name, this.goal, this.calendar, this.messageBuffer, this.history)
+    // Generate replies using both message buffer and history context
+    const replies = await generateReply(this.name, this.goal, this.calendar, this.messageBuffer, this.history)
 
     // Move messages from buffer to history as bot messages
     for (const message of this.messageBuffer) {
@@ -51,12 +51,12 @@ export class BaseScheduleUser implements UserProfile {
     // Clear the buffer after moving to history
     this.messageBuffer = []
 
-    // Save the reply to history
-    if (reply) {
+    // Save all replies to history
+    for (const reply of replies) {
       this.history.push({ sender: 'user', message: reply })
     }
 
-    return reply
+    return replies
   }
 
   async sendInitialMessage(): Promise<string> {

@@ -14,7 +14,6 @@ const extractMeetingTime = tool({
   parameters: MeetingTimeOutput,
   strict: true,
   execute: (output) => {
-    console.log(`🔧 Tool executed with output: ${JSON.stringify(output)}`)
     return output
   },
 })
@@ -75,18 +74,12 @@ Examples:
   try {
     const result = await run(timeExtractionAgent, prompt)
 
-    // Debug logging to understand agent behavior
-    console.log('🔍 Time extraction:')
-    console.log(`   Final output: ${JSON.stringify(result.finalOutput)}`)
-
     if (!result.finalOutput) {
-      console.log('   ❌ No output generated')
       return null
     }
 
     // Check if agent found a meeting time or returned "NONE"
     if (result.finalOutput.start === 'NONE' || result.finalOutput.end === 'NONE' || result.finalOutput.summary === 'NONE') {
-      console.log('   ℹ️  Agent found no meeting time')
       return null
     }
 
@@ -99,7 +92,6 @@ Examples:
       return null
     }
 
-    console.log(`   ✅ Successfully extracted meeting time: ${startDate.toISOString()} - ${endDate.toISOString()}`)
     return {
       start: startDate,
       end: endDate,
