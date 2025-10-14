@@ -23,7 +23,6 @@ const DOC_SCOPES = [
 ]
 
 const DEFAULT_FETCH_LIMIT = 5
-const POST_TEXT_CHAR_LIMIT = 3500
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.PV_GOOGLE_SERVICE_ACCOUNT_KEY
@@ -175,18 +174,6 @@ function documentToPlainText(doc: docs_v1.Schema$Document | undefined): string {
   return compressed.join('\n').trim()
 }
 
-function escapeSlackText(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
-function truncateForSlack(text: string, limit: number): string {
-  if (text.length <= limit) return text
-  return `${text.slice(0, limit - 1).trimEnd()}…`
-}
-
 async function fetchSummaryForArtifact(artifact: MeetingArtifact): Promise<{ text: string | null, link: string | null, docId: string | null }> {
   const calendar = getCalendarClient()
   if (!calendar) {
@@ -229,25 +216,6 @@ async function fetchSummaryForArtifact(artifact: MeetingArtifact): Promise<{ tex
   }
 }
 
-function buildSummaryMessage(summary: string | null, link: string | null, artifact: MeetingArtifact): string {
-  const header = `*Gemini summary: ${artifact.summary || 'Meeting'}*`
-  const cleanSummary = summary ? escapeSlackText(summary).trim() : ''
-  const truncated = cleanSummary ? truncateForSlack(cleanSummary, POST_TEXT_CHAR_LIMIT) : ''
-  const linkText = link ? `Full summary & transcript: ${link}` : ''
-
-  if (!truncated) {
-    return linkText || `${header}\n(No summary text available)`
-  }
-
-  if (link && truncated.includes(link)) {
-    return `${header}\n\n${truncated}`
-  }
-
-  const sections = [header, truncated]
-  if (linkText) sections.push(linkText)
-  return sections.join('\n\n')
-}
-
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
   const now = new Date()
   const nowMs = now.getTime()
@@ -268,7 +236,7 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
 
   const { text, link, docId } = await fetchSummaryForArtifact(artifact)
 
-  if (!text && !link) {
+  if (!text || !link) {
     await updateMeetingSummaryProcessing(artifact.id, {
       transcriptLastCheckedAt: now,
       transcriptAttemptCount: artifact.transcriptAttemptCount + 1,
@@ -307,58 +275,33 @@ async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> 
     }
   }
 
-  // Process action items if transcript text is available
-  let actionItemsResult = null
-  if (text && !artifact.actionItemsProcessedAt) {
-    try {
-      actionItemsResult = await processActionItemsForArtifact(artifact, text)
-    } catch (error) {
-      console.error(`[MeetingSummaryWorker] Action items processing failed for artifact ${artifact.id}:`, error)
-    }
-  }
-
-  const message = buildSummaryMessage(text, link, artifact)
-
   const slackClient = await getSlackClientForTeam(artifact.slackTeamId)
-
   if (!slackClient) {
     console.warn(`[MeetingSummaryWorker] No Slack client available for team ${artifact.slackTeamId}, skipping post for artifact ${artifact.id}.`)
     return
   }
 
   try {
+    const actionItemsResult = await processActionItemsForArtifact(artifact, text)
+    const actionItemsMessage = buildActionItemsMessage(actionItemsResult)
+    const linkText = link ? `\n\nFull summary & transcript: ${link}` : ''
+    const fullMessage = `${actionItemsMessage}${linkText}`
+
     const res = await slackClient.chat.postMessage({
       channel: artifact.originChannelId,
-      text: message,
+      text: fullMessage,
       thread_ts: artifact.originThreadTs || undefined,
       unfurl_links: false,
       unfurl_media: false,
     })
-
     if (!res.ok || !res.ts) {
-      console.error(`[MeetingSummaryWorker] Failed to post summary for artifact ${artifact.id}:`, res)
+      console.error(`[MeetingSummaryWorker] Failed to post action items for artifact ${artifact.id}:`, res)
       return
-    }
-
-    // Post action items as separate message in same thread
-    if (actionItemsResult) {
-      const actionItemsMessage = buildActionItemsMessage(actionItemsResult)
-      try {
-        await slackClient.chat.postMessage({
-          channel: artifact.originChannelId,
-          text: actionItemsMessage,
-          thread_ts: artifact.originThreadTs || res.ts,
-          unfurl_links: false,
-          unfurl_media: false,
-        })
-      } catch (error) {
-        console.error(`[MeetingSummaryWorker] Failed to post action items for artifact ${artifact.id}:`, error)
-      }
     }
 
     await markMeetingSummaryPosted(artifact.id, artifact.originChannelId, res.ts)
   } catch (error) {
-    console.error(`[MeetingSummaryWorker] Slack post failed for artifact ${artifact.id}:`, error)
+    console.error(`[MeetingSummaryWorker] Action items processing failed for artifact ${artifact.id}:`, error)
   }
 }
 
