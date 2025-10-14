@@ -120,7 +120,7 @@ export type PendingMeetingArtifact = MeetingArtifact & {
   slackTeamId: string
 }
 
-export async function getPendingMeetingSummaries(limit: number = 10): Promise<PendingMeetingArtifact[]> {
+export async function getPendingMeetingSummaries(): Promise<PendingMeetingArtifact[]> {
   const now = new Date()
   const withinTranscriptCheckWindow = or(
     isNull(meetingArtifactTable.transcriptLastCheckedAt),
@@ -139,7 +139,6 @@ export async function getPendingMeetingSummaries(limit: number = 10): Promise<Pe
       withinTranscriptCheckWindow,
     ))
     .orderBy(asc(meetingArtifactTable.endTime))
-    .limit(limit)
 
   return rows.map(({ artifact, slackTeamId }) => ({
     ...artifact,
