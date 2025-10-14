@@ -69,6 +69,11 @@ Given a list of existing topics and a new message, determine:
   - Could generate follow-up discussion
   - Is coherent enough to summarize into a topic
 
+- Special case for scheduling requests:
+  - If a user asks to schedule a meeting, this should ALMOST ALWAYS be treated as a new topic
+  - Even if an identical or very similar meeting was recently scheduled or cancelled in an existing topic, a new scheduling request marks a new topic
+  - The only exception is if the user is clearly continuing an active discussion related to an existing meeting (e.g., providing availability, or "actually, can we move it to 3pm instead?", or "cancel this meeting")
+
 ## Workflow Type Classification
 When suggesting a new topic, also classify its workflow type:
 - "scheduling": The topic involves planning, organizing, or scheduling meetings, events, or activities (e.g., "plan lunch", "schedule meeting", "organize team event")
