@@ -587,7 +587,7 @@ export async function getChannelDescription(
 }
 
 // Helper function to format timestamp with timezone
-export function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string): string {
+export function formatTimestampWithTimezone(timestamp: Date | string, timezone?: string, includeDayOfWeek?: boolean): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
   const formatted = date.toLocaleString('en-US', {
     timeZone: timezone || 'UTC',
@@ -597,6 +597,7 @@ export function formatTimestampWithTimezone(timestamp: Date | string, timezone?:
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+    ...(includeDayOfWeek ? { weekday: 'long' } : {}),
   })
 
   // Get abbreviated timezone
