@@ -115,7 +115,9 @@ Channel: ${channelDescription}${
 }
 Timestamp: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone)}
 
-Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.`
+Based on the conversation history and current message, determine the next step in the scheduling workflow and generate the appropriate response.
+
+For context, the current day and time is: ${formatTimestampWithTimezone(message.timestamp, callingUserTimezone, true)}`
 
   console.log(`User prompt: ${userPrompt}`)
 

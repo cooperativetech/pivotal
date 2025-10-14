@@ -14,11 +14,11 @@ import { findCommonFreeTime, convertCalendarEventsToUserProfile } from '../tools
 
 const findFreeSlots = tool({
   name: 'findFreeSlots',
-  description: 'Find common free time slots for all users in the topic between specified start time and end time. Returns mathematically accurate free slots. Pass the exact user names from the User Directory.',
+  description: 'Find common free time slots for all users in the topic between specified start time and end time. Returns mathematically accurate free slots. Pass the exact user names from the User Directory. CRITICAL: Always use the correct year based on the current date and the timeframe being requested (e.g., if it\'s October 2025 and the user asks for "next Tuesday", that\'s in 2025, not 2024).',
   parameters: z.object({
     userNames: z.array(z.string()).describe('Array of user names (exact names from User Directory) to find free slots for'),
-    startTime: z.string().describe('ISO timestamp for the start of the time range to search for free slots'),
-    endTime: z.string().describe('ISO timestamp for the end of the time range to search for free slots'),
+    startTime: z.string().describe('ISO timestamp for the start of the time range to search for free slots. CRITICAL: Use the correct year based on the current date/time provided in the context and the user\'s request (e.g., if today is Oct 14, 2025 and user asks for "next Tuesday", use 2025 not 2024).'),
+    endTime: z.string().describe('ISO timestamp for the end of the time range to search for free slots. CRITICAL: Use the correct year based on the current date/time provided in the context and the user\'s request (e.g., if today is Oct 14, 2025 and user asks for "next Tuesday", use 2025 not 2024).'),
   }),
   execute: async ({ userNames, startTime, endTime }, runContext?: RunContext<ConversationContext>) => {
     console.log('Tool called: findFreeSlots for users:', userNames, 'from', startTime, 'to', endTime)
