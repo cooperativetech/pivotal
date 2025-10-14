@@ -12,7 +12,7 @@ const aboutItems: AboutItem[] = [
   {
     title: 'Our mission',
     paragraphs: [
-      'We believe that harnessing humanity\'s collective intelligence and unlocking group coordination are critical and underexplored approaches to AI safety. Current UI tools across chat, coding, service, and legal advice have focused on one person <-> LLM interactions. We are building the interface for many person <-> LLM use cases.',
+      'The greatest human achievements are collaborative efforts. As such, we believe that the promise of AI is in further unlocking humanity\'s collective intelligence to realize a flourishing future. Current AI tools (across chat, coding, service, legal advice, etc.) have focused on “one person ↔ LLM.”  We are building the surface for “many person ↔ LLM” use cases. In particular, we’re interested in a tool which is cross-platform and multi-tool, to unlock new heights for the collaborative unit, whether it be a small team or a large firm.',
     ],
   },
   {
