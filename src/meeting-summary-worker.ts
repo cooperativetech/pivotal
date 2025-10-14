@@ -22,7 +22,6 @@ const DOC_SCOPES = [
   'https://www.googleapis.com/auth/drive',
 ]
 
-const DEFAULT_FETCH_LIMIT = 5
 function buildServiceAccountJwt(scopes: string[]) {
   const clientEmail = process.env.PV_GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.PV_GOOGLE_SERVICE_ACCOUNT_KEY
@@ -218,12 +217,6 @@ async function fetchSummaryForArtifact(artifact: MeetingArtifact): Promise<{ tex
 
 async function processArtifact(artifact: PendingMeetingArtifact): Promise<void> {
   const now = new Date()
-  const nowMs = now.getTime()
-  const meetingStartMs = artifact.startTime.getTime()
-
-  if (meetingStartMs > nowMs) {
-    return
-  }
 
   if (!artifact.originChannelId) {
     await updateMeetingSummaryProcessing(artifact.id, {
@@ -311,7 +304,7 @@ async function checkMeetingSummaries(): Promise<void> {
   if (isProcessing) return
   isProcessing = true
   try {
-    const pending = await getPendingMeetingSummaries(DEFAULT_FETCH_LIMIT)
+    const pending = await getPendingMeetingSummaries()
     if (!pending.length) return
 
     for (const artifact of pending) {
