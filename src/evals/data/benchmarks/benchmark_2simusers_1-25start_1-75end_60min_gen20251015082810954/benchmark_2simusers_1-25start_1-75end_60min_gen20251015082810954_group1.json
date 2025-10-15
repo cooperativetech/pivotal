@@ -1,0 +1,101 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251015082810954",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Edward",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Alice",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Morning property market analysis - Theme park adjacent listings"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Client consultation - Resort property investment opportunity"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Property showing - Luxury vacation rental near Universal Studios"
+        },
+        {
+          "start": "2025-01-02T18:00:00.000Z",
+          "end": "2025-01-02T18:45:00.000Z",
+          "summary": "Lunch meeting - Partnership discussion with theme park hospitality group"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:15:00.000Z",
+          "summary": "Contract review - Commercial property lease near Disney World"
+        },
+        {
+          "start": "2025-01-02T20:30:00.000Z",
+          "end": "2025-01-02T21:30:00.000Z",
+          "summary": "Virtual tour preparation - Entertainment district condominiums"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "Client follow-up calls - Theme park area investment inquiries"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Alice",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T14:00:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Individual Therapy Session - Gaming Addiction Recovery"
+        },
+        {
+          "start": "2025-01-02T15:15:00.000Z",
+          "end": "2025-01-02T16:15:00.000Z",
+          "summary": "Couples Therapy - Gaming Impact on Relationships"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Game Studio Consultation - Employee Wellness Program"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T19:30:00.000Z",
+          "summary": "Group Therapy - Healthy Gaming Habits Workshop"
+        },
+        {
+          "start": "2025-01-02T20:00:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Virtual Reality Therapy Session - Anxiety Management"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Case Notes & Gaming Therapy Journal Update"
+        },
+        {
+          "start": "2025-01-02T22:00:00.000Z",
+          "end": "2025-01-02T23:00:00.000Z",
+          "summary": "Esports Team Mental Health Check-in"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
