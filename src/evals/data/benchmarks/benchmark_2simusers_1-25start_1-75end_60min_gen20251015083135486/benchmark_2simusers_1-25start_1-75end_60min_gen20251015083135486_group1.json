@@ -1,0 +1,106 @@
+{
+  "benchmark": {
+    "startTime": "2025-01-02T11:00:00.000Z",
+    "startTimeOffset": 1.25,
+    "endTime": "2025-01-02T23:00:00.000Z",
+    "endTimeOffset": 1.75,
+    "meetingLength": 60,
+    "nSimUsers": 2,
+    "genTimestamp": "20251015083135486",
+    "nGroups": 1,
+    "groupIndex": 0
+  },
+  "simUsers": [
+    {
+      "name": "Helen",
+      "goal": "Schedule a 1-hour meeting between Thursday, January 2 at 6:00 AM and Thursday, January 2 at 6:00 PM with Yasmin",
+      "calendar": [
+        {
+          "start": "2025-01-02T13:00:00.000Z",
+          "end": "2025-01-02T13:30:00.000Z",
+          "summary": "Shop floor safety briefing"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T15:00:00.000Z",
+          "summary": "Server rack maintenance - Data center"
+        },
+        {
+          "start": "2025-01-02T15:15:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Hardware diagnostics - Network equipment"
+        },
+        {
+          "start": "2025-01-02T16:00:00.000Z",
+          "end": "2025-01-02T16:30:00.000Z",
+          "summary": "Weekly sync with IT operations team"
+        },
+        {
+          "start": "2025-01-02T16:45:00.000Z",
+          "end": "2025-01-02T17:45:00.000Z",
+          "summary": "Troubleshooting enterprise router issues"
+        },
+        {
+          "start": "2025-01-02T18:30:00.000Z",
+          "end": "2025-01-02T20:00:00.000Z",
+          "summary": "Cable management and infrastructure upgrade"
+        },
+        {
+          "start": "2025-01-02T20:15:00.000Z",
+          "end": "2025-01-02T21:00:00.000Z",
+          "summary": "Client consultation - Hardware replacement planning"
+        },
+        {
+          "start": "2025-01-02T21:15:00.000Z",
+          "end": "2025-01-02T22:15:00.000Z",
+          "summary": "Preventive maintenance on cooling systems"
+        },
+        {
+          "start": "2025-01-02T22:15:00.000Z",
+          "end": "2025-01-02T22:45:00.000Z",
+          "summary": "Daily work log and parts inventory check"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    },
+    {
+      "name": "Yasmin",
+      "goal": "",
+      "calendar": [
+        {
+          "start": "2025-01-02T12:00:00.000Z",
+          "end": "2025-01-02T13:00:00.000Z",
+          "summary": "Morning Meditation & Energy Clearing"
+        },
+        {
+          "start": "2025-01-02T13:30:00.000Z",
+          "end": "2025-01-02T14:30:00.000Z",
+          "summary": "Sunrise Yoga Class - Community Center"
+        },
+        {
+          "start": "2025-01-02T15:00:00.000Z",
+          "end": "2025-01-02T16:00:00.000Z",
+          "summary": "Client Consultation - Paranormal Activity Assessment"
+        },
+        {
+          "start": "2025-01-02T16:30:00.000Z",
+          "end": "2025-01-02T17:30:00.000Z",
+          "summary": "Equipment Check & Research Prep"
+        },
+        {
+          "start": "2025-01-02T19:30:00.000Z",
+          "end": "2025-01-02T20:30:00.000Z",
+          "summary": "Mindful Movement Workshop Planning"
+        },
+        {
+          "start": "2025-01-02T21:00:00.000Z",
+          "end": "2025-01-02T22:00:00.000Z",
+          "summary": "Team Meeting - Paranormal Research Group"
+        }
+      ],
+      "messageBuffer": [],
+      "history": []
+    }
+  ]
+}
