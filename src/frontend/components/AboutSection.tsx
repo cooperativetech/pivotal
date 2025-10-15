@@ -12,7 +12,7 @@ const aboutItems: AboutItem[] = [
   {
     title: 'Our mission',
     paragraphs: [
-      'The greatest human achievements are collaborative efforts. As such, we believe that the promise of AI is in further unlocking humanity\'s collective intelligence to realize a flourishing future. Current AI tools (across chat, coding, service, legal advice, etc.) have focused on “one person ↔ LLM.”  We are building the surface for “many person ↔ LLM” use cases. In particular, we’re interested in a tool which is cross-platform and multi-tool, to unlock new heights for the collaborative unit, whether it be a small team or a large firm.',
+      'The greatest human achievements are collaborative efforts. As such, we believe that the promise of AI is in further unlocking humanity\'s collective intelligence to realize a flourishing future. Current AI tools (across chat, coding, service, legal advice, etc.) have focused on "one person ↔ LLM."  We are building the surface for "many person ↔ LLM" use cases. Our focus is a cross-platform, multi-tool solution to elevate the collaborative unit — whether it be a small team or a large firm — to new heights.',
     ],
   },
   {
